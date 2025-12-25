@@ -89,16 +89,23 @@
 	<header class="sticky top-0 z-50 bg-white/80 shadow-sm backdrop-blur-md">
 		<div class="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
 			<div class="flex items-center justify-between">
-				<!-- Title Section -->
-				<div class="flex flex-col text-right">
-					<h1
-						class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-right text-2xl font-bold text-transparent sm:text-4xl"
-					>
-						מדריך העסקים שלנו
-					</h1>
-					<p class="hidden text-right text-sm text-gray-600 sm:block">
-						גלו עסקים מקומיים והטבות בלעדיות
-					</p>
+				<!-- Title & Logo Section -->
+				<div class="flex items-center gap-3">
+					<img
+						src="/logo.png"
+						alt="לוגו"
+						class="h-10 w-10 rounded-full object-cover shadow-sm sm:h-14 sm:w-14"
+					/>
+					<div class="flex flex-col text-right">
+						<h1
+							class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-right text-2xl font-bold text-transparent sm:text-4xl"
+						>
+							מדריך העסקים שלנו
+						</h1>
+						<p class="hidden text-right text-sm text-gray-600 sm:block">
+							גלו עסקים מקומיים והטבות בלעדיות לחברי תנועת יוצאים לחירות
+						</p>
+					</div>
 				</div>
 
 				<!-- Action Button -->
@@ -124,7 +131,7 @@
 				</a>
 			</div>
 			<p class="mt-2 text-right text-xs text-gray-600 sm:hidden">
-				גלו עסקים מקומיים והטבות בלעדיות
+				גלו עסקים מקומיים והטבות בלעדיות לחברי תנועת יוצאים לחירות
 			</p>
 		</div>
 	</header>
@@ -363,11 +370,27 @@
 
 	<footer class="mt-16 border-t bg-gray-50 py-8">
 		<div class="mx-auto max-w-7xl px-4 text-center text-gray-600">
+			<div class="mb-8 flex flex-col items-center">
+				<a
+					href="https://www.melecshop.com/"
+					target="_blank"
+					class="flex flex-col items-center rounded-2xl bg-gradient-to-r from-blue-600 to-purple-600 px-12 py-2 text-white shadow-xl transition-all hover:scale-105 hover:shadow-2xl active:scale-95"
+				>
+					<span class="text-3xl font-black tracking-wider">יוצאים לחירות</span>
+					<span class="text-lg font-medium opacity-90">בונים עולם חדש!</span>
+				</a>
+			</div>
 			<p>
 				רוצים להוסיף את העסק שלכם? <a
 					href="https://docs.google.com/forms/d/e/1FAIpQLSe2wvCp484_PyoJyDZ_n8GupIQVy00ozt5rxOhsWklr7UPkXQ/viewform?usp=header"
 					target="_blank"
 					class="text-blue-600 hover:underline">מלאו את הטופס</a
+				>
+				<span class="mx-2 text-gray-400">|</span>
+				<a
+					href="https://docs.google.com/forms/d/e/1FAIpQLScwLo3V6wBwv-PcZYNGx9TDsVAQUvsRuQw5wUeuO_h_90C1tQ/viewform?usp=header"
+					target="_blank"
+					class="text-red-500 hover:underline">דווח על הפרה</a
 				>
 			</p>
 		</div>
