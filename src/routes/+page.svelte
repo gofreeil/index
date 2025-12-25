@@ -86,14 +86,46 @@
 
 <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
 	<!-- Header -->
-	<header class="sticky top-0 z-10 bg-white/80 shadow-sm backdrop-blur-md">
-		<div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-			<h1
-				class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-center text-4xl font-bold text-transparent"
-			>
-				מדריך העסקים שלנו
-			</h1>
-			<p class="mt-2 text-center text-gray-600">גלו עסקים מקומיים והטבות בלעדיות</p>
+	<header class="sticky top-0 z-50 bg-white/80 shadow-sm backdrop-blur-md">
+		<div class="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+			<div class="flex items-center justify-between">
+				<!-- Title Section -->
+				<div class="flex flex-col text-right">
+					<h1
+						class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-right text-2xl font-bold text-transparent sm:text-4xl"
+					>
+						מדריך העסקים שלנו
+					</h1>
+					<p class="hidden text-right text-sm text-gray-600 sm:block">
+						גלו עסקים מקומיים והטבות בלעדיות
+					</p>
+				</div>
+
+				<!-- Action Button -->
+				<a
+					href="https://forms.gle/2PcfNFmh4HfZfWhv6"
+					target="_blank"
+					class="group flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 px-5 py-2.5 text-sm font-bold text-white shadow-md transition-all hover:scale-105 hover:shadow-lg active:scale-95"
+				>
+					<svg
+						class="h-5 w-5 transition-transform group-hover:rotate-90"
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2.5"
+							d="M12 4v16m8-8H4"
+						/>
+					</svg>
+					<span>הוסף חנות</span>
+				</a>
+			</div>
+			<p class="mt-2 text-right text-xs text-gray-600 sm:hidden">
+				גלו עסקים מקומיים והטבות בלעדיות
+			</p>
 		</div>
 	</header>
 
@@ -345,8 +377,8 @@
 <style>
 	:global(body) {
 		direction: rtl;
-		font-family:
-			-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
+			sans-serif;
 	}
 
 	.line-clamp-3 {
