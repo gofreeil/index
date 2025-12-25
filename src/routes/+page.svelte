@@ -103,7 +103,7 @@
 
 				<!-- Action Button -->
 				<a
-					href="https://forms.gle/2PcfNFmh4HfZfWhv6"
+					href="https://docs.google.com/forms/d/e/1FAIpQLSe2wvCp484_PyoJyDZ_n8GupIQVy00ozt5rxOhsWklr7UPkXQ/viewform?usp=header"
 					target="_blank"
 					class="group flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 px-5 py-2.5 text-sm font-bold text-white shadow-md transition-all hover:scale-105 hover:shadow-lg active:scale-95"
 				>
@@ -365,7 +365,7 @@
 		<div class="mx-auto max-w-7xl px-4 text-center text-gray-600">
 			<p>
 				רוצים להוסיף את העסק שלכם? <a
-					href="https://forms.gle/2PcfNFmh4HfZfWhv6"
+					href="https://docs.google.com/forms/d/e/1FAIpQLSe2wvCp484_PyoJyDZ_n8GupIQVy00ozt5rxOhsWklr7UPkXQ/viewform?usp=header"
 					target="_blank"
 					class="text-blue-600 hover:underline">מלאו את הטופס</a
 				>
@@ -377,8 +377,8 @@
 <style>
 	:global(body) {
 		direction: rtl;
-		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
-			sans-serif;
+		font-family:
+			-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 	}
 
 	.line-clamp-3 {
