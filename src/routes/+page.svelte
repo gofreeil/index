@@ -1,6 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
 
+	/** @type {any[]} */
 	let businesses = $state([]);
 	let loading = $state(true);
 	let error = $state(null);
@@ -8,6 +9,7 @@
 	let selectedCategory = $state('all');
 
 	// פונקציית עזר להמרת קישורי גוגל דרייב לקישור תמונה ישיר
+	/** @param {string} url */
 	const getDirectImageUrl = (url) => {
 		if (!url) return '';
 
@@ -28,16 +30,20 @@
 			if (!response.ok) throw new Error('Failed to fetch businesses');
 			const rawData = await response.json();
 
-			businesses = rawData.map((row) => {
+			businesses = rawData.map((/** @type {any} */ row) => {
+				/** @param {string} partialKey */
 				const findValue = (partialKey) => {
 					const key = Object.keys(row).find((k) => k.includes(partialKey));
 					return key ? row[key] : '';
 				};
 
-				// טיפול בתמונה - לפעמים יש כמה תמונות מופרדות בפסיק, ניקח את הראשונה
-				let rawImage = row['הוסף תמונה לבאנר'] || '';
-				if (rawImage.includes(',')) {
-					rawImage = rawImage.split(',')[0].trim();
+				// טיפול בתמונות - יכולות להיות כמה תמונות מופרדות בפסיק
+				let rawImages = row['הוסף תמונה לבאנר'] || '';
+				let bannerArray = [];
+				if (rawImages) {
+					bannerArray = rawImages
+						.split(',')
+						.map((/** @type {any} */ url) => getDirectImageUrl(url.trim()));
 				}
 
 				return {
@@ -45,19 +51,18 @@
 					name: row['שם העסק או השירות '] || row['שם העסק'] || 'ללא שם',
 					phone: row['טלפון '] || row['טלפון'] || '',
 					category: row['קטגוריה'] || row['Category'] || 'כללי',
-
-					// כאן אנחנו מפעילים את התיקון לקישור
-					banner: getDirectImageUrl(rawImage),
-
+					banners: bannerArray,
+					banner: bannerArray[0] || '', // תמונה ראשי לכרטיסייה
 					description: row['הערות'] || row['תיאור'] || '',
 					discount: findValue('ההנחה הבלעדית'),
 					salesArea: row['אזור מכירה ארצי (אנטרנטי). אם האיזור פרטי נא לפרט היכן'] || '',
 					address: row['מיקום המפעל / חנות / מחסן'] || '',
 					deliveries: row['שירות משלוחים'] || '',
-					website: row['אתר'] || row['Website'] || ''
+					website: row['אתר'] || row['Website'] || '',
+					logo: row['לוגו'] || '' // הוספת שדה לוגו אם קיים
 				};
 			});
-		} catch (err) {
+		} catch (/** @type {any} */ err) {
 			error = err.message;
 		} finally {
 			loading = false;
@@ -145,8 +150,9 @@
 				<!-- Business cards grid -->
 				<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
 					{#each filteredBusinesses as business (business.id)}
-						<div
-							class="group flex flex-col overflow-hidden rounded-xl bg-white shadow-md transition-all duration-300 hover:shadow-xl"
+						<a
+							href="/business/{business.id}"
+							class="group flex flex-col overflow-hidden rounded-xl bg-white shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
 						>
 							<!-- Banner Image -->
 							{#if business.banner}
@@ -275,43 +281,14 @@
 													d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
 												/>
 											</svg>
-											<a
-												href="tel:{business.phone}"
-												class="font-medium hover:text-blue-600 hover:underline"
-											>
+											<span class="font-medium">
 												{business.phone}
-											</a>
-										</div>
-									{/if}
-
-									{#if business.website}
-										<div class="flex items-center gap-2">
-											<svg
-												class="h-4 w-4 text-gray-400"
-												fill="none"
-												stroke="currentColor"
-												viewBox="0 0 24 24"
-											>
-												<path
-													stroke-linecap="round"
-													stroke-linejoin="round"
-													stroke-width="2"
-													d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
-												/>
-											</svg>
-											<a
-												href={business.website}
-												target="_blank"
-												rel="noopener noreferrer"
-												class="truncate hover:text-blue-600 hover:underline"
-											>
-												בקר באתר
-											</a>
+											</span>
 										</div>
 									{/if}
 								</div>
 							</div>
-						</div>
+						</a>
 					{/each}
 				</div>
 			{/if}

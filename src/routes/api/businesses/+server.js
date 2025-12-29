@@ -12,6 +12,7 @@ import {
  */
 const clean = (str) => {
   if (!str) return '';
+  // Remove wrapping quotes and fix escaped newlines
   return str.replace(/^"(.*)"$/, '$1').replace(/\\n/g, '\n').trim();
 };
 
@@ -28,7 +29,8 @@ const sheets = google.sheets({ version: 'v4', auth });
 export async function GET() {
   try {
     const spreadsheetId = clean(SPREADSHEET_ID);
-    // Get spreadsheet metadata to find the actual sheet names
+
+    // Get spreadsheet metadata
     const metaResponse = await sheets.spreadsheets.get({
       spreadsheetId,
     });
@@ -38,7 +40,6 @@ export async function GET() {
       return json({ error: 'No sheets found in spreadsheet' }, { status: 404 });
     }
 
-    // Use the first sheet (assuming it contains the data)
     const sheetName = sheetsList[0]?.properties?.title;
 
     if (!sheetName) {
@@ -47,18 +48,16 @@ export async function GET() {
 
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: sheetName, // Fetch all data from the sheet
+      range: sheetName,
     });
 
-    /** @type {string[][]} */
+    /** @type {any[][]} */
     const rows = response.data.values || [];
 
     if (rows.length === 0) {
       return json([]);
     }
-    console.log(rows[0]);
-    // הנח שהשורה הראשונה היא כותרות
-    /** @type {string[]} */
+
     const headers = rows[0];
     const approvedIndex = headers.findIndex(h =>
       h.toLowerCase().includes('אושר') ||
@@ -66,16 +65,15 @@ export async function GET() {
     );
 
     const businesses = rows.slice(1)
-      .filter((/** @type {string[]} */ row) => {
-        // סנן רק עסקים מאושרים
+      .filter((row) => {
         if (approvedIndex !== -1) {
           return row[approvedIndex]?.toLowerCase() === 'כן' ||
-                 row[approvedIndex]?.toLowerCase() === 'yes' ||
-                 row[approvedIndex] === '1';
+            row[approvedIndex]?.toLowerCase() === 'yes' ||
+            row[approvedIndex] === '1';
         }
-        return true; // אם אין עמודת אישור, הצג הכל
+        return true;
       })
-      .map((/** @type {string[]} */ row, index) => {
+      .map((row, index) => {
         /** @type {Record<string, any>} */
         const business = {};
         headers.forEach((header, i) => {
@@ -88,9 +86,9 @@ export async function GET() {
     return json(businesses);
   } catch (error) {
     console.error('Error fetching businesses:', error);
-    return json({ 
-      error: 'Failed to fetch businesses', 
-      details: error instanceof Error ? error.message : String(error) 
+    return json({
+      error: 'Failed to fetch businesses',
+      details: error instanceof Error ? error.message : String(error)
     }, { status: 500 });
   }
 }
