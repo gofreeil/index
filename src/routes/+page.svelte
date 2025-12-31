@@ -429,7 +429,16 @@
 					</div>
 				</div>
 
-				<p class="mb-4 text-gray-600">נמצאו {filteredBusinesses.length} עסקים</p>
+				<div class="mb-6 flex items-center justify-between">
+					<h2
+						class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-xl font-extrabold text-transparent sm:text-2xl"
+					>
+						חמשת המדורגים ביותר
+					</h2>
+					<p class="text-sm font-medium text-gray-500">
+						נמצאו {filteredBusinesses.length} עסקים בסך הכל
+					</p>
+				</div>
 
 				<!-- Business cards grid -->
 				<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
