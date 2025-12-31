@@ -11,14 +11,20 @@
 
 	<!-- Meta Tags for Social Media (Open Graph) -->
 	<meta property="og:title" content="מדריך בעלי מקצוע כשרים - יוצאים לחירות" />
-	<meta property="og:description" content="גלו עסקים מקומיים והטבות בלעדיות לחברי יוצאים לחירות" />
+	<meta
+		property="og:description"
+		content="בעלי מקצוע כשרים בהנחות והטבות ייחודיות לחברי יוצאים לחירות"
+	/>
 	<meta property="og:image" content="/og-image.png" />
 	<meta property="og:type" content="website" />
 
 	<!-- Twitter Meta Tags -->
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta name="twitter:title" content="מדריך בעלי מקצוע כשרים - יוצאים לחירות" />
-	<meta name="twitter:description" content="גלו עסקים מקומיים והטבות בלעדיות לחברי יוצאים לחירות" />
+	<meta
+		name="twitter:description"
+		content="בעלי מקצוע כשרים בהנחות והטבות ייחודיות לחברי יוצאים לחירות"
+	/>
 	<meta name="twitter:image" content="/og-image.png" />
 </svelte:head>
 
@@ -41,7 +47,7 @@
 							מדריך בעלי מקצוע כשרים
 						</h1>
 						<p class="hidden text-right text-sm text-gray-600 sm:block">
-							גלו עסקים מקומיים והטבות בלעדיות לחברי יוצאים לחירות
+							בעלי מקצוע כשרים בהנחות והטבות ייחודיות לחברי יוצאים לחירות
 						</p>
 					</div>
 				</a>
@@ -88,7 +94,7 @@
 				</div>
 			</div>
 			<p class="mt-2 text-right text-xs text-gray-600 sm:hidden">
-				גלו עסקים מקומיים והטבות בלעדיות לחברי יוצאים לחירות
+				בעלי מקצוע כשרים בהנחות והטבות ייחודיות לחברי יוצאים לחירות
 			</p>
 		</div>
 	</header>
