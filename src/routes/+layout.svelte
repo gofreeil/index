@@ -7,17 +7,17 @@
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
-	<title>מדריך העסקים - יוצאים לחירות</title>
+	<title>מדריך בעלי מקצוע כשרים - יוצאים לחירות</title>
 
 	<!-- Meta Tags for Social Media (Open Graph) -->
-	<meta property="og:title" content="מדריך העסקים - יוצאים לחירות" />
+	<meta property="og:title" content="מדריך בעלי מקצוע כשרים - יוצאים לחירות" />
 	<meta property="og:description" content="גלו עסקים מקומיים והטבות בלעדיות לחברי יוצאים לחירות" />
 	<meta property="og:image" content="/og-image.png" />
 	<meta property="og:type" content="website" />
 
 	<!-- Twitter Meta Tags -->
 	<meta name="twitter:card" content="summary_large_image" />
-	<meta name="twitter:title" content="מדריך העסקים - יוצאים לחירות" />
+	<meta name="twitter:title" content="מדריך בעלי מקצוע כשרים - יוצאים לחירות" />
 	<meta name="twitter:description" content="גלו עסקים מקומיים והטבות בלעדיות לחברי יוצאים לחירות" />
 	<meta name="twitter:image" content="/og-image.png" />
 </svelte:head>
@@ -38,7 +38,7 @@
 						<h1
 							class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-right text-2xl font-bold text-transparent sm:text-4xl"
 						>
-							מדריך העסקים שלנו
+							מדריך בעלי מקצוע כשרים
 						</h1>
 						<p class="hidden text-right text-sm text-gray-600 sm:block">
 							גלו עסקים מקומיים והטבות בלעדיות לחברי יוצאים לחירות
