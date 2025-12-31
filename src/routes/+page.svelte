@@ -7,8 +7,11 @@
 	let error = $state(null);
 	let searchTerm = $state('');
 	let selectedCategory = $state('all');
+	let selectedLocation = $state('all');
 	let isMenuOpen = $state(false);
+	let isLocationMenuOpen = $state(false);
 	let hoveredCategory = $state(null);
+	let hoveredCity = $state(null);
 
 	const categoryHierarchy = {
 		'בית ותחזוקה': ['אינסטלציה', 'חשמל', 'שיפוצים', 'מיזוג אוויר', 'גינון', 'ניקיון'],
@@ -19,6 +22,26 @@
 		'שירותים משפטיים ופיננסיים': ['עריכת דין', 'ראיית חשבון', 'ביטוח'],
 		'אוכל ומזון': ['מסעדות', 'מאפיות', 'קייטרינג', 'משלוחי אוכל']
 	};
+
+	const cityHierarchy = {
+		ירושלים: ['רמות', 'בית וגן', 'הר נוף', 'גבעת שאול', 'מאה שערים', 'פסגת זאב', 'תלפיות'],
+		'בני ברק': ['מרכז', 'רמת אהרן', 'שיכון ה', 'שיכון ו', 'רמת אלחנן', 'פרדס כץ'],
+		'תל אביב': ['צפון העיר', 'דרום העיר', 'יפו', 'מרכז העיר'],
+		אשדוד: ['רובע ז', 'רובע ג', 'רובע ח', 'מרכז העיר'],
+		'בית שמש': ['רמת בית שמש א', 'רמת בית שמש ב', 'רמת בית שמש ג', 'העיר הותיקה'],
+		'ביתר עילית': ['גבעה א', 'גבעה ב'],
+		'מודיעין עילית': ['קרית ספר', 'אחוזת ברכפלד'],
+		חיפה: ['הדר', 'נווה שאנן', 'מרכז הכרמל'],
+		'פתח תקווה': ['גני הדר', 'מרכז העיר'],
+		נתניה: ['קרית צאנז', 'מרכז העיר'],
+		צפת: ['העיר העתיקה', 'דרום העיר'],
+		אלעד: [],
+		רחובות: [],
+		'באר שבע': []
+	};
+
+	// מיון הערים לפי א'-ב'
+	const sortedCities = Object.keys(cityHierarchy).sort((a, b) => a.localeCompare(b, 'he'));
 
 	// פונקציית עזר להמרת קישורי גוגל דרייב לקישור תמונה ישיר
 	/** @param {string} url */
@@ -98,16 +121,29 @@
 			if (selectedCategory === 'all') {
 				matchesCategory = true;
 			} else if (categoryHierarchy[selectedCategory]) {
-				// אם נבחרה קטגוריה ראשית, נראה את כל מה שתחתיה
 				matchesCategory =
 					business.category === selectedCategory ||
 					categoryHierarchy[selectedCategory].includes(business.category);
 			} else {
-				// בחירה ספציפית של תת-קטגוריה
 				matchesCategory = business.category === selectedCategory;
 			}
 
-			return matchesSearch && matchesCategory;
+			let matchesLocation = false;
+			if (selectedLocation === 'all') {
+				matchesLocation = true;
+			} else if (cityHierarchy[selectedLocation]) {
+				// אם נבחרה עיר, נבדוק אם העסק בעיר או באחת השכונות שלה
+				matchesLocation =
+					String(business.address).includes(selectedLocation) ||
+					String(business.salesArea).includes(selectedLocation);
+			} else {
+				// בחירה ספציפית של שכונה
+				matchesLocation =
+					String(business.address).includes(selectedLocation) ||
+					String(business.salesArea).includes(selectedLocation);
+			}
+
+			return matchesSearch && matchesCategory && matchesLocation;
 		})
 	);
 </script>
@@ -240,12 +276,109 @@
 							{/if}
 						</div>
 
-						{#if selectedCategory !== 'all'}
+						<!-- Location Filter (Neighborhoods) -->
+						<div
+							class="relative inline-block"
+							onmouseenter={() => (isLocationMenuOpen = true)}
+							onmouseleave={() => {
+								isLocationMenuOpen = false;
+								hoveredCity = null;
+							}}
+						>
 							<button
-								onclick={() => (selectedCategory = 'all')}
+								class="flex items-center gap-2 rounded-xl bg-purple-600 px-6 py-3 font-bold text-white shadow-md transition-all hover:bg-purple-700"
+							>
+								<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+									/>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+									/>
+								</svg>
+								<span>{selectedLocation === 'all' ? 'עסקים בשכונתי' : selectedLocation}</span>
+							</button>
+
+							{#if isLocationMenuOpen}
+								<div
+									class="scrollbar-thin scrollbar-thumb-gray-200 absolute right-0 z-[100] mt-1 flex max-h-[70vh] w-64 flex-col overflow-y-auto rounded-xl border border-gray-100 bg-white py-2 shadow-2xl"
+								>
+									<button
+										onclick={() => {
+											selectedLocation = 'all';
+											isLocationMenuOpen = false;
+										}}
+										class="px-4 py-2 text-right transition hover:bg-purple-50 hover:text-purple-600 {selectedLocation ===
+										'all'
+											? 'font-bold text-purple-600'
+											: 'text-gray-700'}"
+									>
+										כל הארץ
+									</button>
+
+									<div class="my-1 border-t border-gray-100"></div>
+
+									{#each sortedCities as city}
+										<div class="group relative" onmouseenter={() => (hoveredCity = city)}>
+											<button
+												onclick={() => {
+													selectedLocation = city;
+													isLocationMenuOpen = false;
+												}}
+												class="flex w-full items-center justify-between px-4 py-2 text-right transition hover:bg-purple-50 hover:text-purple-600 {selectedLocation ===
+												city
+													? 'font-bold text-purple-600'
+													: 'text-gray-700'}"
+											>
+												{#if cityHierarchy[city].length > 0}
+													<span class="ml-2">←</span>
+												{:else}
+													<span></span>
+												{/if}
+												<span>{city}</span>
+											</button>
+
+											{#if hoveredCity === city && cityHierarchy[city].length > 0}
+												<div
+													class="absolute top-0 right-full z-[101] mr-1 w-56 rounded-xl border border-gray-100 bg-white py-2 shadow-xl"
+												>
+													{#each cityHierarchy[city] as neighborhood}
+														<button
+															onclick={() => {
+																selectedLocation = neighborhood;
+																isLocationMenuOpen = false;
+															}}
+															class="block w-full px-4 py-2 text-right text-sm transition hover:bg-purple-50 hover:text-purple-600 {selectedLocation ===
+															neighborhood
+																? 'font-bold text-purple-600'
+																: 'text-gray-700'}"
+														>
+															{neighborhood}
+														</button>
+													{/each}
+												</div>
+											{/if}
+										</div>
+									{/each}
+								</div>
+							{/if}
+						</div>
+
+						{#if selectedCategory !== 'all' || selectedLocation !== 'all'}
+							<button
+								onclick={() => {
+									selectedCategory = 'all';
+									selectedLocation = 'all';
+								}}
 								class="text-sm font-medium text-gray-500 hover:text-blue-600"
 							>
-								ביטול סינון
+								ביטול כל המסננים
 							</button>
 						{/if}
 					</div>
