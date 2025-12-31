@@ -128,6 +128,12 @@
 					</p>
 				</div>
 			</div>
+
+			<div class="mt-8 border-t border-gray-200 pt-8 text-center">
+				<p class="text-xs text-gray-500">
+					רשימת בעלי העסקים תחת 7 מצוות בני נח לעילוי נשמת קלמן אליעזר בן יוסף צדוק
+				</p>
+			</div>
 		</div>
 	</footer>
 </div>
