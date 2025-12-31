@@ -7,6 +7,18 @@
 	let error = $state(null);
 	let searchTerm = $state('');
 	let selectedCategory = $state('all');
+	let isMenuOpen = $state(false);
+	let hoveredCategory = $state(null);
+
+	const categoryHierarchy = {
+		'בית ותחזוקה': ['אינסטלציה', 'חשמל', 'שיפוצים', 'מיזוג אוויר', 'גינון', 'ניקיון'],
+		'מחשבים וטכנולוגיה': ['תיקון מחשבים', 'בניית אתרים', 'סלולר', 'גרפיקה'],
+		'טיפול וייעוץ': ['אימון אישי', 'טיפול רגשי', 'ייעוץ עסקי', 'ייעוץ זוגי'],
+		'אירועים ופנאי': ['צילום', 'קייטרינג', 'מוזיקה', 'הפקת אירועים'],
+		'יופי ובריאות': ['קונדיטוריה', 'מספרה', 'תזונה', 'כושר'],
+		'שירותים משפטיים ופיננסיים': ['עריכת דין', 'ראיית חשבון', 'ביטוח'],
+		'אוכל ומזון': ['מסעדות', 'מאפיות', 'קייטרינג', 'משלוחי אוכל']
+	};
 
 	// פונקציית עזר להמרת קישורי גוגל דרייב לקישור תמונה ישיר
 	/** @param {string} url */
@@ -82,7 +94,18 @@
 					String(value).toLowerCase().includes(searchTerm.toLowerCase())
 				);
 
-			const matchesCategory = selectedCategory === 'all' || business.category === selectedCategory;
+			let matchesCategory = false;
+			if (selectedCategory === 'all') {
+				matchesCategory = true;
+			} else if (categoryHierarchy[selectedCategory]) {
+				// אם נבחרה קטגוריה ראשית, נראה את כל מה שתחתיה
+				matchesCategory =
+					business.category === selectedCategory ||
+					categoryHierarchy[selectedCategory].includes(business.category);
+			} else {
+				// בחירה ספציפית של תת-קטגוריה
+				matchesCategory = business.category === selectedCategory;
+			}
 
 			return matchesSearch && matchesCategory;
 		})
@@ -131,17 +154,100 @@
 						</svg>
 					</div>
 
-					<div class="flex flex-wrap gap-2">
-						{#each categories as category}
+					<div class="flex items-center gap-4">
+						<div
+							class="relative inline-block"
+							onmouseenter={() => (isMenuOpen = true)}
+							onmouseleave={() => {
+								isMenuOpen = false;
+								hoveredCategory = null;
+							}}
+						>
 							<button
-								onclick={() => (selectedCategory = category)}
-								class="rounded-full px-4 py-2 transition {selectedCategory === category
-									? 'bg-blue-500 text-white shadow-md'
-									: 'bg-white text-gray-700 hover:bg-gray-100'}"
+								class="flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 font-bold text-white shadow-md transition-all hover:bg-blue-700"
 							>
-								{category === 'all' ? 'הכל' : category}
+								<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M4 6h16M4 12h16m-7 6h7"
+									/>
+								</svg>
+								<span>{selectedCategory === 'all' ? 'קטגוריות' : selectedCategory}</span>
 							</button>
-						{/each}
+
+							{#if isMenuOpen}
+								<div
+									class="absolute right-0 z-[100] mt-1 flex w-64 flex-col rounded-xl border border-gray-100 bg-white py-2 shadow-2xl"
+								>
+									<button
+										onclick={() => {
+											selectedCategory = 'all';
+											isMenuOpen = false;
+										}}
+										class="px-4 py-2 text-right transition hover:bg-blue-50 hover:text-blue-600 {selectedCategory ===
+										'all'
+											? 'font-bold text-blue-600'
+											: 'text-gray-700'}"
+									>
+										הכל
+									</button>
+
+									<div class="my-1 border-t border-gray-100"></div>
+
+									{#each Object.keys(categoryHierarchy) as mainCat}
+										<div class="group relative" onmouseenter={() => (hoveredCategory = mainCat)}>
+											<button
+												onclick={() => {
+													selectedCategory = mainCat;
+													isMenuOpen = false;
+												}}
+												class="flex w-full items-center justify-between px-4 py-2 text-right transition hover:bg-blue-50 hover:text-blue-600 {selectedCategory ===
+												mainCat
+													? 'font-bold text-blue-600'
+													: 'text-gray-700'}"
+											>
+												<span class="ml-2">←</span>
+												<span>{mainCat}</span>
+											</button>
+
+											{#if hoveredCategory === mainCat && categoryHierarchy[mainCat].length > 0}
+												<div
+													class="absolute top-0 right-full z-[101] mr-1 w-56 rounded-xl border border-gray-100 bg-white py-2 shadow-xl"
+												>
+													{#each categoryHierarchy[mainCat] as subCat}
+														<button
+															onclick={() => {
+																selectedCategory = subCat;
+																isMenuOpen = false;
+															}}
+															class="block w-full px-4 py-2 text-right text-sm transition hover:bg-blue-50 hover:text-blue-600 {selectedCategory ===
+															subCat
+																? 'font-bold text-blue-600'
+																: 'text-gray-700'}"
+														>
+															{subCat}
+														</button>
+													{/each}
+												</div>
+											{/if}
+										</div>
+									{/each}
+								</div>
+							{:else}
+								<!-- Hidden indicator for better perceived performance -->
+							{/if}
+						</div>
+
+						{#if selectedCategory !== 'all'}
+							<button
+								onclick={() => (selectedCategory = 'all')}
+								class="text-sm font-medium text-gray-500 hover:text-blue-600"
+							>
+								ביטול סינון
+							</button>
+						{/if}
 					</div>
 				</div>
 

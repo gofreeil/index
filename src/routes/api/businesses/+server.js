@@ -12,8 +12,41 @@ import {
  */
 const clean = (str) => {
   if (!str) return '';
-  // Remove wrapping quotes and fix escaped newlines
-  return str.replace(/^"(.*)"$/, '$1').replace(/\\n/g, '\n').trim();
+
+  // Convert any type of newline representation to standard \n
+  let cleaned = str.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n').replace(/\r\n/g, '\n');
+
+  // Handle backslash line continuations
+  cleaned = cleaned.replace(/\\\n/g, '\n');
+
+  cleaned = cleaned.trim();
+
+  // Remove wrapping quotes
+  if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
+    cleaned = cleaned.substring(1, cleaned.length - 1);
+  }
+
+  if (cleaned.includes('BEGIN')) {
+    const header = '-----BEGIN PRIVATE KEY-----';
+    const footer = '-----END PRIVATE KEY-----';
+
+    // Extract only the base64 part, removing headers, footers, whitespace and backslashes
+    let body = cleaned
+      .replace(/-----BEGIN[\s\S]*?KEY-----/g, '')
+      .replace(/-----END[\s\S]*?KEY-----/g, '')
+      .replace(/\\/g, '')
+      .replace(/\s+/g, '');
+
+    // Format body with standard 64-character lines
+    let formattedBody = '';
+    for (let i = 0; i < body.length; i += 64) {
+      formattedBody += body.substring(i, i + 64) + '\n';
+    }
+
+    cleaned = `${header}\n${formattedBody}${footer}`;
+  }
+
+  return cleaned;
 };
 
 const auth = new google.auth.GoogleAuth({
