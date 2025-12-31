@@ -140,7 +140,7 @@
 					>
 						צור קשר
 					</a>
-					<a href="/policy" class="text-xs text-gray-500 transition-colors hover:text-blue-600">
+					<a href="/privacy" class="text-xs text-gray-500 transition-colors hover:text-blue-600">
 						מדיניות פרטיות
 					</a>
 				</div>
