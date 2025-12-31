@@ -97,7 +97,7 @@
 
 	<footer class="mt-16 border-t bg-gray-50 py-8">
 		<div class="mx-auto max-w-7xl px-4 text-right text-gray-600">
-			<div class="flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:gap-8">
+			<div class="flex flex-col items-center justify-center gap-6 sm:flex-row sm:gap-12">
 				<!-- Action Group (Right aligned in RTL) -->
 				<div class="flex flex-col items-center gap-2">
 					<p class="text-[11px] font-medium text-gray-500">
