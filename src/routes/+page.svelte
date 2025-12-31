@@ -65,38 +65,41 @@
 			if (!response.ok) throw new Error('Failed to fetch businesses');
 			const rawData = await response.json();
 
-			businesses = rawData.map((/** @type {any} */ row) => {
-				/** @param {string} partialKey */
-				const findValue = (partialKey) => {
-					const key = Object.keys(row).find((k) => k.includes(partialKey));
-					return key ? row[key] : '';
-				};
+			businesses = rawData
+				.map((/** @type {any} */ row) => {
+					/** @param {string} partialKey */
+					const findValue = (partialKey) => {
+						const key = Object.keys(row).find((k) => k.includes(partialKey));
+						return key ? row[key] : '';
+					};
 
-				// טיפול בתמונות - יכולות להיות כמה תמונות מופרדות בפסיק
-				let rawImages = row['הוסף תמונה לבאנר'] || '';
-				let bannerArray = [];
-				if (rawImages) {
-					bannerArray = rawImages
-						.split(',')
-						.map((/** @type {any} */ url) => getDirectImageUrl(url.trim()));
-				}
+					// טיפול בתמונות - יכולות להיות כמה תמונות מופרדות בפסיק
+					let rawImages = row['הוסף תמונה לבאנר'] || '';
+					let bannerArray = [];
+					if (rawImages) {
+						bannerArray = rawImages
+							.split(',')
+							.map((/** @type {any} */ url) => getDirectImageUrl(url.trim()));
+					}
 
-				return {
-					id: row.id,
-					name: row['שם העסק או השירות '] || row['שם העסק'] || 'ללא שם',
-					phone: row['טלפון '] || row['טלפון'] || '',
-					category: row['קטגוריה'] || row['Category'] || 'כללי',
-					banners: bannerArray,
-					banner: bannerArray[0] || '', // תמונה ראשי לכרטיסייה
-					description: row['הערות'] || row['תיאור'] || '',
-					discount: findValue('ההנחה הבלעדית'),
-					salesArea: row['אזור מכירה ארצי (אנטרנטי). אם האיזור פרטי נא לפרט היכן'] || '',
-					address: row['מיקום המפעל / חנות / מחסן'] || '',
-					deliveries: row['שירות משלוחים'] || '',
-					website: row['אתר'] || row['Website'] || '',
-					logo: row['לוגו'] || '' // הוספת שדה לוגו אם קיים
-				};
-			});
+					return {
+						id: row.id,
+						name: row['שם העסק או השירות '] || row['שם העסק'] || 'ללא שם',
+						phone: row['טלפון '] || row['טלפון'] || '',
+						category: row['קטגוריה'] || row['Category'] || 'כללי',
+						banners: bannerArray,
+						banner: bannerArray[0] || '', // תמונה ראשי לכרטיסייה
+						description: row['הערות'] || row['תיאור'] || '',
+						discount: findValue('ההנחה הבלעדית'),
+						salesArea: row['אזור מכירה ארצי (אנטרנטי). אם האיזור פרטי נא לפרט היכן'] || '',
+						address: row['מיקום המפעל / חנות / מחסן'] || '',
+						deliveries: row['שירות משלוחים'] || '',
+						website: row['אתר'] || row['Website'] || '',
+						logo: row['לוגו'] || '',
+						rating: Number(row['דירוג'] || row['Rating'] || 0)
+					};
+				})
+				.sort((a, b) => b.rating - a.rating);
 		} catch (/** @type {any} */ err) {
 			error = err.message;
 		} finally {
@@ -146,6 +149,8 @@
 			return matchesSearch && matchesCategory && matchesLocation;
 		})
 	);
+
+	const displayedBusinesses = $derived(filteredBusinesses.slice(0, 5));
 </script>
 
 <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -388,7 +393,7 @@
 
 				<!-- Business cards grid -->
 				<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-					{#each filteredBusinesses as business (business.id)}
+					{#each displayedBusinesses as business (business.id)}
 						<a
 							href="/business/{business.id}"
 							class="group flex flex-col overflow-hidden rounded-xl bg-white shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
