@@ -130,7 +130,7 @@
 							target="_blank"
 							class="text-lg font-medium text-red-500 hover:underline"
 						>
-							דווח על עסק כמפר מדיניות הקהילה
+							דווח על עסק המפר את מדיניות הקהילה
 						</a>
 					</p>
 				</div>
