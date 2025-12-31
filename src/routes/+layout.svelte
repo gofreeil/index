@@ -99,14 +99,19 @@
 		<div class="mx-auto max-w-7xl px-4 text-right text-gray-600">
 			<div class="flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:gap-12">
 				<!-- Button on the right (first in RTL) -->
-				<a
-					href="https://www.melecshop.com/"
-					target="_blank"
-					class="flex shrink-0 flex-col items-center rounded-2xl bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-1 text-white shadow-xl transition-all hover:scale-105 hover:shadow-2xl active:scale-95"
-				>
-					<span class="text-xl font-black tracking-wider">יוצאים לחירות</span>
-					<span class="text-sm font-medium opacity-90">בונים עולם חדש!</span>
-				</a>
+				<div class="flex flex-col items-center gap-2">
+					<p class="text-[11px] font-medium text-gray-500">
+						לכלל פעילות התנועה החברתית יוצאים לחירות הקלק:
+					</p>
+					<a
+						href="https://www.melecshop.com/"
+						target="_blank"
+						class="flex shrink-0 flex-col items-center rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-0.5 text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-95"
+					>
+						<span class="text-base font-black tracking-wider">יוצאים לחירות</span>
+						<span class="text-[10px] font-medium opacity-90">בונים עולם חדש!</span>
+					</a>
+				</div>
 
 				<!-- Words on the left -->
 				<div class="flex flex-col gap-2">
