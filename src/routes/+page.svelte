@@ -150,7 +150,24 @@
 		})
 	);
 
-	const displayedBusinesses = $derived(filteredBusinesses.slice(0, 5));
+	let displayedBusinesses = $derived(filteredBusinesses.slice(0, 5));
+
+	// פונקציה לסגירת כל התפריטים בלחיצה מחוץ להם
+	/** @param {MouseEvent} event */
+	function handleOutsideClick(event) {
+		const target = /** @type {HTMLElement} */ (event.target);
+		if (!target.closest('.menu-container')) {
+			isMenuOpen = false;
+			isLocationMenuOpen = false;
+			hoveredCategory = null;
+			hoveredCity = null;
+		}
+	}
+
+	onMount(() => {
+		window.addEventListener('click', handleOutsideClick);
+		return () => window.removeEventListener('click', handleOutsideClick);
+	});
 </script>
 
 <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -195,16 +212,20 @@
 						</svg>
 					</div>
 
-					<div class="flex items-center gap-4">
+					<div class="flex flex-wrap items-center gap-4">
 						<div
-							class="relative inline-block"
-							onmouseenter={() => (isMenuOpen = true)}
-							onmouseleave={() => {
-								isMenuOpen = false;
-								hoveredCategory = null;
+							class="menu-container relative inline-block"
+							onmouseenter={() => {
+								isMenuOpen = true;
+								isLocationMenuOpen = false;
 							}}
 						>
 							<button
+								onclick={(e) => {
+									e.stopPropagation();
+									isMenuOpen = !isMenuOpen;
+									if (isMenuOpen) isLocationMenuOpen = false;
+								}}
 								class="flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 font-bold text-white shadow-md transition-all hover:bg-blue-700"
 							>
 								<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -283,14 +304,18 @@
 
 						<!-- Location Filter (Neighborhoods) -->
 						<div
-							class="relative inline-block"
-							onmouseenter={() => (isLocationMenuOpen = true)}
-							onmouseleave={() => {
-								isLocationMenuOpen = false;
-								hoveredCity = null;
+							class="menu-container relative inline-block"
+							onmouseenter={() => {
+								isLocationMenuOpen = true;
+								isMenuOpen = false;
 							}}
 						>
 							<button
+								onclick={(e) => {
+									e.stopPropagation();
+									isLocationMenuOpen = !isLocationMenuOpen;
+									if (isLocationMenuOpen) isMenuOpen = false;
+								}}
 								class="flex items-center gap-2 rounded-xl bg-purple-600 px-6 py-3 font-bold text-white shadow-md transition-all hover:bg-purple-700"
 							>
 								<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -330,39 +355,54 @@
 									<div class="my-1 border-t border-gray-100"></div>
 
 									{#each sortedCities as city}
-										<div class="group relative" onmouseenter={() => (hoveredCity = city)}>
+										<div class="relative border-b border-gray-50 last:border-0">
 											<button
+												onmouseenter={() => (hoveredCity = city)}
 												onclick={() => {
-													selectedLocation = city;
-													isLocationMenuOpen = false;
+													if (cityHierarchy[city].length === 0) {
+														selectedLocation = city;
+														isLocationMenuOpen = false;
+													} else {
+														hoveredCity = hoveredCity === city ? null : city;
+													}
 												}}
-												class="flex w-full items-center justify-between px-4 py-2 text-right transition hover:bg-purple-50 hover:text-purple-600 {selectedLocation ===
+												class="flex w-full items-center justify-between px-4 py-3 text-right transition hover:bg-purple-50 hover:text-purple-600 {selectedLocation ===
 												city
 													? 'font-bold text-purple-600'
 													: 'text-gray-700'}"
 											>
+												<span class="text-base">{city}</span>
 												{#if cityHierarchy[city].length > 0}
-													<span class="ml-2">←</span>
-												{:else}
-													<span></span>
+													<svg
+														class="h-4 w-4 transition-transform {hoveredCity === city
+															? 'rotate-180'
+															: ''}"
+														fill="none"
+														stroke="currentColor"
+														viewBox="0 0 24 24"
+													>
+														<path
+															stroke-linecap="round"
+															stroke-linejoin="round"
+															stroke-width="2"
+															d="M19 9l-7 7-7-7"
+														/>
+													</svg>
 												{/if}
-												<span>{city}</span>
 											</button>
 
 											{#if hoveredCity === city && cityHierarchy[city].length > 0}
-												<div
-													class="absolute top-0 right-full z-[101] mr-1 w-56 rounded-xl border border-gray-100 bg-white py-2 shadow-xl"
-												>
+												<div class="bg-gray-50 py-1 shadow-inner">
 													{#each cityHierarchy[city] as neighborhood}
 														<button
 															onclick={() => {
 																selectedLocation = neighborhood;
 																isLocationMenuOpen = false;
 															}}
-															class="block w-full px-4 py-2 text-right text-sm transition hover:bg-purple-50 hover:text-purple-600 {selectedLocation ===
+															class="block w-full border-r-4 border-transparent px-8 py-2 text-right text-sm transition hover:border-purple-400 hover:bg-purple-100/50 hover:text-purple-700 {selectedLocation ===
 															neighborhood
-																? 'font-bold text-purple-600'
-																: 'text-gray-700'}"
+																? 'font-bold text-purple-700'
+																: 'text-gray-600'}"
 														>
 															{neighborhood}
 														</button>
