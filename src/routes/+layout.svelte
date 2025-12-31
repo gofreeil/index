@@ -97,8 +97,8 @@
 
 	<footer class="mt-16 border-t bg-gray-50 py-8">
 		<div class="mx-auto max-w-7xl px-4 text-right text-gray-600">
-			<div class="flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:gap-12">
-				<!-- Button on the right (first in RTL) -->
+			<div class="flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:gap-8">
+				<!-- Action Group (Right aligned in RTL) -->
 				<div class="flex flex-col items-center gap-2">
 					<p class="text-[11px] font-medium text-gray-500">
 						לכלל פעילות התנועה החברתית יוצאים לחירות הקלק:
@@ -113,24 +113,36 @@
 					</a>
 				</div>
 
-				<!-- Words on the left -->
+				<!-- Vertical Divider (Hidden on mobile) -->
+				<div class="hidden h-12 w-px bg-gray-300 sm:block"></div>
+
+				<!-- Legal link Group -->
 				<div class="flex flex-col gap-2">
-					<p class="text-lg font-medium">
-						רוצים להוסיף את העסק שלכם? <a
-							href="https://docs.google.com/forms/d/e/1FAIpQLSe2wvCp484_PyoJyDZ_n8GupIQVy00ozt5rxOhsWklr7UPkXQ/viewform?usp=header"
-							target="_blank"
-							class="text-blue-600 hover:underline">מלאו את הטופס</a
-						>
-					</p>
 					<p>
 						<a
 							href="https://docs.google.com/forms/d/e/1FAIpQLScwLo3V6wBwv-PcZYNGx9TDsVAQUvsRuQw5wUeuO_h_90C1tQ/viewform?usp=header"
 							target="_blank"
 							class="text-lg font-medium text-red-500 hover:underline"
 						>
-							הזמן בעל עסק לבית הדין/ פיוס של יוצאים לחירות
+							דווח על הפרת מדיניות הקהילה של בעל עסק
 						</a>
 					</p>
+				</div>
+
+				<!-- Second Vertical Divider -->
+				<div class="hidden h-12 w-px bg-gray-300 sm:block"></div>
+
+				<!-- Contact & Privacy Group -->
+				<div class="flex flex-col gap-1">
+					<a
+						href="mailto:support@melecshop.com"
+						class="text-sm font-bold text-gray-700 transition-colors hover:text-blue-600"
+					>
+						צור קשר
+					</a>
+					<a href="/policy" class="text-xs text-gray-500 transition-colors hover:text-blue-600">
+						מדיניות פרטיות
+					</a>
 				</div>
 			</div>
 
