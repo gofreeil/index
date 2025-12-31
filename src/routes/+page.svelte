@@ -212,6 +212,28 @@
 						</svg>
 					</div>
 
+					<div class="mt-2 flex items-center gap-2 px-1 text-sm text-gray-500">
+						<svg
+							class="h-4 w-4 text-blue-500"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+							/>
+						</svg>
+						<span>סה"כ <strong>{businesses.length}</strong> עסקים באינדקס</span>
+						{#if searchTerm || selectedCategory !== 'all' || selectedLocation !== 'all'}
+							<span class="mx-1 text-gray-300">|</span>
+							<span class="font-medium text-blue-600">נמצאו {filteredBusinesses.length} תוצאות</span
+							>
+						{/if}
+					</div>
+
 					<div class="flex flex-wrap items-center gap-4">
 						<div
 							class="menu-container relative inline-block"
@@ -435,9 +457,6 @@
 					>
 						חמשת המדורגים ביותר
 					</h2>
-					<p class="text-sm font-medium text-gray-500">
-						נמצאו {filteredBusinesses.length} עסקים בסך הכל
-					</p>
 				</div>
 
 				<!-- Business cards grid -->
