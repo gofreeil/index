@@ -124,7 +124,7 @@
 							target="_blank"
 							class="text-lg font-medium text-red-500 hover:underline"
 						>
-							דווח על הפרת מדיניות הקהילה של בעל עסק
+							דווח על עסק כמפר מדיניות הקהילה
 						</a>
 					</p>
 				</div>
