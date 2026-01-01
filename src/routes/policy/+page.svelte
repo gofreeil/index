@@ -62,14 +62,16 @@
 					{t.policySection1}
 				</h2>
 				<p class="{t.dir === 'rtl' ? 'pr-9' : 'pl-9'} text-lg">
+					{t.policySection1Prefix}
 					<a
 						href="https://www.melecshop.com/page/uecc"
 						target="_blank"
 						rel="noopener noreferrer"
 						class="text-blue-600 underline decoration-blue-300 underline-offset-4 transition-colors hover:text-blue-800 hover:decoration-blue-500"
 					>
-						{t.policySection1Text}
+						{t.policySection1LinkName}
 					</a>
+					{t.policySection1Suffix}
 				</p>
 			</section>
 
