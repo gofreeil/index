@@ -45,7 +45,16 @@
 				<h2 class="flex items-center gap-3 text-2xl font-bold text-gray-900">
 					<span class="text-blue-600">🟦</span> 1. קבלת הקוד האתי העולמי
 				</h2>
-				<p class="pr-9 text-lg">קבלת הקוד האתי העולמי המבוסס על 7 מצוות בני נח.</p>
+				<p class="pr-9 text-lg">
+					<a
+						href="https://www.melecshop.com/page/uecc"
+						target="_blank"
+						rel="noopener noreferrer"
+						class="text-blue-600 underline decoration-blue-300 underline-offset-4 transition-colors hover:text-blue-800 hover:decoration-blue-500"
+					>
+						קבלת הקוד האתי העולמי המבוסס על 7 מצוות בני נח.
+					</a>
+				</p>
 			</section>
 
 			<section class="space-y-4">
