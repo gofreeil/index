@@ -85,10 +85,10 @@
 					/** @param {string} text */
 					const cleanText = (text) => {
 						if (!text) return '';
-						// ניקוי אגרסיבי של וריאציות שונות של "אחר אפרט למטה"
+						// ניקוי אגרסיבי כולל פסיקים וכל וריאציה של "אחר אפרט"
 						return text
-							.replace(/אחר[:\-\s]*אפרט\s*(למטה|למה)?/g, '')
-							.replace(/^\s*[:\-]\s*/, '') // ניקוי סימני פיסוק שנשארו בהתחלה
+							.replace(/אחר[,\s:\-]*אפרט\s*(למטה|למה)?/g, '')
+							.replace(/^[,\s:\-]+|[,\s:\-]+$/g, '') // ניקוי שאריות מהקצוות
 							.trim();
 					};
 
@@ -96,7 +96,7 @@
 						id: row.id,
 						name: row['שם העסק או השירות '] || row['שם העסק'] || 'ללא שם',
 						phone: row['טלפון '] || row['טלפון'] || '',
-						category: row['קטגוריה'] || row['Category'] || 'כללי',
+						category: cleanText(row['קטגוריה'] || row['Category'] || 'כללי'),
 						banners: bannerArray,
 						banner: bannerArray[0] || '', // תמונה ראשי לכרטיסייה
 						description: cleanText(row['הערות'] || row['תיאור'] || ''),

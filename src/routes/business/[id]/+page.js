@@ -41,8 +41,8 @@ export async function load({ fetch, params }) {
         const cleanText = (text) => {
             if (!text) return '';
             return text
-                .replace(/אחר[:\-\s]*אפרט\s*(למטה|למה)?/g, '')
-                .replace(/^\s*[:\-]\s*/, '')
+                .replace(/אחר[,\s:\-]*אפרט\s*(למטה|למה)?/g, '')
+                .replace(/^[,\s:\-]+|[,\s:\-]+$/g, '')
                 .trim();
         };
 
@@ -50,7 +50,7 @@ export async function load({ fetch, params }) {
             id: business.id,
             name: business['שם העסק או השירות '] || business['שם העסק'] || 'ללא שם',
             phone: business['טלפון '] || business['טלפון'] || '',
-            category: business['קטגוריה'] || business['Category'] || 'כללי',
+            category: cleanText(business['קטגוריה'] || business['Category'] || 'כללי'),
             banners: bannerArray,
             description: cleanText(business['הערות'] || business['תיאור'] || ''),
             discount: cleanText(findValue(business, 'ההנחה הבלעדית')),
