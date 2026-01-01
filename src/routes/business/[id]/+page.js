@@ -44,7 +44,8 @@ export async function load({ fetch, params }) {
                 .replace(/אחר[,\s:\-\.]*אפרט\s*(למטה|למה)?/g, '')
                 .replace(/^[,\s:\-\.]+|[,\s:\-\.]+$/g, '')
                 .trim();
-            return cleaned.length <= 1 && /^[,\s:\-\.]$/.test(cleaned) ? '' : cleaned;
+            // אם נשאר רק טקסט שהוא סימני פיסוק או רווחים - החזר מחרוזת ריקה
+            return !cleaned || /^[,\s:\-\.\|]+$/.test(cleaned) ? '' : cleaned;
         };
 
         const formattedBusiness = {

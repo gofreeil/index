@@ -91,8 +91,8 @@
 							.replace(/^[,\s:\-\.]+|[,\s:\-\.]+$/g, '') // ניקוי שאריות מהקצוות כולל נקודות
 							.trim();
 
-						// אם נשאר רק תו בודד של פיסוק או שהטקסט ריק - החזר מחרוזת ריקה
-						return cleaned.length <= 1 && /^[,\s:\-\.]$/.test(cleaned) ? '' : cleaned;
+						// אם נשאר רק טקסט שהוא סימני פיסוק או רווחים - החזר מחרוזת ריקה כדי להסתיר אייקונים
+						return !cleaned || /^[,\s:\-\.\|]+$/.test(cleaned) ? '' : cleaned;
 					};
 
 					return {
@@ -911,7 +911,7 @@
 		overflow: hidden;
 	}
 	.animate-gold-shimmer {
-		animation: gold-shimmer 2s ease-in-out 1 forwards;
+		animation: gold-shimmer 1.5s cubic-bezier(0.4, 0, 0.2, 1) 1 forwards;
 	}
 
 	@keyframes gold-shimmer {
