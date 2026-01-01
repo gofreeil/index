@@ -846,11 +846,13 @@
 						></div>
 					</div>
 
-					<div class="flex flex-wrap justify-center gap-8 px-4">
+					<div
+						class="grid grid-cols-3 gap-3 px-2 sm:flex sm:flex-wrap sm:justify-center sm:gap-8 sm:px-4"
+					>
 						{#each filteredBusinesses as business (business.id)}
 							<a
 								href="/business/{business.id}"
-								class="group relative flex h-32 w-32 items-center justify-center rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-xl"
+								class="group relative flex aspect-square w-full items-center justify-center rounded-xl border border-gray-100 bg-white p-2 shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-xl sm:h-32 sm:w-32 sm:rounded-2xl sm:p-4"
 								title={business.name}
 							>
 								{#if business.logo}
