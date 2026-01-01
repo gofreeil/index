@@ -42,7 +42,7 @@
 					/>
 					<div class="flex flex-col text-right">
 						<h1
-							class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-right text-2xl font-bold text-transparent sm:text-4xl"
+							class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-right text-xl font-bold text-transparent sm:text-4xl"
 						>
 							מדריך בעלי מקצוע כשרים
 						</h1>
@@ -57,7 +57,8 @@
 					<!-- Community Policy Button -->
 					<a
 						href="/policy"
-						class="flex items-center gap-2 rounded-full bg-gradient-to-r from-yellow-200 to-yellow-400 px-4 py-2.5 text-sm font-bold text-yellow-900 shadow-sm transition-all hover:scale-105 hover:shadow-md active:scale-95"
+						class="flex items-center gap-2 rounded-full bg-gradient-to-r from-yellow-200 to-yellow-400 px-3 py-2 text-sm font-bold text-yellow-900 shadow-sm transition-all hover:scale-105 hover:shadow-md active:scale-95 sm:px-4 sm:py-2.5"
+						title="מדיניות הקהילה"
 					>
 						<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 							<path
@@ -67,14 +68,15 @@
 								d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
 							/>
 						</svg>
-						<span>מדיניות הקהילה</span>
+						<span class="hidden sm:inline">מדיניות הקהילה</span>
 					</a>
 
 					<!-- Add Store Button -->
 					<a
 						href="https://docs.google.com/forms/d/e/1FAIpQLSe2wvCp484_PyoJyDZ_n8GupIQVy00ozt5rxOhsWklr7UPkXQ/viewform?usp=header"
 						target="_blank"
-						class="group flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 px-5 py-2.5 text-sm font-bold text-white shadow-md transition-all hover:scale-105 hover:shadow-lg active:scale-95"
+						class="group flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 px-3 py-2 text-sm font-bold text-white shadow-md transition-all hover:scale-105 hover:shadow-lg active:scale-95 sm:px-5 sm:py-2.5"
+						title="הוסף חנות"
 					>
 						<svg
 							class="h-5 w-5 transition-transform group-hover:rotate-90"
@@ -89,7 +91,7 @@
 								d="M12 4v16m8-8H4"
 							/>
 						</svg>
-						<span>הוסף חנות</span>
+						<span class="hidden sm:inline">הוסף חנות</span>
 					</a>
 				</div>
 			</div>

@@ -11,8 +11,8 @@
 	let selectedLocation = $state('all');
 	let isMenuOpen = $state(false);
 	let isLocationMenuOpen = $state(false);
-	let hoveredCategory = $state(null);
-	let hoveredCity = $state(null);
+	let hoveredCategory = $state('');
+	let hoveredCity = $state('');
 
 	const categoryHierarchy = {
 		'בית ותחזוקה': [
@@ -62,6 +62,9 @@
 		רחובות: [],
 		'באר שבע': []
 	};
+
+	const catHier = /** @type {any} */ (categoryHierarchy);
+	const cityHier = /** @type {any} */ (cityHierarchy);
 
 	// מיון הערים לפי א'-ב'
 	const sortedCities = Object.keys(cityHierarchy).sort((a, b) => a.localeCompare(b, 'he'));
@@ -161,10 +164,10 @@
 			let matchesCategory = false;
 			if (selectedCategory === 'all') {
 				matchesCategory = true;
-			} else if (/** @type {any} */ (categoryHierarchy)[selectedCategory]) {
+			} else if (catHier[selectedCategory]) {
 				matchesCategory =
 					business.category === selectedCategory ||
-					/** @type {any} */ (categoryHierarchy)[selectedCategory].includes(business.category);
+					catHier[selectedCategory].includes(business.category);
 			} else {
 				matchesCategory = business.category === selectedCategory;
 			}
@@ -172,7 +175,7 @@
 			let matchesLocation = false;
 			if (selectedLocation === 'all') {
 				matchesLocation = true;
-			} else if (/** @type {any} */ (cityHierarchy)[selectedLocation]) {
+			} else if (cityHier[selectedLocation]) {
 				// אם נבחרה עיר, נבדוק אם העסק בעיר או באחת השכונות שלה
 				matchesLocation =
 					String(business.address).includes(selectedLocation) ||
@@ -198,8 +201,8 @@
 		if (!target.closest('.menu-container')) {
 			isMenuOpen = false;
 			isLocationMenuOpen = false;
-			hoveredCategory = null;
-			hoveredCity = null;
+			hoveredCategory = '';
+			hoveredCity = '';
 		}
 	}
 
@@ -273,9 +276,9 @@
 						{/if}
 					</div>
 
-					<div class="flex flex-wrap items-center gap-4">
+					<div class="flex w-full flex-wrap items-center gap-3 sm:w-auto sm:gap-4">
 						<div
-							class="menu-container relative inline-block"
+							class="menu-container relative flex-1 sm:flex-initial"
 							onmouseenter={() => {
 								isMenuOpen = true;
 								isLocationMenuOpen = false;
@@ -287,7 +290,7 @@
 									isMenuOpen = !isMenuOpen;
 									if (isMenuOpen) isLocationMenuOpen = false;
 								}}
-								class="flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 font-bold text-white shadow-md transition-all hover:bg-blue-700"
+								class="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 font-bold text-white shadow-md transition-all hover:bg-blue-700 sm:w-auto sm:px-6"
 							>
 								<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 									<path
@@ -319,7 +322,7 @@
 
 									<div class="my-1 border-t border-gray-100"></div>
 
-									{#each Object.keys(categoryHierarchy) as mainCat}
+									{#each Object.keys(catHier) as mainCat}
 										<div class="group relative" onmouseenter={() => (hoveredCategory = mainCat)}>
 											<button
 												onclick={() => {
@@ -335,19 +338,19 @@
 												<span>{mainCat}</span>
 											</button>
 
-											{#if hoveredCategory === mainCat && categoryHierarchy[mainCat].length > 0}
+											{#if hoveredCategory === mainCat && catHier[mainCat].length > 0}
 												<div
-													class="absolute top-0 right-full z-[101] mr-1 w-56 rounded-xl border border-gray-100 bg-white py-2 shadow-xl"
+													class="static w-full bg-blue-50/50 py-1 lg:absolute lg:top-0 lg:right-full lg:z-[101] lg:mr-1 lg:w-56 lg:rounded-xl lg:border lg:border-gray-100 lg:bg-white lg:py-2 lg:shadow-xl"
 												>
-													{#each categoryHierarchy[mainCat] as subCat}
+													{#each catHier[mainCat] as subCat}
 														<button
 															onclick={() => {
 																selectedCategory = subCat;
 																isMenuOpen = false;
 															}}
-															class="block w-full px-4 py-2 text-right text-sm transition hover:bg-blue-50 hover:text-blue-600 {selectedCategory ===
+															class="block w-full px-8 py-2 text-right text-sm transition hover:bg-blue-100 hover:text-blue-700 lg:px-4 {selectedCategory ===
 															subCat
-																? 'font-bold text-blue-600'
+																? 'font-bold text-blue-700'
 																: 'text-gray-700'}"
 														>
 															{subCat}
@@ -365,7 +368,7 @@
 
 						<!-- Location Filter (Neighborhoods) -->
 						<div
-							class="menu-container relative inline-block"
+							class="menu-container relative flex-1 sm:flex-initial"
 							onmouseenter={() => {
 								isLocationMenuOpen = true;
 								isMenuOpen = false;
@@ -377,7 +380,7 @@
 									isLocationMenuOpen = !isLocationMenuOpen;
 									if (isLocationMenuOpen) isMenuOpen = false;
 								}}
-								class="flex items-center gap-2 rounded-xl bg-purple-600 px-6 py-3 font-bold text-white shadow-md transition-all hover:bg-purple-700"
+								class="flex w-full items-center justify-center gap-2 rounded-xl bg-purple-600 px-4 py-3 font-bold text-white shadow-md transition-all hover:bg-purple-700 sm:w-auto sm:px-6"
 							>
 								<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 									<path
@@ -420,11 +423,12 @@
 											<button
 												onmouseenter={() => (hoveredCity = city)}
 												onclick={() => {
-													if (cityHierarchy[city].length === 0) {
+													const neighborhoods = cityHier[city];
+													if (!neighborhoods || neighborhoods.length === 0) {
 														selectedLocation = city;
 														isLocationMenuOpen = false;
 													} else {
-														hoveredCity = hoveredCity === city ? null : city;
+														hoveredCity = hoveredCity === city ? '' : city;
 													}
 												}}
 												class="flex w-full items-center justify-between px-4 py-3 text-right transition hover:bg-purple-50 hover:text-purple-600 {selectedLocation ===
@@ -433,7 +437,7 @@
 													: 'text-gray-700'}"
 											>
 												<span class="text-base">{city}</span>
-												{#if cityHierarchy[city].length > 0}
+												{#if cityHier[city]?.length > 0}
 													<svg
 														class="h-4 w-4 transition-transform {hoveredCity === city
 															? 'rotate-180'
@@ -452,9 +456,9 @@
 												{/if}
 											</button>
 
-											{#if hoveredCity === city && cityHierarchy[city].length > 0}
+											{#if hoveredCity === city && cityHier[city]?.length > 0}
 												<div class="bg-gray-50 py-1 shadow-inner">
-													{#each cityHierarchy[city] as neighborhood}
+													{#each cityHier[city] as neighborhood}
 														<button
 															onclick={() => {
 																selectedLocation = neighborhood;
@@ -490,9 +494,9 @@
 					</div>
 				</div>
 
-				<div class="mb-10 flex flex-col items-center justify-center">
+				<div class="mb-10 flex flex-col items-center justify-center text-center">
 					<h2
-						class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-3xl font-extrabold text-transparent sm:text-4xl lg:text-5xl"
+						class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-2xl font-extrabold text-transparent sm:text-4xl lg:text-5xl"
 					>
 						שלושת המדורגים ביותר
 					</h2>
@@ -693,9 +697,9 @@
 
 				<!-- New Businesses Section -->
 				<div class="mt-20">
-					<div class="mb-10 flex flex-col items-center justify-center">
+					<div class="mb-10 flex flex-col items-center justify-center text-center">
 						<h2
-							class="bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-3xl font-extrabold text-transparent sm:text-4xl lg:text-5xl"
+							class="bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-2xl font-extrabold text-transparent sm:text-4xl lg:text-5xl"
 						>
 							עסקים חדשים שהצטרפו
 						</h2>
@@ -810,7 +814,7 @@
 				<div class="mt-20">
 					<div class="mb-10 flex flex-col items-center justify-center text-center">
 						<h2
-							class="bg-gradient-to-r from-blue-600 to-indigo-700 bg-clip-text text-3xl font-extrabold text-transparent sm:text-4xl lg:text-5xl"
+							class="bg-gradient-to-r from-blue-600 to-indigo-700 bg-clip-text text-2xl font-extrabold text-transparent sm:text-4xl lg:text-5xl"
 						>
 							העסקים שלנו פרוסים בארץ
 						</h2>
@@ -821,7 +825,7 @@
 					</div>
 
 					<div
-						class="mx-auto max-w-4xl overflow-hidden rounded-3xl border border-gray-100 bg-white p-2 shadow-2xl"
+						class="relative h-[600px] w-full max-w-sm overflow-hidden rounded-3xl border-4 border-white bg-sky-50 shadow-2xl sm:h-[650px]"
 					>
 						<div class="rounded-2xl bg-slate-50">
 							<IsraelMap {businesses} showRegions={false} />
@@ -831,9 +835,9 @@
 
 				<!-- All Businesses Section -->
 				<div class="mt-20">
-					<div class="mb-10 flex flex-col items-center justify-center">
+					<div class="mb-10 flex flex-col items-center justify-center text-center">
 						<h2
-							class="bg-gradient-to-r from-gray-700 to-gray-900 bg-clip-text text-3xl font-extrabold text-transparent sm:text-4xl lg:text-5xl"
+							class="bg-gradient-to-r from-gray-700 to-gray-900 bg-clip-text text-2xl font-extrabold text-transparent sm:text-4xl lg:text-5xl"
 						>
 							כלל העסקים המשרתים אותנו
 						</h2>

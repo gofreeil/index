@@ -42,7 +42,14 @@
 		נתיבות: { x: 80, y: 320 },
 		שדרות: { x: 85, y: 300 },
 		ערד: { x: 145, y: 340 },
-		דימונה: { x: 135, y: 380 }
+		דימונה: { x: 135, y: 380 },
+		חריש: { x: 115, y: 100 },
+		עמנואל: { x: 135, y: 160 },
+		'נוף הגליל': { x: 135, y: 80 },
+		כרמיאל: { x: 130, y: 45 },
+		מגדל: { x: 140, y: 70 },
+		'קרית גת': { x: 95, y: 250 },
+		רכסים: { x: 120, y: 65 }
 	};
 
 	// Try to find the city in the address
@@ -52,20 +59,38 @@
 
 	const markerPos = $derived(detectedCity ? cityCoords[detectedCity] : null);
 
-	// All markers for the main page map
-	const allMarkers = $derived(
-		/** @type {any[]} */ (businesses).reduce((/** @type {any[]} */ acc, b) => {
+	// All markers for the main page map with Jitter to prevent overlap
+	const allMarkers = $derived.by(() => {
+		/** @type {Record<string, number>} */
+		const cityCounts = {};
+
+		return /** @type {any[]} */ (businesses).reduce((/** @type {any[]} */ acc, b) => {
 			const addressStr = String(b.address || '');
 			const salesAreaStr = String(b.salesArea || '');
-			const city = Object.keys(cityCoords).find(
-				(c) => addressStr.includes(c) || salesAreaStr.includes(c)
-			);
+
+			// Match the longest city name first for accuracy
+			const cities = Object.keys(cityCoords).sort((a, b) => b.length - a.length);
+			const city = cities.find((c) => addressStr.includes(c) || salesAreaStr.includes(c));
+
 			if (city) {
-				acc.push({ ...cityCoords[city], name: b.name });
+				cityCounts[city] = (cityCounts[city] || 0) + 1;
+				const count = cityCounts[city];
+
+				// Spiral dispersion (Fermat's spiral concept)
+				const angle = (count - 1) * 137.5; // Golden angle for even distribution
+				const radius = count === 1 ? 0 : Math.min((count - 1) * 2.5, 15);
+				const offsetX = Math.cos((angle * Math.PI) / 180) * radius;
+				const offsetY = Math.sin((angle * Math.PI) / 180) * radius;
+
+				acc.push({
+					x: cityCoords[city].x + offsetX,
+					y: cityCoords[city].y + offsetY,
+					name: b.name
+				});
 			}
 			return acc;
-		}, [])
-	);
+		}, []);
+	});
 
 	// Keywords mapping to regions
 	const regions = [
@@ -144,7 +169,7 @@
 
 <div class="relative flex flex-col items-center overflow-hidden p-2">
 	<div
-		class="relative h-[650px] w-full max-w-[320px] overflow-hidden rounded-3xl border-4 border-white bg-sky-50 shadow-2xl"
+		class="relative h-[600px] w-full max-w-sm overflow-hidden rounded-3xl border-4 border-white bg-sky-50 shadow-2xl sm:h-[650px]"
 	>
 		<!-- Real Map Image from User -->
 		<div class="absolute inset-0 transition-all duration-1000 ease-in-out" style={zoomStyles}>
