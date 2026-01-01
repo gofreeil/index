@@ -187,21 +187,21 @@
 
 	{@render children()}
 
-	<footer class="mt-16 border-t bg-gray-50 py-8">
+	<footer class="mt-8 border-t bg-gray-50 py-4 sm:mt-16 sm:py-8">
 		<div class="mx-auto max-w-7xl px-4 text-right text-gray-600">
-			<div class="flex flex-col items-center justify-center gap-6 sm:flex-row sm:gap-12">
+			<div class="flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-12">
 				<!-- Action Group (Right aligned in RTL) -->
-				<div class="flex flex-col items-center gap-2">
-					<p class="text-[11px] font-medium text-gray-500">
+				<div class="flex flex-col items-center gap-1 sm:gap-2">
+					<p class="text-[9px] font-medium text-gray-500 sm:text-[11px]">
 						{t.movementAction}
 					</p>
 					<a
 						href="https://www.melecshop.com/"
 						target="_blank"
-						class="flex shrink-0 flex-col items-center rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-0.5 text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-95"
+						class="flex shrink-0 flex-col items-center rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-3 py-0.5 text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-95 sm:px-4"
 					>
-						<span class="text-base font-black tracking-wider">יוצאים לחירות</span>
-						<span class="text-[10px] font-medium opacity-90">{t.movementSlogan}</span>
+						<span class="text-sm font-black tracking-wider sm:text-base">יוצאים לחירות</span>
+						<span class="text-[8px] font-medium opacity-90 sm:text-[10px]">{t.movementSlogan}</span>
 					</a>
 				</div>
 
@@ -209,12 +209,12 @@
 				<div class="hidden h-12 w-px bg-gray-300 sm:block"></div>
 
 				<!-- Legal link Group -->
-				<div class="flex flex-col gap-2">
+				<div class="flex flex-col gap-1 sm:gap-2">
 					<p>
 						<a
 							href="https://docs.google.com/forms/d/e/1FAIpQLScwLo3V6wBwv-PcZYNGx9TDsVAQUvsRuQw5wUeuO_h_90C1tQ/viewform?usp=header"
 							target="_blank"
-							class="text-lg font-medium text-red-500 hover:underline"
+							class="text-sm font-medium text-red-500 hover:underline sm:text-lg"
 						>
 							{t.reportViolation}
 						</a>
@@ -225,21 +225,24 @@
 				<div class="hidden h-12 w-px bg-gray-300 sm:block"></div>
 
 				<!-- Contact & Privacy Group -->
-				<div class="flex flex-col gap-1">
+				<div class="flex flex-col gap-0.5 sm:gap-1">
 					<a
 						href="mailto:support@melecshop.com"
-						class="text-sm font-bold text-gray-700 transition-colors hover:text-blue-600"
+						class="text-xs font-bold text-gray-700 transition-colors hover:text-blue-600 sm:text-sm"
 					>
 						{t.contact}
 					</a>
-					<a href="/privacy" class="text-xs text-gray-500 transition-colors hover:text-blue-600">
+					<a
+						href="/privacy"
+						class="text-[10px] text-gray-500 transition-colors hover:text-blue-600 sm:text-xs"
+					>
 						{t.privacy}
 					</a>
 				</div>
 			</div>
 
-			<div class="mt-8 border-t border-gray-200 pt-8 text-center">
-				<p class="text-xs text-gray-500">
+			<div class="mt-4 border-t border-gray-200 pt-4 text-center sm:mt-8 sm:pt-8">
+				<p class="text-[10px] text-gray-500 sm:text-xs">
 					{t.dedication}
 				</p>
 			</div>
