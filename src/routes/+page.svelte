@@ -825,7 +825,7 @@
 					</div>
 
 					<div
-						class="relative h-[600px] w-full max-w-sm overflow-hidden rounded-3xl border-4 border-white bg-sky-50 shadow-2xl sm:h-[650px]"
+						class="mx-auto max-w-4xl overflow-hidden rounded-3xl border border-gray-100 bg-white p-2 shadow-2xl"
 					>
 						<div class="rounded-2xl bg-slate-50">
 							<IsraelMap {businesses} showRegions={false} />

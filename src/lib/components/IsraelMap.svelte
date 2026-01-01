@@ -169,7 +169,7 @@
 
 <div class="relative flex flex-col items-center overflow-hidden p-2">
 	<div
-		class="relative h-[600px] w-full max-w-sm overflow-hidden rounded-3xl border-4 border-white bg-sky-50 shadow-2xl sm:h-[650px]"
+		class="relative mx-auto h-[580px] w-full max-w-[320px] overflow-hidden rounded-3xl border-4 border-white bg-sky-50 shadow-2xl sm:h-[650px] sm:max-w-sm"
 	>
 		<!-- Real Map Image from User -->
 		<div class="absolute inset-0 transition-all duration-1000 ease-in-out" style={zoomStyles}>
