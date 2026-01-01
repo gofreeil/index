@@ -1,8 +1,14 @@
 <script>
 	import { fade } from 'svelte/transition';
+	import { lang, translations } from '$lib/i18n';
 
 	/** @type {{ salesArea?: string, address?: string, businesses?: any[], showRegions?: boolean }} */
 	let { salesArea = 'כל הארץ', address = '', businesses = [], showRegions = true } = $props();
+
+	let currentLang = $state('he');
+	lang.subscribe((v) => (currentLang = v));
+
+	const t = $derived(/** @type {any} */ (translations)[currentLang]);
 
 	/** @type {Record<string, { x: number, y: number }>} */
 	const cityCoords = {
@@ -258,14 +264,14 @@
 			>
 				<div class="mb-1.5 flex items-center gap-2">
 					<div class="h-3 w-3 rounded-full bg-red-500 shadow-sm"></div>
-					<span class="text-gray-800">מיקום בעסק</span>
+					<span class="text-gray-800">{t.businessLocation}</span>
 				</div>
 				{#if showRegions && businesses.length === 0}
 					<div class="flex items-center gap-2">
 						<div
 							class="h-3 w-3 rounded-sm border border-green-500/30 bg-green-500/40 shadow-sm"
 						></div>
-						<span class="text-gray-800">אזורי שירות פעילים</span>
+						<span class="text-gray-800">{t.activeAreas}</span>
 					</div>
 				{/if}
 			</div>
@@ -277,7 +283,7 @@
 		<div
 			class="mt-4 flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-4 py-1.5 shadow-sm"
 		>
-			<span class="text-xs font-bold text-blue-700">📍 נמצא ב{detectedCity}</span>
+			<span class="text-xs font-bold text-blue-700">📍 {t.foundIn} {detectedCity}</span>
 		</div>
 	{/if}
 

@@ -6,7 +6,7 @@
 	// Handle Language
 	let currentLang = $state('he');
 	lang.subscribe((v) => (currentLang = v));
-	const t = $derived(translations[currentLang]);
+	const t = $derived(/** @type {any} */ (translations)[currentLang]);
 
 	/** @type {any[]} */
 	let businesses = $state([]);
@@ -219,7 +219,7 @@
 </script>
 
 <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-	<div class="flex flex-col gap-8 lg:flex-row">
+	<div class="flex flex-col items-start gap-8 lg:flex-row">
 		<!-- Main Content Area -->
 		<div class="flex-1">
 			{#if loading}
@@ -831,7 +831,7 @@
 
 		<!-- Sticky Left Sidebar -->
 		<aside class="hidden w-64 shrink-0 lg:block">
-			<div class="sticky top-24 z-10 space-y-6">
+			<div class="sticky top-32 z-10 space-y-6">
 				<!-- Banner Area -->
 				<div
 					class="flex h-48 flex-col items-center justify-center rounded-2xl border border-yellow-300 bg-gradient-to-br from-yellow-100 to-yellow-200 p-6 text-center shadow-sm"
