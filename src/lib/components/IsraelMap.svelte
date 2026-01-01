@@ -4,7 +4,7 @@
 	/** @type {{ salesArea?: string, address?: string, businesses?: any[] }} */
 	let { salesArea = 'כל הארץ', address = '', businesses = [] } = $props();
 
-	// Extended city mapping for markers and zoom
+	/** @type {Record<string, { x: number, y: number }>} */
 	const cityCoords = {
 		ירושלים: { x: 105, y: 245 },
 		'בני ברק': { x: 80, y: 165 },
@@ -20,7 +20,29 @@
 		אלעד: { x: 88, y: 175 },
 		רחובות: { x: 75, y: 185 },
 		'באר שבע': { x: 75, y: 360 },
-		אילת: { x: 90, y: 485 }
+		אילת: { x: 90, y: 485 },
+		חולון: { x: 76, y: 172 },
+		'ראשון לציון': { x: 74, y: 178 },
+		הרצליה: { x: 75, y: 152 },
+		'בת ים': { x: 73, y: 168 },
+		'רמת גן': { x: 82, y: 162 },
+		רעננה: { x: 80, y: 148 },
+		'כפר סבא': { x: 85, y: 145 },
+		חדרה: { x: 78, y: 105 },
+		'קריית שמונה': { x: 115, y: 15 },
+		נצרת: { x: 100, y: 80 },
+		עכו: { x: 82, y: 55 },
+		נהריה: { x: 84, y: 40 },
+		טבריה: { x: 115, y: 75 },
+		רמלה: { x: 85, y: 195 },
+		לוד: { x: 90, y: 192 },
+		מודיעין: { x: 100, y: 205 },
+		אשקלון: { x: 55, y: 240 },
+		'קרית מלאכי': { x: 75, y: 230 },
+		נתיבות: { x: 50, y: 320 },
+		שדרות: { x: 55, y: 300 },
+		ערד: { x: 115, y: 340 },
+		דימונה: { x: 105, y: 380 }
 	};
 
 	// Try to find the city in the address
@@ -32,12 +54,13 @@
 
 	// All markers for the main page map
 	const allMarkers = $derived(
-		businesses
-			.map((b) => {
-				const city = Object.keys(cityCoords).find((c) => b.address?.includes(c));
-				return city ? { ...cityCoords[city], name: b.name } : null;
-			})
-			.filter(Boolean)
+		/** @type {any[]} */ (businesses).reduce((/** @type {any[]} */ acc, b) => {
+			const city = Object.keys(cityCoords).find((c) => b.address?.includes(c));
+			if (city) {
+				acc.push({ ...cityCoords[city], name: b.name });
+			}
+			return acc;
+		}, [])
 	);
 
 	// Keywords mapping to regions

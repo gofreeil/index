@@ -1,5 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
+	import IsraelMap from '$lib/components/IsraelMap.svelte';
 
 	/** @type {any[]} */
 	let businesses = $state([]);
@@ -136,7 +137,7 @@
 						rating: Number(row['דירוג'] || row['Rating'] || 0)
 					};
 				})
-				.sort((a, b) => b.rating - a.rating);
+				.sort((/** @type {any} */ a, /** @type {any} */ b) => b.rating - a.rating);
 		} catch (/** @type {any} */ err) {
 			error = err.message;
 		} finally {
@@ -160,10 +161,10 @@
 			let matchesCategory = false;
 			if (selectedCategory === 'all') {
 				matchesCategory = true;
-			} else if (categoryHierarchy[selectedCategory]) {
+			} else if (/** @type {any} */ (categoryHierarchy)[selectedCategory]) {
 				matchesCategory =
 					business.category === selectedCategory ||
-					categoryHierarchy[selectedCategory].includes(business.category);
+					/** @type {any} */ (categoryHierarchy)[selectedCategory].includes(business.category);
 			} else {
 				matchesCategory = business.category === selectedCategory;
 			}
@@ -171,7 +172,7 @@
 			let matchesLocation = false;
 			if (selectedLocation === 'all') {
 				matchesLocation = true;
-			} else if (cityHierarchy[selectedLocation]) {
+			} else if (/** @type {any} */ (cityHierarchy)[selectedLocation]) {
 				// אם נבחרה עיר, נבדוק אם העסק בעיר או באחת השכונות שלה
 				matchesLocation =
 					String(business.address).includes(selectedLocation) ||
@@ -804,6 +805,32 @@
 						{/each}
 					</div>
 				</div>
+
+				<!-- Section: Businesses Map -->
+				<div class="mt-20">
+					<div class="mb-10 flex flex-col items-center justify-center text-center">
+						<h2
+							class="bg-gradient-to-r from-blue-600 to-indigo-700 bg-clip-text text-3xl font-extrabold text-transparent sm:text-4xl lg:text-5xl"
+						>
+							העסקים שלנו פרוסים בארץ
+						</h2>
+						<p class="mt-4 max-w-2xl text-lg text-gray-600">
+							אנחנו גדלים בכל יום! בואו לראות את הפריסה הרחבה של הקהילה העסקית שלנו מצפון ועד דרום.
+						</p>
+						<div
+							class="mt-6 h-1 w-24 rounded-full bg-gradient-to-r from-blue-400 to-indigo-500"
+						></div>
+					</div>
+
+					<div
+						class="mx-auto max-w-4xl overflow-hidden rounded-3xl border border-gray-100 bg-white p-2 shadow-2xl"
+					>
+						<div class="rounded-2xl bg-slate-50">
+							<IsraelMap {businesses} />
+						</div>
+					</div>
+				</div>
+
 				<!-- All Businesses Section -->
 				<div class="mt-20">
 					<div class="mb-10 flex flex-col items-center justify-center">
