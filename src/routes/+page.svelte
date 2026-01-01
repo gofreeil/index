@@ -788,7 +788,7 @@
 						<h2
 							class="bg-gradient-to-r from-gray-700 to-gray-900 bg-clip-text text-3xl font-extrabold text-transparent sm:text-4xl lg:text-5xl"
 						>
-							כלל העסקים העובדים איתנו
+							כלל העסקים המשרתים אותנו
 						</h2>
 						<div
 							class="mt-4 h-1 w-24 rounded-full bg-gradient-to-r from-blue-500 to-purple-500"
