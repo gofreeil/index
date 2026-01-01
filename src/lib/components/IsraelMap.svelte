@@ -49,8 +49,20 @@
 		}
 	];
 
+	// City markers for more context
+	const cities = [
+		{ name: 'חיפה', x: 85, y: 70 },
+		{ name: 'תל אביב', x: 78, y: 160 },
+		{ name: 'ירושלים', x: 105, y: 245 },
+		{ name: 'באר שבע', x: 75, y: 360 },
+		{ name: 'אילת', x: 90, y: 485 }
+	];
+
 	const isAllCountry = $derived(
-		!salesArea || salesArea.includes('כל הארץ') || salesArea === 'ארצי'
+		!salesArea ||
+			salesArea.includes('כל הארץ') ||
+			salesArea === 'ארצי' ||
+			salesArea.includes('ארצי')
 	);
 
 	const activeRegions = $derived(
@@ -66,46 +78,88 @@
 </script>
 
 <div class="relative flex flex-col items-center p-4">
-	<svg
-		viewBox="0 0 200 500"
-		class="h-[500px] w-auto drop-shadow-2xl"
-		xmlns="http://www.w3.org/2000/svg"
-	>
-		<!-- Background / Ghost map -->
-		<g fill="#E2E8F0" stroke="#CBD5E1" stroke-width="1">
-			{#each regions as region}
-				<path d={region.path} />
-			{/each}
-		</g>
+	<div class="relative overflow-hidden rounded-2xl bg-slate-50 shadow-inner">
+		<svg
+			viewBox="0 0 200 500"
+			class="h-[600px] w-auto transition-all duration-700"
+			xmlns="http://www.w3.org/2000/svg"
+		>
+			<!-- Sea/Background -->
+			<rect width="200" height="500" fill="#f0f9ff" />
 
-		<!-- Highlighted Regions -->
-		<g>
-			{#each regions as region}
-				{#if isActive(region.id)}
-					<path
-						in:fade={{ duration: 800 }}
-						d={region.path}
-						fill="rgba(59, 130, 246, 0.4)"
-						stroke="#3b82f6"
-						stroke-width="2"
-						class="transition-all duration-500 hover:fill-blue-400/50"
+			<!-- Background / Ghost map base -->
+			<g fill="#f1f5f9" stroke="#cbd5e1" stroke-width="0.5">
+				{#each regions as region}
+					<path d={region.path} class="transition-colors duration-300" />
+				{/each}
+			</g>
+
+			<!-- Highlighted Service Regions -->
+			<g>
+				{#each regions as region}
+					{#if isActive(region.id)}
+						<path
+							in:fade={{ duration: 1000 }}
+							d={region.path}
+							fill="rgba(34, 197, 94, 0.3)"
+							stroke="#16a34a"
+							stroke-width="1.5"
+							class="transition-all duration-500 hover:fill-green-400/40"
+						>
+							<title>{region.name} - אזור שירות פעיל</title>
+						</path>
+					{/if}
+				{/each}
+			</g>
+
+			<!-- City Markers -->
+			<g class="pointer-events-none">
+				{#each cities as city}
+					<circle cx={city.x} cy={city.y} r="2.5" fill="#ef4444" />
+					<text
+						x={city.x + 4}
+						y={city.y + 2}
+						font-size="8"
+						font-weight="bold"
+						fill="#475569"
+						style="font-family: sans-serif;"
 					>
-						<title>{region.name}</title>
-					</path>
-				{/if}
-			{/each}
-		</g>
-	</svg>
+						{city.name}
+					</text>
+				{/each}
+			</g>
 
-	<div class="mt-4 flex flex-wrap justify-center gap-2">
+			<!-- Compass -->
+			<g transform="translate(20, 20) scale(0.5)" opacity="0.3">
+				<circle r="20" fill="none" stroke="#64748b" stroke-width="1" />
+				<path d="M0,-18 L4,0 L0,18 L-4,0 Z" fill="#64748b" />
+				<path d="M-18,0 L0,-4 L18,0 L0,4 Z" fill="#64748b" />
+			</g>
+		</svg>
+	</div>
+
+	<div class="mt-6 flex flex-wrap justify-center gap-3">
 		{#each regions as region}
-			<span
-				class="rounded-full px-3 py-1 text-xs font-medium transition-colors {isActive(region.id)
-					? 'bg-blue-100 text-blue-700'
-					: 'bg-gray-100 text-gray-400'}"
+			<div
+				class="flex items-center gap-2 rounded-full border px-3 py-1.5 transition-all {isActive(
+					region.id
+				)
+					? 'border-green-200 bg-green-50 text-green-700 shadow-sm'
+					: 'border-gray-100 bg-white text-gray-400 opacity-60'}"
 			>
-				{region.name}
-			</span>
+				<div
+					class="h-2 w-2 rounded-full {isActive(region.id) ? 'bg-green-500' : 'bg-gray-200'}"
+				></div>
+				<span class="text-xs leading-none font-bold">
+					{region.name}
+				</span>
+			</div>
 		{/each}
 	</div>
 </div>
+
+<style>
+	svg {
+		filter: drop-shadow(0 4px 6px -1px rgb(0 0 0 / 0.1));
+	}
+</style>

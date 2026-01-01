@@ -678,7 +678,7 @@
 						</h2>
 						<div class="mt-4 flex gap-2">
 							<span
-								class="inline-flex animate-bounce items-center rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800"
+								class="animate-jump-limited inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800"
 							>
 								חדש באתר!
 							</span>
@@ -913,6 +913,9 @@
 	.animate-gold-shimmer {
 		animation: gold-shimmer 1.5s cubic-bezier(0.4, 0, 0.2, 1) 1 forwards;
 	}
+	.animate-jump-limited {
+		animation: jump-limited 1s ease-in-out 3;
+	}
 
 	@keyframes gold-shimmer {
 		0%,
@@ -923,6 +926,16 @@
 		50% {
 			transform: scale(1.15) rotate(5deg);
 			filter: brightness(1.3) drop-shadow(0 0 15px rgba(184, 134, 11, 0.6));
+		}
+	}
+
+	@keyframes jump-limited {
+		0%,
+		100% {
+			transform: translateY(0);
+		}
+		50% {
+			transform: translateY(-10px);
 		}
 	}
 </style>

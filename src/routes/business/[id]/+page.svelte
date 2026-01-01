@@ -316,13 +316,55 @@
 				</div>
 			</div>
 
-			<!-- Real Map -->
+			<!-- Map & Territory Section -->
 			<div class="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-xl">
 				<div class="bg-gray-50 p-6">
-					<h3 class="text-lg font-bold text-gray-800">אזורי שירות</h3>
-					<p class="text-sm text-gray-500">{business.salesArea || 'כל הארץ'}</p>
+					<h3 class="text-xl font-bold text-gray-800">מיקום ואזורי שירות</h3>
+					{#if business.address}
+						<p class="mt-1 text-sm text-gray-600">
+							<strong>מיקום העסק:</strong>
+							{business.address}
+						</p>
+					{/if}
+					<p class="mt-1 text-sm text-gray-600">
+						<strong>גבולות שירות:</strong>
+						{business.salesArea || 'כל הארץ'}
+					</p>
 				</div>
-				<IsraelMap salesArea={business.salesArea} />
+
+				<div class="space-y-4 p-4">
+					<!-- Google Maps Embed for Address -->
+					{#if business.address}
+						<div
+							class="h-64 w-full overflow-hidden rounded-2xl border border-gray-200 shadow-inner md:h-80"
+						>
+							<iframe
+								title="מפה של {business.name}"
+								width="100%"
+								height="100%"
+								style="border:0"
+								loading="lazy"
+								allowfullscreen
+								referrerpolicy="no-referrer-when-downgrade"
+								src="https://maps.google.com/maps?q={encodeURIComponent(
+									business.address
+								)}&t=&z=14&ie=UTF8&iwloc=&output=embed"
+							></iframe>
+						</div>
+					{/if}
+
+					<!-- Territory Map (IsraelMap) -->
+					<div class="relative rounded-2xl border border-gray-100 bg-gray-50/50 p-4">
+						<div class="absolute top-4 right-4 z-10">
+							<span
+								class="rounded-lg border border-gray-100 bg-white/90 px-3 py-1 text-xs font-bold text-gray-700 shadow-sm"
+							>
+								מפת אזורי שירות
+							</span>
+						</div>
+						<IsraelMap salesArea={business.salesArea} />
+					</div>
+				</div>
 			</div>
 		</div>
 	</div>
