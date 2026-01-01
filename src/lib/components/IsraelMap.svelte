@@ -1,8 +1,8 @@
 <script>
 	import { fade } from 'svelte/transition';
 
-	/** @type {{ salesArea: string, address: string }} */
-	let { salesArea = 'כל הארץ', address = '' } = $props();
+	/** @type {{ salesArea?: string, address?: string, businesses?: any[] }} */
+	let { salesArea = 'כל הארץ', address = '', businesses = [] } = $props();
 
 	// Extended city mapping for markers and zoom
 	const cityCoords = {
@@ -29,6 +29,16 @@
 	);
 
 	const markerPos = $derived(detectedCity ? cityCoords[detectedCity] : null);
+
+	// All markers for the main page map
+	const allMarkers = $derived(
+		businesses
+			.map((b) => {
+				const city = Object.keys(cityCoords).find((c) => b.address?.includes(c));
+				return city ? { ...cityCoords[city], name: b.name } : null;
+			})
+			.filter(Boolean)
+	);
 
 	// Keywords mapping to regions
 	const regions = [
@@ -106,6 +116,7 @@
 
 	// Zoom calculation: focus on marker if exists, otherwise center on active regions
 	const zoomStyles = $derived.by(() => {
+		if (businesses.length > 0) return 'transform: scale(1) translateY(0);'; // No zoom for multi-map
 		if (!markerPos) return 'transform: scale(1) translateY(0);';
 		// Target Y: move the marker towards the middle of the view (which is 250 in a 500 height svg)
 		const targetY = 250 - markerPos.y * 1.3;
@@ -164,8 +175,8 @@
 				{/each}
 			</g>
 
-			<!-- THEPIN: Business Location Marker -->
-			{#if markerPos}
+			<!-- THEPIN: Business Location Marker (Single) -->
+			{#if markerPos && businesses.length === 0}
 				<g in:fade={{ delay: 1000, duration: 500 }}>
 					<!-- Pulse effect -->
 					<circle
@@ -185,6 +196,25 @@
 						stroke-width="0.5"
 					/>
 					<circle cx={markerPos.x} cy={markerPos.y - 8} r="1.5" fill="white" />
+				</g>
+			{/if}
+
+			<!-- Multi Markers for Main Page -->
+			{#if businesses.length > 0}
+				<g>
+					{#each allMarkers as marker}
+						<g>
+							<circle
+								cx={marker.x}
+								cy={marker.y}
+								r="3"
+								fill="#ef4444"
+								stroke="white"
+								stroke-width="0.5"
+							/>
+							<title>{marker.name}</title>
+						</g>
+					{/each}
 				</g>
 			{/if}
 		</svg>
