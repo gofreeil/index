@@ -814,9 +814,7 @@
 						>
 							העסקים שלנו פרוסים בארץ
 						</h2>
-						<p class="mt-4 max-w-2xl text-lg text-gray-600">
-							אנחנו גדלים בכל יום! בואו לראות את הפריסה הרחבה של הקהילה העסקית שלנו מצפון ועד דרום.
-						</p>
+
 						<div
 							class="mt-6 h-1 w-24 rounded-full bg-gradient-to-r from-blue-400 to-indigo-500"
 						></div>
@@ -826,7 +824,7 @@
 						class="mx-auto max-w-4xl overflow-hidden rounded-3xl border border-gray-100 bg-white p-2 shadow-2xl"
 					>
 						<div class="rounded-2xl bg-slate-50">
-							<IsraelMap {businesses} />
+							<IsraelMap {businesses} showRegions={false} />
 						</div>
 					</div>
 				</div>

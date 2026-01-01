@@ -1,8 +1,8 @@
 <script>
 	import { fade } from 'svelte/transition';
 
-	/** @type {{ salesArea?: string, address?: string, businesses?: any[] }} */
-	let { salesArea = 'כל הארץ', address = '', businesses = [] } = $props();
+	/** @type {{ salesArea?: string, address?: string, businesses?: any[], showRegions?: boolean }} */
+	let { salesArea = 'כל הארץ', address = '', businesses = [], showRegions = true } = $props();
 
 	/** @type {Record<string, { x: number, y: number }>} */
 	const cityCoords = {
@@ -157,20 +157,22 @@
 				xmlns="http://www.w3.org/2000/svg"
 			>
 				<!-- Active Service Boundaries (Semi-transparent Green Overlays) -->
-				<g>
-					{#each regions as region}
-						{#if isActive(region.id)}
-							<path
-								in:fade={{ duration: 1000 }}
-								d={region.path}
-								fill="rgba(34, 197, 94, 0.25)"
-								stroke="#16a34a"
-								stroke-width="1.5"
-								stroke-dasharray="4 2"
-							/>
-						{/if}
-					{/each}
-				</g>
+				{#if showRegions && businesses.length === 0}
+					<g>
+						{#each regions as region}
+							{#if isActive(region.id)}
+								<path
+									in:fade={{ duration: 1000 }}
+									d={region.path}
+									fill="rgba(34, 197, 94, 0.25)"
+									stroke="#16a34a"
+									stroke-width="1.5"
+									stroke-dasharray="4 2"
+								/>
+							{/if}
+						{/each}
+					</g>
+				{/if}
 
 				<!-- THEPIN: Business Location Marker (Single) -->
 				{#if markerPos && businesses.length === 0}
@@ -223,12 +225,14 @@
 					<div class="h-3 w-3 rounded-full bg-red-500 shadow-sm"></div>
 					<span class="text-gray-800">מיקום בעסק</span>
 				</div>
-				<div class="flex items-center gap-2">
-					<div
-						class="h-3 w-3 rounded-sm border border-green-500/30 bg-green-500/40 shadow-sm"
-					></div>
-					<span class="text-gray-800">אזורי שירות פעילים</span>
-				</div>
+				{#if showRegions && businesses.length === 0}
+					<div class="flex items-center gap-2">
+						<div
+							class="h-3 w-3 rounded-sm border border-green-500/30 bg-green-500/40 shadow-sm"
+						></div>
+						<span class="text-gray-800">אזורי שירות פעילים</span>
+					</div>
+				{/if}
 			</div>
 		</div>
 	</div>
@@ -243,26 +247,28 @@
 	{/if}
 
 	<!-- legend and regions list -->
-	<div class="mt-8 flex flex-wrap justify-center gap-2">
-		{#each regions as region}
-			<div
-				class="flex items-center gap-2 rounded-full border px-4 py-2 transition-all duration-300 {isActive(
-					region.id
-				)
-					? 'scale-105 transform border-green-200 bg-green-50 text-green-800 shadow-md'
-					: 'border-gray-100 bg-white text-gray-400 opacity-60'}"
-			>
+	{#if showRegions && businesses.length === 0}
+		<div class="mt-8 flex flex-wrap justify-center gap-2">
+			{#each regions as region}
 				<div
-					class="h-2.5 w-2.5 rounded-full {isActive(region.id)
-						? 'animate-pulse bg-green-500'
-						: 'bg-gray-200'}"
-				></div>
-				<span class="text-xs leading-none font-extrabold">
-					{region.name}
-				</span>
-			</div>
-		{/each}
-	</div>
+					class="flex items-center gap-2 rounded-full border px-4 py-2 transition-all duration-300 {isActive(
+						region.id
+					)
+						? 'scale-105 transform border-green-200 bg-green-50 text-green-800 shadow-md'
+						: 'border-gray-100 bg-white text-gray-400 opacity-60'}"
+				>
+					<div
+						class="h-2.5 w-2.5 rounded-full {isActive(region.id)
+							? 'animate-pulse bg-green-500'
+							: 'bg-gray-200'}"
+					></div>
+					<span class="text-xs leading-none font-extrabold">
+						{region.name}
+					</span>
+				</div>
+			{/each}
+		</div>
+	{/if}
 </div>
 
 <style>
