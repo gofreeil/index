@@ -38,8 +38,8 @@ export const translations = {
         businessLocation: 'מיקום בעסק',
         activeAreas: 'אזורי שירות פעילים',
         foundIn: 'נמצא ב',
-        israel: 'ישראל',
-        russia: 'רוסיה',
+        israel: 'עברית',
+        russia: 'רוסית',
         english: 'אנגלית'
     },
     en: {

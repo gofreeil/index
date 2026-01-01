@@ -85,11 +85,14 @@
 					<div class="relative flex items-center">
 						<button
 							onclick={() => (isLangMenuOpen = !isLangMenuOpen)}
-							class="flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-2.5 py-1.5 text-xl shadow-sm transition-all hover:bg-gray-50 hover:shadow-md sm:px-4 sm:py-2"
+							class="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-2.5 py-1.5 text-xl shadow-sm transition-all hover:bg-gray-50 hover:shadow-md sm:px-4 sm:py-2"
 							title="Change Language"
 						>
 							<span class="flex items-center justify-center leading-none">
 								{/** @type {any} */ (flags)[currentLang]}
+							</span>
+							<span class="hidden text-sm font-bold text-gray-700 sm:inline">
+								{currentLang === 'he' ? t.israel : currentLang === 'en' ? t.english : t.russia}
 							</span>
 							<svg
 								class="h-4 w-4 text-gray-400 transition-transform {isLangMenuOpen
