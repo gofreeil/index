@@ -50,7 +50,7 @@
 </svelte:head>
 
 <div
-	class="min-h-screen overflow-x-hidden bg-gradient-to-br from-blue-50 via-white to-purple-50"
+	class="relative min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50"
 	dir={t.dir}
 >
 	<!-- Header -->

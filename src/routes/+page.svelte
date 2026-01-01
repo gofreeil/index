@@ -557,7 +557,7 @@
 				</div>
 
 				<!-- Business cards grid -->
-				<div class="grid grid-cols-3 gap-2 md:grid-cols-3 md:gap-6">
+				<div class="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-6">
 					{#each displayedBusinesses as business (business.id)}
 						<a
 							href="/business/{business.id}"
@@ -565,7 +565,7 @@
 						>
 							<!-- Banner Image -->
 							{#if business.banner}
-								<div class="relative h-20 w-full overflow-hidden bg-gray-100 sm:h-48">
+								<div class="relative h-28 w-full overflow-hidden bg-gray-100 sm:h-48">
 									<img
 										src={business.banner}
 										alt={business.name}
@@ -574,19 +574,19 @@
 									/>
 								</div>
 							{:else}
-								<div class="h-1.5 bg-gradient-to-r from-blue-500 to-purple-500 sm:h-3"></div>
+								<div class="h-2 bg-gradient-to-r from-blue-500 to-purple-500 sm:h-3"></div>
 							{/if}
 
-							<div class="flex flex-1 flex-col p-2 sm:p-6">
+							<div class="flex flex-1 flex-col p-3 sm:p-6">
 								<!-- Header: Name & Category -->
-								<div class="mb-1 sm:mb-4">
+								<div class="mb-2 sm:mb-4">
 									<h3
-										class="line-clamp-1 text-[10px] font-bold text-gray-800 transition group-hover:text-blue-600 sm:text-xl"
+										class="line-clamp-1 text-xs font-bold text-gray-800 transition group-hover:text-blue-600 sm:text-xl"
 									>
 										{business.name}
 									</h3>
 									<span
-										class="mt-0.5 inline-block rounded-full bg-blue-100 px-1.5 py-0.5 text-[8px] font-medium text-blue-700 sm:mt-1 sm:px-3 sm:py-1 sm:text-xs"
+										class="mt-1 inline-block rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700 sm:px-3 sm:py-1 sm:text-xs"
 									>
 										{business.category}
 									</span>
@@ -595,28 +595,28 @@
 								<!-- Discount -->
 								{#if business.discount}
 									<div
-										class="mb-1 rounded border border-green-100 bg-green-50 p-1 sm:mb-4 sm:rounded-lg sm:p-3"
+										class="mb-2 rounded border border-green-100 bg-green-50 p-1.5 sm:mb-4 sm:rounded-lg sm:p-3"
 									>
-										<p class="line-clamp-2 text-[8px] leading-tight text-green-800 sm:text-sm">
+										<p class="line-clamp-2 text-[10px] leading-tight text-green-800 sm:text-sm">
 											{business.discount}
 										</p>
 									</div>
 								{/if}
 
-								<!-- Description (Hidden on mobile 3-col) -->
+								<!-- Description (Hidden on mobile) -->
 								{#if business.description}
 									<p class="mb-4 line-clamp-3 hidden flex-grow text-sm text-gray-600 sm:block">
 										{business.description}
 									</p>
 								{/if}
 
-								<!-- Info Grid (Simplified on mobile) -->
+								<!-- Info Grid -->
 								<div
-									class="mt-auto border-t pt-1 text-[8px] text-gray-600 sm:space-y-2 sm:pt-4 sm:text-sm"
+									class="mt-auto border-t pt-2 text-[10px] text-gray-600 sm:space-y-2 sm:pt-4 sm:text-sm"
 								>
-									<div class="flex items-center gap-1">
+									<div class="flex items-center gap-1.5">
 										<svg
-											class="h-2 w-2 flex-shrink-0 text-gray-400 sm:h-4 sm:w-4"
+											class="h-3 w-3 flex-shrink-0 text-gray-400 sm:h-4 sm:w-4"
 											fill="none"
 											stroke="currentColor"
 											viewBox="0 0 24 24"
@@ -653,7 +653,7 @@
 						</div>
 					</div>
 
-					<div class="grid grid-cols-3 gap-2 md:grid-cols-3 md:gap-6">
+					<div class="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-6">
 						{#each newestBusinesses as business (business.id)}
 							<a
 								href="/business/{business.id}"
@@ -661,7 +661,7 @@
 							>
 								<!-- Banner Image -->
 								{#if business.banner}
-									<div class="relative h-20 w-full overflow-hidden bg-gray-100 sm:h-48">
+									<div class="relative h-28 w-full overflow-hidden bg-gray-100 sm:h-48">
 										<img
 											src={business.banner}
 											alt={business.name}
@@ -669,25 +669,25 @@
 											loading="lazy"
 										/>
 										<div
-											class="absolute top-1 right-1 rounded bg-green-600 px-1 py-0.5 text-[6px] font-bold text-white shadow-sm sm:top-2 sm:right-2 sm:rounded-lg sm:px-2 sm:py-1 sm:text-[10px]"
+											class="absolute top-1 right-1 rounded bg-green-600 px-1.5 py-0.5 text-[8px] font-bold text-white shadow-sm sm:top-2 sm:right-2 sm:rounded-lg sm:px-2 sm:py-1 sm:text-[10px]"
 										>
 											חדש
 										</div>
 									</div>
 								{:else}
-									<div class="h-1.5 bg-gradient-to-r from-green-500 to-blue-500 sm:h-3"></div>
+									<div class="h-2 bg-gradient-to-r from-green-500 to-blue-500 sm:h-3"></div>
 								{/if}
 
-								<div class="flex flex-1 flex-col p-2 sm:p-6">
+								<div class="flex flex-1 flex-col p-3 sm:p-6">
 									<!-- Header: Name & Category -->
-									<div class="mb-1 sm:mb-4">
+									<div class="mb-2 sm:mb-4">
 										<h3
-											class="line-clamp-1 text-[10px] font-bold text-gray-800 transition group-hover:text-green-600 sm:text-xl"
+											class="line-clamp-1 text-xs font-bold text-gray-800 transition group-hover:text-green-600 sm:text-xl"
 										>
 											{business.name}
 										</h3>
 										<span
-											class="mt-0.5 inline-block rounded-full bg-green-100 px-1.5 py-0.5 text-[8px] font-medium text-green-700 sm:mt-1 sm:px-3 sm:py-1 sm:text-xs"
+											class="mt-1 inline-block rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-medium text-green-700 sm:px-3 sm:py-1 sm:text-xs"
 										>
 											{business.category}
 										</span>
@@ -696,9 +696,9 @@
 									<!-- Discount -->
 									{#if business.discount}
 										<div
-											class="mb-1 rounded border border-green-100 bg-green-50 p-1 sm:mb-4 sm:rounded-lg sm:p-3"
+											class="mb-2 rounded border border-green-100 bg-green-50 p-1.5 sm:mb-4 sm:rounded-lg sm:p-3"
 										>
-											<p class="line-clamp-2 text-[8px] leading-tight text-green-800 sm:text-sm">
+											<p class="line-clamp-2 text-[10px] leading-tight text-green-800 sm:text-sm">
 												{business.discount}
 											</p>
 										</div>
@@ -706,11 +706,11 @@
 
 									<!-- Info Grid -->
 									<div
-										class="mt-auto border-t pt-1 text-[8px] text-gray-600 sm:space-y-2 sm:pt-4 sm:text-sm"
+										class="mt-auto border-t pt-2 text-[10px] text-gray-600 sm:space-y-2 sm:pt-4 sm:text-sm"
 									>
-										<div class="flex items-center gap-1">
+										<div class="flex items-center gap-1.5">
 											<svg
-												class="h-2 w-2 flex-shrink-0 text-gray-400 sm:h-4 sm:w-4"
+												class="h-3 w-3 flex-shrink-0 text-gray-400 sm:h-4 sm:w-4"
 												fill="none"
 												stroke="currentColor"
 												viewBox="0 0 24 24"
@@ -821,7 +821,7 @@
 
 		<!-- Sticky Left Sidebar -->
 		<aside class="hidden w-64 shrink-0 lg:block">
-			<div class="sticky top-28 space-y-6">
+			<div class="sticky top-24 z-10 space-y-6">
 				<!-- Banner Area -->
 				<div
 					class="flex h-48 flex-col items-center justify-center rounded-2xl border border-yellow-300 bg-gradient-to-br from-yellow-100 to-yellow-200 p-6 text-center shadow-sm"
