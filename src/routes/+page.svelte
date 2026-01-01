@@ -163,6 +163,7 @@
 	);
 
 	let displayedBusinesses = $derived(filteredBusinesses.slice(0, 3));
+	let newestBusinesses = $derived([...businesses].reverse().slice(0, 3));
 
 	// פונקציה לסגירת כל התפריטים בלחיצה מחוץ להם
 	/** @param {MouseEvent} event */
@@ -463,12 +464,25 @@
 					</div>
 				</div>
 
-				<div class="mb-10 flex items-center justify-center">
+				<div class="mb-10 flex flex-col items-center justify-center">
 					<h2
 						class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-3xl font-extrabold text-transparent sm:text-4xl lg:text-5xl"
 					>
 						שלושת המדורגים ביותר
 					</h2>
+					<div class="mt-4 flex gap-1">
+						{#each Array(5) as _}
+							<svg
+								class="h-8 w-8 animate-pulse text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.8)]"
+								fill="currentColor"
+								viewBox="0 0 20 20"
+							>
+								<path
+									d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"
+								/>
+							</svg>
+						{/each}
+					</div>
 				</div>
 
 				<!-- Business cards grid -->
@@ -615,6 +629,121 @@
 						</a>
 					{/each}
 				</div>
+
+				<!-- New Businesses Section -->
+				<div class="mt-20">
+					<div class="mb-10 flex flex-col items-center justify-center">
+						<h2
+							class="bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-3xl font-extrabold text-transparent sm:text-4xl lg:text-5xl"
+						>
+							עסקים חדשים שהצטרפו
+						</h2>
+						<div class="mt-4 flex gap-2">
+							<span
+								class="inline-flex animate-bounce items-center rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800"
+							>
+								חדש באתר!
+							</span>
+						</div>
+					</div>
+
+					<div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+						{#each newestBusinesses as business (business.id)}
+							<a
+								href="/business/{business.id}"
+								class="group flex flex-col overflow-hidden rounded-xl border-t-4 border-green-500 bg-white shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+							>
+								<!-- Banner Image -->
+								{#if business.banner}
+									<div class="relative h-48 w-full overflow-hidden bg-gray-100">
+										<img
+											src={business.banner}
+											alt={business.name}
+											class="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+											loading="lazy"
+										/>
+										<div
+											class="absolute top-2 right-2 rounded-lg bg-green-600 px-2 py-1 text-[10px] font-bold text-white shadow-sm"
+										>
+											חדש
+										</div>
+									</div>
+								{:else}
+									<div class="h-3 bg-gradient-to-r from-green-500 to-blue-500"></div>
+								{/if}
+
+								<div class="flex flex-1 flex-col p-6">
+									<!-- Header: Name & Category -->
+									<div class="mb-4">
+										<div class="flex items-start justify-between">
+											<h3
+												class="text-xl font-bold text-gray-800 transition group-hover:text-green-600"
+											>
+												{business.name}
+											</h3>
+										</div>
+										<span
+											class="mt-1 inline-block rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700"
+										>
+											{business.category}
+										</span>
+									</div>
+
+									<!-- Discount -->
+									{#if business.discount}
+										<div class="mb-4 rounded-lg border border-green-100 bg-green-50 p-3">
+											<div class="flex items-center gap-2 text-green-700">
+												<svg
+													class="h-5 w-5 flex-shrink-0"
+													fill="none"
+													stroke="currentColor"
+													viewBox="0 0 24 24"
+												>
+													<path
+														stroke-linecap="round"
+														stroke-linejoin="round"
+														stroke-width="2"
+														d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+													/>
+												</svg>
+												<span class="text-sm font-bold">הטבה לחברים:</span>
+											</div>
+											<p class="mt-1 text-sm text-green-800">{business.discount}</p>
+										</div>
+									{/if}
+
+									<!-- Info Grid -->
+									<div class="mt-auto space-y-2 border-t pt-4 text-sm text-gray-600">
+										{#if business.address}
+											<div class="flex items-start gap-2">
+												<svg
+													class="mt-0.5 h-4 w-4 flex-shrink-0 text-gray-400"
+													fill="none"
+													stroke="currentColor"
+													viewBox="0 0 24 24"
+												>
+													<path
+														stroke-linecap="round"
+														stroke-linejoin="round"
+														stroke-width="2"
+														d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+													/>
+													<path
+														stroke-linecap="round"
+														stroke-linejoin="round"
+														stroke-width="2"
+														d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+													/>
+												</svg>
+												<span>{business.address}</span>
+											</div>
+										{/if}
+									</div>
+								</div>
+							</a>
+						{/each}
+					</div>
+				</div>
 			{/if}
 		</div>
 
@@ -682,5 +811,22 @@
 		-webkit-line-clamp: 3;
 		-webkit-box-orient: vertical;
 		overflow: hidden;
+	}
+	.animate-pulse {
+		animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+	}
+
+	@keyframes pulse {
+		0%,
+		100% {
+			opacity: 1;
+			transform: scale(1);
+			filter: brightness(1.2) drop-shadow(0 0 12px rgba(250, 204, 21, 0.9));
+		}
+		50% {
+			opacity: 0.8;
+			transform: scale(1.1);
+			filter: brightness(1.5) drop-shadow(0 0 20px rgba(250, 204, 21, 1));
+		}
 	}
 </style>
