@@ -219,7 +219,7 @@
 </script>
 
 <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-	<div class="flex flex-col items-start gap-8 lg:flex-row">
+	<div class="flex flex-col gap-8 lg:flex-row">
 		<!-- Main Content Area -->
 		<div class="flex-1">
 			{#if loading}
