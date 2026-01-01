@@ -1,6 +1,12 @@
 <script>
 	import { onMount } from 'svelte';
 	import IsraelMap from '$lib/components/IsraelMap.svelte';
+	import { lang, translations } from '$lib/i18n';
+
+	// Handle Language
+	let currentLang = $state('he');
+	lang.subscribe((v) => (currentLang = v));
+	const t = $derived(translations[currentLang]);
 
 	/** @type {any[]} */
 	let businesses = $state([]);
@@ -222,12 +228,12 @@
 						<div
 							class="inline-block h-12 w-12 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"
 						></div>
-						<p class="mt-4 text-gray-600">טוען עסקים...</p>
+						<p class="mt-4 text-gray-600">{t.loading}</p>
 					</div>
 				</div>
 			{:else if error}
 				<div class="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
-					<p class="text-red-600">שגיאה בטעינת העסקים: {error}</p>
+					<p class="text-red-600">{t.error}: {error}</p>
 				</div>
 			{:else}
 				<!-- Filters -->
@@ -236,7 +242,7 @@
 						<input
 							type="text"
 							bind:value={searchTerm}
-							placeholder="חיפוש עסקים..."
+							placeholder={t.search}
 							class="w-full rounded-xl border border-gray-200 px-4 py-3 pr-12 transition outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
 						/>
 						<svg
@@ -317,7 +323,7 @@
 											? 'font-bold text-blue-600'
 											: 'text-gray-700'}"
 									>
-										הכל
+										{t.all}
 									</button>
 
 									<div class="my-1 border-t border-gray-100"></div>
@@ -396,7 +402,7 @@
 										d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
 									/>
 								</svg>
-								<span>{selectedLocation === 'all' ? 'עסקים בשכונתי' : selectedLocation}</span>
+								<span>{selectedLocation === 'all' ? t.neighborhoods : selectedLocation}</span>
 							</button>
 
 							{#if isLocationMenuOpen}
@@ -498,7 +504,7 @@
 					<h2
 						class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-2xl font-extrabold text-transparent sm:text-4xl lg:text-5xl"
 					>
-						שלושת המדורגים ביותר
+						{t.topRated}
 					</h2>
 					<div class="mt-4 flex gap-2">
 						{#each Array(5) as _, i}
@@ -701,7 +707,7 @@
 						<h2
 							class="bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-2xl font-extrabold text-transparent sm:text-4xl lg:text-5xl"
 						>
-							עסקים חדשים שהצטרפו
+							{t.newBusinesses}
 						</h2>
 						<div class="mt-4 flex gap-2">
 							<span
@@ -816,7 +822,7 @@
 						<h2
 							class="bg-gradient-to-r from-blue-600 to-indigo-700 bg-clip-text text-2xl font-extrabold text-transparent sm:text-4xl lg:text-5xl"
 						>
-							העסקים שלנו פרוסים בארץ
+							{t.mapTitle}
 						</h2>
 
 						<div
@@ -839,7 +845,7 @@
 						<h2
 							class="bg-gradient-to-r from-gray-700 to-gray-900 bg-clip-text text-2xl font-extrabold text-transparent sm:text-4xl lg:text-5xl"
 						>
-							כלל העסקים המשרתים אותנו
+							{t.allBusinesses}
 						</h2>
 						<div
 							class="mt-4 h-1 w-24 rounded-full bg-gradient-to-r from-blue-500 to-purple-500"
@@ -905,13 +911,13 @@
 				<div
 					class="flex h-48 flex-col items-center justify-center rounded-2xl border border-yellow-300 bg-gradient-to-br from-yellow-100 to-yellow-200 p-6 text-center shadow-sm"
 				>
-					<span class="text-sm font-bold text-yellow-800">באנר פרסומי</span>
-					<p class="mt-2 text-xs text-yellow-700">כאן יכול להופיע הבאנר שלכם</p>
+					<span class="text-sm font-bold text-yellow-800">{t.sidebarBannerTitle}</span>
+					<p class="mt-2 text-xs text-yellow-700">{t.sidebarBannerP}</p>
 				</div>
 
 				<!-- Advertisements -->
 				<div class="space-y-4">
-					<h3 class="border-b pb-2 text-lg font-bold text-gray-800">פרסומות</h3>
+					<h3 class="border-b pb-2 text-lg font-bold text-gray-800">{t.ads}</h3>
 					<div class="grid gap-4">
 						<div class="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
 							<div class="mb-2 flex h-24 w-full items-center justify-center rounded-lg bg-gray-100">
@@ -929,26 +935,26 @@
 									/>
 								</svg>
 							</div>
-							<h4 class="text-sm font-bold">הטבה מיוחדת</h4>
-							<p class="mt-1 text-xs text-gray-500">גלו את המבצעים החדשים שלנו לקהילה</p>
+							<h4 class="text-sm font-bold">{t.specialOffer}</h4>
+							<p class="mt-1 text-xs text-gray-500">{t.specialOfferDesc}</p>
 						</div>
 
 						<div class="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
 							<div class="mb-2 flex h-24 w-full items-center justify-center rounded-lg bg-gray-200">
-								<span class="text-xs font-medium text-gray-400">פרסומת נוספת</span>
+								<span class="text-xs font-medium text-gray-400">{t.ads}</span>
 							</div>
-							<h4 class="text-sm font-bold">עולם חדש בבניה</h4>
-							<p class="mt-1 text-xs text-gray-500">הצטרפו למהפכה הכלכלית שלנו</p>
+							<h4 class="text-sm font-bold">{t.newWorld}</h4>
+							<p class="mt-1 text-xs text-gray-500">{t.newWorldDesc}</p>
 						</div>
 					</div>
 				</div>
 
 				<!-- Action Call -->
 				<div class="rounded-xl border border-blue-100 bg-blue-50 p-4">
-					<p class="text-xs font-medium text-blue-800">רוצים לפרסם כאן?</p>
+					<p class="text-xs font-medium text-blue-800">{t.wantToAdvertise}</p>
 					<a
 						href="mailto:support@melecshop.com"
-						class="mt-2 block text-xs font-bold text-blue-600 hover:underline">צרו קשר</a
+						class="mt-2 block text-xs font-bold text-blue-600 hover:underline">{t.contact}</a
 					>
 				</div>
 			</div>

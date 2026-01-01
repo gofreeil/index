@@ -1,13 +1,34 @@
-<script lang="ts">
+<script>
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
+	import { lang, translations } from '$lib/i18n';
+	import { get } from 'svelte/store';
 
 	let { children } = $props();
+
+	// Support for Svelte 5 state-like behavior from store
+	let currentLang = $state('he');
+	lang.subscribe((v) => (currentLang = v));
+
+	const t = $derived(/** @type {any} */ (translations)[currentLang]);
+
+	let isLangMenuOpen = $state(false);
+
+	const changeLang = (l) => {
+		lang.set(l);
+		isLangMenuOpen = false;
+	};
+
+	const flags = {
+		he: '🇮🇱',
+		en: '🇬🇧',
+		ru: '🇷🇺'
+	};
 </script>
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
-	<title>מדריך בעלי מקצוע כשרים - יוצאים לחירות</title>
+	<title>{t.title} - יוצאים לחירות</title>
 
 	<!-- Meta Tags for Social Media (Open Graph) -->
 	<meta property="og:title" content="מדריך בעלי מקצוע כשרים - יוצאים לחירות" />
@@ -28,7 +49,10 @@
 	<meta name="twitter:image" content="/og-image.png" />
 </svelte:head>
 
-<div class="min-h-screen overflow-x-hidden bg-gradient-to-br from-blue-50 via-white to-purple-50">
+<div
+	class="min-h-screen overflow-x-hidden bg-gradient-to-br from-blue-50 via-white to-purple-50"
+	dir={t.dir}
+>
 	<!-- Header -->
 	<header class="sticky top-0 z-50 bg-white/80 shadow-sm backdrop-blur-md">
 		<div class="mx-auto max-w-7xl px-2 py-3 sm:px-6 lg:px-8">
@@ -56,12 +80,69 @@
 				</a>
 
 				<!-- Action Buttons -->
-				<div class="flex items-center gap-2">
+				<div class="flex items-center gap-1 sm:gap-2">
+					<!-- Language Selector -->
+					<div class="relative">
+						<button
+							onclick={() => (isLangMenuOpen = !isLangMenuOpen)}
+							class="flex items-center gap-1 rounded-full border border-gray-200 bg-white px-2 py-1.5 text-xl shadow-sm transition-all hover:bg-gray-50 sm:px-3"
+							title="Change Language"
+						>
+							<span>{/** @type {any} */ (flags)[currentLang]}</span>
+							<svg
+								class="h-4 w-4 text-gray-400 transition-transform {isLangMenuOpen
+									? 'rotate-180'
+									: ''}"
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M19 9l-7 7-7-7"
+								/>
+							</svg>
+						</button>
+
+						{#if isLangMenuOpen}
+							<div
+								class="absolute top-full z-[60] mt-2 flex w-32 flex-col rounded-xl border border-gray-100 bg-white py-1 shadow-xl {t.dir ===
+								'rtl'
+									? 'right-0'
+									: 'left-0'}"
+							>
+								<button
+									onclick={() => changeLang('he')}
+									class="flex items-center gap-3 px-3 py-2 text-right text-sm hover:bg-gray-50"
+								>
+									<span>🇮🇱</span>
+									<span>{t.israel}</span>
+								</button>
+								<button
+									onclick={() => changeLang('en')}
+									class="flex items-center gap-3 px-3 py-2 text-right text-sm hover:bg-gray-50"
+								>
+									<span>🇬🇧</span>
+									<span>{t.english}</span>
+								</button>
+								<button
+									onclick={() => changeLang('ru')}
+									class="flex items-center gap-3 px-3 py-2 text-right text-sm hover:bg-gray-50"
+								>
+									<span>🇷🇺</span>
+									<span>{t.russia}</span>
+								</button>
+							</div>
+						{/if}
+					</div>
+
 					<!-- Community Policy Button -->
 					<a
 						href="/policy"
 						class="flex items-center gap-2 rounded-full bg-gradient-to-r from-yellow-200 to-yellow-400 px-3 py-2 text-sm font-bold text-yellow-900 shadow-sm transition-all hover:scale-105 hover:shadow-md active:scale-95 sm:px-4 sm:py-2.5"
-						title="מדיניות הקהילה"
+						title={t.policy}
 					>
 						<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 							<path
@@ -71,7 +152,7 @@
 								d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
 							/>
 						</svg>
-						<span class="hidden sm:inline">מדיניות הקהילה</span>
+						<span class="hidden sm:inline">{t.policy}</span>
 					</a>
 
 					<!-- Add Store Button -->
@@ -79,7 +160,7 @@
 						href="https://docs.google.com/forms/d/e/1FAIpQLSe2wvCp484_PyoJyDZ_n8GupIQVy00ozt5rxOhsWklr7UPkXQ/viewform?usp=header"
 						target="_blank"
 						class="group flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 px-3 py-2 text-sm font-bold text-white shadow-md transition-all hover:scale-105 hover:shadow-lg active:scale-95 sm:px-5 sm:py-2.5"
-						title="הוסף חנות"
+						title={t.addStore}
 					>
 						<svg
 							class="h-5 w-5 transition-transform group-hover:rotate-90"
@@ -94,12 +175,12 @@
 								d="M12 4v16m8-8H4"
 							/>
 						</svg>
-						<span class="hidden sm:inline">הוסף חנות</span>
+						<span class="hidden sm:inline">{t.addStore}</span>
 					</a>
 				</div>
 			</div>
 			<p class="mt-2 text-right text-xs text-gray-600 sm:hidden">
-				בהנחות והטבות ייחודיות לחברי יוצאים לחירות
+				{t.subtitle}
 			</p>
 		</div>
 	</header>
@@ -112,7 +193,7 @@
 				<!-- Action Group (Right aligned in RTL) -->
 				<div class="flex flex-col items-center gap-2">
 					<p class="text-[11px] font-medium text-gray-500">
-						לכלל פעילות התנועה החברתית יוצאים לחירות הקלק:
+						{t.movementAction}
 					</p>
 					<a
 						href="https://www.melecshop.com/"
@@ -120,7 +201,7 @@
 						class="flex shrink-0 flex-col items-center rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-0.5 text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-95"
 					>
 						<span class="text-base font-black tracking-wider">יוצאים לחירות</span>
-						<span class="text-[10px] font-medium opacity-90">בונים עולם חדש!</span>
+						<span class="text-[10px] font-medium opacity-90">{t.movementSlogan}</span>
 					</a>
 				</div>
 
@@ -135,7 +216,7 @@
 							target="_blank"
 							class="text-lg font-medium text-red-500 hover:underline"
 						>
-							דווח על עסק המפר את מדיניות הקהילה
+							{t.reportViolation}
 						</a>
 					</p>
 				</div>
@@ -149,17 +230,17 @@
 						href="mailto:support@melecshop.com"
 						class="text-sm font-bold text-gray-700 transition-colors hover:text-blue-600"
 					>
-						צור קשר
+						{t.contact}
 					</a>
 					<a href="/privacy" class="text-xs text-gray-500 transition-colors hover:text-blue-600">
-						מדיניות פרטיות
+						{t.privacy}
 					</a>
 				</div>
 			</div>
 
 			<div class="mt-8 border-t border-gray-200 pt-8 text-center">
 				<p class="text-xs text-gray-500">
-					אינדקס בעלי העסקים תחת 7 מצוות בני נח לעילוי נשמת קלמן אליעזר בן יוסף צדוק
+					{t.dedication}
 				</p>
 			</div>
 		</div>
@@ -168,7 +249,6 @@
 
 <style>
 	:global(body) {
-		direction: rtl;
 		font-family:
 			-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 	}
