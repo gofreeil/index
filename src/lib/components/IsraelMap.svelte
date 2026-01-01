@@ -110,15 +110,6 @@
 		}
 	];
 
-	// City labels for the "photo" look
-	const mainCities = [
-		{ name: 'חיפה', x: 80, y: 70 },
-		{ name: 'תל אביב', x: 68, y: 160 },
-		{ name: 'ירושלים', x: 105, y: 245 },
-		{ name: 'באר שבע', x: 75, y: 360 },
-		{ name: 'אילת', x: 90, y: 485 }
-	];
-
 	const isAllCountry = $derived(
 		!salesArea ||
 			salesArea.includes('כל הארץ') ||
@@ -142,120 +133,101 @@
 		if (businesses.length > 0) return 'transform: scale(1) translateY(0);'; // No zoom for multi-map
 		if (!markerPos) return 'transform: scale(1) translateY(0);';
 		// Target Y: move the marker towards the middle of the view (which is 250 in a 500 height svg)
-		const targetY = 250 - markerPos.y * 1.3;
-		return `transform: scale(1.3) translateY(${targetY}px); transform-origin: 50% ${markerPos.y}px;`;
+		const targetY = 250 - markerPos.y * 1.5;
+		return `transform: scale(1.5) translateY(${targetY}px); transform-origin: 50% ${markerPos.y}px;`;
 	});
 </script>
 
-<div class="relative flex flex-col items-center overflow-hidden p-4">
+<div class="relative flex flex-col items-center overflow-hidden p-2">
 	<div
-		class="relative w-full max-w-[280px] overflow-hidden rounded-2xl border border-sky-100 bg-sky-50 shadow-inner"
+		class="relative h-[650px] w-full max-w-[320px] overflow-hidden rounded-3xl border-4 border-white bg-sky-50 shadow-2xl"
 	>
-		<svg
-			viewBox="0 0 200 500"
-			class="h-[600px] w-auto transition-all duration-1000 ease-in-out"
-			style={zoomStyles}
-			xmlns="http://www.w3.org/2000/svg"
-		>
-			<!-- Sea -->
-			<rect x="-100" y="0" width="400" height="500" fill="#f0f9ff" />
+		<!-- Real Map Image from User -->
+		<div class="absolute inset-0 transition-all duration-1000 ease-in-out" style={zoomStyles}>
+			<img
+				src="/israel-map.png"
+				alt="Israel Map Background"
+				class="h-full w-full object-cover opacity-90"
+			/>
 
-			<!-- Israel Land Base -->
-			<g fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.5">
-				{#each regions as region}
-					<path d={region.path} />
-				{/each}
-			</g>
-
-			<!-- Active Service Boundaries (Green Overlay) -->
-			<g>
-				{#each regions as region}
-					{#if isActive(region.id)}
-						<path
-							in:fade={{ duration: 1000 }}
-							d={region.path}
-							fill="rgba(34, 197, 94, 0.25)"
-							stroke="#16a34a"
-							stroke-width="1"
-						/>
-					{/if}
-				{/each}
-			</g>
-
-			<!-- Regional Labels Map-Style -->
-			<g class="pointer-events-none opacity-40">
-				{#each mainCities as city}
-					<text
-						x={city.x + 5}
-						y={city.y + 2}
-						font-size="6"
-						font-weight="bold"
-						fill="#94a3b8"
-						style="font-family: sans-serif;"
-					>
-						{city.name}
-					</text>
-				{/each}
-			</g>
-
-			<!-- THEPIN: Business Location Marker (Single) -->
-			{#if markerPos && businesses.length === 0}
-				<g in:fade={{ delay: 1000, duration: 500 }}>
-					<!-- Pulse effect -->
-					<circle
-						cx={markerPos.x}
-						cy={markerPos.y}
-						r="8"
-						fill="#ef4444"
-						class="animate-ping opacity-20"
-					/>
-					<!-- Pin shadow -->
-					<ellipse cx={markerPos.x} cy={markerPos.y + 2} rx="2" ry="1" fill="black" opacity="0.2" />
-					<!-- Actual Pin -->
-					<path
-						d="M{markerPos.x} {markerPos.y} l-4 -8 a4 4 0 1 1 8 0 z"
-						fill="#ef4444"
-						stroke="white"
-						stroke-width="0.5"
-					/>
-					<circle cx={markerPos.x} cy={markerPos.y - 8} r="1.5" fill="white" />
-				</g>
-			{/if}
-
-			<!-- Multi Markers for Main Page -->
-			{#if businesses.length > 0}
+			<!-- SVG Overlay for Interactive Elements -->
+			<svg
+				viewBox="0 0 200 500"
+				class="absolute inset-0 h-full w-full"
+				xmlns="http://www.w3.org/2000/svg"
+			>
+				<!-- Active Service Boundaries (Semi-transparent Green Overlays) -->
 				<g>
-					{#each allMarkers as marker}
-						<g>
-							<circle
-								cx={marker.x}
-								cy={marker.y}
-								r="3"
-								fill="#ef4444"
-								stroke="white"
-								stroke-width="0.5"
+					{#each regions as region}
+						{#if isActive(region.id)}
+							<path
+								in:fade={{ duration: 1000 }}
+								d={region.path}
+								fill="rgba(34, 197, 94, 0.25)"
+								stroke="#16a34a"
+								stroke-width="1.5"
+								stroke-dasharray="4 2"
 							/>
-							<title>{marker.name}</title>
-						</g>
+						{/if}
 					{/each}
 				</g>
-			{/if}
-		</svg>
+
+				<!-- THEPIN: Business Location Marker (Single) -->
+				{#if markerPos && businesses.length === 0}
+					<g in:fade={{ delay: 1000, duration: 500 }}>
+						<circle
+							cx={markerPos.x}
+							cy={markerPos.y}
+							r="10"
+							fill="#ef4444"
+							class="animate-ping opacity-30"
+						/>
+						<path
+							d="M{markerPos.x} {markerPos.y} l-5 -10 a5 5 0 1 1 10 0 z"
+							fill="#ef4444"
+							stroke="white"
+							stroke-width="1"
+						/>
+						<circle cx={markerPos.x} cy={markerPos.y - 10} r="2" fill="white" />
+					</g>
+				{/if}
+
+				<!-- Multi Markers for Main Page -->
+				{#if businesses.length > 0}
+					<g>
+						{#each allMarkers as marker}
+							<g>
+								<circle
+									cx={marker.x}
+									cy={marker.y}
+									r="4"
+									fill="#ef4444"
+									stroke="white"
+									stroke-width="1"
+									class="shadow-sm"
+								/>
+								<title>{marker.name}</title>
+							</g>
+						{/each}
+					</g>
+				{/if}
+			</svg>
+		</div>
 
 		<!-- Zoom reset / Legend indicator -->
-		<div
-			class="pointer-events-none absolute right-4 bottom-4 left-4 flex items-end justify-between"
-		>
+		<div class="pointer-events-none absolute right-4 bottom-4 left-4 flex flex-col gap-2">
 			<div
-				class="rounded-lg border border-gray-100 bg-white/90 p-2 text-[10px] font-bold shadow-sm backdrop-blur-sm"
+				class="rounded-xl border border-white/50 bg-white/80 p-3 text-[11px] font-bold shadow-lg backdrop-blur-md"
 			>
-				<div class="mb-1 flex items-center gap-1.5">
-					<div class="h-2 w-2 rounded-full bg-red-500"></div>
-					<span class="text-gray-700">מיקום העסק</span>
+				<div class="mb-1.5 flex items-center gap-2">
+					<div class="h-3 w-3 rounded-full bg-red-500 shadow-sm"></div>
+					<span class="text-gray-800">מיקום בעסק</span>
 				</div>
-				<div class="flex items-center gap-1.5">
-					<div class="h-2 w-2 rounded-sm border border-green-500/20 bg-green-500/40"></div>
-					<span class="text-gray-700">אזורי שירות</span>
+				<div class="flex items-center gap-2">
+					<div
+						class="h-3 w-3 rounded-sm border border-green-500/30 bg-green-500/40 shadow-sm"
+					></div>
+					<span class="text-gray-800">אזורי שירות פעילים</span>
 				</div>
 			</div>
 		</div>
@@ -263,25 +235,29 @@
 
 	<!-- Status Message -->
 	{#if detectedCity}
-		<p class="animate-fade-in font-display mt-4 text-center text-xs font-medium text-blue-600">
-			📍 מוצג מיקום מקורב ב{detectedCity}
-		</p>
+		<div
+			class="mt-4 flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-4 py-1.5 shadow-sm"
+		>
+			<span class="text-xs font-bold text-blue-700">📍 נמצא ב{detectedCity}</span>
+		</div>
 	{/if}
 
 	<!-- legend and regions list -->
-	<div class="mt-6 flex flex-wrap justify-center gap-3">
+	<div class="mt-8 flex flex-wrap justify-center gap-2">
 		{#each regions as region}
 			<div
-				class="flex items-center gap-2 rounded-full border px-3 py-1.5 transition-all {isActive(
+				class="flex items-center gap-2 rounded-full border px-4 py-2 transition-all duration-300 {isActive(
 					region.id
 				)
-					? 'border-green-200 bg-green-50 text-green-700 shadow-sm'
+					? 'scale-105 transform border-green-200 bg-green-50 text-green-800 shadow-md'
 					: 'border-gray-100 bg-white text-gray-400 opacity-60'}"
 			>
 				<div
-					class="h-2 w-2 rounded-full {isActive(region.id) ? 'bg-green-500' : 'bg-gray-200'}"
+					class="h-2.5 w-2.5 rounded-full {isActive(region.id)
+						? 'animate-pulse bg-green-500'
+						: 'bg-gray-200'}"
 				></div>
-				<span class="text-xs leading-none font-bold">
+				<span class="text-xs leading-none font-extrabold">
 					{region.name}
 				</span>
 			</div>
@@ -290,7 +266,18 @@
 </div>
 
 <style>
-	svg {
-		filter: drop-shadow(0 4px 6px -1px rgb(0 0 0 / 0.1));
+	img {
+		filter: brightness(1.05) contrast(1.05);
+	}
+	@keyframes ping {
+		75%,
+		100% {
+			transform: scale(2.5);
+			opacity: 0;
+		}
+	}
+	.animate-ping {
+		animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+		transform-origin: center;
 	}
 </style>
