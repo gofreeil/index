@@ -774,6 +774,66 @@
 											</div>
 										{/if}
 									</div>
+								</div></a
+							>
+						{/each}
+					</div>
+				</div>
+				<!-- All Businesses Section -->
+				<div class="mt-20">
+					<div class="mb-10 flex flex-col items-center justify-center">
+						<h2
+							class="bg-gradient-to-r from-gray-700 to-gray-900 bg-clip-text text-3xl font-extrabold text-transparent sm:text-4xl lg:text-5xl"
+						>
+							כלל העסקים העובדים איתנו
+						</h2>
+						<div
+							class="mt-4 h-1 w-24 rounded-full bg-gradient-to-r from-blue-500 to-purple-500"
+						></div>
+					</div>
+
+					<div class="flex flex-wrap justify-center gap-8 px-4">
+						{#each filteredBusinesses as business (business.id)}
+							<a
+								href="/business/{business.id}"
+								class="group relative flex h-32 w-32 items-center justify-center rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-xl"
+								title={business.name}
+							>
+								{#if business.logo}
+									<img
+										src={getDirectImageUrl(business.logo)}
+										alt={business.name}
+										class="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-110"
+										loading="lazy"
+									/>
+								{:else}
+									<div class="flex flex-col items-center justify-center text-center">
+										<div
+											class="mb-1 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-400"
+										>
+											<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+												<path
+													stroke-linecap="round"
+													stroke-linejoin="round"
+													stroke-width="2"
+													d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+												/>
+											</svg>
+										</div>
+										<span class="line-clamp-2 text-[10px] font-bold text-gray-400"
+											>{business.name}</span
+										>
+									</div>
+								{/if}
+
+								<!-- Hover Tooltip -->
+								<div
+									class="pointer-events-none absolute -bottom-10 left-1/2 z-10 -translate-x-1/2 rounded-lg bg-gray-800 px-3 py-1.5 text-xs font-medium whitespace-nowrap text-white opacity-0 shadow-xl transition-opacity group-hover:opacity-100"
+								>
+									{business.name}
+									<div
+										class="absolute -top-1 left-1/2 -translate-x-1/2 border-x-4 border-b-4 border-x-transparent border-b-gray-800"
+									></div>
 								</div>
 							</a>
 						{/each}
