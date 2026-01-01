@@ -82,6 +82,12 @@
 							.map((/** @type {any} */ url) => getDirectImageUrl(url.trim()));
 					}
 
+					/** @param {string} text */
+					const cleanText = (text) => {
+						if (!text) return '';
+						return text.replace(/אחר:?\s*אפרט למטה/g, '').trim();
+					};
+
 					return {
 						id: row.id,
 						name: row['שם העסק או השירות '] || row['שם העסק'] || 'ללא שם',
@@ -89,11 +95,13 @@
 						category: row['קטגוריה'] || row['Category'] || 'כללי',
 						banners: bannerArray,
 						banner: bannerArray[0] || '', // תמונה ראשי לכרטיסייה
-						description: row['הערות'] || row['תיאור'] || '',
-						discount: findValue('ההנחה הבלעדית'),
-						salesArea: row['אזור מכירה ארצי (אנטרנטי). אם האיזור פרטי נא לפרט היכן'] || '',
-						address: row['מיקום המפעל / חנות / מחסן'] || '',
-						deliveries: row['שירות משלוחים'] || '',
+						description: cleanText(row['הערות'] || row['תיאור'] || ''),
+						discount: cleanText(findValue('ההנחה הבלעדית')),
+						salesArea: cleanText(
+							row['אזור מכירה ארצי (אנטרנטי). אם האיזור פרטי נא לפרט היכן'] || ''
+						),
+						address: cleanText(row['מיקום המפעל / חנות / מחסן'] || ''),
+						deliveries: cleanText(row['שירות משלוחים'] || ''),
 						website: row['אתר'] || row['Website'] || '',
 						logo: row['לוגו'] || '',
 						rating: Number(row['דירוג'] || row['Rating'] || 0)

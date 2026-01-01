@@ -38,17 +38,22 @@ export async function load({ fetch, params }) {
             bannerArray = rawImages.split(',').map(url => getDirectImageUrl(url.trim()));
         }
 
+        const cleanText = (text) => {
+            if (!text) return '';
+            return text.replace(/אחר:?\s*אפרט למטה/g, '').trim();
+        };
+
         const formattedBusiness = {
             id: business.id,
             name: business['שם העסק או השירות '] || business['שם העסק'] || 'ללא שם',
             phone: business['טלפון '] || business['טלפון'] || '',
             category: business['קטגוריה'] || business['Category'] || 'כללי',
             banners: bannerArray,
-            description: business['הערות'] || business['תיאור'] || '',
-            discount: findValue(business, 'ההנחה הבלעדית'),
-            salesArea: business['אזור מכירה ארצי (אנטרנטי). אם האיזור פרטי נא לפרט היכן'] || '',
-            address: business['מיקום המפעל / חנות / מחסן'] || '',
-            deliveries: business['שירות משלוחים'] || '',
+            description: cleanText(business['הערות'] || business['תיאור'] || ''),
+            discount: cleanText(findValue(business, 'ההנחה הבלעדית')),
+            salesArea: cleanText(business['אזור מכירה ארצי (אנטרנטי). אם האיזור פרטי נא לפרט היכן'] || ''),
+            address: cleanText(business['מיקום המפעל / חנות / מחסן'] || ''),
+            deliveries: cleanText(business['שירות משלוחים'] || ''),
             website: business['אתר'] || business['Website'] || '',
             logo: getDirectImageUrl(business['לוגו']) || ''
         };
