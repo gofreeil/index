@@ -56,6 +56,20 @@
 				{t.policyPromise}
 			</p>
 
+			<section
+				class="rounded-2xl border-yellow-200 bg-yellow-50/50 p-6 {t.dir === 'rtl'
+					? 'border-r-4'
+					: 'border-l-4'}"
+			>
+				<h2 class="flex items-center gap-3 text-2xl font-black text-yellow-800">
+					<span class="text-3xl">🪙</span>
+					{t.policyCashTitle}
+				</h2>
+				<p class="mt-4 text-xl leading-relaxed font-bold text-yellow-900">
+					"{t.policyCashText}"
+				</p>
+			</section>
+
 			<section class="space-y-4">
 				<h2 class="flex items-center gap-3 text-2xl font-bold text-gray-900">
 					<span class="text-blue-600">🟦</span>
