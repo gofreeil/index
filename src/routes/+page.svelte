@@ -451,16 +451,16 @@
 					</div>
 				</div>
 
-				<div class="mb-6 flex items-center justify-between">
+				<div class="mb-10 flex items-center justify-center">
 					<h2
-						class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-xl font-extrabold text-transparent sm:text-2xl"
+						class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-3xl font-extrabold text-transparent sm:text-4xl lg:text-5xl"
 					>
 						חמשת המדורגים ביותר
 					</h2>
 				</div>
 
 				<!-- Business cards grid -->
-				<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+				<div class="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-5">
 					{#each displayedBusinesses as business (business.id)}
 						<a
 							href="/business/{business.id}"
