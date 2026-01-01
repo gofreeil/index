@@ -55,7 +55,11 @@
 	// All markers for the main page map
 	const allMarkers = $derived(
 		/** @type {any[]} */ (businesses).reduce((/** @type {any[]} */ acc, b) => {
-			const city = Object.keys(cityCoords).find((c) => b.address?.includes(c));
+			const addressStr = String(b.address || '');
+			const salesAreaStr = String(b.salesArea || '');
+			const city = Object.keys(cityCoords).find(
+				(c) => addressStr.includes(c) || salesAreaStr.includes(c)
+			);
 			if (city) {
 				acc.push({ ...cityCoords[city], name: b.name });
 			}
@@ -199,14 +203,17 @@
 					<g>
 						{#each allMarkers as marker}
 							<g>
+								<!-- Outer glow/halo -->
+								<circle cx={marker.x} cy={marker.y} r="7" fill="white" class="opacity-40" />
+								<!-- Inner marker -->
 								<circle
 									cx={marker.x}
 									cy={marker.y}
-									r="4"
+									r="4.5"
 									fill="#ef4444"
 									stroke="white"
-									stroke-width="1"
-									class="shadow-sm"
+									stroke-width="1.5"
+									class="shadow-xl"
 								/>
 								<title>{marker.name}</title>
 							</g>
