@@ -470,15 +470,50 @@
 					>
 						שלושת המדורגים ביותר
 					</h2>
-					<div class="mt-4 flex gap-1">
-						{#each Array(5) as _}
+					<div class="mt-4 flex gap-2">
+						{#each Array(5) as _, i}
 							<svg
-								class="h-8 w-8 animate-pulse text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.8)]"
-								fill="currentColor"
-								viewBox="0 0 20 20"
+								class="animate-gold-shimmer h-10 w-10 drop-shadow-lg"
+								viewBox="0 0 24 24"
+								style="animation-delay: {i * 0.2}s"
 							>
+								<defs>
+									<linearGradient id="gold-gradient-{i}" x1="0%" y1="0%" x2="100%" y2="100%">
+										<stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
+										<stop offset="50%" style="stop-color:#B8860B;stop-opacity:1" />
+										<stop offset="100%" style="stop-color:#8B6508;stop-opacity:1" />
+									</linearGradient>
+									<filter id="f3d-{i}" x="-20%" y="-20%" width="140%" height="140%">
+										<feGaussianBlur in="SourceAlpha" stdDeviation="0.5" result="blur" />
+										<feOffset in="blur" dx="1" dy="1" result="offsetBlur" />
+										<feSpecularLighting
+											in="blur"
+											surfaceScale="5"
+											specularConstant="1"
+											specularExponent="20"
+											lighting-color="#ffffff"
+											result="specOut"
+										>
+											<fePointLight x="-5000" y="-10000" z="20000" />
+										</feSpecularLighting>
+										<feComposite in="specOut" in2="SourceAlpha" operator="in" result="specOut" />
+										<feComposite
+											in="SourceGraphic"
+											in2="specOut"
+											operator="arithmetic"
+											k1="0"
+											k2="1"
+											k3="1"
+											k4="0"
+										/>
+									</filter>
+								</defs>
 								<path
-									d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"
+									filter="url(#f3d-{i})"
+									fill="url(#gold-gradient-{i})"
+									stroke="#5C4508"
+									stroke-width="0.5"
+									d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
 								/>
 							</svg>
 						{/each}
@@ -812,21 +847,19 @@
 		-webkit-box-orient: vertical;
 		overflow: hidden;
 	}
-	.animate-pulse {
-		animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+	.animate-gold-shimmer {
+		animation: gold-shimmer 3s ease-in-out infinite;
 	}
 
-	@keyframes pulse {
+	@keyframes gold-shimmer {
 		0%,
 		100% {
-			opacity: 1;
-			transform: scale(1);
-			filter: brightness(1.2) drop-shadow(0 0 12px rgba(250, 204, 21, 0.9));
+			transform: scale(1) rotate(0deg);
+			filter: brightness(1);
 		}
 		50% {
-			opacity: 0.8;
-			transform: scale(1.1);
-			filter: brightness(1.5) drop-shadow(0 0 20px rgba(250, 204, 21, 1));
+			transform: scale(1.15) rotate(5deg);
+			filter: brightness(1.3) drop-shadow(0 0 15px rgba(184, 134, 11, 0.6));
 		}
 	}
 </style>
