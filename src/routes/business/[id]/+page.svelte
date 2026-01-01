@@ -362,7 +362,7 @@
 								מפת אזורי שירות
 							</span>
 						</div>
-						<IsraelMap salesArea={business.salesArea} />
+						<IsraelMap salesArea={business.salesArea} address={business.address} />
 					</div>
 				</div>
 			</div>

@@ -1,8 +1,34 @@
 <script>
 	import { fade } from 'svelte/transition';
 
-	/** @type {{ salesArea: string }} */
-	let { salesArea = 'כל הארץ' } = $props();
+	/** @type {{ salesArea: string, address: string }} */
+	let { salesArea = 'כל הארץ', address = '' } = $props();
+
+	// Extended city mapping for markers and zoom
+	const cityCoords = {
+		ירושלים: { x: 105, y: 245 },
+		'בני ברק': { x: 80, y: 165 },
+		'תל אביב': { x: 78, y: 160 },
+		אשדוד: { x: 65, y: 210 },
+		'בית שמש': { x: 95, y: 235 },
+		'ביתר עילית': { x: 102, y: 255 },
+		'מודיעין עילית': { x: 98, y: 215 },
+		חיפה: { x: 85, y: 70 },
+		'פתח תקווה': { x: 85, y: 155 },
+		נתניה: { x: 74, y: 115 },
+		צפת: { x: 110, y: 35 },
+		אלעד: { x: 88, y: 175 },
+		רחובות: { x: 75, y: 185 },
+		'באר שבע': { x: 75, y: 360 },
+		אילת: { x: 90, y: 485 }
+	};
+
+	// Try to find the city in the address
+	const detectedCity = $derived(
+		Object.keys(cityCoords).find((city) => address?.includes(city)) || null
+	);
+
+	const markerPos = $derived(detectedCity ? cityCoords[detectedCity] : null);
 
 	// Keywords mapping to regions
 	const regions = [
@@ -25,14 +51,16 @@
 				'בת ים',
 				'ראשון לציון',
 				'רמת גן',
-				'פתח תקווה'
+				'פתח תקווה',
+				'בני ברק',
+				'אלעד'
 			],
 			path: 'M110,100 L125,150 L120,220 L100,230 L80,220 L75,180 L85,130 L90,105 Z'
 		},
 		{
 			id: 'jerusalem',
 			name: 'ירושלים',
-			keywords: ['ירושלים', 'בית שמש', 'מעלה אדומים', 'מבשרת'],
+			keywords: ['ירושלים', 'בית שמש', 'מעלה אדומים', 'מבשרת', 'ביתר'],
 			path: 'M100,230 L120,220 L130,250 L125,280 L110,290 L95,270 Z'
 		},
 		{
@@ -44,15 +72,15 @@
 		{
 			id: 'js',
 			name: 'יהודה ושומרון',
-			keywords: ['יהודה ושומרון', 'יו"ש', 'אריאל', 'חברון', 'שומרון'],
+			keywords: ['יהודה ושומרון', 'יו"ש', 'אריאל', 'חברון', 'שומרון', 'מודיעין'],
 			path: 'M120,150 L140,160 L145,200 L130,250 L120,220 Z'
 		}
 	];
 
-	// City markers for more context
-	const cities = [
-		{ name: 'חיפה', x: 85, y: 70 },
-		{ name: 'תל אביב', x: 78, y: 160 },
+	// City labels for the "photo" look
+	const mainCities = [
+		{ name: 'חיפה', x: 80, y: 70 },
+		{ name: 'תל אביב', x: 68, y: 160 },
 		{ name: 'ירושלים', x: 105, y: 245 },
 		{ name: 'באר שבע', x: 75, y: 360 },
 		{ name: 'אילת', x: 90, y: 485 }
@@ -75,53 +103,60 @@
 
 	/** @param {string} regionId */
 	const isActive = (regionId) => activeRegions.some((r) => r.id === regionId);
+
+	// Zoom calculation: focus on marker if exists, otherwise center on active regions
+	const zoomStyles = $derived.by(() => {
+		if (!markerPos) return 'transform: scale(1) translateY(0);';
+		// Target Y: move the marker towards the middle of the view (which is 250 in a 500 height svg)
+		const targetY = 250 - markerPos.y * 1.3;
+		return `transform: scale(1.3) translateY(${targetY}px); transform-origin: 50% ${markerPos.y}px;`;
+	});
 </script>
 
-<div class="relative flex flex-col items-center p-4">
-	<div class="relative overflow-hidden rounded-2xl bg-slate-50 shadow-inner">
+<div class="relative flex flex-col items-center overflow-hidden p-4">
+	<div
+		class="relative w-full max-w-[280px] overflow-hidden rounded-2xl border border-sky-100 bg-sky-50 shadow-inner"
+	>
 		<svg
 			viewBox="0 0 200 500"
-			class="h-[600px] w-auto transition-all duration-700"
+			class="h-[600px] w-auto transition-all duration-1000 ease-in-out"
+			style={zoomStyles}
 			xmlns="http://www.w3.org/2000/svg"
 		>
-			<!-- Sea/Background -->
-			<rect width="200" height="500" fill="#f0f9ff" />
+			<!-- Sea -->
+			<rect x="-100" y="0" width="400" height="500" fill="#f0f9ff" />
 
-			<!-- Background / Ghost map base -->
-			<g fill="#f1f5f9" stroke="#cbd5e1" stroke-width="0.5">
+			<!-- Israel Land Base -->
+			<g fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.5">
 				{#each regions as region}
-					<path d={region.path} class="transition-colors duration-300" />
+					<path d={region.path} />
 				{/each}
 			</g>
 
-			<!-- Highlighted Service Regions -->
+			<!-- Active Service Boundaries (Green Overlay) -->
 			<g>
 				{#each regions as region}
 					{#if isActive(region.id)}
 						<path
 							in:fade={{ duration: 1000 }}
 							d={region.path}
-							fill="rgba(34, 197, 94, 0.3)"
+							fill="rgba(34, 197, 94, 0.25)"
 							stroke="#16a34a"
-							stroke-width="1.5"
-							class="transition-all duration-500 hover:fill-green-400/40"
-						>
-							<title>{region.name} - אזור שירות פעיל</title>
-						</path>
+							stroke-width="1"
+						/>
 					{/if}
 				{/each}
 			</g>
 
-			<!-- City Markers -->
-			<g class="pointer-events-none">
-				{#each cities as city}
-					<circle cx={city.x} cy={city.y} r="2.5" fill="#ef4444" />
+			<!-- Regional Labels Map-Style -->
+			<g class="pointer-events-none opacity-40">
+				{#each mainCities as city}
 					<text
-						x={city.x + 4}
+						x={city.x + 5}
 						y={city.y + 2}
-						font-size="8"
+						font-size="6"
 						font-weight="bold"
-						fill="#475569"
+						fill="#94a3b8"
 						style="font-family: sans-serif;"
 					>
 						{city.name}
@@ -129,15 +164,58 @@
 				{/each}
 			</g>
 
-			<!-- Compass -->
-			<g transform="translate(20, 20) scale(0.5)" opacity="0.3">
-				<circle r="20" fill="none" stroke="#64748b" stroke-width="1" />
-				<path d="M0,-18 L4,0 L0,18 L-4,0 Z" fill="#64748b" />
-				<path d="M-18,0 L0,-4 L18,0 L0,4 Z" fill="#64748b" />
-			</g>
+			<!-- THEPIN: Business Location Marker -->
+			{#if markerPos}
+				<g in:fade={{ delay: 1000, duration: 500 }}>
+					<!-- Pulse effect -->
+					<circle
+						cx={markerPos.x}
+						cy={markerPos.y}
+						r="8"
+						fill="#ef4444"
+						class="animate-ping opacity-20"
+					/>
+					<!-- Pin shadow -->
+					<ellipse cx={markerPos.x} cy={markerPos.y + 2} rx="2" ry="1" fill="black" opacity="0.2" />
+					<!-- Actual Pin -->
+					<path
+						d="M{markerPos.x} {markerPos.y} l-4 -8 a4 4 0 1 1 8 0 z"
+						fill="#ef4444"
+						stroke="white"
+						stroke-width="0.5"
+					/>
+					<circle cx={markerPos.x} cy={markerPos.y - 8} r="1.5" fill="white" />
+				</g>
+			{/if}
 		</svg>
+
+		<!-- Zoom reset / Legend indicator -->
+		<div
+			class="pointer-events-none absolute right-4 bottom-4 left-4 flex items-end justify-between"
+		>
+			<div
+				class="rounded-lg border border-gray-100 bg-white/90 p-2 text-[10px] font-bold shadow-sm backdrop-blur-sm"
+			>
+				<div class="mb-1 flex items-center gap-1.5">
+					<div class="h-2 w-2 rounded-full bg-red-500"></div>
+					<span class="text-gray-700">מיקום העסק</span>
+				</div>
+				<div class="flex items-center gap-1.5">
+					<div class="h-2 w-2 rounded-sm border border-green-500/20 bg-green-500/40"></div>
+					<span class="text-gray-700">אזורי שירות</span>
+				</div>
+			</div>
+		</div>
 	</div>
 
+	<!-- Status Message -->
+	{#if detectedCity}
+		<p class="animate-fade-in font-display mt-4 text-center text-xs font-medium text-blue-600">
+			📍 מוצג מיקום מקורב ב{detectedCity}
+		</p>
+	{/if}
+
+	<!-- legend and regions list -->
 	<div class="mt-6 flex flex-wrap justify-center gap-3">
 		{#each regions as region}
 			<div
