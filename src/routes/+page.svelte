@@ -85,11 +85,14 @@
 					/** @param {string} text */
 					const cleanText = (text) => {
 						if (!text) return '';
-						// ניקוי אגרסיבי כולל פסיקים וכל וריאציה של "אחר אפרט"
-						return text
-							.replace(/אחר[,\s:\-]*אפרט\s*(למטה|למה)?/g, '')
-							.replace(/^[,\s:\-]+|[,\s:\-]+$/g, '') // ניקוי שאריות מהקצוות
+						// ניקוי אגרסיבי כולל פסיקים, נקודות וכל וריאציה של "אחר אפרט"
+						const cleaned = text
+							.replace(/אחר[,\s:\-\.]*אפרט\s*(למטה|למה)?/g, '')
+							.replace(/^[,\s:\-\.]+|[,\s:\-\.]+$/g, '') // ניקוי שאריות מהקצוות כולל נקודות
 							.trim();
+
+						// אם נשאר רק תו בודד של פיסוק או שהטקסט ריק - החזר מחרוזת ריקה
+						return cleaned.length <= 1 && /^[,\s:\-\.]$/.test(cleaned) ? '' : cleaned;
 					};
 
 					return {
@@ -908,7 +911,7 @@
 		overflow: hidden;
 	}
 	.animate-gold-shimmer {
-		animation: gold-shimmer 3s ease-in-out infinite;
+		animation: gold-shimmer 2s ease-in-out 1 forwards;
 	}
 
 	@keyframes gold-shimmer {

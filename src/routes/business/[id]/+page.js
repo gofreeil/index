@@ -40,10 +40,11 @@ export async function load({ fetch, params }) {
 
         const cleanText = (text) => {
             if (!text) return '';
-            return text
-                .replace(/אחר[,\s:\-]*אפרט\s*(למטה|למה)?/g, '')
-                .replace(/^[,\s:\-]+|[,\s:\-]+$/g, '')
+            const cleaned = text
+                .replace(/אחר[,\s:\-\.]*אפרט\s*(למטה|למה)?/g, '')
+                .replace(/^[,\s:\-\.]+|[,\s:\-\.]+$/g, '')
                 .trim();
+            return cleaned.length <= 1 && /^[,\s:\-\.]$/.test(cleaned) ? '' : cleaned;
         };
 
         const formattedBusiness = {
