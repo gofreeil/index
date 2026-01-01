@@ -80,15 +80,17 @@
 				</a>
 
 				<!-- Action Buttons -->
-				<div class="flex items-center gap-1 sm:gap-2">
+				<div class="flex items-center gap-2 sm:gap-3">
 					<!-- Language Selector -->
-					<div class="relative">
+					<div class="relative flex items-center">
 						<button
 							onclick={() => (isLangMenuOpen = !isLangMenuOpen)}
-							class="flex items-center gap-1 rounded-full border border-gray-200 bg-white px-2 py-1.5 text-xl shadow-sm transition-all hover:bg-gray-50 sm:px-3"
+							class="flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-2.5 py-1.5 text-xl shadow-sm transition-all hover:bg-gray-50 hover:shadow-md sm:px-4 sm:py-2"
 							title="Change Language"
 						>
-							<span>{/** @type {any} */ (flags)[currentLang]}</span>
+							<span class="flex items-center justify-center leading-none">
+								{/** @type {any} */ (flags)[currentLang]}
+							</span>
 							<svg
 								class="h-4 w-4 text-gray-400 transition-transform {isLangMenuOpen
 									? 'rotate-180'
@@ -108,31 +110,31 @@
 
 						{#if isLangMenuOpen}
 							<div
-								class="absolute top-full z-[60] mt-2 flex w-32 flex-col rounded-xl border border-gray-100 bg-white py-1 shadow-xl {t.dir ===
+								class="absolute top-full z-[100] mt-2 flex w-36 flex-col overflow-hidden rounded-xl border border-gray-100 bg-white py-1 shadow-2xl {t.dir ===
 								'rtl'
 									? 'right-0'
 									: 'left-0'}"
 							>
 								<button
 									onclick={() => changeLang('he')}
-									class="flex items-center gap-3 px-3 py-2 text-right text-sm hover:bg-gray-50"
+									class="flex items-center gap-3 px-3 py-2.5 text-right text-sm transition-colors hover:bg-gray-50"
 								>
-									<span>🇮🇱</span>
-									<span>{t.israel}</span>
+									<span class="text-lg">🇮🇱</span>
+									<span class="font-medium text-gray-700">{t.israel}</span>
 								</button>
 								<button
 									onclick={() => changeLang('en')}
-									class="flex items-center gap-3 px-3 py-2 text-right text-sm hover:bg-gray-50"
+									class="flex items-center gap-3 px-3 py-2.5 text-right text-sm transition-colors hover:bg-gray-50"
 								>
-									<span>🇬🇧</span>
-									<span>{t.english}</span>
+									<span class="text-lg">🇬🇧</span>
+									<span class="font-medium text-gray-700">{t.english}</span>
 								</button>
 								<button
 									onclick={() => changeLang('ru')}
-									class="flex items-center gap-3 px-3 py-2 text-right text-sm hover:bg-gray-50"
+									class="flex items-center gap-3 px-3 py-2.5 text-right text-sm transition-colors hover:bg-gray-50"
 								>
-									<span>🇷🇺</span>
-									<span>{t.russia}</span>
+									<span class="text-lg">🇷🇺</span>
+									<span class="font-medium text-gray-700">{t.russia}</span>
 								</button>
 							</div>
 						{/if}
