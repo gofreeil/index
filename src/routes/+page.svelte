@@ -85,7 +85,11 @@
 					/** @param {string} text */
 					const cleanText = (text) => {
 						if (!text) return '';
-						return text.replace(/אחר:?\s*אפרט למטה/g, '').trim();
+						// ניקוי אגרסיבי של וריאציות שונות של "אחר אפרט למטה"
+						return text
+							.replace(/אחר[:\-\s]*אפרט\s*(למטה|למה)?/g, '')
+							.replace(/^\s*[:\-]\s*/, '') // ניקוי סימני פיסוק שנשארו בהתחלה
+							.trim();
 					};
 
 					return {
@@ -158,7 +162,7 @@
 		})
 	);
 
-	let displayedBusinesses = $derived(filteredBusinesses.slice(0, 5));
+	let displayedBusinesses = $derived(filteredBusinesses.slice(0, 3));
 
 	// פונקציה לסגירת כל התפריטים בלחיצה מחוץ להם
 	/** @param {MouseEvent} event */
@@ -463,12 +467,12 @@
 					<h2
 						class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-3xl font-extrabold text-transparent sm:text-4xl lg:text-5xl"
 					>
-						חמשת המדורגים ביותר
+						שלושת המדורגים ביותר
 					</h2>
 				</div>
 
 				<!-- Business cards grid -->
-				<div class="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-5">
+				<div class="grid grid-cols-1 gap-6 md:grid-cols-3">
 					{#each displayedBusinesses as business (business.id)}
 						<a
 							href="/business/{business.id}"
