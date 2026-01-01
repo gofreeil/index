@@ -254,7 +254,7 @@
 						</svg>
 					</div>
 
-					<div class="mt-2 flex items-center gap-2 px-1 text-sm text-gray-500">
+					<div class="mt-2 flex flex-wrap items-center gap-2 px-1 text-sm text-gray-500">
 						<svg
 							class="h-4 w-4 text-blue-500"
 							fill="none"

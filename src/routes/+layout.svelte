@@ -28,21 +28,24 @@
 	<meta name="twitter:image" content="/og-image.png" />
 </svelte:head>
 
-<div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+<div class="min-h-screen overflow-x-hidden bg-gradient-to-br from-blue-50 via-white to-purple-50">
 	<!-- Header -->
 	<header class="sticky top-0 z-50 bg-white/80 shadow-sm backdrop-blur-md">
-		<div class="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+		<div class="mx-auto max-w-7xl px-2 py-3 sm:px-6 lg:px-8">
 			<div class="flex items-center justify-between">
 				<!-- Title & Logo Section -->
-				<a href="/" class="flex items-center gap-3 transition-opacity hover:opacity-80">
+				<a
+					href="/"
+					class="flex flex-1 items-center gap-1 transition-opacity hover:opacity-80 sm:gap-3"
+				>
 					<img
 						src="/logo.png"
 						alt="לוגו"
-						class="h-10 w-10 rounded-full object-cover shadow-sm sm:h-14 sm:w-14"
+						class="h-8 w-8 rounded-full object-cover shadow-sm sm:h-14 sm:w-14"
 					/>
 					<div class="flex flex-col text-right">
 						<h1
-							class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-right text-lg font-bold text-transparent sm:text-4xl"
+							class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-right text-base font-bold text-transparent sm:text-4xl"
 						>
 							מדריך בעלי מקצוע כשרים
 						</h1>
