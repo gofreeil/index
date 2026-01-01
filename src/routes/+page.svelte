@@ -282,7 +282,7 @@
 						{/if}
 					</div>
 
-					<div class="flex w-full flex-wrap items-center gap-3 sm:w-auto sm:gap-4">
+					<div class="flex w-full items-center gap-2 sm:w-auto sm:flex-wrap sm:gap-4">
 						<div
 							class="menu-container relative flex-1 sm:flex-initial"
 							onmouseenter={() => {
@@ -296,9 +296,14 @@
 									isMenuOpen = !isMenuOpen;
 									if (isMenuOpen) isLocationMenuOpen = false;
 								}}
-								class="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 font-bold text-white shadow-md transition-all hover:bg-blue-700 sm:w-auto sm:px-6"
+								class="flex h-full w-full items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-2 py-3 text-xs font-bold text-white shadow-md transition-all hover:bg-blue-700 sm:gap-2 sm:px-6 sm:text-base"
 							>
-								<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<svg
+									class="h-4 w-4 sm:h-5 sm:w-5"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+								>
 									<path
 										stroke-linecap="round"
 										stroke-linejoin="round"
@@ -306,7 +311,9 @@
 										d="M4 6h16M4 12h16m-7 6h7"
 									/>
 								</svg>
-								<span>{selectedCategory === 'all' ? 'קטגוריות' : selectedCategory}</span>
+								<span class="line-clamp-1"
+									>{selectedCategory === 'all' ? 'קטגוריות' : selectedCategory}</span
+								>
 							</button>
 
 							{#if isMenuOpen}
@@ -367,8 +374,6 @@
 										</div>
 									{/each}
 								</div>
-							{:else}
-								<!-- Hidden indicator for better perceived performance -->
 							{/if}
 						</div>
 
@@ -386,9 +391,14 @@
 									isLocationMenuOpen = !isLocationMenuOpen;
 									if (isLocationMenuOpen) isMenuOpen = false;
 								}}
-								class="flex w-full items-center justify-center gap-2 rounded-xl bg-purple-600 px-4 py-3 font-bold text-white shadow-md transition-all hover:bg-purple-700 sm:w-auto sm:px-6"
+								class="flex h-full w-full items-center justify-center gap-1.5 rounded-xl bg-purple-600 px-2 py-3 text-xs font-bold text-white shadow-md transition-all hover:bg-purple-700 sm:gap-2 sm:px-6 sm:text-base"
 							>
-								<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<svg
+									class="h-4 w-4 sm:h-5 sm:w-5"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+								>
 									<path
 										stroke-linecap="round"
 										stroke-linejoin="round"
@@ -402,7 +412,9 @@
 										d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
 									/>
 								</svg>
-								<span>{selectedLocation === 'all' ? t.neighborhoods : selectedLocation}</span>
+								<span class="line-clamp-1"
+									>{selectedLocation === 'all' ? t.neighborhoods : selectedLocation}</span
+								>
 							</button>
 
 							{#if isLocationMenuOpen}
@@ -557,11 +569,11 @@
 				</div>
 
 				<!-- Business cards grid -->
-				<div class="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-6">
+				<div class="flex flex-wrap justify-center gap-3 md:grid md:grid-cols-3 md:gap-6">
 					{#each displayedBusinesses as business (business.id)}
 						<a
 							href="/business/{business.id}"
-							class="group flex flex-col overflow-hidden rounded-lg bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md sm:rounded-xl sm:shadow-md sm:hover:shadow-xl"
+							class="group flex w-[calc(50%-6px)] flex-col overflow-hidden rounded-lg bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md sm:w-auto sm:rounded-xl sm:shadow-md sm:hover:shadow-xl"
 						>
 							<!-- Banner Image -->
 							{#if business.banner}
@@ -653,11 +665,11 @@
 						</div>
 					</div>
 
-					<div class="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-6">
+					<div class="flex flex-wrap justify-center gap-3 md:grid md:grid-cols-3 md:gap-6">
 						{#each newestBusinesses as business (business.id)}
 							<a
 								href="/business/{business.id}"
-								class="group flex flex-col overflow-hidden rounded-lg border-t-2 border-green-500 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md sm:rounded-xl sm:border-t-4 sm:shadow-md sm:hover:shadow-xl"
+								class="group flex w-[calc(50%-6px)] flex-col overflow-hidden rounded-lg border-t-2 border-green-500 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md sm:w-auto sm:rounded-xl sm:border-t-4 sm:shadow-md sm:hover:shadow-xl"
 							>
 								<!-- Banner Image -->
 								{#if business.banner}
@@ -767,13 +779,11 @@
 						></div>
 					</div>
 
-					<div
-						class="grid grid-cols-3 gap-3 px-2 sm:flex sm:flex-wrap sm:justify-center sm:gap-8 sm:px-4"
-					>
+					<div class="flex flex-wrap justify-center gap-3 px-2 sm:gap-8 sm:px-4">
 						{#each filteredBusinesses as business (business.id)}
 							<a
 								href="/business/{business.id}"
-								class="group relative flex aspect-square w-full items-center justify-center rounded-xl border border-gray-100 bg-white p-2 shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-xl sm:h-32 sm:w-32 sm:rounded-2xl sm:p-4"
+								class="group relative flex aspect-square w-[calc(33.33%-8px)] items-center justify-center rounded-xl border border-gray-100 bg-white p-2 shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-xl sm:h-32 sm:w-32 sm:rounded-2xl sm:p-4"
 								title={business.name}
 							>
 								{#if business.logo}

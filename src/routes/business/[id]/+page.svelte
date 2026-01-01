@@ -2,10 +2,17 @@
 	import { onMount } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
 	import IsraelMap from '$lib/components/IsraelMap.svelte';
+	import { lang, translations } from '$lib/i18n';
 
 	/** @type {{ data: any }} */
 	let { data } = $props();
 	const business = $derived(data.business);
+
+	// Support for Svelte 5 state-like behavior from store
+	let currentLang = $state('he');
+	lang.subscribe((v) => (currentLang = v));
+
+	const t = $derived(/** @type {any} */ (translations)[currentLang]);
 
 	let currentImageIndex = $state(0);
 	/** @type {any} */
@@ -57,7 +64,7 @@
 </script>
 
 <svelte:head>
-	<title>{business.name} - יוצאים לחירות</title>
+	<title>{business.name} - {t.title}</title>
 </svelte:head>
 
 <main class="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
@@ -68,7 +75,7 @@
 			<div class="mb-4 flex items-center justify-end gap-2">
 				<span class="text-xl font-bold text-yellow-500">{averageRating}</span>
 				<span class="text-xl text-yellow-400">{renderStars(averageRating)}</span>
-				<span class="text-sm text-gray-500">({reviews.length} חוות דעת)</span>
+				<span class="text-sm text-gray-500">({reviews.length} {t.reviews})</span>
 			</div>
 			<p class="text-xl text-gray-600">{business.category}</p>
 
@@ -78,7 +85,7 @@
 						href="tel:{business.phone}"
 						class="flex items-center gap-2 rounded-full border border-blue-600 px-6 py-2 font-bold text-blue-600 transition hover:bg-blue-600 hover:text-white"
 					>
-						<span>התקשרו עכשיו</span>
+						<span>{t.callNow}</span>
 						<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 							<path
 								stroke-linecap="round"
@@ -95,7 +102,7 @@
 						target="_blank"
 						class="flex items-center gap-2 rounded-full bg-blue-600 px-6 py-2 font-bold text-white shadow-lg transition hover:bg-blue-700"
 					>
-						<span>לאתר העסק</span>
+						<span>{t.businessSite}</span>
 						<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 							<path
 								stroke-linecap="round"
@@ -168,56 +175,56 @@
 
 			<!-- Description -->
 			<section class="mb-12">
-				<h2 class="mb-4 text-2xl font-bold text-gray-800">על העסק</h2>
+				<h2 class="mb-4 text-2xl font-bold text-gray-800">{t.aboutBusiness}</h2>
 				<div
 					class="rounded-2xl border border-blue-50 bg-blue-50/30 p-8 text-lg leading-relaxed text-gray-700"
 				>
-					{business.description || 'אין תיאור זמין לעסק זה.'}
+					{business.description || t.noDescription}
 				</div>
 			</section>
 
 			<!-- Reviews Section -->
 			<section>
 				<div class="mb-6 flex items-center justify-between">
-					<h2 class="text-2xl font-bold text-gray-800">חוות דעת של לקוחות</h2>
+					<h2 class="text-2xl font-bold text-gray-800">{t.reviews}</h2>
 					<button
 						onclick={() => (showReviewForm = !showReviewForm)}
 						class="text-sm font-bold text-blue-600 hover:underline"
 					>
-						{showReviewForm ? 'ביטול' : 'הוסף חוות דעת'}
+						{showReviewForm ? t.cancel : t.addReview}
 					</button>
 				</div>
 
 				{#if showReviewForm}
 					<div in:fly={{ y: 20 }} class="mb-8 rounded-2xl bg-gray-50 p-6 shadow-inner">
-						<h3 class="mb-4 font-bold text-gray-800">מה דעתך על העסק?</h3>
+						<h3 class="mb-4 font-bold text-gray-800">{t.whatDoYouThink}</h3>
 						<div class="space-y-4">
 							<input
 								type="text"
 								bind:value={newReview.user}
-								placeholder="השם שלך"
+								placeholder={t.yourNamePlaceholder}
 								class="w-full rounded-lg border border-gray-200 p-2"
 							/>
 							<select
 								bind:value={newReview.rating}
 								class="w-full rounded-lg border border-gray-200 p-2"
 							>
-								<option value={5}>5 כוכבים - מעולה</option>
-								<option value={4}>4 כוכבים - טוב מאוד</option>
-								<option value={3}>3 כוכבים - בסדר</option>
-								<option value={2}>2 כוכבים - טעון שיפור</option>
-								<option value={1}>1 כוכב - גרוע</option>
+								<option value={5}>5 ★ - Excellent</option>
+								<option value={4}>4 ★ - Good</option>
+								<option value={3}>3 ★ - Okay</option>
+								<option value={2}>2 ★ - Needs improvement</option>
+								<option value={1}>1 ★ - Bad</option>
 							</select>
 							<textarea
 								bind:value={newReview.comment}
-								placeholder="כתוב כאן את חוות הדעת שלך..."
+								placeholder={t.reviewPlaceholder}
 								class="h-32 w-full rounded-lg border border-gray-200 p-2"
 							></textarea>
 							<button
 								onclick={submitReview}
 								class="rounded-full bg-blue-600 px-6 py-2 font-bold text-white transition hover:bg-blue-700"
 							>
-								שלח חוות דעת
+								{t.submitReview}
 							</button>
 						</div>
 					</div>
@@ -242,7 +249,7 @@
 		<div class="space-y-8">
 			<!-- Info Card -->
 			<div class="rounded-3xl border border-gray-100 bg-white p-8 shadow-xl">
-				<h3 class="mb-6 text-xl font-bold text-gray-800">פרטי קשר ומיקום</h3>
+				<h3 class="mb-6 text-xl font-bold text-gray-800">{t.contactInfo}</h3>
 
 				<div class="space-y-6">
 					{#if business.address}
@@ -287,7 +294,7 @@
 								</svg>
 							</div>
 							<div>
-								<p class="font-bold text-green-700">הטבה בלעדית</p>
+								<p class="font-bold text-green-700">{t.exclusiveBenefit}</p>
 								<p class="text-green-800">{business.discount}</p>
 							</div>
 						</div>
@@ -308,7 +315,7 @@
 								</svg>
 							</div>
 							<div>
-								<p class="font-bold text-gray-800">משלוחים</p>
+								<p class="font-bold text-gray-800">{t.deliveries}</p>
 								<p class="text-gray-600">{business.deliveries}</p>
 							</div>
 						</div>
@@ -319,16 +326,16 @@
 			<!-- Map & Territory Section -->
 			<div class="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-xl">
 				<div class="bg-gray-50 p-6">
-					<h3 class="text-xl font-bold text-gray-800">מיקום ואזורי שירות</h3>
+					<h3 class="text-xl font-bold text-gray-800">{t.serviceZones}</h3>
 					{#if business.address}
 						<p class="mt-1 text-sm text-gray-600">
-							<strong>מיקום העסק:</strong>
+							<strong>{t.businessLocationLabel}</strong>
 							{business.address}
 						</p>
 					{/if}
 					<p class="mt-1 text-sm text-gray-600">
-						<strong>גבולות שירות:</strong>
-						{business.salesArea || 'כל הארץ'}
+						<strong>{t.serviceBorders}</strong>
+						{business.salesArea || t.all}
 					</p>
 				</div>
 
@@ -359,7 +366,7 @@
 							<span
 								class="rounded-lg border border-gray-100 bg-white/90 px-3 py-1 text-xs font-bold text-gray-700 shadow-sm"
 							>
-								מפת אזורי שירות
+								{t.serviceMap}
 							</span>
 						</div>
 						<IsraelMap salesArea={business.salesArea} address={business.address} />
