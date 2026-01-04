@@ -573,7 +573,7 @@
 					{#each displayedBusinesses as business (business.id)}
 						<a
 							href="/business/{business.id}"
-							class="group flex w-[calc(50%-6px)] flex-col overflow-hidden rounded-lg bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md sm:w-auto sm:rounded-xl sm:shadow-md sm:hover:shadow-xl"
+							class="group flex w-[calc(50%-8px)] flex-col overflow-hidden rounded-lg bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md sm:w-auto sm:rounded-xl sm:shadow-md sm:hover:shadow-xl"
 						>
 							<div class="relative h-28 w-full overflow-hidden bg-gray-100 sm:h-48">
 								{#if business.logo}
@@ -687,7 +687,7 @@
 						{#each newestBusinesses as business (business.id)}
 							<a
 								href="/business/{business.id}"
-								class="group flex w-[calc(50%-6px)] flex-col overflow-hidden rounded-lg border-t-2 border-green-500 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md sm:w-auto sm:rounded-xl sm:border-t-4 sm:shadow-md sm:hover:shadow-xl"
+								class="group flex w-[calc(50%-8px)] flex-col overflow-hidden rounded-lg border-t-2 border-green-500 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md sm:w-auto sm:rounded-xl sm:border-t-4 sm:shadow-md sm:hover:shadow-xl"
 							>
 								<div class="relative h-28 w-full overflow-hidden bg-gray-100 sm:h-48">
 									{#if business.logo}
