@@ -82,19 +82,27 @@
 		const trimmedUrl = url.trim();
 
 		// אם זה קישור של גוגל דרייב
-		if (trimmedUrl.includes('drive.google.com')) {
+		if (trimmedUrl.includes('drive.google.com') || trimmedUrl.includes('googledrive.com')) {
 			let id = '';
-			if (trimmedUrl.includes('id=')) {
-				const idMatch = trimmedUrl.match(/id=([^&]+)/);
-				id = idMatch ? idMatch[1] : '';
-			} else if (trimmedUrl.includes('/file/d/')) {
-				const idMatch = trimmedUrl.match(/\/file\/d\/([^/]+)/);
-				id = idMatch ? idMatch[1] : '';
+			// דפוסים שונים לזיהוי ID של קובץ בגוגל דרייב
+			const idPatterns = [
+				/\/file\/d\/([a-zA-Z0-9_-]+)/,
+				/id=([a-zA-Z0-9_-]+)/,
+				/\/d\/([a-zA-Z0-9_-]+)/,
+				/drive\/folders\/([a-zA-Z0-9_-]+)/
+			];
+			
+			for (const pattern of idPatterns) {
+				const match = trimmedUrl.match(pattern);
+				if (match && match[1]) {
+					id = match[1];
+					break;
+				}
 			}
 
 			if (id) {
-				// We use thumbnail URL which is often more stable and doesn't require explicit "export=view" perms sometimes
-				return `https://drive.google.com/thumbnail?id=${id}&sz=w1000`;
+				// thumbnail endpoint yields better results for direct embedding
+				return `https://drive.google.com/thumbnail?id=${id}&sz=w600`;
 			}
 		}
 		return trimmedUrl;
@@ -596,7 +604,6 @@
 							href="/business/{business.id}"
 							class="group flex w-[calc(50%-6px)] flex-col overflow-hidden rounded-lg bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md sm:w-auto sm:rounded-xl sm:shadow-md sm:hover:shadow-xl"
 						>
-							<!-- Banner Image -->
 								<div class="relative h-28 w-full overflow-hidden bg-gray-100 sm:h-48">
 									{#if business.logo}
 										<img
@@ -606,7 +613,8 @@
 											loading="lazy"
 											onerror={(e) => {
 												const img = /** @type {HTMLImageElement} */ (e.target);
-												if (business.fallbackLogo && img.src !== business.fallbackLogo) {
+												if (business.fallbackLogo && !img.dataset.fallbackTried) {
+													img.dataset.fallbackTried = 'true';
 													img.src = business.fallbackLogo;
 												} else {
 													img.style.display = 'none';
@@ -621,11 +629,10 @@
 											class="h-full w-full object-cover opacity-30 transition duration-500 group-hover:scale-105"
 											loading="lazy"
 										/>
+									{:else}
+										<div class="h-full w-full bg-gradient-to-r from-blue-500 to-purple-500 opacity-20"></div>
 									{/if}
 								</div>
-							{:else}
-								<div class="h-2 bg-gradient-to-r from-blue-500 to-purple-500 sm:h-3"></div>
-							{/if}
 
 							<div class="flex flex-1 flex-col p-3 sm:p-6">
 								<!-- Header: Name & Category -->
@@ -709,7 +716,6 @@
 								href="/business/{business.id}"
 								class="group flex w-[calc(50%-6px)] flex-col overflow-hidden rounded-lg border-t-2 border-green-500 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md sm:w-auto sm:rounded-xl sm:border-t-4 sm:shadow-md sm:hover:shadow-xl"
 							>
-								<!-- Banner Image -->
 								<div class="relative h-28 w-full overflow-hidden bg-gray-100 sm:h-48">
 									{#if business.logo}
 										<img
@@ -719,7 +725,8 @@
 											loading="lazy"
 											onerror={(e) => {
 												const img = /** @type {HTMLImageElement} */ (e.target);
-												if (business.fallbackLogo && img.src !== business.fallbackLogo) {
+												if (business.fallbackLogo && !img.dataset.fallbackTried) {
+													img.dataset.fallbackTried = 'true';
 													img.src = business.fallbackLogo;
 												} else {
 													img.style.display = 'none';
@@ -734,13 +741,15 @@
 											class="h-full w-full object-cover opacity-30 transition duration-500 group-hover:scale-105"
 											loading="lazy"
 										/>
+									{:else}
+										<div class="h-full w-full bg-gradient-to-r from-green-500 to-blue-500 opacity-20"></div>
 									{/if}
-										<div
-											class="absolute top-1 right-1 rounded bg-green-600 px-1.5 py-0.5 text-[8px] font-bold text-white shadow-sm sm:top-2 sm:right-2 sm:rounded-lg sm:px-2 sm:py-1 sm:text-[10px]"
-										>
-											חדש
-										</div>
+									<div
+										class="absolute top-1 right-1 z-20 rounded bg-green-600 px-1.5 py-0.5 text-[8px] font-bold text-white shadow-sm sm:top-2 sm:right-2 sm:rounded-lg sm:px-2 sm:py-1 sm:text-[10px]"
+									>
+										חדש
 									</div>
+								</div>
 								{:else}
 									<div class="h-2 bg-gradient-to-r from-green-500 to-blue-500 sm:h-3"></div>
 								{/if}
@@ -849,7 +858,8 @@
 										loading="lazy"
 										onerror={(e) => {
 											const img = /** @type {HTMLImageElement} */ (e.target);
-											if (business.fallbackLogo && img.src !== business.fallbackLogo) {
+											if (business.fallbackLogo && !img.dataset.fallbackTried) {
+												img.dataset.fallbackTried = 'true';
 												img.src = business.fallbackLogo;
 											}
 										}}
