@@ -29,7 +29,8 @@ export async function load({ fetch, params }) {
                     id = idMatch ? idMatch[1] : '';
                 }
                 if (id) {
-                    return `https://drive.google.com/uc?export=view&id=${id}`;
+                    // Using thumbnail endpoint is often more reliable for direct embedding
+                    return `https://drive.google.com/thumbnail?id=${id}&sz=w1000`;
                 }
             }
             return trimmedUrl;

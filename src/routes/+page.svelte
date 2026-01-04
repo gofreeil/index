@@ -93,7 +93,8 @@
 			}
 
 			if (id) {
-				return `https://drive.google.com/uc?export=view&id=${id}`;
+				// We use thumbnail URL which is often more stable and doesn't require explicit "export=view" perms sometimes
+				return `https://drive.google.com/thumbnail?id=${id}&sz=w1000`;
 			}
 		}
 		return trimmedUrl;
@@ -596,14 +597,31 @@
 							class="group flex w-[calc(50%-6px)] flex-col overflow-hidden rounded-lg bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md sm:w-auto sm:rounded-xl sm:shadow-md sm:hover:shadow-xl"
 						>
 							<!-- Banner Image -->
-							{#if business.banner}
 								<div class="relative h-28 w-full overflow-hidden bg-gray-100 sm:h-48">
-									<img
-										src={business.banner}
-										alt={business.name}
-										class="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-										loading="lazy"
-									/>
+									{#if business.logo}
+										<img
+											src={business.logo}
+											alt={business.name}
+											class="absolute inset-0 z-10 h-full w-full object-contain p-2 transition duration-500 group-hover:scale-105"
+											loading="lazy"
+											onerror={(e) => {
+												const img = /** @type {HTMLImageElement} */ (e.target);
+												if (business.fallbackLogo && img.src !== business.fallbackLogo) {
+													img.src = business.fallbackLogo;
+												} else {
+													img.style.display = 'none';
+												}
+											}}
+										/>
+									{/if}
+									{#if business.banner}
+										<img
+											src={business.banner}
+											alt={business.name}
+											class="h-full w-full object-cover opacity-30 transition duration-500 group-hover:scale-105"
+											loading="lazy"
+										/>
+									{/if}
 								</div>
 							{:else}
 								<div class="h-2 bg-gradient-to-r from-blue-500 to-purple-500 sm:h-3"></div>
@@ -692,14 +710,31 @@
 								class="group flex w-[calc(50%-6px)] flex-col overflow-hidden rounded-lg border-t-2 border-green-500 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md sm:w-auto sm:rounded-xl sm:border-t-4 sm:shadow-md sm:hover:shadow-xl"
 							>
 								<!-- Banner Image -->
-								{#if business.banner}
-									<div class="relative h-28 w-full overflow-hidden bg-gray-100 sm:h-48">
+								<div class="relative h-28 w-full overflow-hidden bg-gray-100 sm:h-48">
+									{#if business.logo}
+										<img
+											src={business.logo}
+											alt={business.name}
+											class="absolute inset-0 z-10 h-full w-full object-contain p-2 transition duration-500 group-hover:scale-105"
+											loading="lazy"
+											onerror={(e) => {
+												const img = /** @type {HTMLImageElement} */ (e.target);
+												if (business.fallbackLogo && img.src !== business.fallbackLogo) {
+													img.src = business.fallbackLogo;
+												} else {
+													img.style.display = 'none';
+												}
+											}}
+										/>
+									{/if}
+									{#if business.banner}
 										<img
 											src={business.banner}
 											alt={business.name}
-											class="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+											class="h-full w-full object-cover opacity-30 transition duration-500 group-hover:scale-105"
 											loading="lazy"
 										/>
+									{/if}
 										<div
 											class="absolute top-1 right-1 rounded bg-green-600 px-1.5 py-0.5 text-[8px] font-bold text-white shadow-sm sm:top-2 sm:right-2 sm:rounded-lg sm:px-2 sm:py-1 sm:text-[10px]"
 										>
