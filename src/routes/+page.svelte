@@ -79,16 +79,24 @@
 	/** @param {string} url */
 	const getDirectImageUrl = (url) => {
 		if (!url) return '';
+		const trimmedUrl = url.trim();
 
 		// אם זה קישור של גוגל דרייב
-		if (url.includes('drive.google.com') && url.includes('id=')) {
-			const idMatch = url.match(/id=([^&]+)/);
-			if (idMatch && idMatch[1]) {
-				// המרה לפורמט uc?export=view שמציג את התמונה ישירות
-				return `https://drive.google.com/uc?export=view&id=${idMatch[1]}`;
+		if (trimmedUrl.includes('drive.google.com')) {
+			let id = '';
+			if (trimmedUrl.includes('id=')) {
+				const idMatch = trimmedUrl.match(/id=([^&]+)/);
+				id = idMatch ? idMatch[1] : '';
+			} else if (trimmedUrl.includes('/file/d/')) {
+				const idMatch = trimmedUrl.match(/\/file\/d\/([^/]+)/);
+				id = idMatch ? idMatch[1] : '';
+			}
+
+			if (id) {
+				return `https://drive.google.com/uc?export=view&id=${id}`;
 			}
 		}
-		return url;
+		return trimmedUrl;
 	};
 
 	onMount(async () => {
@@ -130,7 +138,13 @@
 					// לוגו מעמודה J (אם הקישור לא זמין תשאיר את הלוגו הנוכחי)
 					const jLogo = row.logoFromColumnJ || '';
 					const currentLogo = row['לוגו'] || '';
-					const finalLogo = jLogo && jLogo.includes('http') ? jLogo : currentLogo;
+
+					// נשמור את שניהם לצורך fallback במידה ואחד שבור
+					const primaryLogo =
+						jLogo && jLogo.includes('http')
+							? getDirectImageUrl(jLogo)
+							: getDirectImageUrl(currentLogo);
+					const fallbackLogo = getDirectImageUrl(currentLogo);
 
 					return {
 						id: row.id,
@@ -147,7 +161,8 @@
 						address: cleanText(row['מיקום המפעל / חנות / מחסן'] || ''),
 						deliveries: cleanText(row['שירות משלוחים'] || ''),
 						website: row['אתר'] || row['Website'] || '',
-						logo: getDirectImageUrl(finalLogo),
+						logo: primaryLogo,
+						fallbackLogo: fallbackLogo,
 						rating: Number(row['דירוג'] || row['Rating'] || 0)
 					};
 				})
@@ -793,10 +808,16 @@
 							>
 								{#if business.logo}
 									<img
-										src={getDirectImageUrl(business.logo)}
+										src={business.logo}
 										alt={business.name}
 										class="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-110"
 										loading="lazy"
+										onerror={(e) => {
+											const img = /** @type {HTMLImageElement} */ (e.target);
+											if (business.fallbackLogo && img.src !== business.fallbackLogo) {
+												img.src = business.fallbackLogo;
+											}
+										}}
 									/>
 								{:else}
 									<div class="flex flex-col items-center justify-center text-center">

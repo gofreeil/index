@@ -18,13 +18,21 @@ export async function load({ fetch, params }) {
         // Helper to format business data
         const getDirectImageUrl = (url) => {
             if (!url) return '';
-            if (url.includes('drive.google.com') && url.includes('id=')) {
-                const idMatch = url.match(/id=([^&]+)/);
-                if (idMatch && idMatch[1]) {
-                    return `https://drive.google.com/uc?export=view&id=${idMatch[1]}`;
+            const trimmedUrl = url.trim();
+            if (trimmedUrl.includes('drive.google.com')) {
+                let id = '';
+                if (trimmedUrl.includes('id=')) {
+                    const idMatch = trimmedUrl.match(/id=([^&]+)/);
+                    id = idMatch ? idMatch[1] : '';
+                } else if (trimmedUrl.includes('/file/d/')) {
+                    const idMatch = trimmedUrl.match(/\/file\/d\/([^/]+)/);
+                    id = idMatch ? idMatch[1] : '';
+                }
+                if (id) {
+                    return `https://drive.google.com/uc?export=view&id=${id}`;
                 }
             }
-            return url;
+            return trimmedUrl;
         };
 
         const findValue = (row, partialKey) => {
@@ -51,7 +59,8 @@ export async function load({ fetch, params }) {
         // לוגו מעמודה J (אם הקישור לא זמין תשאיר את הלוגו הנוכחי)
         const jLogo = business.logoFromColumnJ || '';
         const currentLogo = business['לוגו'] || '';
-        const finalLogo = (jLogo && jLogo.includes('http')) ? jLogo : currentLogo;
+        const primaryLogo = (jLogo && jLogo.includes('http')) ? getDirectImageUrl(jLogo) : getDirectImageUrl(currentLogo);
+        const fallbackLogo = getDirectImageUrl(currentLogo);
 
         const formattedBusiness = {
             id: business.id,
@@ -65,7 +74,8 @@ export async function load({ fetch, params }) {
             address: cleanText(business['מיקום המפעל / חנות / מחסן'] || ''),
             deliveries: cleanText(business['שירות משלוחים'] || ''),
             website: business['אתר'] || business['Website'] || '',
-            logo: getDirectImageUrl(finalLogo) || ''
+            logo: primaryLogo,
+            fallbackLogo: fallbackLogo
         };
 
         return {

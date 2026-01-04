@@ -121,7 +121,17 @@
 			class="order-first h-40 w-40 overflow-hidden rounded-2xl bg-white p-4 shadow-xl md:order-last md:h-56 md:w-56"
 		>
 			{#if business.logo}
-				<img src={business.logo} alt="לוגו {business.name}" class="h-full w-full object-contain" />
+				<img
+					src={business.logo}
+					alt="לוגו {business.name}"
+					class="h-full w-full object-contain"
+					onerror={(e) => {
+						const img = /** @type {HTMLImageElement} */ (e.target);
+						if (business.fallbackLogo && img.src !== business.fallbackLogo) {
+							img.src = business.fallbackLogo;
+						}
+					}}
+				/>
 			{:else}
 				<div class="flex h-full w-full items-center justify-center bg-gray-100 text-gray-400">
 					<svg class="h-20 w-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
