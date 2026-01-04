@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import IsraelMap from '$lib/components/IsraelMap.svelte';
 	import { lang, translations } from '$lib/i18n';
-	import goldStar from '$lib/assets/gold-star.png';
+	import fiveStars from '$lib/assets/five-stars.png';
 
 	// Handle Language
 	let currentLang = $state('he');
@@ -522,15 +522,13 @@
 					>
 						{t.topRated}
 					</h2>
-					<div class="mt-4 flex justify-center -space-x-1 sm:-space-x-2" dir="ltr">
-						{#each Array(5) as _, i}
-							<img
-								src={goldStar}
-								alt="כוכב זהב"
-								class="animate-star-entry h-10 w-10 object-contain drop-shadow-lg transition-transform hover:scale-110 sm:h-16 sm:w-16"
-								style="animation-delay: {i * 0.15}s; opacity: 0; animation-fill-mode: forwards;"
-							/>
-						{/each}
+					<div class="mt-4 flex justify-center" dir="ltr">
+						<img
+							src={fiveStars}
+							alt="חמישה כוכבי זהב"
+							class="animate-scatter-gather h-16 object-contain drop-shadow-2xl sm:h-24"
+							style="opacity: 0; animation-fill-mode: forwards;"
+						/>
 					</div>
 				</div>
 
@@ -915,18 +913,27 @@
 		-webkit-box-orient: vertical;
 		overflow: hidden;
 	}
-	.animate-star-entry {
-		animation: star-entry 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+	.animate-scatter-gather {
+		animation: scatter-gather 1.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 	}
 
-	@keyframes star-entry {
+	@keyframes scatter-gather {
 		0% {
 			opacity: 0;
-			transform: scale(0.5) translateY(20px) rotate(-15deg);
+			transform: scale(3) rotate(10deg);
+			filter: blur(20px);
+		}
+		40% {
+			opacity: 1;
+			transform: scale(0.9) rotate(-5deg);
+			filter: blur(0px);
+		}
+		70% {
+			transform: scale(1.05) rotate(2deg);
 		}
 		100% {
-			opacity: 1;
-			transform: scale(1) translateY(0) rotate(0deg);
+			transform: scale(1) rotate(0deg);
+			filter: blur(0px);
 		}
 	}
 
