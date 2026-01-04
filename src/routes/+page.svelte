@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import IsraelMap from '$lib/components/IsraelMap.svelte';
 	import { lang, translations } from '$lib/i18n';
-	import fiveStars from '$lib/assets/five-stars.png';
+	import goldStar from '$lib/assets/gold-star.png';
 
 	// Handle Language
 	let currentLang = $state('he');
@@ -522,13 +522,15 @@
 					>
 						{t.topRated}
 					</h2>
-					<div class="mt-4 flex justify-center" dir="ltr">
-						<img
-							src={fiveStars}
-							alt="חמישה כוכבי זהב"
-							class="animate-scatter-gather h-16 object-contain drop-shadow-2xl sm:h-24"
-							style="opacity: 0; animation-fill-mode: forwards;"
-						/>
+					<div class="mt-4 flex justify-center -space-x-1 sm:-space-x-2" dir="ltr">
+						{#each [{ tx: '-100px', ty: '-50px', r: '-45deg', d: '0s' }, { tx: '-50px', ty: '80px', r: '30deg', d: '0.1s' }, { tx: '0px', ty: '-100px', r: '180deg', d: '0.2s' }, { tx: '50px', ty: '60px', r: '-20deg', d: '0.3s' }, { tx: '100px', ty: '-40px', r: '90deg', d: '0.4s' }] as star, i}
+							<img
+								src={goldStar}
+								alt="כוכב זהב"
+								class="animate-converge h-10 w-10 object-contain drop-shadow-lg sm:h-16 sm:w-16"
+								style="--tx: {star.tx}; --ty: {star.ty}; --r: {star.r}; animation-delay: {star.d}; opacity: 0; animation-fill-mode: forwards;"
+							/>
+						{/each}
 					</div>
 				</div>
 
@@ -913,19 +915,22 @@
 		-webkit-box-orient: vertical;
 		overflow: hidden;
 	}
-	.animate-scatter-gather {
-		animation: scatter-gather 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+	.animate-converge {
+		animation: converge 1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 	}
 
-	@keyframes scatter-gather {
+	@keyframes converge {
 		0% {
 			opacity: 0;
-			transform: scale(2);
+			transform: translate(var(--tx), var(--ty)) rotate(var(--r)) scale(3);
 			filter: blur(10px);
+		}
+		60% {
+			opacity: 1;
 		}
 		100% {
 			opacity: 1;
-			transform: scale(1);
+			transform: translate(0, 0) rotate(0deg) scale(1);
 			filter: blur(0px);
 		}
 	}
