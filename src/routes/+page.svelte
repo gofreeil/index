@@ -522,13 +522,13 @@
 					>
 						{t.topRated}
 					</h2>
-					<div class="mt-4 flex justify-center gap-1 sm:gap-2">
+					<div class="mt-4 flex justify-center -space-x-1 sm:-space-x-2" dir="ltr">
 						{#each Array(5) as _, i}
 							<img
 								src={goldStar}
 								alt="כוכב זהב"
-								class="h-8 w-8 animate-pulse object-contain drop-shadow-lg transition-transform hover:scale-110 sm:h-12 sm:w-12"
-								style="animation-delay: {i * 0.2}s; animation-duration: 3s;"
+								class="animate-star-entry h-10 w-10 object-contain drop-shadow-lg transition-transform hover:scale-110 sm:h-16 sm:w-16"
+								style="animation-delay: {i * 0.15}s; opacity: 0; animation-fill-mode: forwards;"
 							/>
 						{/each}
 					</div>
@@ -911,11 +911,23 @@
 	.line-clamp-3 {
 		display: -webkit-box;
 		-webkit-line-clamp: 3;
+		line-clamp: 3;
 		-webkit-box-orient: vertical;
 		overflow: hidden;
 	}
-	.animate-jump-limited {
-		animation: jump-limited 1s ease-in-out 3;
+	.animate-star-entry {
+		animation: star-entry 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+	}
+
+	@keyframes star-entry {
+		0% {
+			opacity: 0;
+			transform: scale(0.5) translateY(20px) rotate(-15deg);
+		}
+		100% {
+			opacity: 1;
+			transform: scale(1) translateY(0) rotate(0deg);
+		}
 	}
 
 	@keyframes jump-limited {
