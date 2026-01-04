@@ -113,6 +113,7 @@ export async function GET() {
           business[header] = row[i] || '';
         });
         business.id = index;
+        business.logoFromColumnJ = row[9] || '';
         return business;
       });
 

@@ -127,6 +127,11 @@
 						return !cleaned || /^[,\s:\-\.\|]+$/.test(cleaned) ? '' : cleaned;
 					};
 
+					// לוגו מעמודה J (אם הקישור לא זמין תשאיר את הלוגו הנוכחי)
+					const jLogo = row.logoFromColumnJ || '';
+					const currentLogo = row['לוגו'] || '';
+					const finalLogo = jLogo && jLogo.includes('http') ? jLogo : currentLogo;
+
 					return {
 						id: row.id,
 						name: row['שם העסק או השירות '] || row['שם העסק'] || 'ללא שם',
@@ -142,7 +147,7 @@
 						address: cleanText(row['מיקום המפעל / חנות / מחסן'] || ''),
 						deliveries: cleanText(row['שירות משלוחים'] || ''),
 						website: row['אתר'] || row['Website'] || '',
-						logo: row['לוגו'] || '',
+						logo: getDirectImageUrl(finalLogo),
 						rating: Number(row['דירוג'] || row['Rating'] || 0)
 					};
 				})

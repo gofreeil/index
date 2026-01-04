@@ -48,6 +48,11 @@ export async function load({ fetch, params }) {
             return !cleaned || /^[,\s:\-\.\|]+$/.test(cleaned) ? '' : cleaned;
         };
 
+        // לוגו מעמודה J (אם הקישור לא זמין תשאיר את הלוגו הנוכחי)
+        const jLogo = business.logoFromColumnJ || '';
+        const currentLogo = business['לוגו'] || '';
+        const finalLogo = (jLogo && jLogo.includes('http')) ? jLogo : currentLogo;
+
         const formattedBusiness = {
             id: business.id,
             name: business['שם העסק או השירות '] || business['שם העסק'] || 'ללא שם',
@@ -60,7 +65,7 @@ export async function load({ fetch, params }) {
             address: cleanText(business['מיקום המפעל / חנות / מחסן'] || ''),
             deliveries: cleanText(business['שירות משלוחים'] || ''),
             website: business['אתר'] || business['Website'] || '',
-            logo: getDirectImageUrl(business['לוגו']) || ''
+            logo: getDirectImageUrl(finalLogo) || ''
         };
 
         return {
