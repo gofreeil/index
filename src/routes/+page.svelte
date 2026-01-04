@@ -914,25 +914,18 @@
 		overflow: hidden;
 	}
 	.animate-scatter-gather {
-		animation: scatter-gather 1.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+		animation: scatter-gather 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 	}
 
 	@keyframes scatter-gather {
 		0% {
 			opacity: 0;
-			transform: scale(3) rotate(10deg);
-			filter: blur(20px);
-		}
-		40% {
-			opacity: 1;
-			transform: scale(0.9) rotate(-5deg);
-			filter: blur(0px);
-		}
-		70% {
-			transform: scale(1.05) rotate(2deg);
+			transform: scale(2);
+			filter: blur(10px);
 		}
 		100% {
-			transform: scale(1) rotate(0deg);
+			opacity: 1;
+			transform: scale(1);
 			filter: blur(0px);
 		}
 	}
