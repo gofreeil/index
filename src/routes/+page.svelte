@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import IsraelMap from '$lib/components/IsraelMap.svelte';
 	import { lang, translations } from '$lib/i18n';
+	import goldStar from '$lib/assets/gold-star.png';
 
 	// Handle Language
 	let currentLang = $state('he');
