@@ -91,7 +91,7 @@
 				/\/d\/([a-zA-Z0-9_-]+)/,
 				/drive\/folders\/([a-zA-Z0-9_-]+)/
 			];
-			
+
 			for (const pattern of idPatterns) {
 				const match = trimmedUrl.match(pattern);
 				if (match && match[1]) {
@@ -604,35 +604,37 @@
 							href="/business/{business.id}"
 							class="group flex w-[calc(50%-6px)] flex-col overflow-hidden rounded-lg bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md sm:w-auto sm:rounded-xl sm:shadow-md sm:hover:shadow-xl"
 						>
-								<div class="relative h-28 w-full overflow-hidden bg-gray-100 sm:h-48">
-									{#if business.logo}
-										<img
-											src={business.logo}
-											alt={business.name}
-											class="absolute inset-0 z-10 h-full w-full object-contain p-2 transition duration-500 group-hover:scale-105"
-											loading="lazy"
-											onerror={(e) => {
-												const img = /** @type {HTMLImageElement} */ (e.target);
-												if (business.fallbackLogo && !img.dataset.fallbackTried) {
-													img.dataset.fallbackTried = 'true';
-													img.src = business.fallbackLogo;
-												} else {
-													img.style.display = 'none';
-												}
-											}}
-										/>
-									{/if}
-									{#if business.banner}
-										<img
-											src={business.banner}
-											alt={business.name}
-											class="h-full w-full object-cover opacity-30 transition duration-500 group-hover:scale-105"
-											loading="lazy"
-										/>
-									{:else}
-										<div class="h-full w-full bg-gradient-to-r from-blue-500 to-purple-500 opacity-20"></div>
-									{/if}
-								</div>
+							<div class="relative h-28 w-full overflow-hidden bg-gray-100 sm:h-48">
+								{#if business.logo}
+									<img
+										src={business.logo}
+										alt={business.name}
+										class="absolute inset-0 z-10 h-full w-full object-contain p-2 transition duration-500 group-hover:scale-105"
+										loading="lazy"
+										onerror={(e) => {
+											const img = /** @type {HTMLImageElement} */ (e.target);
+											if (business.fallbackLogo && !img.dataset.fallbackTried) {
+												img.dataset.fallbackTried = 'true';
+												img.src = business.fallbackLogo;
+											} else {
+												img.style.display = 'none';
+											}
+										}}
+									/>
+								{/if}
+								{#if business.banner}
+									<img
+										src={business.banner}
+										alt={business.name}
+										class="h-full w-full object-cover opacity-30 transition duration-500 group-hover:scale-105"
+										loading="lazy"
+									/>
+								{:else}
+									<div
+										class="h-full w-full bg-gradient-to-r from-blue-500 to-purple-500 opacity-20"
+									></div>
+								{/if}
+							</div>
 
 							<div class="flex flex-1 flex-col p-3 sm:p-6">
 								<!-- Header: Name & Category -->
@@ -742,7 +744,9 @@
 											loading="lazy"
 										/>
 									{:else}
-										<div class="h-full w-full bg-gradient-to-r from-green-500 to-blue-500 opacity-20"></div>
+										<div
+											class="h-full w-full bg-gradient-to-r from-green-500 to-blue-500 opacity-20"
+										></div>
 									{/if}
 									<div
 										class="absolute top-1 right-1 z-20 rounded bg-green-600 px-1.5 py-0.5 text-[8px] font-bold text-white shadow-sm sm:top-2 sm:right-2 sm:rounded-lg sm:px-2 sm:py-1 sm:text-[10px]"
@@ -750,9 +754,6 @@
 										חדש
 									</div>
 								</div>
-								{:else}
-									<div class="h-2 bg-gradient-to-r from-green-500 to-blue-500 sm:h-3"></div>
-								{/if}
 
 								<div class="flex flex-1 flex-col p-3 sm:p-6">
 									<!-- Header: Name & Category -->

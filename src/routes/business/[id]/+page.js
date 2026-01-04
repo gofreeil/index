@@ -19,18 +19,23 @@ export async function load({ fetch, params }) {
         const getDirectImageUrl = (url) => {
             if (!url) return '';
             const trimmedUrl = url.trim();
-            if (trimmedUrl.includes('drive.google.com')) {
+            if (trimmedUrl.includes('drive.google.com') || trimmedUrl.includes('googledrive.com')) {
                 let id = '';
-                if (trimmedUrl.includes('id=')) {
-                    const idMatch = trimmedUrl.match(/id=([^&]+)/);
-                    id = idMatch ? idMatch[1] : '';
-                } else if (trimmedUrl.includes('/file/d/')) {
-                    const idMatch = trimmedUrl.match(/\/file\/d\/([^/]+)/);
-                    id = idMatch ? idMatch[1] : '';
+                const idPatterns = [
+                    /\/file\/d\/([a-zA-Z0-9_-]+)/,
+                    /id=([a-zA-Z0-9_-]+)/,
+                    /\/d\/([a-zA-Z0-9_-]+)/,
+                    /drive\/folders\/([a-zA-Z0-9_-]+)/
+                ];
+                for (const pattern of idPatterns) {
+                    const match = trimmedUrl.match(pattern);
+                    if (match && match[1]) {
+                        id = match[1];
+                        break;
+                    }
                 }
                 if (id) {
-                    // Using thumbnail endpoint is often more reliable for direct embedding
-                    return `https://drive.google.com/thumbnail?id=${id}&sz=w1000`;
+                    return `https://drive.google.com/thumbnail?id=${id}&sz=w800`;
                 }
             }
             return trimmedUrl;
