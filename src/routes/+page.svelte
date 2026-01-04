@@ -522,41 +522,14 @@
 					>
 						{t.topRated}
 					</h2>
-					<div class="mt-4 flex gap-2">
+					<div class="mt-4 flex justify-center gap-1 sm:gap-2">
 						{#each Array(5) as _, i}
-							<svg
-								class="h-10 w-10 animate-pulse drop-shadow-md"
-								viewBox="0 0 24 24"
-								style="animation-delay: {i * 0.2}s; animation-duration: 2s;"
-							>
-								<defs>
-									<linearGradient id="luxury-gold-{i}" x1="0%" y1="0%" x2="100%" y2="100%">
-										<stop offset="0%" style="stop-color:#FDB931" />
-										<stop offset="45%" style="stop-color:#F5C148" />
-										<stop offset="55%" style="stop-color:#D4AF37" />
-										<stop offset="100%" style="stop-color:#AA771C" />
-									</linearGradient>
-									<filter id="glow-{i}" height="130%" width="130%">
-										<feGaussianBlur in="SourceAlpha" stdDeviation="1" />
-										<feOffset dx="0" dy="1" result="offsetblur" />
-										<feComponentTransfer>
-											<feFuncA type="linear" slope="0.3" />
-										</feComponentTransfer>
-										<feMerge>
-											<feMergeNode />
-											<feMergeNode in="SourceGraphic" />
-										</feMerge>
-									</filter>
-								</defs>
-								<path
-									filter="url(#glow-{i})"
-									fill="url(#luxury-gold-{i})"
-									d="M12,2 L14.7,8.3 L21.6,9 L16.4,13.5 L17.9,20.2 L12,16.7 L6.1,20.2 L7.6,13.5 L2.4,9 L9.3,8.3 L12,2 Z"
-									stroke="#B8860B"
-									stroke-width="0.5"
-									stroke-linejoin="round"
-								/>
-							</svg>
+							<img
+								src={goldStar}
+								alt="כוכב זהב"
+								class="h-8 w-8 animate-pulse object-contain drop-shadow-lg transition-transform hover:scale-110 sm:h-12 sm:w-12"
+								style="animation-delay: {i * 0.2}s; animation-duration: 3s;"
+							/>
 						{/each}
 					</div>
 				</div>
