@@ -59,6 +59,40 @@ const auth = new google.auth.GoogleAuth({
 
 const sheets = google.sheets({ version: 'v4', auth });
 
+/**
+ * @param {string} url
+ * @returns {string}
+ */
+const getDirectImageUrl = (url) => {
+  if (!url) return '';
+  const trimmedUrl = url.trim();
+
+  // Handle Google Drive links
+  if (trimmedUrl.includes('drive.google.com') || trimmedUrl.includes('googledrive.com')) {
+    let id = '';
+    const idPatterns = [
+      /\/file\/d\/([a-zA-Z0-9_-]+)/,
+      /id=([a-zA-Z0-9_-]+)/,
+      /\/d\/([a-zA-Z0-9_-]+)/,
+      /drive\/folders\/([a-zA-Z0-9_-]+)/
+    ];
+
+    for (const pattern of idPatterns) {
+      const match = trimmedUrl.match(pattern);
+      if (match && match[1]) {
+        id = match[1];
+        break;
+      }
+    }
+
+    if (id) {
+      // thumbnail endpoint is much more reliable for embedding than uc?export=view
+      return `https://drive.google.com/thumbnail?id=${id}&sz=w800`;
+    }
+  }
+  return trimmedUrl;
+};
+
 export async function GET() {
   try {
     const spreadsheetId = clean(SPREADSHEET_ID);
@@ -110,10 +144,26 @@ export async function GET() {
         /** @type {Record<string, any>} */
         const business = {};
         headers.forEach((header, i) => {
-          business[header] = row[i] || '';
+          let value = row[i] || '';
+
+          // Automatically convert Google Drive links in ANY column if they look like links
+          if (typeof value === 'string' && (value.includes('drive.google.com') || value.includes('googledrive.com'))) {
+            // If it's a comma-separated list of links (common for banners)
+            if (value.includes(',')) {
+              value = value.split(',').map(v => getDirectImageUrl(v.trim())).join(',');
+            } else {
+              value = getDirectImageUrl(value);
+            }
+          }
+
+          business[header] = value;
         });
         business.id = index;
-        business.logoFromColumnJ = row[9] || '';
+
+        // Also handle the specific Column J logo
+        const logoFromJ = row[9] || '';
+        business.logoFromColumnJ = getDirectImageUrl(logoFromJ);
+
         return business;
       });
 

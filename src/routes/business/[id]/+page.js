@@ -18,27 +18,7 @@ export async function load({ fetch, params }) {
         // Helper to format business data
         const getDirectImageUrl = (url) => {
             if (!url) return '';
-            const trimmedUrl = url.trim();
-            if (trimmedUrl.includes('drive.google.com') || trimmedUrl.includes('googledrive.com')) {
-                let id = '';
-                const idPatterns = [
-                    /\/file\/d\/([a-zA-Z0-9_-]+)/,
-                    /id=([a-zA-Z0-9_-]+)/,
-                    /\/d\/([a-zA-Z0-9_-]+)/,
-                    /drive\/folders\/([a-zA-Z0-9_-]+)/
-                ];
-                for (const pattern of idPatterns) {
-                    const match = trimmedUrl.match(pattern);
-                    if (match && match[1]) {
-                        id = match[1];
-                        break;
-                    }
-                }
-                if (id) {
-                    return `https://drive.google.com/thumbnail?id=${id}&sz=w800`;
-                }
-            }
-            return trimmedUrl;
+            return url.trim();
         };
 
         const findValue = (row, partialKey) => {
@@ -62,11 +42,11 @@ export async function load({ fetch, params }) {
             return !cleaned || /^[,\s:\-\.\|]+$/.test(cleaned) ? '' : cleaned;
         };
 
-        // לוגו מעמודה J (אם הקישור לא זמין תשאיר את הלוגו הנוכחי)
+        // לוגו מעמודה J (מעובד כבר בשרת)
         const jLogo = business.logoFromColumnJ || '';
         const currentLogo = business['לוגו'] || '';
-        const primaryLogo = (jLogo && jLogo.includes('http')) ? getDirectImageUrl(jLogo) : getDirectImageUrl(currentLogo);
-        const fallbackLogo = getDirectImageUrl(currentLogo);
+        const primaryLogo = jLogo || currentLogo;
+        const fallbackLogo = currentLogo;
 
         const formattedBusiness = {
             id: business.id,
