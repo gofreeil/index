@@ -14,6 +14,9 @@
 
 	const t = $derived(/** @type {any} */ (translations)[currentLang]);
 
+	const PLACEHOLDER_IMG =
+		'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGNsYXNzPSJoLTYgdy02IiBmaWxsPSJub25lIiBzdHJva2U9IiM5Q0EzQUYiIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2Utd2lkdGg9IjIiIGQ9Ik0xOSAyMVY1YTIgMiAwIDAwLTItMkg3YTIgMiAwIDAwLTIgMnYxNm0xNCAwaDJtLTIgMGgtNW0tOSAweDNtMiAwaDVNOSA3aDFtLTEgNGgxbTQtNGgxbS0xIDRoMW0tNSAxMHYtNWExIDEgMCAwMTEtMWgyYTEgMSAwIDAxMSAxdjVtLTQgMGg0IiAvPjwvc3ZnPg==';
+
 	let currentImageIndex = $state(0);
 	/** @type {any} */
 	let interval;
@@ -129,6 +132,11 @@
 						const img = /** @type {HTMLImageElement} */ (e.target);
 						if (business.fallbackLogo && img.src !== business.fallbackLogo) {
 							img.src = business.fallbackLogo;
+						} else {
+							img.src = PLACEHOLDER_IMG;
+							img.style.padding = '20px';
+							img.style.backgroundColor = '#f3f4f6';
+							img.style.objectFit = 'contain';
 						}
 					}}
 				/>
