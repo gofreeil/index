@@ -3,6 +3,7 @@
 	import IsraelMap from '$lib/components/IsraelMap.svelte';
 	import { lang, translations } from '$lib/i18n';
 	import goldStar from '$lib/assets/gold-star.png';
+	import sidebarBanner from '$lib/assets/sidebar-banner.jpg';
 
 	// Handle Language
 	let currentLang = $state('he');
@@ -527,7 +528,7 @@
 							<img
 								src={goldStar}
 								alt="כוכב זהב"
-								class="animate-converge h-10 w-10 object-contain drop-shadow-lg sm:h-16 sm:w-16"
+								class="animate-converge h-10 w-10 object-contain mix-blend-multiply sm:h-16 sm:w-16"
 								style="--tx: {star.tx}; --ty: {star.ty}; --r: {star.r}; animation-delay: {star.d}; opacity: 0; animation-fill-mode: forwards;"
 							/>
 						{/each}
@@ -853,12 +854,25 @@
 		<aside class="hidden w-64 shrink-0 lg:block">
 			<div class="sticky top-32 z-10 space-y-6">
 				<!-- Banner Area -->
-				<div
-					class="flex h-48 flex-col items-center justify-center rounded-2xl border border-yellow-300 bg-gradient-to-br from-yellow-100 to-yellow-200 p-6 text-center shadow-sm"
+				<!-- Banner Area -->
+				<a
+					href="https://www.melecshop.com/"
+					target="_blank"
+					class="group relative flex h-48 flex-col items-center justify-center overflow-hidden rounded-2xl shadow-md transition-shadow hover:shadow-lg"
 				>
-					<span class="text-sm font-bold text-yellow-800">{t.sidebarBannerTitle}</span>
-					<p class="mt-2 text-xs text-yellow-700">{t.sidebarBannerP}</p>
-				</div>
+					<img
+						src={sidebarBanner}
+						alt="Banner"
+						class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+					/>
+					<div class="absolute inset-0 bg-black/40 transition-colors group-hover:bg-black/50"></div>
+					<div class="relative z-10 p-4 text-center">
+						<span class="block text-lg font-bold text-white drop-shadow-md"
+							>{t.sidebarBannerTitle}</span
+						>
+						<p class="mt-2 text-xs font-medium text-white/90 drop-shadow">{t.sidebarBannerP}</p>
+					</div>
+				</a>
 
 				<!-- Advertisements -->
 				<div class="space-y-4">
