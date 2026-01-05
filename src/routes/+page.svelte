@@ -937,7 +937,7 @@
 		0% {
 			opacity: 0;
 			transform: translate(var(--tx), var(--ty)) rotate(var(--r)) scale(3);
-			filter: blur(10px);
+			filter: blur(10px) drop-shadow(0 0 0 rgba(0, 0, 0, 0));
 		}
 		60% {
 			opacity: 1;
@@ -945,7 +945,7 @@
 		100% {
 			opacity: 1;
 			transform: translate(0, 0) rotate(0deg) scale(1);
-			filter: blur(0px);
+			filter: blur(0px) drop-shadow(0px 15px 15px rgba(0, 0, 0, 0.6));
 		}
 	}
 
