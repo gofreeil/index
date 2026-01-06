@@ -3,6 +3,7 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import { lang, translations } from '$lib/i18n';
 	import { get } from 'svelte/store';
+	import VisitorCounter from '$lib/components/VisitorCounter.svelte';
 
 	let { children } = $props();
 
@@ -250,6 +251,7 @@
 				<p class="text-[10px] text-gray-500 sm:text-xs">
 					{t.dedication}
 				</p>
+				<VisitorCounter />
 			</div>
 		</div>
 	</footer>
