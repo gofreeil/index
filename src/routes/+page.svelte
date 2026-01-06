@@ -21,6 +21,8 @@
 	let isLocationMenuOpen = $state(false);
 	let hoveredCategory = $state('');
 	let hoveredCity = $state('');
+	/** @type {Record<number, boolean>} */
+	let failedImages = $state({});
 
 	const categoryHierarchy = {
 		'בית ותחזוקה': [
@@ -543,7 +545,7 @@
 							class="group flex w-[calc(50%-8px)] flex-col overflow-hidden rounded-lg bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md sm:w-auto sm:rounded-xl sm:shadow-md sm:hover:shadow-xl"
 						>
 							<div class="relative h-28 w-full overflow-hidden bg-gray-100 sm:h-48">
-								{#if business.logo}
+								{#if business.logo && !failedImages[business.id]}
 									<img
 										src={business.logo}
 										alt={business.name}
@@ -555,10 +557,7 @@
 												img.dataset.fallbackTried = 'true';
 												img.src = business.fallbackLogo;
 											} else {
-												img.src = PLACEHOLDER_IMG;
-												img.style.padding = '20px';
-												img.style.backgroundColor = '#f3f4f6';
-												img.style.objectFit = 'contain';
+												failedImages[business.id] = true;
 											}
 										}}
 									/>
@@ -660,7 +659,7 @@
 								class="group flex w-[calc(50%-8px)] flex-col overflow-hidden rounded-lg border-t-2 border-green-500 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md sm:w-auto sm:rounded-xl sm:border-t-4 sm:shadow-md sm:hover:shadow-xl"
 							>
 								<div class="relative h-28 w-full overflow-hidden bg-gray-100 sm:h-48">
-									{#if business.logo}
+									{#if business.logo && !failedImages[business.id]}
 										<img
 											src={business.logo}
 											alt={business.name}
@@ -672,10 +671,7 @@
 													img.dataset.fallbackTried = 'true';
 													img.src = business.fallbackLogo;
 												} else {
-													img.src = PLACEHOLDER_IMG;
-													img.style.padding = '20px';
-													img.style.backgroundColor = '#f3f4f6';
-													img.style.objectFit = 'contain';
+													failedImages[business.id] = true;
 												}
 											}}
 										/>
@@ -795,7 +791,7 @@
 								class="group relative flex aspect-square w-[calc(33.33%-8px)] items-center justify-center rounded-xl border border-gray-100 bg-white p-2 shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-xl sm:h-32 sm:w-32 sm:rounded-2xl sm:p-4"
 								title={business.name}
 							>
-								{#if business.logo}
+								{#if business.logo && !failedImages[business.id]}
 									<img
 										src={business.logo}
 										alt={business.name}
@@ -807,10 +803,7 @@
 												img.dataset.fallbackTried = 'true';
 												img.src = business.fallbackLogo;
 											} else {
-												img.src = PLACEHOLDER_IMG;
-												img.style.padding = '8px';
-												img.style.backgroundColor = '#f3f4f6';
-												img.style.borderRadius = '50%';
+												failedImages[business.id] = true;
 											}
 										}}
 									/>

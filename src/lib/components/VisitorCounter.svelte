@@ -34,7 +34,7 @@
 
 {#if count !== null}
 	<div
-		class="mt-2 flex items-center justify-center gap-2 text-xs text-gray-400 opacity-70 transition-opacity hover:opacity-100 sm:text-sm"
+		class="mt-3 flex items-center justify-center gap-2 rounded-full border border-gray-200 bg-white/80 px-4 py-1.5 text-xs font-bold text-gray-700 shadow-sm backdrop-blur-sm transition-all hover:border-blue-300 hover:bg-white hover:text-blue-600 hover:shadow-md sm:text-sm"
 	>
 		<svg
 			xmlns="http://www.w3.org/2000/svg"
