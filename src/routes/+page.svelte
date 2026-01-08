@@ -1,6 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
-	import GoogleBusinessesMap from '$lib/components/GoogleBusinessesMap.svelte';
+	import IsraelMap from '$lib/components/IsraelMap.svelte';
 	import { lang, translations } from '$lib/i18n';
 	import goldStar from '$lib/assets/gold-star.png';
 	import sidebarBanner from '$lib/assets/sidebar-banner.jpg';
@@ -763,9 +763,11 @@
 					</div>
 
 					<div
-						class="h-[600px] w-full overflow-hidden rounded-2xl border border-gray-100 shadow-2xl"
+						class="mx-auto max-w-4xl overflow-hidden rounded-3xl border border-gray-100 bg-white p-2 shadow-2xl"
 					>
-						<GoogleBusinessesMap {businesses} />
+						<div class="rounded-2xl bg-slate-50">
+							<IsraelMap {businesses} showRegions={false} />
+						</div>
 					</div>
 				</div>
 
@@ -870,11 +872,11 @@
 					<h3 class="border-b pb-2 text-lg font-bold text-gray-800">{t.ads}</h3>
 					<div class="grid gap-4">
 						<div
-							class="rounded-xl border-2 border-dashed border-blue-300 bg-gradient-to-br from-blue-50 to-purple-50 p-4 shadow-sm"
+							class="rounded-xl border-2 border-dashed border-orange-400 bg-gradient-to-br from-yellow-50 to-orange-50 p-4 shadow-sm"
 						>
-							<div class="mb-2 flex h-24 w-full items-center justify-center rounded-lg bg-white/50">
+							<div class="mb-2 flex h-24 w-full items-center justify-center rounded-lg bg-white/60">
 								<svg
-									class="h-10 w-10 text-blue-400"
+									class="h-10 w-10 text-orange-400"
 									fill="none"
 									stroke="currentColor"
 									viewBox="0 0 24 24"
@@ -887,8 +889,8 @@
 									/>
 								</svg>
 							</div>
-							<h4 class="text-center text-sm font-bold text-blue-600">מקום פרסום זה</h4>
-							<p class="mt-1 text-center text-xs font-medium text-blue-500">יכול להיות שלך</p>
+							<h4 class="text-center text-sm font-bold text-orange-600">מקום פרסום זה</h4>
+							<p class="mt-1 text-center text-xs font-medium text-orange-500">יכול להיות שלך</p>
 						</div>
 
 						<div class="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
