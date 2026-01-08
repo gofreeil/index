@@ -1,6 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
-	import IsraelMap from '$lib/components/IsraelMap.svelte';
+	import InteractiveMap from '$lib/components/InteractiveMap.svelte';
 	import { lang, translations } from '$lib/i18n';
 	import goldStar from '$lib/assets/gold-star.png';
 	import sidebarBanner from '$lib/assets/sidebar-banner.jpg';
@@ -763,11 +763,9 @@
 					</div>
 
 					<div
-						class="mx-auto max-w-4xl overflow-hidden rounded-3xl border border-gray-100 bg-white p-2 shadow-2xl"
+						class="h-[600px] w-full overflow-hidden rounded-2xl border border-gray-100 shadow-2xl"
 					>
-						<div class="rounded-2xl bg-slate-50">
-							<IsraelMap {businesses} showRegions={false} />
-						</div>
+						<InteractiveMap {businesses} />
 					</div>
 				</div>
 
