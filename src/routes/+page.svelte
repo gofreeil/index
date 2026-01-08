@@ -962,6 +962,39 @@
 		}
 	}
 
+	/* Pulse glow animation for "New" badge */
+	.animate-pulse-glow {
+		animation: pulse-glow 2s ease-in-out infinite;
+	}
+
+	@keyframes pulse-glow {
+		0%,
+		100% {
+			box-shadow: 0 0 20px rgba(34, 197, 94, 0.6);
+			transform: scale(1);
+		}
+		50% {
+			box-shadow:
+				0 0 30px rgba(34, 197, 94, 0.9),
+				0 0 50px rgba(34, 197, 94, 0.5);
+			transform: scale(1.05);
+		}
+	}
+
+	/* Slow spin animation for star icon */
+	.animate-spin-slow {
+		animation: spin-slow 3s linear infinite;
+	}
+
+	@keyframes spin-slow {
+		from {
+			transform: rotate(0deg);
+		}
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
 	@keyframes jump-limited {
 		0%,
 		100% {
