@@ -5,13 +5,16 @@
 	/** @type {{ businesses: any[] }} */
 	let { businesses = [] } = $props();
 
+	/** @type {any} */
 	let mapElement;
+	/** @type {any} */
 	let map;
+	/** @type {any} */
 	let markersLayer;
 
 	let currentLang = $state('he');
 	lang.subscribe((v) => (currentLang = v));
-	const t = $derived(translations[currentLang]);
+	const t = $derived(/** @type {any} */ (translations)[currentLang]);
 
 	// Coordinates for major cities and towns in Israel
 	const CITY_COORDINATES = {
@@ -65,6 +68,7 @@
 	// Sort cities by length descending to match specific names first
 	const sortedCities = Object.entries(CITY_COORDINATES).sort((a, b) => b[0].length - a[0].length);
 
+	/** @param {any} business */
 	function getCoordinates(business) {
 		const address = (business.address || '').toString();
 		const salesArea = (business.salesArea || '').toString();
@@ -83,8 +87,8 @@
 		return null;
 	}
 
-	onMount(async () => {
-		// Load Leaflet CSS and JS
+	onMount(() => {
+		// Load Leaflet CSS
 		const link = document.createElement('link');
 		link.rel = 'stylesheet';
 		link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
@@ -92,6 +96,7 @@
 		link.crossOrigin = '';
 		document.head.appendChild(link);
 
+		// Load Leaflet JS
 		const script = document.createElement('script');
 		script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
 		script.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
@@ -113,22 +118,34 @@
 	function initMap() {
 		if (!mapElement || !window.L) return;
 
-		// Initialize the map centered on Israel
-		map = window.L.map(mapElement, {
-			center: [31.5, 34.9],
+		const L = window.L;
+
+		// Define Israel bounds (approximate)
+		const israelBounds = L.latLngBounds(
+			L.latLng(29.4, 34.2), // Southwest corner (Eilat area)
+			L.latLng(33.3, 35.9) // Northeast corner (Golan Heights)
+		);
+
+		// Initialize the map centered on Israel with bounds restriction
+		map = L.map(mapElement, {
+			center: [31.5, 35.0],
 			zoom: 8,
+			minZoom: 7,
+			maxZoom: 15,
+			maxBounds: israelBounds,
+			maxBoundsViscosity: 1.0, // Prevents dragging outside bounds
 			scrollWheelZoom: true
 		});
 
 		// Add OpenStreetMap tiles
-		window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+		L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 			attribution:
 				'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
 			maxZoom: 19
 		}).addTo(map);
 
 		// Create a layer group for markers
-		markersLayer = window.L.layerGroup().addTo(map);
+		markersLayer = L.layerGroup().addTo(map);
 
 		updateMarkers();
 	}
@@ -136,10 +153,13 @@
 	function updateMarkers() {
 		if (!map || !window.L || !markersLayer) return;
 
+		const L = window.L;
+
 		// Clear existing markers
 		markersLayer.clearLayers();
 
 		let validBusinesses = 0;
+		let skippedBusinesses = 0;
 
 		businesses.forEach((business) => {
 			const coords = getCoordinates(business);
@@ -147,7 +167,7 @@
 				validBusinesses++;
 
 				// Create custom icon
-				const icon = window.L.icon({
+				const icon = L.icon({
 					iconUrl:
 						'data:image/svg+xml;base64,' +
 						btoa(`
@@ -161,7 +181,7 @@
 					popupAnchor: [0, -40]
 				});
 
-				const marker = window.L.marker([coords.lat, coords.lng], { icon }).addTo(markersLayer);
+				const marker = L.marker([coords.lat, coords.lng], { icon }).addTo(markersLayer);
 
 				// Create popup content
 				const popupContent = `
@@ -192,10 +212,14 @@
 					maxWidth: 300,
 					className: 'custom-popup'
 				});
+			} else {
+				skippedBusinesses++;
 			}
 		});
 
-		console.log(`Displayed ${validBusinesses} businesses on the map`);
+		console.log(
+			`✅ Displayed ${validBusinesses} businesses on the map (${skippedBusinesses} skipped - no location found)`
+		);
 	}
 
 	// Reactively update markers when businesses change

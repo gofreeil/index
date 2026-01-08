@@ -762,9 +762,7 @@
 						></div>
 					</div>
 
-					<div
-						class="h-[600px] w-full overflow-hidden rounded-2xl border border-gray-100 shadow-2xl"
-					>
+					<div class="h-[600px] w-full">
 						<InteractiveMap {businesses} />
 					</div>
 				</div>
