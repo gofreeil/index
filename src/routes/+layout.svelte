@@ -32,20 +32,20 @@
 	<title>{t.title} - יוצאים לחירות</title>
 
 	<!-- Meta Tags for Social Media (Open Graph) -->
-	<meta property="og:title" content="מדריך בעלי מקצוע כשרים - יוצאים לחירות" />
+	<meta property="og:title" content="מדריך בעלי מקצוע כשירים - יוצאים לחירות" />
 	<meta
 		property="og:description"
-		content="בעלי מקצוע כשרים בהנחות והטבות ייחודיות לחברי יוצאים לחירות"
+		content="בעלי מקצוע כשירים בהנחות והטבות ייחודיות לחברי יוצאים לחירות"
 	/>
 	<meta property="og:image" content="/og-image.png" />
 	<meta property="og:type" content="website" />
 
 	<!-- Twitter Meta Tags -->
 	<meta name="twitter:card" content="summary_large_image" />
-	<meta name="twitter:title" content="מדריך בעלי מקצוע כשרים - יוצאים לחירות" />
+	<meta name="twitter:title" content="מדריך בעלי מקצוע כשירים - יוצאים לחירות" />
 	<meta
 		name="twitter:description"
-		content="בעלי מקצוע כשרים בהנחות והטבות ייחודיות לחברי יוצאים לחירות"
+		content="בעלי מקצוע כשירים בהנחות והטבות ייחודיות לחברי יוצאים לחירות"
 	/>
 	<meta name="twitter:image" content="/og-image.png" />
 </svelte:head>
@@ -72,7 +72,7 @@
 						<h1
 							class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-right text-base font-bold text-transparent sm:text-4xl"
 						>
-							מדריך בעלי מקצוע כשרים
+							מדריך בעלי מקצוע כשירים
 						</h1>
 						<p class="hidden text-right text-sm text-gray-600 sm:block">
 							בהנחות והטבות ייחודיות לחברי יוצאים לחירות

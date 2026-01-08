@@ -5,7 +5,7 @@ export const lang = writable('he');
 export const translations = {
     he: {
         dir: 'rtl',
-        title: 'מדריך בעלי מקצוע כשרים',
+        title: 'מדריך בעלי מקצוע כשירים',
         subtitle: 'בהנחות והטבות ייחודיות לחברי יוצאים לחירות',
         addStore: 'הוסף עסק',
         policy: 'מדיניות הקהילה',
