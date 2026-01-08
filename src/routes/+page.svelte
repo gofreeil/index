@@ -1,6 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
-	import InteractiveMap from '$lib/components/InteractiveMap.svelte';
+	import LazyMap from '$lib/components/LazyMap.svelte';
 	import { lang, translations } from '$lib/i18n';
 	import goldStar from '$lib/assets/gold-star.png';
 	import sidebarBanner from '$lib/assets/sidebar-banner.jpg';
@@ -762,9 +762,7 @@
 						></div>
 					</div>
 
-					<div class="h-[600px] w-full">
-						<InteractiveMap {businesses} />
-					</div>
+					<LazyMap {businesses} />
 				</div>
 
 				<!-- All Businesses Section -->

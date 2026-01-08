@@ -214,6 +214,18 @@
 
 				const marker = L.marker([coords.lat, coords.lng], { icon }).addTo(markersLayer);
 
+				// Add tooltip (shows on hover)
+				marker.bindTooltip(business.name, {
+					direction: 'top',
+					offset: [0, -35],
+					className: 'business-tooltip'
+				});
+
+				// Add click event to navigate directly to business page
+				marker.on('click', () => {
+					window.location.href = `/business/${business.id}`;
+				});
+
 				// Create popup content
 				const popupContent = `
 					<div style="text-align: right; direction: rtl; min-width: 200px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
@@ -288,5 +300,21 @@
 
 	:global(.leaflet-popup-tip) {
 		box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+	}
+	:global(.business-tooltip) {
+		background: rgba(31, 41, 55, 0.95) !important;
+		border: none !important;
+		border-radius: 8px !important;
+		padding: 8px 12px !important;
+		font-size: 14px !important;
+		font-weight: 600 !important;
+		color: white !important;
+		box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3) !important;
+		direction: rtl !important;
+		text-align: center !important;
+	}
+
+	:global(.business-tooltip::before) {
+		border-top-color: rgba(31, 41, 55, 0.95) !important;
 	}
 </style>
