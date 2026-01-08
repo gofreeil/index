@@ -887,13 +887,28 @@
 							<p class="mt-1 text-center text-xs font-medium text-orange-500">יכול להיות שלך</p>
 						</div>
 
-						<div class="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-							<div class="mb-2 flex h-24 w-full items-center justify-center rounded-lg bg-gray-200">
-								<span class="text-xs font-medium text-gray-400">{t.ads}</span>
+						<a
+							href="https://www.melecshop.com/"
+							target="_blank"
+							class="group relative overflow-hidden rounded-xl shadow-sm transition-all hover:shadow-md"
+						>
+							<img
+								src="/group-purchase-banner.png"
+								alt="קבוצת רכישה"
+								class="h-auto w-full object-cover transition-transform duration-300 group-hover:scale-105"
+							/>
+							<div
+								class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"
+							></div>
+							<div class="absolute right-4 bottom-4 left-4 text-right">
+								<h4 class="text-base font-extrabold text-white drop-shadow-lg sm:text-lg">
+									הצטרף לקבוצת רכישה
+								</h4>
+								<p class="mt-1 text-xs font-medium text-white/90 drop-shadow-md sm:text-sm">
+									והוזל מיד את ההוצאות החודשיות שלך
+								</p>
 							</div>
-							<h4 class="text-sm font-bold">{t.newWorld}</h4>
-							<p class="mt-1 text-xs text-gray-500">{t.newWorldDesc}</p>
-						</div>
+						</a>
 					</div>
 				</div>
 
