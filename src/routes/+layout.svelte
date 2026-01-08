@@ -247,7 +247,7 @@
 				</div>
 			</div>
 
-			<div class="mt-4 border-t border-gray-200 pt-4 text-center sm:mt-8 sm:pt-8">
+			<div class="mt-2 border-t border-gray-200 pt-2 text-center sm:mt-4 sm:pt-4">
 				<p class="text-[10px] text-gray-500 sm:text-xs">
 					{t.dedication}
 				</p>

@@ -1,6 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
-	import IsraelMap from '$lib/components/IsraelMap.svelte';
+	import GoogleBusinessesMap from '$lib/components/GoogleBusinessesMap.svelte';
 	import { lang, translations } from '$lib/i18n';
 	import goldStar from '$lib/assets/gold-star.png';
 	import sidebarBanner from '$lib/assets/sidebar-banner.jpg';
@@ -763,11 +763,9 @@
 					</div>
 
 					<div
-						class="mx-auto max-w-4xl overflow-hidden rounded-3xl border border-gray-100 bg-white p-2 shadow-2xl"
+						class="h-[600px] w-full overflow-hidden rounded-2xl border border-gray-100 shadow-2xl"
 					>
-						<div class="rounded-2xl bg-slate-50">
-							<IsraelMap {businesses} showRegions={false} />
-						</div>
+						<GoogleBusinessesMap {businesses} />
 					</div>
 				</div>
 
@@ -871,10 +869,12 @@
 				<div class="space-y-4">
 					<h3 class="border-b pb-2 text-lg font-bold text-gray-800">{t.ads}</h3>
 					<div class="grid gap-4">
-						<div class="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-							<div class="mb-2 flex h-24 w-full items-center justify-center rounded-lg bg-gray-100">
+						<div
+							class="rounded-xl border-2 border-dashed border-blue-300 bg-gradient-to-br from-blue-50 to-purple-50 p-4 shadow-sm"
+						>
+							<div class="mb-2 flex h-24 w-full items-center justify-center rounded-lg bg-white/50">
 								<svg
-									class="h-8 w-8 text-gray-300"
+									class="h-10 w-10 text-blue-400"
 									fill="none"
 									stroke="currentColor"
 									viewBox="0 0 24 24"
@@ -883,12 +883,12 @@
 										stroke-linecap="round"
 										stroke-linejoin="round"
 										stroke-width="2"
-										d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+										d="M12 4v16m8-8H4"
 									/>
 								</svg>
 							</div>
-							<h4 class="text-sm font-bold">{t.specialOffer}</h4>
-							<p class="mt-1 text-xs text-gray-500">{t.specialOfferDesc}</p>
+							<h4 class="text-center text-sm font-bold text-blue-600">מקום פרסום זה</h4>
+							<p class="mt-1 text-center text-xs font-medium text-blue-500">יכול להיות שלך</p>
 						</div>
 
 						<div class="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
