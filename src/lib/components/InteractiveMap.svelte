@@ -70,12 +70,14 @@
 
 	/** @param {any} business */
 	function getCoordinates(business) {
-		const address = (business.address || '').toString();
-		const salesArea = (business.salesArea || '').toString();
+		const address = (business.address || '').toString().trim().toLowerCase();
+		const salesArea = (business.salesArea || '').toString().trim().toLowerCase();
+		const combinedText = `${address} ${salesArea}`;
 
 		// Try to find a city match in the address or sales area
 		for (const [city, coords] of sortedCities) {
-			if (address.includes(city) || salesArea.includes(city)) {
+			const cityLower = city.toLowerCase();
+			if (combinedText.includes(cityLower)) {
 				// Add slight random jitter to prevent perfect overlap
 				const jitter = 0.005;
 				return {
@@ -84,6 +86,35 @@
 				};
 			}
 		}
+
+		// Fallback: Check for general regions
+		if (combinedText.includes('ארצי') || combinedText.includes('כל הארץ')) {
+			// Place national businesses in Jerusalem (center of Israel)
+			return {
+				lat: 31.7683 + (Math.random() - 0.5) * 0.1,
+				lng: 35.2137 + (Math.random() - 0.5) * 0.1
+			};
+		}
+
+		// Check for region keywords
+		if (combinedText.includes('צפון') || combinedText.includes('גליל')) {
+			return { lat: 32.8 + (Math.random() - 0.5) * 0.2, lng: 35.2 + (Math.random() - 0.5) * 0.2 };
+		}
+		if (combinedText.includes('דרום') || combinedText.includes('נגב')) {
+			return { lat: 31.0 + (Math.random() - 0.5) * 0.3, lng: 34.8 + (Math.random() - 0.5) * 0.2 };
+		}
+		if (
+			combinedText.includes('מרכז') ||
+			combinedText.includes('גוש דן') ||
+			combinedText.includes('שרון')
+		) {
+			return { lat: 32.08 + (Math.random() - 0.5) * 0.1, lng: 34.82 + (Math.random() - 0.5) * 0.1 };
+		}
+
+		// If nothing found, log for debugging and return null
+		console.warn(
+			`❌ No location found for: "${business.name}" - Address: "${business.address}" - Sales Area: "${business.salesArea}"`
+		);
 		return null;
 	}
 
