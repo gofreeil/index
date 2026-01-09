@@ -872,30 +872,17 @@
 
 				<!-- Advertisements -->
 				<div class="space-y-4">
-					<h3 class="border-b pb-2 text-lg font-bold text-gray-800">{t.ads}</h3>
-					<div class="grid gap-4">
-						<div
-							class="rounded-xl border-2 border-dashed border-orange-400 bg-gradient-to-br from-yellow-50 to-orange-50 p-4 shadow-sm"
+					<div class="relative flex items-center py-4">
+						<div class="flex-grow border-t border-gray-200"></div>
+						<span
+							class="mx-4 flex-shrink text-xs font-semibold tracking-wider text-gray-400 uppercase"
+							>תוכן שיווקי</span
 						>
-							<div class="mb-2 flex h-24 w-full items-center justify-center rounded-lg bg-white/60">
-								<svg
-									class="h-10 w-10 text-orange-400"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M12 4v16m8-8H4"
-									/>
-								</svg>
-							</div>
-							<h4 class="text-center text-sm font-bold text-orange-600">מקום פרסום זה</h4>
-							<p class="mt-1 text-center text-xs font-medium text-orange-500">יכול להיות שלך</p>
-						</div>
+						<div class="flex-grow border-t border-gray-200"></div>
+					</div>
 
+					<div class="grid gap-4">
+						<!-- Group Purchase (Priority) -->
 						<a
 							href="https://www.melecshop.com/"
 							target="_blank"
@@ -918,6 +905,29 @@
 								</p>
 							</div>
 						</a>
+
+						<!-- Placeholder Ad -->
+						<div
+							class="rounded-xl border-2 border-dashed border-orange-400 bg-gradient-to-br from-yellow-50 to-orange-50 p-4 shadow-sm"
+						>
+							<div class="mb-2 flex h-24 w-full items-center justify-center rounded-lg bg-white/60">
+								<svg
+									class="h-10 w-10 text-orange-400"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M12 4v16m8-8H4"
+									/>
+								</svg>
+							</div>
+							<h4 class="text-center text-sm font-bold text-orange-600">מקום פרסום זה</h4>
+							<p class="mt-1 text-center text-xs font-medium text-orange-500">יכול להיות שלך</p>
+						</div>
 					</div>
 				</div>
 
