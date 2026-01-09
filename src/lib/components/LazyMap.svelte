@@ -60,7 +60,7 @@
 		</div>
 	{:else}
 		<!-- Interactive map - loads when scrolled into view -->
-		<div class="h-[600px] w-full">
+		<div class="h-[400px] w-full sm:h-[600px]">
 			<InteractiveMap {businesses} />
 		</div>
 	{/if}
@@ -69,7 +69,7 @@
 <style>
 	.map-wrapper {
 		position: relative;
-		min-height: 500px;
+		min-height: 400px;
 	}
 
 	.static-map-container {
