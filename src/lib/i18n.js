@@ -90,7 +90,19 @@ export const translations = {
         privacySection5: '5. אבטחת מידע',
         privacySection6: '6. זכויות המשתמש',
         privacySection7: '7. שינויים במדיניות',
-        privacyFooter: 'בכל שאלה בנושא פרטיות, ניתן ליצור קשר בכתובת:'
+        privacyFooter: 'בכל שאלה בנושא פרטיות, ניתן ליצור קשר בכתובת:',
+        favorites: 'מועדפים',
+        noFavorites: 'אין עדיין עסקים במועדפים',
+        loadMore: 'טען עסקים נוספים',
+        writtenReviews: 'ביקורות כתובות',
+        noReviews: 'עדיין אין ביקורות לעסק זה. היה הראשון לכתוב!',
+        darkMode: 'מצב כהה',
+        lightMode: 'מצב בהיר',
+        saveToFavorites: 'שמור במועדפים',
+        removeFromFavorites: 'הסר מהמועדפים',
+        manageBusiness: 'ניהול ועדכון פרטי עסק',
+        updateBusiness: 'עדכון פרטים',
+        share: 'שיתוף'
     },
     en: {
         dir: 'ltr',

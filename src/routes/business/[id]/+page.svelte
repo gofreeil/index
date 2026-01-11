@@ -12,7 +12,7 @@
 	let currentLang = $state('he');
 	lang.subscribe((v) => (currentLang = v));
 
-	const t = $derived(/** @type {any} */ (translations)[currentLang]);
+	const t = $derived(/** @type {any} */ (translations)[currentLang] || translations.he);
 
 	const PLACEHOLDER_IMG =
 		'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGNsYXNzPSJoLTYgdy02IiBmaWxsPSJub25lIiBzdHJva2U9IiM5Q0EzQUYiIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2Utd2lkdGg9IjIiIGQ9Ik0xOSAyMVY1YTIgMiAwIDAwLTItMkg3YTIgMiAwIDAwLTIgMnYxNm0xNCAwaDJtLTIgMGgtNW0tOSAweDNtMiAwaDVNOSA3aDFtLTEgNGgxbTQtNGgxbS0xIDRoMW0tNSAxMHYtNWExIDEgMCAwMTEtMWgyYTEgMSAwIDAxMSAxdjVtLTQgMGg0IiAvPjwvc3ZnPg==';
@@ -68,25 +68,43 @@
 
 <svelte:head>
 	<title>{business.name} - {t.title}</title>
+	<meta name="description" content={business.description || t.subtitle} />
+
+	<!-- Open Graph -->
+	<meta property="og:title" content="{business.name} - {t.title}" />
+	<meta property="og:description" content={business.description || t.subtitle} />
+	{#if business.logo}
+		<meta property="og:image" content={business.logo} />
+	{/if}
+	<meta property="og:type" content="business.business" />
+
+	<!-- Twitter -->
+	<meta name="twitter:title" content="{business.name} - {t.title}" />
+	<meta name="twitter:description" content={business.description || t.subtitle} />
+	{#if business.logo}
+		<meta name="twitter:image" content={business.logo} />
+	{/if}
 </svelte:head>
 
 <main class="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
 	<!-- Top Section: Logo & Basic Info -->
 	<div class="mb-12 flex flex-col items-center gap-8 md:flex-row md:items-start md:justify-between">
 		<div class="flex-1 text-right">
-			<h1 class="mb-2 text-4xl font-extrabold text-gray-900 md:text-5xl">{business.name}</h1>
+			<h1 class="mb-2 text-4xl font-extrabold text-gray-900 md:text-5xl dark:text-gray-100">
+				{business.name}
+			</h1>
 			<div class="mb-4 flex items-center justify-end gap-2">
 				<span class="text-xl font-bold text-yellow-500">{averageRating}</span>
 				<span class="text-xl text-yellow-400">{renderStars(averageRating)}</span>
-				<span class="text-sm text-gray-500">({reviews.length} {t.reviews})</span>
+				<span class="text-sm text-gray-500 dark:text-gray-400">({reviews.length} {t.reviews})</span>
 			</div>
-			<p class="text-xl text-gray-600">{business.category}</p>
+			<p class="text-xl text-gray-600 dark:text-gray-400">{business.category}</p>
 
 			<div class="mt-6 flex flex-wrap justify-end gap-4">
 				{#if business.phone}
 					<a
 						href="tel:{business.phone}"
-						class="flex items-center gap-2 rounded-full border border-blue-600 px-6 py-2 font-bold text-blue-600 transition hover:bg-blue-600 hover:text-white"
+						class="flex items-center gap-2 rounded-full border border-blue-600 px-6 py-2 font-bold text-blue-600 transition hover:bg-blue-600 hover:text-white dark:border-blue-500 dark:text-blue-400 dark:hover:bg-blue-600 dark:hover:text-white"
 					>
 						<span>{t.callNow}</span>
 						<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -103,7 +121,7 @@
 					<a
 						href={business.website}
 						target="_blank"
-						class="flex items-center gap-2 rounded-full bg-blue-600 px-6 py-2 font-bold text-white shadow-lg transition hover:bg-blue-700"
+						class="flex items-center gap-2 rounded-full bg-blue-600 px-6 py-2 font-bold text-white shadow-lg transition hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800"
 					>
 						<span>{t.businessSite}</span>
 						<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -121,7 +139,7 @@
 
 		<!-- Logo on the right -->
 		<div
-			class="order-first h-40 w-40 overflow-hidden rounded-2xl bg-white p-4 shadow-xl md:order-last md:h-56 md:w-56"
+			class="order-first h-40 w-40 overflow-hidden rounded-2xl bg-white p-4 shadow-xl md:order-last md:h-56 md:w-56 dark:border dark:border-gray-700 dark:bg-gray-800"
 		>
 			{#if business.logo}
 				<img
@@ -141,7 +159,9 @@
 					}}
 				/>
 			{:else}
-				<div class="flex h-full w-full items-center justify-center bg-gray-100 text-gray-400">
+				<div
+					class="flex h-full w-full items-center justify-center bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500"
+				>
 					<svg class="h-20 w-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path
 							stroke-linecap="round"
@@ -161,7 +181,9 @@
 		<div class="lg:col-span-2">
 			<!-- Gallery -->
 			{#if business.banners.length > 0}
-				<div class="relative mb-12 h-64 overflow-hidden rounded-3xl shadow-2xl md:h-[400px]">
+				<div
+					class="relative mb-12 h-64 overflow-hidden rounded-3xl shadow-2xl md:h-[400px] dark:border dark:border-gray-800 dark:shadow-none"
+				>
 					{#each business.banners as banner, i}
 						{#if i === currentImageIndex}
 							<img
@@ -193,9 +215,9 @@
 
 			<!-- Description -->
 			<section class="mb-12">
-				<h2 class="mb-4 text-2xl font-bold text-gray-800">{t.aboutBusiness}</h2>
+				<h2 class="mb-4 text-2xl font-bold text-gray-800 dark:text-gray-100">{t.aboutBusiness}</h2>
 				<div
-					class="rounded-2xl border border-blue-50 bg-blue-50/30 p-8 text-lg leading-relaxed text-gray-700"
+					class="rounded-2xl border border-blue-50 bg-blue-50/30 p-8 text-lg leading-relaxed text-gray-700 dark:border-blue-900/20 dark:bg-blue-900/10 dark:text-gray-300"
 				>
 					{business.description || t.noDescription}
 				</div>
@@ -204,28 +226,31 @@
 			<!-- Reviews Section -->
 			<section>
 				<div class="mb-6 flex items-center justify-between">
-					<h2 class="text-2xl font-bold text-gray-800">{t.reviews}</h2>
+					<h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100">{t.reviews}</h2>
 					<button
 						onclick={() => (showReviewForm = !showReviewForm)}
-						class="text-sm font-bold text-blue-600 hover:underline"
+						class="text-sm font-bold text-blue-600 hover:underline dark:text-blue-400"
 					>
 						{showReviewForm ? t.cancel : t.addReview}
 					</button>
 				</div>
 
 				{#if showReviewForm}
-					<div in:fly={{ y: 20 }} class="mb-8 rounded-2xl bg-gray-50 p-6 shadow-inner">
-						<h3 class="mb-4 font-bold text-gray-800">{t.whatDoYouThink}</h3>
+					<div
+						in:fly={{ y: 20 }}
+						class="mb-8 rounded-2xl bg-gray-50 p-6 shadow-inner dark:border dark:border-gray-700 dark:bg-gray-800"
+					>
+						<h3 class="mb-4 font-bold text-gray-800 dark:text-gray-100">{t.whatDoYouThink}</h3>
 						<div class="space-y-4">
 							<input
 								type="text"
 								bind:value={newReview.user}
 								placeholder={t.yourNamePlaceholder}
-								class="w-full rounded-lg border border-gray-200 p-2"
+								class="w-full rounded-lg border border-gray-200 p-2 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
 							/>
 							<select
 								bind:value={newReview.rating}
-								class="w-full rounded-lg border border-gray-200 p-2"
+								class="w-full rounded-lg border border-gray-200 p-2 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
 							>
 								<option value={5}>5 ★ - Excellent</option>
 								<option value={4}>4 ★ - Good</option>
@@ -236,11 +261,11 @@
 							<textarea
 								bind:value={newReview.comment}
 								placeholder={t.reviewPlaceholder}
-								class="h-32 w-full rounded-lg border border-gray-200 p-2"
+								class="h-32 w-full rounded-lg border border-gray-200 p-2 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
 							></textarea>
 							<button
 								onclick={submitReview}
-								class="rounded-full bg-blue-600 px-6 py-2 font-bold text-white transition hover:bg-blue-700"
+								class="rounded-full bg-blue-600 px-6 py-2 font-bold text-white transition hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800"
 							>
 								{t.submitReview}
 							</button>
@@ -250,13 +275,15 @@
 
 				<div class="space-y-6">
 					{#each reviews as review}
-						<div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+						<div
+							class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800"
+						>
 							<div class="mb-2 flex items-center justify-between">
-								<span class="font-bold text-gray-800">{review.user}</span>
-								<span class="text-sm text-gray-400">{review.date}</span>
+								<span class="font-bold text-gray-800 dark:text-gray-100">{review.user}</span>
+								<span class="text-sm text-gray-400 dark:text-gray-500">{review.date}</span>
 							</div>
 							<div class="mb-3 text-yellow-400">{renderStars(review.rating)}</div>
-							<p class="text-gray-600">{review.comment}</p>
+							<p class="text-gray-600 dark:text-gray-300">{review.comment}</p>
 						</div>
 					{/each}
 				</div>
@@ -266,14 +293,16 @@
 		<!-- Right: Map and Info -->
 		<div class="space-y-8">
 			<!-- Info Card -->
-			<div class="rounded-3xl border border-gray-100 bg-white p-8 shadow-xl">
-				<h3 class="mb-6 text-xl font-bold text-gray-800">{t.contactInfo}</h3>
+			<div
+				class="rounded-3xl border border-gray-100 bg-white p-8 shadow-xl dark:border-gray-700 dark:bg-gray-800"
+			>
+				<h3 class="mb-6 text-xl font-bold text-gray-800 dark:text-gray-100">{t.contactInfo}</h3>
 
 				<div class="space-y-6">
 					{#if business.address}
 						<div class="flex items-start gap-4">
 							<div
-								class="mt-1 flex h-10 w-10 items-center justify-center rounded-xl bg-red-100 text-red-600"
+								class="mt-1 flex h-10 w-10 items-center justify-center rounded-xl bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
 							>
 								<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 									<path
@@ -291,8 +320,8 @@
 								</svg>
 							</div>
 							<div>
-								<p class="font-bold text-gray-800">כתובת</p>
-								<p class="text-gray-600">{business.address}</p>
+								<p class="font-bold text-gray-800 dark:text-gray-200">כתובת</p>
+								<p class="text-gray-600 dark:text-gray-400">{business.address}</p>
 							</div>
 						</div>
 					{/if}
@@ -300,7 +329,7 @@
 					{#if business.discount}
 						<div class="flex items-start gap-4">
 							<div
-								class="mt-1 flex h-10 w-10 items-center justify-center rounded-xl bg-green-100 text-green-600"
+								class="mt-1 flex h-10 w-10 items-center justify-center rounded-xl bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
 							>
 								<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 									<path
@@ -312,8 +341,8 @@
 								</svg>
 							</div>
 							<div>
-								<p class="font-bold text-green-700">{t.exclusiveBenefit}</p>
-								<p class="text-green-800">{business.discount}</p>
+								<p class="font-bold text-green-700 dark:text-green-400">{t.exclusiveBenefit}</p>
+								<p class="text-green-800 dark:text-green-300">{business.discount}</p>
 							</div>
 						</div>
 					{/if}
@@ -321,7 +350,7 @@
 					{#if business.deliveries}
 						<div class="flex items-start gap-4">
 							<div
-								class="mt-1 flex h-10 w-10 items-center justify-center rounded-xl bg-purple-100 text-purple-600"
+								class="mt-1 flex h-10 w-10 items-center justify-center rounded-xl bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400"
 							>
 								<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 									<path
@@ -333,8 +362,8 @@
 								</svg>
 							</div>
 							<div>
-								<p class="font-bold text-gray-800">{t.deliveries}</p>
-								<p class="text-gray-600">{business.deliveries}</p>
+								<p class="font-bold text-gray-800 dark:text-gray-200">{t.deliveries}</p>
+								<p class="text-gray-600 dark:text-gray-400">{business.deliveries}</p>
 							</div>
 						</div>
 					{/if}
@@ -342,16 +371,18 @@
 			</div>
 
 			<!-- Map & Territory Section -->
-			<div class="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-xl">
-				<div class="bg-gray-50 p-6">
-					<h3 class="text-xl font-bold text-gray-800">{t.serviceZones}</h3>
+			<div
+				class="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-800"
+			>
+				<div class="bg-gray-50 p-6 dark:bg-gray-900/50">
+					<h3 class="text-xl font-bold text-gray-800 dark:text-gray-100">{t.serviceZones}</h3>
 					{#if business.address}
-						<p class="mt-1 text-sm text-gray-600">
+						<p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
 							<strong>{t.businessLocationLabel}</strong>
 							{business.address}
 						</p>
 					{/if}
-					<p class="mt-1 text-sm text-gray-600">
+					<p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
 						<strong>{t.serviceBorders}</strong>
 						{business.salesArea || t.all}
 					</p>
@@ -361,7 +392,7 @@
 					<!-- Google Maps Embed for Address -->
 					{#if business.address}
 						<div
-							class="h-64 w-full overflow-hidden rounded-2xl border border-gray-200 shadow-inner md:h-80"
+							class="h-64 w-full overflow-hidden rounded-2xl border border-gray-200 shadow-inner md:h-80 dark:border-gray-700"
 						>
 							<iframe
 								title="מפה של {business.name}"
@@ -379,10 +410,12 @@
 					{/if}
 
 					<!-- Territory Map (IsraelMap) -->
-					<div class="relative rounded-2xl border border-gray-100 bg-gray-50/50 p-4">
+					<div
+						class="relative rounded-2xl border border-gray-100 bg-gray-50/50 p-4 dark:border-gray-700 dark:bg-gray-900/30"
+					>
 						<div class="absolute top-4 right-4 z-10">
 							<span
-								class="rounded-lg border border-gray-100 bg-white/90 px-3 py-1 text-xs font-bold text-gray-700 shadow-sm"
+								class="rounded-lg border border-gray-100 bg-white/90 px-3 py-1 text-xs font-bold text-gray-700 shadow-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
 							>
 								{t.serviceMap}
 							</span>

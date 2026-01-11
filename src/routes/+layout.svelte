@@ -4,6 +4,7 @@
 	import { lang, translations } from '$lib/i18n';
 	import { get } from 'svelte/store';
 	import VisitorCounter from '$lib/components/VisitorCounter.svelte';
+	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 
 	let { children } = $props();
 
@@ -11,7 +12,7 @@
 	let currentLang = $state('he');
 	lang.subscribe((v) => (currentLang = v));
 
-	const t = $derived(/** @type {any} */ (translations)[currentLang]);
+	const t = $derived(/** @type {any} */ (translations)[currentLang] || translations.he);
 
 	let isLangMenuOpen = $state(false);
 
@@ -51,11 +52,13 @@
 </svelte:head>
 
 <div
-	class="relative min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50"
+	class="relative min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 transition-colors duration-300 dark:from-gray-900 dark:via-gray-950 dark:to-gray-900"
 	dir={t.dir}
 >
 	<!-- Header -->
-	<header class="sticky top-0 z-50 bg-white/80 shadow-sm backdrop-blur-md">
+	<header
+		class="sticky top-0 z-50 bg-white/80 shadow-sm backdrop-blur-md dark:border-b dark:border-gray-800 dark:bg-gray-900/80"
+	>
 		<div class="mx-auto max-w-7xl px-2 py-3 sm:px-6 lg:px-8">
 			<div class="flex items-center justify-between">
 				<!-- Title & Logo Section -->
@@ -86,13 +89,13 @@
 					<div class="relative flex items-center">
 						<button
 							onclick={() => (isLangMenuOpen = !isLangMenuOpen)}
-							class="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-2.5 py-1.5 text-xl shadow-sm transition-all hover:bg-gray-50 hover:shadow-md sm:px-4 sm:py-2"
+							class="dark:hover:bg-gray-750 flex items-center gap-2 rounded-full border border-gray-200 bg-white px-2.5 py-1.5 text-xl shadow-sm transition-all hover:bg-gray-50 hover:shadow-md sm:px-4 sm:py-2 dark:border-gray-700 dark:bg-gray-800"
 							title="Change Language"
 						>
 							<span class="flex items-center justify-center leading-none">
 								{/** @type {any} */ (flags)[currentLang]}
 							</span>
-							<span class="hidden text-sm font-bold text-gray-700 sm:inline">
+							<span class="hidden text-sm font-bold text-gray-700 sm:inline dark:text-gray-200">
 								{currentLang === 'he' ? t.israel : currentLang === 'en' ? t.english : t.russia}
 							</span>
 							<svg
@@ -114,35 +117,37 @@
 
 						{#if isLangMenuOpen}
 							<div
-								class="absolute top-full z-[100] mt-2 flex w-36 flex-col overflow-hidden rounded-xl border border-gray-100 bg-white py-1 shadow-2xl {t.dir ===
+								class="absolute top-full z-[100] mt-2 flex w-36 flex-col overflow-hidden rounded-xl border border-gray-100 bg-white py-1 shadow-2xl dark:border-gray-700 dark:bg-gray-800 {t.dir ===
 								'rtl'
 									? 'right-0'
 									: 'left-0'}"
 							>
 								<button
 									onclick={() => changeLang('he')}
-									class="flex items-center gap-3 px-3 py-2.5 text-right text-sm transition-colors hover:bg-gray-50"
+									class="flex items-center gap-3 px-3 py-2.5 text-right text-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
 								>
 									<span class="text-lg">🇮🇱</span>
-									<span class="font-medium text-gray-700">{t.israel}</span>
+									<span class="font-medium text-gray-700 dark:text-gray-200">{t.israel}</span>
 								</button>
 								<button
 									onclick={() => changeLang('en')}
-									class="flex items-center gap-3 px-3 py-2.5 text-right text-sm transition-colors hover:bg-gray-50"
+									class="flex items-center gap-3 px-3 py-2.5 text-right text-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
 								>
 									<span class="text-lg">🇬🇧</span>
-									<span class="font-medium text-gray-700">{t.english}</span>
+									<span class="font-medium text-gray-700 dark:text-gray-200">{t.english}</span>
 								</button>
 								<button
 									onclick={() => changeLang('ru')}
-									class="flex items-center gap-3 px-3 py-2.5 text-right text-sm transition-colors hover:bg-gray-50"
+									class="flex items-center gap-3 px-3 py-2.5 text-right text-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
 								>
 									<span class="text-lg">🇷🇺</span>
-									<span class="font-medium text-gray-700">{t.russia}</span>
+									<span class="font-medium text-gray-700 dark:text-gray-200">{t.russia}</span>
 								</button>
 							</div>
 						{/if}
 					</div>
+
+					<ThemeToggle />
 
 					<!-- Community Policy Button -->
 					<a
@@ -193,12 +198,14 @@
 
 	{@render children()}
 
-	<footer class="mt-8 border-t bg-gray-50 py-4 sm:mt-16 sm:py-8">
-		<div class="mx-auto max-w-7xl px-4 text-right text-gray-600">
+	<footer
+		class="mt-8 border-t bg-gray-50 py-4 sm:mt-16 sm:py-8 dark:border-gray-800 dark:bg-gray-900/50"
+	>
+		<div class="mx-auto max-w-7xl px-4 text-right text-gray-600 dark:text-gray-400">
 			<div class="flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-12">
 				<!-- Action Group (Right aligned in RTL) -->
 				<div class="flex flex-col items-center gap-1 sm:gap-2">
-					<p class="text-[9px] font-medium text-gray-500 sm:text-[11px]">
+					<p class="text-[9px] font-medium text-gray-500 sm:text-[11px] dark:text-gray-500">
 						{t.movementAction}
 					</p>
 					<a
@@ -212,7 +219,7 @@
 				</div>
 
 				<!-- Vertical Divider (Hidden on mobile) -->
-				<div class="hidden h-12 w-px bg-gray-300 sm:block"></div>
+				<div class="hidden h-12 w-px bg-gray-300 sm:block dark:bg-gray-700"></div>
 
 				<!-- Legal link Group -->
 				<div class="flex flex-col gap-1 sm:gap-2">
@@ -228,27 +235,29 @@
 				</div>
 
 				<!-- Second Vertical Divider -->
-				<div class="hidden h-12 w-px bg-gray-300 sm:block"></div>
+				<div class="hidden h-12 w-px bg-gray-300 sm:block dark:bg-gray-700"></div>
 
 				<!-- Contact & Privacy Group -->
 				<div class="flex flex-col gap-0.5 sm:gap-1">
 					<a
 						href="mailto:support@melecshop.com"
-						class="text-xs font-bold text-gray-700 transition-colors hover:text-blue-600 sm:text-sm"
+						class="text-xs font-bold text-gray-700 transition-colors hover:text-blue-600 sm:text-sm dark:text-gray-300 dark:hover:text-blue-400"
 					>
 						{t.contact}
 					</a>
 					<a
 						href="/privacy"
-						class="text-[10px] text-gray-500 transition-colors hover:text-blue-600 sm:text-xs"
+						class="text-[10px] text-gray-500 transition-colors hover:text-blue-600 sm:text-xs dark:text-gray-500 dark:hover:text-blue-400"
 					>
 						{t.privacy}
 					</a>
 				</div>
 			</div>
 
-			<div class="mt-2 border-t border-gray-200 pt-2 text-center sm:mt-4 sm:pt-4">
-				<p class="text-[10px] text-gray-500 sm:text-xs">
+			<div
+				class="mt-2 border-t border-gray-200 pt-2 text-center sm:mt-4 sm:pt-4 dark:border-gray-800"
+			>
+				<p class="text-[10px] text-gray-500 sm:text-xs dark:text-gray-600">
 					{t.dedication}
 				</p>
 				<VisitorCounter />

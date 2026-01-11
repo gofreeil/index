@@ -2,13 +2,15 @@
 	import { onMount } from 'svelte';
 	import LazyMap from '$lib/components/LazyMap.svelte';
 	import { lang, translations } from '$lib/i18n';
+	import BusinessCard from '$lib/components/BusinessCard.svelte';
+	import SkeletonCard from '$lib/components/SkeletonCard.svelte';
 	import goldStar from '$lib/assets/gold-star.png';
 	import sidebarBanner from '$lib/assets/sidebar-banner.jpg';
 
 	// Handle Language
 	let currentLang = $state('he');
 	lang.subscribe((v) => (currentLang = v));
-	const t = $derived(/** @type {any} */ (translations)[currentLang]);
+	const t = $derived(/** @type {any} */ (translations)[currentLang] || translations.he);
 
 	/** @type {any[]} */
 	let businesses = $state([]);
@@ -21,6 +23,37 @@
 	let isLocationMenuOpen = $state(false);
 	let hoveredCategory = $state('');
 	let hoveredCity = $state('');
+
+	// Pagination
+	let visibleCount = $state(12);
+	const incrementBy = 12;
+
+	function loadMore() {
+		visibleCount += incrementBy;
+	}
+
+	// Favorites
+	/** @type {any[]} */
+	let favoriteIds = $state([]);
+	onMount(() => {
+		const updateFavorites = () => {
+			favoriteIds = JSON.parse(localStorage.getItem('favorites') || '[]');
+		};
+		updateFavorites();
+		window.addEventListener('storage', updateFavorites);
+		// Listen for custom event if local storage is modified in same tab
+		const _setItem = localStorage.setItem;
+		localStorage.setItem = function (key, value) {
+			_setItem.apply(this, [key, value]);
+			updateFavorites();
+		};
+
+		return () => {
+			window.removeEventListener('storage', updateFavorites);
+			localStorage.setItem = _setItem;
+		};
+	});
+
 	/** @type {Record<number, boolean>} */
 	let failedImages = $state({});
 
@@ -204,8 +237,9 @@
 		})
 	);
 
-	let displayedBusinesses = $derived(filteredBusinesses.slice(0, 3));
+	let displayedBusinesses = $derived(filteredBusinesses.slice(0, visibleCount));
 	let newestBusinesses = $derived([...businesses].reverse().slice(0, 3));
+	let favoriteBusinesses = $derived(businesses.filter((b) => favoriteIds.includes(b.id)));
 
 	// פונקציה לסגירת כל התפריטים בלחיצה מחוץ להם
 	/** @param {MouseEvent} event */
@@ -230,13 +264,11 @@
 		<!-- Main Content Area -->
 		<div class="flex-1">
 			{#if loading}
-				<div class="flex min-h-[400px] items-center justify-center">
-					<div class="text-center">
-						<div
-							class="inline-block h-12 w-12 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"
-						></div>
-						<p class="mt-4 text-gray-600">{t.loading}</p>
-					</div>
+				<div class="mb-8 h-12 w-full animate-pulse rounded-xl bg-gray-200 dark:bg-gray-800"></div>
+				<div class="flex flex-wrap justify-center gap-3 md:grid md:grid-cols-3 md:gap-6">
+					{#each Array(6) as _}
+						<SkeletonCard />
+					{/each}
 				</div>
 			{:else if error}
 				<div class="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
@@ -250,7 +282,7 @@
 							type="text"
 							bind:value={searchTerm}
 							placeholder={t.search}
-							class="w-full rounded-xl border border-gray-200 px-4 py-3 pr-12 transition outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+							class="w-full rounded-xl border border-gray-200 px-4 py-3 pr-12 transition outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:focus:ring-blue-900/30"
 						/>
 						<svg
 							class="absolute top-3.5 right-4 h-5 w-5 text-gray-400"
@@ -267,7 +299,9 @@
 						</svg>
 					</div>
 
-					<div class="mt-2 flex flex-wrap items-center gap-2 px-1 text-sm text-gray-500">
+					<div
+						class="mt-2 flex flex-wrap items-center gap-2 px-1 text-sm text-gray-500 dark:text-gray-400"
+					>
 						<svg
 							class="h-4 w-4 text-blue-500"
 							fill="none"
@@ -281,15 +315,17 @@
 								d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
 							/>
 						</svg>
-						<span>סה"כ <strong>{businesses.length}</strong> עסקים באינדקס</span>
+						<span>{t.totalBusinesses.replace('{count}', businesses.length.toString())}</span>
 						{#if searchTerm || selectedCategory !== 'all' || selectedLocation !== 'all'}
-							<span class="mx-1 text-gray-300">|</span>
-							<span class="font-medium text-blue-600">נמצאו {filteredBusinesses.length} תוצאות</span
+							<span class="mx-1 text-gray-300 dark:text-gray-700">|</span>
+							<span class="font-medium text-blue-600 dark:text-blue-400"
+								>{t.foundResults.replace('{count}', filteredBusinesses.length.toString())}</span
 							>
 						{/if}
 					</div>
 
 					<div class="flex w-full items-center gap-2 sm:w-auto sm:flex-wrap sm:gap-4">
+						<!-- svelte-ignore a11y_no_static_element_interactions -->
 						<div
 							class="menu-container relative flex-1 sm:flex-initial"
 							onmouseenter={() => {
@@ -325,34 +361,35 @@
 
 							{#if isMenuOpen}
 								<div
-									class="absolute right-0 z-[100] mt-1 flex w-64 flex-col rounded-xl border border-gray-100 bg-white py-2 shadow-2xl"
+									class="absolute right-0 z-[100] mt-1 flex w-64 flex-col rounded-xl border border-gray-100 bg-white py-2 shadow-2xl dark:border-gray-700 dark:bg-gray-800"
 								>
 									<button
 										onclick={() => {
 											selectedCategory = 'all';
 											isMenuOpen = false;
 										}}
-										class="px-4 py-2 text-right transition hover:bg-blue-50 hover:text-blue-600 {selectedCategory ===
+										class="px-4 py-2 text-right transition hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20 {selectedCategory ===
 										'all'
-											? 'font-bold text-blue-600'
-											: 'text-gray-700'}"
+											? 'font-bold text-blue-600 dark:text-blue-400'
+											: 'text-gray-700 dark:text-gray-300'}"
 									>
 										{t.all}
 									</button>
 
-									<div class="my-1 border-t border-gray-100"></div>
+									<div class="my-1 border-t border-gray-100 dark:border-gray-700"></div>
 
 									{#each Object.keys(catHier) as mainCat}
+										<!-- svelte-ignore a11y_no_static_element_interactions -->
 										<div class="group relative" onmouseenter={() => (hoveredCategory = mainCat)}>
 											<button
 												onclick={() => {
 													selectedCategory = mainCat;
 													isMenuOpen = false;
 												}}
-												class="flex w-full items-center justify-between px-4 py-2 text-right transition hover:bg-blue-50 hover:text-blue-600 {selectedCategory ===
+												class="flex w-full items-center justify-between px-4 py-2 text-right transition hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20 {selectedCategory ===
 												mainCat
-													? 'font-bold text-blue-600'
-													: 'text-gray-700'}"
+													? 'font-bold text-blue-600 dark:text-blue-400'
+													: 'text-gray-700 dark:text-gray-300'}"
 											>
 												<span class="ml-2">←</span>
 												<span>{mainCat}</span>
@@ -360,7 +397,8 @@
 
 											{#if hoveredCategory === mainCat && catHier[mainCat].length > 0}
 												<div
-													class="static w-full bg-blue-50/50 py-1 lg:absolute lg:top-0 lg:right-full lg:z-[101] lg:mr-1 lg:w-56 lg:rounded-xl lg:border lg:border-gray-100 lg:bg-white lg:py-2 lg:shadow-xl"
+													class="static w-full bg-blue-50/50 py-1 lg:absolute lg:top-0 lg:right-full lg:z-[101] lg:mr-1 lg:w-56 lg:rounded-xl lg:border lg:border-gray-100 lg:bg-white lg:py-2 lg:shadow-xl dark:bg-gray-800 dark:lg:border-gray-700"
+													role="none"
 												>
 													{#each catHier[mainCat] as subCat}
 														<button
@@ -368,10 +406,10 @@
 																selectedCategory = subCat;
 																isMenuOpen = false;
 															}}
-															class="block w-full px-8 py-2 text-right text-sm transition hover:bg-blue-100 hover:text-blue-700 lg:px-4 {selectedCategory ===
+															class="block w-full px-8 py-2 text-right text-sm transition hover:bg-blue-100 hover:text-blue-700 lg:px-4 dark:hover:bg-blue-900/30 {selectedCategory ===
 															subCat
-																? 'font-bold text-blue-700'
-																: 'text-gray-700'}"
+																? 'font-bold text-blue-700 dark:text-blue-400'
+																: 'text-gray-700 dark:text-gray-300'}"
 														>
 															{subCat}
 														</button>
@@ -385,8 +423,11 @@
 						</div>
 
 						<!-- Location Filter (Neighborhoods) -->
+						<!-- svelte-ignore a11y_no_static_element_interactions -->
 						<div
 							class="menu-container relative flex-1 sm:flex-initial"
+							role="button"
+							tabindex="-1"
 							onmouseenter={() => {
 								isLocationMenuOpen = true;
 								isMenuOpen = false;
@@ -426,25 +467,28 @@
 
 							{#if isLocationMenuOpen}
 								<div
-									class="scrollbar-thin scrollbar-thumb-gray-200 absolute right-0 z-[100] mt-1 flex max-h-[70vh] w-64 flex-col overflow-y-auto rounded-xl border border-gray-100 bg-white py-2 shadow-2xl"
+									class="scrollbar-thin scrollbar-thumb-gray-200 absolute right-0 z-[100] mt-1 flex max-h-[70vh] w-64 flex-col overflow-y-auto rounded-xl border border-gray-100 bg-white py-2 shadow-2xl dark:border-gray-700 dark:bg-gray-800"
 								>
 									<button
 										onclick={() => {
 											selectedLocation = 'all';
 											isLocationMenuOpen = false;
 										}}
-										class="px-4 py-2 text-right transition hover:bg-purple-50 hover:text-purple-600 {selectedLocation ===
+										class="px-4 py-2 text-right transition hover:bg-purple-50 hover:text-purple-600 dark:hover:bg-purple-900/20 {selectedLocation ===
 										'all'
-											? 'font-bold text-purple-600'
-											: 'text-gray-700'}"
+											? 'font-bold text-purple-600 dark:text-purple-400'
+											: 'text-gray-700 dark:text-gray-300'}"
 									>
 										כל הארץ
 									</button>
 
-									<div class="my-1 border-t border-gray-100"></div>
+									<div class="my-1 border-t border-gray-100 dark:border-gray-700"></div>
 
 									{#each sortedCities as city}
-										<div class="relative border-b border-gray-50 last:border-0">
+										<div
+											class="relative border-b border-gray-50 last:border-0 dark:border-gray-700"
+											role="none"
+										>
 											<button
 												onmouseenter={() => (hoveredCity = city)}
 												onclick={() => {
@@ -456,10 +500,10 @@
 														hoveredCity = hoveredCity === city ? '' : city;
 													}
 												}}
-												class="flex w-full items-center justify-between px-4 py-3 text-right transition hover:bg-purple-50 hover:text-purple-600 {selectedLocation ===
+												class="flex w-full items-center justify-between px-4 py-3 text-right transition hover:bg-purple-50 hover:text-purple-600 dark:hover:bg-purple-900/20 {selectedLocation ===
 												city
-													? 'font-bold text-purple-600'
-													: 'text-gray-700'}"
+													? 'font-bold text-purple-600 dark:text-purple-400'
+													: 'text-gray-700 dark:text-gray-300'}"
 											>
 												<span class="text-base">{city}</span>
 												{#if cityHier[city]?.length > 0}
@@ -482,17 +526,17 @@
 											</button>
 
 											{#if hoveredCity === city && cityHier[city]?.length > 0}
-												<div class="bg-gray-50 py-1 shadow-inner">
+												<div class="bg-gray-50 py-1 shadow-inner dark:bg-gray-900/50">
 													{#each cityHier[city] as neighborhood}
 														<button
 															onclick={() => {
 																selectedLocation = neighborhood;
 																isLocationMenuOpen = false;
 															}}
-															class="block w-full border-r-4 border-transparent px-8 py-2 text-right text-sm transition hover:border-purple-400 hover:bg-purple-100/50 hover:text-purple-700 {selectedLocation ===
+															class="block w-full border-r-4 border-transparent px-8 py-2 text-right text-sm transition hover:border-purple-400 hover:bg-purple-100/50 hover:text-purple-700 dark:hover:bg-purple-900/30 {selectedLocation ===
 															neighborhood
-																? 'font-bold text-purple-700'
-																: 'text-gray-600'}"
+																? 'font-bold text-purple-700 dark:text-purple-400'
+																: 'text-gray-600 dark:text-gray-300'}"
 														>
 															{neighborhood}
 														</button>
@@ -519,6 +563,20 @@
 					</div>
 				</div>
 
+				{#if favoriteBusinesses.length > 0}
+					<div class="mb-16">
+						<div class="mb-8 flex items-center gap-3">
+							<div class="h-8 w-1.5 rounded-full bg-red-500"></div>
+							<h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100">{t.favorites}</h2>
+						</div>
+						<div class="flex flex-wrap justify-center gap-3 md:grid md:grid-cols-3 md:gap-6">
+							{#each favoriteBusinesses as business (business.id)}
+								<BusinessCard {business} />
+							{/each}
+						</div>
+					</div>
+				{/if}
+
 				<div class="mb-10 flex flex-col items-center justify-center text-center">
 					<h2
 						class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-2xl font-extrabold text-transparent sm:text-4xl lg:text-5xl"
@@ -540,98 +598,7 @@
 				<!-- Business cards grid -->
 				<div class="flex flex-wrap justify-center gap-3 md:grid md:grid-cols-3 md:gap-6">
 					{#each displayedBusinesses as business (business.id)}
-						<a
-							href="/business/{business.id}"
-							class="group flex w-[calc(50%-8px)] flex-col overflow-hidden rounded-lg bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md sm:w-auto sm:rounded-xl sm:shadow-md sm:hover:shadow-xl"
-						>
-							<div class="relative h-28 w-full overflow-hidden bg-gray-100 sm:h-48">
-								{#if business.logo && !failedImages[business.id]}
-									<img
-										src={business.logo}
-										alt={business.name}
-										class="absolute inset-0 z-10 h-full w-full object-contain p-2 transition duration-500 group-hover:scale-105"
-										loading="lazy"
-										onerror={(e) => {
-											const img = /** @type {HTMLImageElement} */ (e.target);
-											if (business.fallbackLogo && !img.dataset.fallbackTried) {
-												img.dataset.fallbackTried = 'true';
-												img.src = business.fallbackLogo;
-											} else {
-												failedImages[business.id] = true;
-											}
-										}}
-									/>
-								{/if}
-								{#if business.banner}
-									<img
-										src={business.banner}
-										alt={business.name}
-										class="h-full w-full object-cover opacity-30 transition duration-500 group-hover:scale-105"
-										loading="lazy"
-									/>
-								{:else}
-									<div
-										class="h-full w-full bg-gradient-to-r from-blue-500 to-purple-500 opacity-20"
-									></div>
-								{/if}
-							</div>
-
-							<div class="flex flex-1 flex-col p-3 sm:p-6">
-								<!-- Header: Name & Category -->
-								<div class="mb-2 sm:mb-4">
-									<h3
-										class="line-clamp-1 text-xs font-bold text-gray-800 transition group-hover:text-blue-600 sm:text-xl"
-									>
-										{business.name}
-									</h3>
-									<span
-										class="mt-1 inline-block rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700 sm:px-3 sm:py-1 sm:text-xs"
-									>
-										{business.category}
-									</span>
-								</div>
-
-								<!-- Discount -->
-								{#if business.discount}
-									<div
-										class="mb-2 rounded border border-green-100 bg-green-50 p-1.5 sm:mb-4 sm:rounded-lg sm:p-3"
-									>
-										<p class="line-clamp-2 text-[10px] leading-tight text-green-800 sm:text-sm">
-											{business.discount}
-										</p>
-									</div>
-								{/if}
-
-								<!-- Description (Hidden on mobile) -->
-								{#if business.description}
-									<p class="mb-4 line-clamp-3 hidden flex-grow text-sm text-gray-600 sm:block">
-										{business.description}
-									</p>
-								{/if}
-
-								<!-- Info Grid -->
-								<div
-									class="mt-auto border-t pt-2 text-[10px] text-gray-600 sm:space-y-2 sm:pt-4 sm:text-sm"
-								>
-									<div class="flex items-center gap-1.5">
-										<svg
-											class="h-3 w-3 flex-shrink-0 text-gray-400 sm:h-4 sm:w-4"
-											fill="none"
-											stroke="currentColor"
-											viewBox="0 0 24 24"
-										>
-											<path
-												stroke-linecap="round"
-												stroke-linejoin="round"
-												stroke-width="2"
-												d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-											/>
-										</svg>
-										<span class="line-clamp-1">{business.address || business.salesArea}</span>
-									</div>
-								</div>
-							</div>
-						</a>
+						<BusinessCard {business} />
 					{/each}
 				</div>
 
@@ -663,96 +630,7 @@
 
 					<div class="flex flex-wrap justify-center gap-3 md:grid md:grid-cols-3 md:gap-6">
 						{#each newestBusinesses as business (business.id)}
-							<a
-								href="/business/{business.id}"
-								class="group flex w-[calc(50%-8px)] flex-col overflow-hidden rounded-lg border-t-2 border-green-500 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md sm:w-auto sm:rounded-xl sm:border-t-4 sm:shadow-md sm:hover:shadow-xl"
-							>
-								<div class="relative h-28 w-full overflow-hidden bg-gray-100 sm:h-48">
-									{#if business.logo && !failedImages[business.id]}
-										<img
-											src={business.logo}
-											alt={business.name}
-											class="absolute inset-0 z-10 h-full w-full object-contain p-2 transition duration-500 group-hover:scale-105"
-											loading="lazy"
-											onerror={(e) => {
-												const img = /** @type {HTMLImageElement} */ (e.target);
-												if (business.fallbackLogo && !img.dataset.fallbackTried) {
-													img.dataset.fallbackTried = 'true';
-													img.src = business.fallbackLogo;
-												} else {
-													failedImages[business.id] = true;
-												}
-											}}
-										/>
-									{/if}
-									{#if business.banner}
-										<img
-											src={business.banner}
-											alt={business.name}
-											class="h-full w-full object-cover opacity-30 transition duration-500 group-hover:scale-105"
-											loading="lazy"
-										/>
-									{:else}
-										<div
-											class="h-full w-full bg-gradient-to-r from-green-500 to-blue-500 opacity-20"
-										></div>
-									{/if}
-									<div
-										class="absolute top-1 right-1 z-20 rounded bg-green-600 px-1.5 py-0.5 text-[8px] font-bold text-white shadow-sm sm:top-2 sm:right-2 sm:rounded-lg sm:px-2 sm:py-1 sm:text-[10px]"
-									>
-										חדש
-									</div>
-								</div>
-
-								<div class="flex flex-1 flex-col p-3 sm:p-6">
-									<!-- Header: Name & Category -->
-									<div class="mb-2 sm:mb-4">
-										<h3
-											class="line-clamp-1 text-xs font-bold text-gray-800 transition group-hover:text-green-600 sm:text-xl"
-										>
-											{business.name}
-										</h3>
-										<span
-											class="mt-1 inline-block rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-medium text-green-700 sm:px-3 sm:py-1 sm:text-xs"
-										>
-											{business.category}
-										</span>
-									</div>
-
-									<!-- Discount -->
-									{#if business.discount}
-										<div
-											class="mb-2 rounded border border-green-100 bg-green-50 p-1.5 sm:mb-4 sm:rounded-lg sm:p-3"
-										>
-											<p class="line-clamp-2 text-[10px] leading-tight text-green-800 sm:text-sm">
-												{business.discount}
-											</p>
-										</div>
-									{/if}
-
-									<!-- Info Grid -->
-									<div
-										class="mt-auto border-t pt-2 text-[10px] text-gray-600 sm:space-y-2 sm:pt-4 sm:text-sm"
-									>
-										<div class="flex items-center gap-1.5">
-											<svg
-												class="h-3 w-3 flex-shrink-0 text-gray-400 sm:h-4 sm:w-4"
-												fill="none"
-												stroke="currentColor"
-												viewBox="0 0 24 24"
-											>
-												<path
-													stroke-linecap="round"
-													stroke-linejoin="round"
-													stroke-width="2"
-													d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-												/>
-											</svg>
-											<span class="line-clamp-1">{business.address}</span>
-										</div>
-									</div>
-								</div></a
-							>
+							<BusinessCard {business} />
 						{/each}
 					</div>
 				</div>
@@ -787,61 +665,22 @@
 						></div>
 					</div>
 
-					<div class="flex flex-wrap justify-center gap-3 px-2 sm:gap-8 sm:px-4">
-						{#each filteredBusinesses as business (business.id)}
-							<a
-								href="/business/{business.id}"
-								class="group relative flex aspect-square w-[calc(33.33%-8px)] items-center justify-center rounded-xl border border-gray-100 bg-white p-2 shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-xl sm:h-32 sm:w-32 sm:rounded-2xl sm:p-4"
-								title={business.name}
-							>
-								{#if business.logo && !failedImages[business.id]}
-									<img
-										src={business.logo}
-										alt={business.name}
-										class="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-110"
-										loading="lazy"
-										onerror={(e) => {
-											const img = /** @type {HTMLImageElement} */ (e.target);
-											if (business.fallbackLogo && !img.dataset.fallbackTried) {
-												img.dataset.fallbackTried = 'true';
-												img.src = business.fallbackLogo;
-											} else {
-												failedImages[business.id] = true;
-											}
-										}}
-									/>
-								{:else}
-									<div class="flex flex-col items-center justify-center text-center">
-										<div
-											class="mb-1 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-400"
-										>
-											<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-												<path
-													stroke-linecap="round"
-													stroke-linejoin="round"
-													stroke-width="2"
-													d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-												/>
-											</svg>
-										</div>
-										<span class="line-clamp-2 text-[10px] font-bold text-gray-400"
-											>{business.name}</span
-										>
-									</div>
-								{/if}
-
-								<!-- Hover Tooltip -->
-								<div
-									class="pointer-events-none absolute -bottom-10 left-1/2 z-10 -translate-x-1/2 rounded-lg bg-gray-800 px-3 py-1.5 text-xs font-medium whitespace-nowrap text-white opacity-0 shadow-xl transition-opacity group-hover:opacity-100"
-								>
-									{business.name}
-									<div
-										class="absolute -top-1 left-1/2 -translate-x-1/2 border-x-4 border-b-4 border-x-transparent border-b-gray-800"
-									></div>
-								</div>
-							</a>
+					<div class="flex flex-wrap justify-center gap-3 md:grid md:grid-cols-3 md:gap-6">
+						{#each displayedBusinesses as business (business.id)}
+							<BusinessCard {business} />
 						{/each}
 					</div>
+
+					{#if visibleCount < filteredBusinesses.length}
+						<div class="mt-12 flex justify-center">
+							<button
+								onclick={loadMore}
+								class="rounded-full bg-white px-8 py-3 text-lg font-bold text-blue-600 shadow-md transition-all hover:bg-blue-50 hover:shadow-lg active:scale-95 dark:bg-gray-800 dark:text-blue-400 dark:hover:bg-gray-700"
+							>
+								{t.loadMore}
+							</button>
+						</div>
+					{/if}
 				</div>
 			{/if}
 		</div>
@@ -872,15 +711,6 @@
 
 				<!-- Advertisements -->
 				<div class="space-y-4">
-					<div class="relative flex items-center py-4">
-						<div class="flex-grow border-t border-gray-200"></div>
-						<span
-							class="mx-4 flex-shrink text-xs font-semibold tracking-wider text-gray-400 uppercase"
-							>תוכן שיווקי</span
-						>
-						<div class="flex-grow border-t border-gray-200"></div>
-					</div>
-
 					<div class="grid gap-4">
 						<!-- Group Purchase (Priority) -->
 						<a
@@ -905,6 +735,16 @@
 								</p>
 							</div>
 						</a>
+
+						<!-- Sponsored Content Separator -->
+						<div class="relative flex items-center py-2">
+							<div class="flex-grow border-t border-gray-200"></div>
+							<span
+								class="mx-4 flex-shrink text-[10px] font-semibold tracking-wider text-gray-400 uppercase"
+								>תוכן שיווקי</span
+							>
+							<div class="flex-grow border-t border-gray-200"></div>
+						</div>
 
 						<!-- Placeholder Ad -->
 						<div
@@ -945,13 +785,6 @@
 </main>
 
 <style>
-	.line-clamp-3 {
-		display: -webkit-box;
-		-webkit-line-clamp: 3;
-		line-clamp: 3;
-		-webkit-box-orient: vertical;
-		overflow: hidden;
-	}
 	.animate-converge {
 		animation: converge 1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 	}

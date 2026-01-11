@@ -59,6 +59,13 @@ const auth = new google.auth.GoogleAuth({
 
 const sheets = google.sheets({ version: 'v4', auth });
 
+// Cache in-memory
+/** @type {any[] | null} */
+let cachedData = null;
+/** @type {number} */
+let lastFetchTime = 0;
+const CACHE_DURATION = 15 * 60 * 1000; // 15 minutes
+
 /**
  * @param {string} url
  * @returns {string}
@@ -94,6 +101,11 @@ const getDirectImageUrl = (url) => {
 };
 
 export async function GET() {
+  const now = Date.now();
+  if (cachedData && now - lastFetchTime < CACHE_DURATION) {
+    return json(cachedData);
+  }
+
   try {
     const spreadsheetId = clean(SPREADSHEET_ID);
 
@@ -166,6 +178,9 @@ export async function GET() {
 
         return business;
       });
+
+    cachedData = businesses;
+    lastFetchTime = now;
 
     return json(businesses);
   } catch (error) {
