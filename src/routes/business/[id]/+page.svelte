@@ -95,7 +95,17 @@
 			</h1>
 			<div class="mb-4 flex items-center justify-end gap-2">
 				<span class="text-xl font-bold text-yellow-500">{averageRating}</span>
-				<span class="text-xl text-yellow-400">{renderStars(averageRating)}</span>
+				<div class="flex gap-0.5" dir="ltr">
+					{#each Array(5) as _, i}
+						<span
+							class="text-xl {i < Math.floor(averageRating)
+								? 'bg-gradient-to-br from-[#BF953F] via-[#FCF6BA] to-[#AA771C] bg-clip-text text-transparent'
+								: 'text-gray-300 dark:text-gray-600'}"
+						>
+							★
+						</span>
+					{/each}
+				</div>
 				<span class="text-sm text-gray-500 dark:text-gray-400">({reviews.length} {t.reviews})</span>
 			</div>
 			<p class="text-xl text-gray-600 dark:text-gray-400">{business.category}</p>
@@ -282,8 +292,16 @@
 								<span class="font-bold text-gray-800 dark:text-gray-100">{review.user}</span>
 								<span class="text-sm text-gray-400 dark:text-gray-500">{review.date}</span>
 							</div>
-							<div class="mb-3 text-yellow-500 dark:text-yellow-400">
-								{renderStars(review.rating)}
+							<div class="mb-3 flex gap-0.5" dir="ltr">
+								{#each Array(5) as _, i}
+									<span
+										class="text-xl {i < Math.floor(review.rating)
+											? 'bg-gradient-to-br from-[#BF953F] via-[#FCF6BA] to-[#AA771C] bg-clip-text text-transparent'
+											: 'text-gray-300 dark:text-gray-600'}"
+									>
+										★
+									</span>
+								{/each}
 							</div>
 							<p class="text-gray-600 dark:text-gray-300">{review.comment}</p>
 						</div>
