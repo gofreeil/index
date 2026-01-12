@@ -52,11 +52,29 @@
 
 	const averageRating = 4.5;
 
+	let isPhoneRevealed = $state(false);
+
+	async function revealPhoneAndLog() {
+		if (isPhoneRevealed) return;
+
+		isPhoneRevealed = true;
+
+		try {
+			await fetch('/api/stats', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					businessId: business.id,
+					businessName: business.name,
+					action: 'phone_click'
+				})
+			});
+		} catch (e) {
+			console.error('Failed to log click:', e);
+		}
+	}
+
 	// פונקציית עזר לציור כוכבים
-	/** @param {number} rating */
-	const renderStars = (rating) => {
-		return '★'.repeat(Math.floor(rating)) + '☆'.repeat(5 - Math.floor(rating));
-	};
 
 	function submitReview() {
 		// כאן היינו שולחים לשרת, בינתיים רק נסגור
@@ -112,20 +130,43 @@
 
 			<div class="mt-6 flex flex-wrap justify-end gap-4">
 				{#if business.phone}
-					<a
-						href="tel:{business.phone}"
-						class="flex items-center gap-2 rounded-full border border-blue-600 px-6 py-2 font-bold text-blue-600 transition hover:bg-blue-600 hover:text-white dark:border-blue-500 dark:text-blue-400 dark:hover:bg-blue-600 dark:hover:text-white"
-					>
-						<span>{t.callNow}</span>
-						<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-							/>
-						</svg>
-					</a>
+					{#if isPhoneRevealed}
+						<a
+							href="tel:{business.phone}"
+							class="flex items-center gap-2 rounded-full bg-blue-600 px-6 py-2 font-bold text-white transition hover:bg-blue-700"
+						>
+							<span>{business.phone}</span>
+							<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+								/>
+							</svg>
+						</a>
+					{:else}
+						<button
+							onclick={revealPhoneAndLog}
+							class="flex items-center gap-2 rounded-full border border-blue-600 px-6 py-2 font-bold text-blue-600 transition hover:bg-blue-600 hover:text-white dark:border-blue-500 dark:text-blue-400 dark:hover:bg-blue-600 dark:hover:text-white"
+						>
+							<span>{t.revealPhone}</span>
+							<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+								/>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+								/>
+							</svg>
+						</button>
+					{/if}
 				{/if}
 				{#if business.website}
 					<a
