@@ -470,7 +470,11 @@
 					</p>
 				</div>
 
-				<div class="space-y-4 p-4">
+				<div class="space-y-6 p-8 sm:p-6">
+					<!-- Interactive Area Message for Mobile -->
+					<p class="text-center text-[10px] text-gray-400 sm:hidden">
+						* לניווט באתר החלק על המסגרת הלבנה סביב המפה
+					</p>
 					<!-- Google Maps Embed for Address -->
 					{#if business.address}
 						<div

@@ -41,6 +41,10 @@
 </script>
 
 <div bind:this={mapContainer} class="styled-map-wrapper">
+	<!-- Mobile Scroll Hint -->
+	<p class="mb-2 text-center text-[10px] text-gray-400 sm:hidden">
+		* לניווט באתר החלק על המסגרת סביב המפה
+	</p>
 	<div class="inner-frame">
 		{#if !shouldLoadInteractiveMap}
 			<!-- Static map placeholder - loads immediately -->
@@ -82,11 +86,17 @@
 		max-width: 950px;
 		margin: 2rem auto;
 		background: white;
-		padding: 12px;
+		padding: 32px; /* Large safe zone for mobile scrolling */
 		border-radius: 2.5rem;
 		box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
 		border: 1px solid rgba(0, 0, 0, 0.05);
 		transition: all 0.3s ease;
+	}
+
+	@media (min-width: 640px) {
+		.styled-map-wrapper {
+			padding: 12px;
+		}
 	}
 
 	:global(.dark) .styled-map-wrapper {
