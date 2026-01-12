@@ -128,65 +128,61 @@
 			if (!response.ok) throw new Error('Failed to fetch businesses');
 			const rawData = await response.json();
 
-			businesses = rawData
-				.map((/** @type {any} */ row) => {
-					/** @param {string} partialKey */
-					const findValue = (partialKey) => {
-						const key = Object.keys(row).find((k) => k.includes(partialKey));
-						return key ? row[key] : '';
-					};
+			businesses = rawData.map((/** @type {any} */ row) => {
+				/** @param {string} partialKey */
+				const findValue = (partialKey) => {
+					const key = Object.keys(row).find((k) => k.includes(partialKey));
+					return key ? row[key] : '';
+				};
 
-					// טיפול בתמונות - יכולות להיות כמה תמונות מופרדות בפסיק
-					let rawImages = row['הוסף תמונה לבאנר'] || '';
-					let bannerArray = [];
-					if (rawImages) {
-						bannerArray = rawImages
-							.split(',')
-							.map((/** @type {any} */ url) => getDirectImageUrl(url.trim()));
-					}
+				// טיפול בתמונות - יכולות להיות כמה תמונות מופרדות בפסיק
+				let rawImages = row['הוסף תמונה לבאנר'] || '';
+				let bannerArray = [];
+				if (rawImages) {
+					bannerArray = rawImages
+						.split(',')
+						.map((/** @type {any} */ url) => getDirectImageUrl(url.trim()));
+				}
 
-					/** @param {string} text */
-					const cleanText = (text) => {
-						if (!text) return '';
-						// ניקוי אגרסיבי כולל פסיקים, נקודות וכל וריאציה של "אחר אפרט"
-						const cleaned = text
-							.replace(/אחר[,\s:\-\.]*אפרט\s*(למטה|למה)?/g, '')
-							.replace(/^[,\s:\-\.]+|[,\s:\-\.]+$/g, '') // ניקוי שאריות מהקצוות כולל נקודות
-							.trim();
+				/** @param {string} text */
+				const cleanText = (text) => {
+					if (!text) return '';
+					// ניקוי אגרסיבי כולל פסיקים, נקודות וכל וריאציה של "אחר אפרט"
+					const cleaned = text
+						.replace(/אחר[,\s:\-\.]*אפרט\s*(למטה|למה)?/g, '')
+						.replace(/^[,\s:\-\.]+|[,\s:\-\.]+$/g, '') // ניקוי שאריות מהקצוות כולל נקודות
+						.trim();
 
-						// אם נשאר רק טקסט שהוא סימני פיסוק או רווחים - החזר מחרוזת ריקה כדי להסתיר אייקונים
-						return !cleaned || /^[,\s:\-\.\|]+$/.test(cleaned) ? '' : cleaned;
-					};
+					// אם נשאר רק טקסט שהוא סימני פיסוק או רווחים - החזר מחרוזת ריקה כדי להסתיר אייקונים
+					return !cleaned || /^[,\s:\-\.\|]+$/.test(cleaned) ? '' : cleaned;
+				};
 
-					// לוגו מעמודה J (מעובד כבר בשרת)
-					const jLogo = row.logoFromColumnJ || '';
-					const currentLogo = row['לוגו'] || '';
+				// לוגו מעמודה J (מעובד כבר בשרת)
+				const jLogo = row.logoFromColumnJ || '';
+				const currentLogo = row['לוגו'] || '';
 
-					// שימוש בלוגו התקין ביותר שקיים
-					const primaryLogo = jLogo || currentLogo;
-					const fallbackLogo = currentLogo;
+				// שימוש בלוגו התקין ביותר שקיים
+				const primaryLogo = jLogo || currentLogo;
+				const fallbackLogo = currentLogo;
 
-					return {
-						id: row.id,
-						name: row['שם העסק או השירות '] || row['שם העסק'] || 'ללא שם',
-						phone: row['טלפון '] || row['טלפון'] || '',
-						category: cleanText(row['קטגוריה'] || row['Category'] || 'כללי'),
-						banners: bannerArray,
-						banner: bannerArray[0] || '', // תמונה ראשי לכרטיסייה
-						description: cleanText(row['הערות'] || row['תיאור'] || ''),
-						discount: cleanText(findValue('ההנחה הבלעדית')),
-						salesArea: cleanText(
-							row['אזור מכירה ארצי (אנטרנטי). אם האיזור פרטי נא לפרט היכן'] || ''
-						),
-						address: cleanText(row['מיקום המפעל / חנות / מחסן'] || ''),
-						deliveries: cleanText(row['שירות משלוחים'] || ''),
-						website: row['אתר'] || row['Website'] || '',
-						logo: primaryLogo,
-						fallbackLogo: fallbackLogo,
-						rating: Number(row['דירוג'] || row['Rating'] || 0)
-					};
-				})
-				.sort((/** @type {any} */ a, /** @type {any} */ b) => b.rating - a.rating);
+				return {
+					id: row.id,
+					name: row['שם העסק או השירות '] || row['שם העסק'] || 'ללא שם',
+					phone: row['טלפון '] || row['טלפון'] || '',
+					category: cleanText(row['קטגוריה'] || row['Category'] || 'כללי'),
+					banners: bannerArray,
+					banner: bannerArray[0] || '', // תמונה ראשי לכרטיסייה
+					description: cleanText(row['הערות'] || row['תיאור'] || ''),
+					discount: cleanText(findValue('ההנחה הבלעדית')),
+					salesArea: cleanText(row['אזור מכירה ארצי (אנטרנטי). אם האיזור פרטי נא לפרט היכן'] || ''),
+					address: cleanText(row['מיקום המפעל / חנות / מחסן'] || ''),
+					deliveries: cleanText(row['שירות משלוחים'] || ''),
+					website: row['אתר'] || row['Website'] || '',
+					logo: primaryLogo,
+					fallbackLogo: fallbackLogo,
+					rating: Number(row['דירוג'] || row['Rating'] || 0)
+				};
+			});
 		} catch (/** @type {any} */ err) {
 			error = err.message;
 		} finally {
@@ -200,7 +196,7 @@
 	]);
 
 	const filteredBusinesses = $derived(
-		businesses.filter((business) => {
+		[...businesses].reverse().filter((business) => {
 			const matchesSearch =
 				searchTerm === '' ||
 				Object.values(business).some((value) =>
@@ -238,6 +234,9 @@
 	);
 
 	let displayedBusinesses = $derived(filteredBusinesses.slice(0, visibleCount));
+	let topRatedBusinesses = $derived(
+		[...filteredBusinesses].sort((a, b) => b.rating - a.rating).slice(0, 3)
+	);
 	let newestBusinesses = $derived([...businesses].reverse().slice(0, 3));
 	let favoriteBusinesses = $derived(businesses.filter((b) => favoriteIds.includes(b.id)));
 
@@ -597,7 +596,7 @@
 
 				<!-- Business cards grid -->
 				<div class="flex flex-wrap justify-center gap-3 md:grid md:grid-cols-3 md:gap-6">
-					{#each displayedBusinesses as business (business.id)}
+					{#each topRatedBusinesses as business (business.id)}
 						<BusinessCard {business} />
 					{/each}
 				</div>
