@@ -76,7 +76,12 @@ export async function load({ fetch, params }) {
 
         const formattedBusiness = {
             id: business.id,
-            name: business['שם העסק או השירות '] || business['שם העסק'] || 'ללא שם',
+            name: business['שם העסק או השירות '] ||
+                business['שם העסק'] ||
+                business['שם העסק/ שירות'] ||
+                business['שם העסק / שירות'] ||
+                business['שם השירות'] ||
+                'ללא שם',
             phone: business['טלפון '] || business['טלפון'] || '',
             category: cleanText(business['קטגוריה'] || business['Category'] || 'כללי'),
             banners: bannerArray,

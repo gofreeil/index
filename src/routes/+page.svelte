@@ -167,7 +167,13 @@
 
 				return {
 					id: row.id,
-					name: row['שם העסק או השירות '] || row['שם העסק'] || 'ללא שם',
+					name:
+						row['שם העסק או השירות '] ||
+						row['שם העסק'] ||
+						row['שם העסק/ שירות'] ||
+						row['שם העסק / שירות'] ||
+						row['שם השירות'] ||
+						'ללא שם',
 					phone: row['טלפון '] || row['טלפון'] || '',
 					category: cleanText(row['קטגוריה'] || row['Category'] || 'כללי'),
 					banners: bannerArray,
