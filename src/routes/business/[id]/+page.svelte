@@ -126,7 +126,6 @@
 				</div>
 				<span class="text-sm text-gray-500 dark:text-gray-400">({reviews.length} {t.reviews})</span>
 			</div>
-			<p class="text-xl text-gray-600 dark:text-gray-400">{business.category}</p>
 
 			<div class="mt-6 flex flex-wrap justify-end gap-4">
 				{#if business.phone}
