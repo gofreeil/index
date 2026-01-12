@@ -685,7 +685,7 @@
 				<div class="mt-20">
 					<div class="mb-10 flex flex-col items-center justify-center text-center">
 						<h2
-							class="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-2xl font-extrabold text-transparent sm:text-4xl lg:text-5xl"
+							class="bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 bg-clip-text text-2xl font-extrabold text-transparent sm:text-4xl lg:text-5xl"
 						>
 							{t.allBusinesses}
 						</h2>
