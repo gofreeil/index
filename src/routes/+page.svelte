@@ -584,12 +584,31 @@
 					</h2>
 					<div class="mt-4 flex justify-center -space-x-1 sm:-space-x-2" dir="ltr">
 						{#each [{ tx: '-100px', ty: '-50px', r: '-45deg', d: '0s' }, { tx: '-50px', ty: '80px', r: '30deg', d: '0.1s' }, { tx: '0px', ty: '-100px', r: '180deg', d: '0.2s' }, { tx: '50px', ty: '60px', r: '-20deg', d: '0.3s' }, { tx: '100px', ty: '-40px', r: '90deg', d: '0.4s' }] as star, i}
-							<img
-								src={goldStar}
-								alt="כוכב זהב"
-								class="animate-converge h-10 w-10 object-contain sm:h-16 sm:w-16"
+							<div
+								class="animate-converge h-10 w-10 sm:h-16 sm:w-16"
 								style="--tx: {star.tx}; --ty: {star.ty}; --r: {star.r}; animation-delay: {star.d}; opacity: 0; animation-fill-mode: forwards;"
-							/>
+							>
+								<svg
+									viewBox="0 0 24 24"
+									fill="none"
+									xmlns="http://www.w3.org/2000/svg"
+									class="h-full w-full drop-shadow-md"
+								>
+									<defs>
+										<linearGradient id="gold-gradient-{i}" x1="0%" y1="0%" x2="100%" y2="100%">
+											<stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
+											<stop offset="50%" style="stop-color:#FDB931;stop-opacity:1" />
+											<stop offset="100%" style="stop-color:#FFD700;stop-opacity:1" />
+										</linearGradient>
+									</defs>
+									<path
+										d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z"
+										fill="url(#gold-gradient-{i})"
+										stroke="#B8860B"
+										stroke-width="0.5"
+									/>
+								</svg>
+							</div>
 						{/each}
 					</div>
 				</div>

@@ -6,12 +6,11 @@
 	lang.subscribe((v) => (currentLang = v));
 	const t = $derived(/** @type {any} */ (translations)[currentLang] || translations.he);
 
-	let isDark = $state(false);
+	let isDark = $state(true);
 
 	onMount(() => {
-		isDark =
-			localStorage.theme === 'dark' ||
-			(!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+		// Default to dark unless explicitly set to light
+		isDark = localStorage.theme !== 'light';
 		if (isDark) {
 			document.documentElement.classList.add('dark');
 		} else {
