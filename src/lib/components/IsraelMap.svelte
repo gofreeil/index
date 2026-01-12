@@ -286,30 +286,6 @@
 			<span class="text-xs font-bold text-blue-700">📍 {t.foundIn} {detectedCity}</span>
 		</div>
 	{/if}
-
-	<!-- legend and regions list -->
-	{#if showRegions && businesses.length === 0}
-		<div class="mt-8 flex flex-wrap justify-center gap-2">
-			{#each regions as region}
-				<div
-					class="flex items-center gap-2 rounded-full border px-4 py-2 transition-all duration-300 {isActive(
-						region.id
-					)
-						? 'scale-105 transform border-green-200 bg-green-50 text-green-800 shadow-md'
-						: 'border-gray-100 bg-white text-gray-400 opacity-60'}"
-				>
-					<div
-						class="h-2.5 w-2.5 rounded-full {isActive(region.id)
-							? 'animate-pulse bg-green-500'
-							: 'bg-gray-200'}"
-					></div>
-					<span class="text-xs leading-none font-extrabold">
-						{region.name}
-					</span>
-				</div>
-			{/each}
-		</div>
-	{/if}
 </div>
 
 <style>
