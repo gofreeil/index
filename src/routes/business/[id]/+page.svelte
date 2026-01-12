@@ -99,7 +99,7 @@
 					{#each Array(5) as _, i}
 						<span
 							class="text-xl {i < Math.floor(averageRating)
-								? 'bg-gradient-to-br from-[#BF953F] via-[#FCF6BA] to-[#AA771C] bg-clip-text text-transparent'
+								? 'bg-gradient-to-br from-[#3d2b1f] via-[#FCF6BA] to-[#3d2b1f] bg-clip-text text-transparent drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] filter'
 								: 'text-gray-300 dark:text-gray-600'}"
 						>
 							★
@@ -296,7 +296,7 @@
 								{#each Array(5) as _, i}
 									<span
 										class="text-xl {i < Math.floor(review.rating)
-											? 'bg-gradient-to-br from-[#BF953F] via-[#FCF6BA] to-[#AA771C] bg-clip-text text-transparent'
+											? 'bg-gradient-to-br from-[#3d2b1f] via-[#FCF6BA] to-[#3d2b1f] bg-clip-text text-transparent drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] filter'
 											: 'text-gray-300 dark:text-gray-600'}"
 									>
 										★

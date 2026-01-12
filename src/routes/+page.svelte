@@ -592,21 +592,23 @@
 									viewBox="0 0 24 24"
 									fill="none"
 									xmlns="http://www.w3.org/2000/svg"
-									class="h-full w-full drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]"
+									class="h-full w-full drop-shadow-[0_3px_5px_rgba(0,0,0,0.7)]"
 								>
 									<defs>
 										<linearGradient id="gold-gradient-{i}" x1="0%" y1="0%" x2="100%" y2="100%">
-											<stop offset="0%" style="stop-color:#BF953F;stop-opacity:1" />
-											<stop offset="25%" style="stop-color:#FCF6BA;stop-opacity:1" />
-											<stop offset="50%" style="stop-color:#B38728;stop-opacity:1" />
-											<stop offset="75%" style="stop-color:#FBF5B7;stop-opacity:1" />
-											<stop offset="100%" style="stop-color:#AA771C;stop-opacity:1" />
+											<stop offset="0%" style="stop-color:#3d2b1f;stop-opacity:1" />
+											<stop offset="15%" style="stop-color:#8a642d;stop-opacity:1" />
+											<stop offset="30%" style="stop-color:#d4af37;stop-opacity:1" />
+											<stop offset="45%" style="stop-color:#fcf6ba;stop-opacity:1" />
+											<stop offset="60%" style="stop-color:#d4af37;stop-opacity:1" />
+											<stop offset="85%" style="stop-color:#5d4037;stop-opacity:1" />
+											<stop offset="100%" style="stop-color:#3d2b1f;stop-opacity:1" />
 										</linearGradient>
 									</defs>
 									<path
 										d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z"
 										fill="url(#gold-gradient-{i})"
-										stroke="#5d4037"
+										stroke="#2a1b12"
 										stroke-width="0.3"
 									/>
 								</svg>
