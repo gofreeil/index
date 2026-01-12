@@ -282,7 +282,9 @@
 								<span class="font-bold text-gray-800 dark:text-gray-100">{review.user}</span>
 								<span class="text-sm text-gray-400 dark:text-gray-500">{review.date}</span>
 							</div>
-							<div class="mb-3 text-yellow-400">{renderStars(review.rating)}</div>
+							<div class="mb-3 text-yellow-500 dark:text-yellow-400">
+								{renderStars(review.rating)}
+							</div>
 							<p class="text-gray-600 dark:text-gray-300">{review.comment}</p>
 						</div>
 					{/each}

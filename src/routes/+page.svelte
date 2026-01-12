@@ -587,7 +587,7 @@
 							<img
 								src={goldStar}
 								alt="כוכב זהב"
-								class="animate-converge h-10 w-10 object-contain mix-blend-multiply sm:h-16 sm:w-16"
+								class="animate-converge h-10 w-10 object-contain sm:h-16 sm:w-16"
 								style="--tx: {star.tx}; --ty: {star.ty}; --r: {star.r}; animation-delay: {star.d}; opacity: 0; animation-fill-mode: forwards;"
 							/>
 						{/each}
