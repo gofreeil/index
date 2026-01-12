@@ -41,10 +41,6 @@
 </script>
 
 <div bind:this={mapContainer} class="styled-map-wrapper">
-	<!-- Mobile Scroll Hint -->
-	<p class="mb-2 text-center text-[10px] text-gray-400 sm:hidden">
-		* לניווט באתר החלק על המסגרת סביב המפה
-	</p>
 	<div class="inner-frame">
 		{#if !shouldLoadInteractiveMap}
 			<!-- Static map placeholder - loads immediately -->

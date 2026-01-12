@@ -15,7 +15,7 @@ export const translations = {
         all: 'הכל',
         categories: 'קטגוריות',
         neighborhoods: 'עסקים בשכונתי',
-        topRated: 'המדורים ביותר לשנת 2026',
+        topRated: 'המדורגים ביותר לשנת 2026',
         newBusinesses: 'עסקים חדשים שהצטרפו',
         mapTitle: 'העסקים שלנו פרוסים בארץ',
         allBusinesses: 'כלל העסקים המשרתים אותנו',
