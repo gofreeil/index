@@ -172,7 +172,8 @@
 						row['שם העסק'] ||
 						row['שם העסק/ שירות'] ||
 						row['שם העסק / שירות'] ||
-						row['שם השירות'] ||
+						findValue('שם') ||
+						findValue('Name') ||
 						'ללא שם',
 					phone: row['טלפון '] || row['טלפון'] || '',
 					category: cleanText(row['קטגוריה'] || row['Category'] || 'כללי'),

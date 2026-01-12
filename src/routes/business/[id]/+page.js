@@ -80,7 +80,8 @@ export async function load({ fetch, params }) {
                 business['שם העסק'] ||
                 business['שם העסק/ שירות'] ||
                 business['שם העסק / שירות'] ||
-                business['שם השירות'] ||
+                findValue(business, 'שם') ||
+                findValue(business, 'Name') ||
                 'ללא שם',
             phone: business['טלפון '] || business['טלפון'] || '',
             category: cleanText(business['קטגוריה'] || business['Category'] || 'כללי'),
