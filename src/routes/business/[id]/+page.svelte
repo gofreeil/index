@@ -223,6 +223,27 @@
 				</div>
 			{/if}
 
+			<!-- Video Section -->
+			{#if business.youtube}
+				<section class="mb-12">
+					<h2 class="mb-4 text-2xl font-bold text-gray-800 dark:text-gray-100">
+						{t.businessVideo}
+					</h2>
+					<div
+						class="relative w-full overflow-hidden rounded-3xl shadow-2xl"
+						style="padding-top: 56.25%;"
+					>
+						<iframe
+							src={business.youtube}
+							title={business.name}
+							class="absolute inset-0 h-full w-full border-0"
+							allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+							allowfullscreen
+						></iframe>
+					</div>
+				</section>
+			{/if}
+
 			<!-- Description -->
 			<section class="mb-12">
 				<h2 class="mb-4 text-2xl font-bold text-gray-800 dark:text-gray-100">{t.aboutBusiness}</h2>

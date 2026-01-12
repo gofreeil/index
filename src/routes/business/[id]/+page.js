@@ -6,7 +6,7 @@ export async function load({ fetch, params }) {
         const businesses = await response.json();
 
         // Find business by id (which is the index in our API)
-        const business = businesses.find(b => String(b.id) === String(id));
+        const business = businesses.find((/** @type {any} */ b) => String(b.id) === String(id));
 
         if (!business) {
             return {
@@ -16,11 +16,13 @@ export async function load({ fetch, params }) {
         }
 
         // Helper to format business data
+        /** @param {string} url */
         const getDirectImageUrl = (url) => {
             if (!url) return '';
             return url.trim();
         };
 
+        /** @param {any} row @param {string} partialKey */
         const findValue = (row, partialKey) => {
             const key = Object.keys(row).find((k) => k.includes(partialKey));
             return key ? row[key] : '';
@@ -29,9 +31,10 @@ export async function load({ fetch, params }) {
         let rawImages = business['הוסף תמונה לבאנר'] || '';
         let bannerArray = [];
         if (rawImages) {
-            bannerArray = rawImages.split(',').map(url => getDirectImageUrl(url.trim()));
+            bannerArray = rawImages.split(',').map((/** @type {string} */ url) => getDirectImageUrl(url.trim()));
         }
 
+        /** @param {string} text */
         const cleanText = (text) => {
             if (!text) return '';
             const cleaned = text
@@ -48,6 +51,29 @@ export async function load({ fetch, params }) {
         const primaryLogo = jLogo || currentLogo;
         const fallbackLogo = currentLogo;
 
+        /** @param {string} url */
+        const getYoutubeEmbedUrl = (url) => {
+            if (!url) return '';
+            let videoId = '';
+            const patterns = [
+                /(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([^&]+)/,
+                /(?:https?:\/\/)?(?:www\.)?youtu\.be\/([^?]+)/,
+                /(?:https?:\/\/)?(?:www\.)?youtube\.com\/embed\/([^?]+)/
+            ];
+            for (const pattern of patterns) {
+                const match = url.match(pattern);
+                if (match) {
+                    videoId = match[1];
+                    break;
+                }
+            }
+            return videoId ? `https://www.youtube.com/embed/${videoId}` : '';
+        };
+
+        const rawYoutube = findValue(business, 'YouTube') || findValue(business, 'יוטיוב') || findValue(business, 'סרטון');
+        const defaultYoutube = 'https://www.youtube.com/embed/CjBbU2ZOsa8';
+        const youtubeEmbed = getYoutubeEmbedUrl(rawYoutube) || defaultYoutube;
+
         const formattedBusiness = {
             id: business.id,
             name: business['שם העסק או השירות '] || business['שם העסק'] || 'ללא שם',
@@ -61,7 +87,8 @@ export async function load({ fetch, params }) {
             deliveries: cleanText(business['שירות משלוחים'] || ''),
             website: business['אתר'] || business['Website'] || '',
             logo: primaryLogo,
-            fallbackLogo: fallbackLogo
+            fallbackLogo: fallbackLogo,
+            youtube: youtubeEmbed
         };
 
         return {
