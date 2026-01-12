@@ -585,7 +585,7 @@
 
 				<div class="mb-10 flex flex-col items-center justify-center text-center">
 					<h2
-						class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-2xl font-extrabold text-transparent sm:text-4xl lg:text-5xl"
+						class="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 bg-clip-text text-2xl font-extrabold text-transparent sm:text-4xl lg:text-5xl"
 					>
 						{t.topRated}
 					</h2>
@@ -635,7 +635,7 @@
 				<div class="mt-20">
 					<div class="mb-10 flex flex-col items-center justify-center text-center">
 						<h2
-							class="bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-2xl font-extrabold text-transparent sm:text-4xl lg:text-5xl"
+							class="bg-gradient-to-r from-green-500 via-teal-500 to-blue-500 bg-clip-text text-2xl font-extrabold text-transparent sm:text-4xl lg:text-5xl"
 						>
 							{t.newBusinesses}
 						</h2>
@@ -668,7 +668,7 @@
 				<div class="mt-20">
 					<div class="mb-10 flex flex-col items-center justify-center text-center">
 						<h2
-							class="bg-gradient-to-r from-blue-600 to-indigo-700 bg-clip-text text-2xl font-extrabold text-transparent sm:text-4xl lg:text-5xl"
+							class="bg-gradient-to-r from-blue-500 via-indigo-500 to-cyan-500 bg-clip-text text-2xl font-extrabold text-transparent sm:text-4xl lg:text-5xl"
 						>
 							{t.mapTitle}
 						</h2>
@@ -685,7 +685,7 @@
 				<div class="mt-20">
 					<div class="mb-10 flex flex-col items-center justify-center text-center">
 						<h2
-							class="bg-gradient-to-r from-gray-700 to-gray-900 bg-clip-text text-2xl font-extrabold text-transparent sm:text-4xl lg:text-5xl"
+							class="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-2xl font-extrabold text-transparent sm:text-4xl lg:text-5xl"
 						>
 							{t.allBusinesses}
 						</h2>
