@@ -673,7 +673,7 @@
 								onclick={loadMore}
 								class="rounded-full bg-white px-8 py-3 text-lg font-bold text-blue-600 shadow-md transition-all hover:bg-blue-50 hover:shadow-lg active:scale-95 dark:bg-gray-800 dark:text-blue-400 dark:hover:bg-gray-700"
 							>
-								{t.loadMore}
+								{t.loadMore.replace('{count}', filteredBusinesses.length - visibleCount)}
 							</button>
 						</div>
 					{/if}

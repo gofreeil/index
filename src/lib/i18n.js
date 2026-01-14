@@ -100,7 +100,7 @@ export const translations = {
 		privacyFooter: 'בכל שאלה בנושא פרטיות, ניתן ליצור קשר בכתובת:',
 		favorites: 'מועדפים',
 		noFavorites: 'אין עדיין עסקים במועדפים',
-		loadMore: 'טען עסקים נוספים',
+		loadMore: 'טען עוד {count} עסקים נוספים',
 		writtenReviews: 'ביקורות כתובות',
 		noReviews: 'עסק זה עדיין לא דורג. היה הראשון לדרג!',
 		loginToReview: 'יש להתחבר כדי להוסיף חוות דעת',
@@ -188,7 +188,8 @@ export const translations = {
 		alreadyHaveAccount: 'Already have an account? Login',
 		dontHaveAccount: "Don't have an account? Register",
 		logout: 'Logout',
-		privacyFooter: 'For any questions regarding privacy, you can contact us at:'
+		privacyFooter: 'For any questions regarding privacy, you can contact us at:',
+		loadMore: 'Load {count} more businesses'
 	},
 	ru: {
 		dir: 'ltr',
@@ -260,6 +261,7 @@ export const translations = {
 		dontHaveAccount: 'Нет аккаунта? Зарегистрироваться',
 		logout: 'Выйти',
 		privacyFooter:
-			'По любым вопросам, касающимся конфиденциальности, вы можете связаться с нами по адресу:'
+			'По любым вопросам, касающимся конфиденциальности, вы можете связаться с нами по адресу:',
+		loadMore: 'Загрузить еще {count} предприятий'
 	}
 };
