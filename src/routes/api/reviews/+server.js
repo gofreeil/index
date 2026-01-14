@@ -40,13 +40,13 @@ const auth = new google.auth.GoogleAuth({
 });
 
 const sheets = google.sheets({ version: 'v4', auth });
-const STATS_SHEET_NAME = 'BusinessStats';
+const REVIEWS_SHEET_NAME = 'Reviews';
 
 /** @param {string} spreadsheetId */
-async function ensureStatsSheetExists(spreadsheetId) {
+async function ensureReviewsSheetExists(spreadsheetId) {
 	try {
 		const meta = await sheets.spreadsheets.get({ spreadsheetId });
-		const sheetExists = meta.data.sheets?.some((s) => s.properties?.title === STATS_SHEET_NAME);
+		const sheetExists = meta.data.sheets?.some((s) => s.properties?.title === REVIEWS_SHEET_NAME);
 
 		if (!sheetExists) {
 			await sheets.spreadsheets.batchUpdate({
@@ -55,49 +55,89 @@ async function ensureStatsSheetExists(spreadsheetId) {
 					requests: [
 						{
 							addSheet: {
-								properties: { title: STATS_SHEET_NAME }
+								properties: { title: REVIEWS_SHEET_NAME }
 							}
 						}
 					]
 				}
 			});
 
-			// Initialize with headers
+			// Headers: ID, BusinessID, UserID, UserName, Rating, Comment, Date, Approved
 			await sheets.spreadsheets.values.update({
 				spreadsheetId,
-				range: `${STATS_SHEET_NAME}!A1:D1`,
+				range: `${REVIEWS_SHEET_NAME}!A1:H1`,
 				valueInputOption: 'RAW',
 				requestBody: {
-					values: [['Timestamp', 'Business ID', 'Business Name', 'Action']]
+					values: [
+						['ID', 'BusinessID', 'UserID', 'UserName', 'Rating', 'Comment', 'Date', 'Approved']
+					]
 				}
 			});
 		}
 	} catch (error) {
-		console.error('Error ensuring stats sheet exists:', error);
+		console.error('Error ensuring reviews sheet exists:', error);
+	}
+}
+
+export async function GET({ url }) {
+	try {
+		const businessId = url.searchParams.get('businessId');
+		const spreadsheetId = clean(SPREADSHEET_ID);
+
+		const response = await sheets.spreadsheets.values.get({
+			spreadsheetId,
+			range: `${REVIEWS_SHEET_NAME}!A:H`
+		});
+
+		const rows = response.data.values || [];
+		if (rows.length === 0) return json([]);
+
+		const headers = rows[0];
+		const reviews = rows
+			.slice(1)
+			.map((row) => {
+				/** @type {any} */
+				const review = {};
+				headers.forEach((header, i) => {
+					review[header.toLowerCase()] = row[i];
+				});
+				return review;
+			})
+			.filter((r) => {
+				const matchBusiness = !businessId || String(r.businessid) === String(businessId);
+				const isApproved = r.approved === 'TRUE' || r.approved === '1' || r.approved === 'yes';
+				return matchBusiness && isApproved;
+			});
+
+		return json(reviews);
+	} catch (error) {
+		console.error('Reviews Fetch Error:', error);
+		return json([]);
 	}
 }
 
 export async function POST({ request }) {
 	try {
-		const { businessId, businessName, action } = await request.json();
+		const { businessId, userId, userName, rating, comment } = await request.json();
 		const spreadsheetId = clean(SPREADSHEET_ID);
 
-		await ensureStatsSheetExists(spreadsheetId);
+		await ensureReviewsSheetExists(spreadsheetId);
 
-		const timestamp = new Date().toISOString();
+		const id = Date.now().toString();
+		const date = new Date().toISOString().split('T')[0];
 
 		await sheets.spreadsheets.values.append({
 			spreadsheetId,
-			range: `${STATS_SHEET_NAME}!A:D`,
+			range: `${REVIEWS_SHEET_NAME}!A:H`,
 			valueInputOption: 'RAW',
 			requestBody: {
-				values: [[timestamp, businessId, businessName, action]]
+				values: [[id, businessId, userId, userName, rating, comment, date, 'FALSE']]
 			}
 		});
 
 		return json({ success: true });
 	} catch (error) {
-		console.error('Stats API Error:', error);
-		return json({ success: false, error: 'Failed to log stats' }, { status: 500 });
+		console.error('Review Post Error:', error);
+		return json({ success: false, error: 'Failed to post review' }, { status: 500 });
 	}
 }

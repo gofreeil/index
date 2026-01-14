@@ -3,6 +3,7 @@
 	import { fade, fly } from 'svelte/transition';
 	import IsraelMap from '$lib/components/IsraelMap.svelte';
 	import { lang, translations } from '$lib/i18n';
+	import { authUser } from '$lib/auth';
 
 	/** @type {{ data: any }} */
 	let { data } = $props();
@@ -32,25 +33,38 @@
 		return () => clearInterval(interval);
 	});
 
-	// דאטה פיקטיבי לחוות דעת (מכיוון שאין עדיין במערכת)
-	const reviews = [
-		{
-			id: 1,
-			user: 'ישראל ישראלי',
-			rating: 5,
-			comment: 'שירות מעולה! הגעתי דרך האתר וקיבלתי יחס חם והנחה משמעותית.',
-			date: '2023-12-15'
-		},
-		{
-			id: 2,
-			user: 'מיכל כהן',
-			rating: 4,
-			comment: 'איכות מצוינת. המשלוח הגיע בזמן.',
-			date: '2023-11-20'
-		}
-	];
+	/** @type {any[]} */
+	let reviews = $state([]);
+	let averageRating = $derived(
+		reviews.length > 0
+			? Number((reviews.reduce((acc, r) => acc + Number(r.rating), 0) / reviews.length).toFixed(1))
+			: 0
+	);
+	/** @type {any} */
+	let user = $state(null);
+	authUser.subscribe((v) => (user = v));
 
-	const averageRating = 4.5;
+	async function fetchReviews() {
+		try {
+			const res = await fetch(`/api/reviews?businessId=${business.id}`);
+			if (res.ok) {
+				reviews = await res.json();
+			}
+		} catch (e) {
+			console.error('Failed to fetch reviews:', e);
+		}
+	}
+
+	onMount(() => {
+		fetchReviews();
+
+		if (business.banners.length > 1) {
+			interval = setInterval(() => {
+				currentImageIndex = (currentImageIndex + 1) % business.banners.length;
+			}, 5000);
+		}
+		return () => clearInterval(interval);
+	});
 
 	let isPhoneRevealed = $state(false);
 
@@ -74,13 +88,32 @@
 		}
 	}
 
-	// פונקציית עזר לציור כוכבים
-
-	function submitReview() {
-		// כאן היינו שולחים לשרת, בינתיים רק נסגור
-		alert('תודה על חוות הדעת! היא תפורסם לאחר אישור.');
-		showReviewForm = false;
-		newReview = { rating: 5, comment: '', user: '' };
+	async function submitReview() {
+		if (!user) return;
+		try {
+			const response = await fetch('/api/reviews', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					businessId: business.id,
+					userId: user.id,
+					userName: user.name,
+					rating: newReview.rating,
+					comment: newReview.comment
+				})
+			});
+			const result = await response.json();
+			if (result.success) {
+				alert('תודה על חוות הדעת! היא תפורסם לאחר אישור.');
+				showReviewForm = false;
+				newReview = { rating: 5, comment: '', user: '' };
+				// We don't fetchReviews again because it needs approval
+			} else {
+				alert('שגיאה בשליחת חוות הדעת');
+			}
+		} catch (e) {
+			alert('שגיאה בשליחת חוות הדעת');
+		}
 	}
 </script>
 
@@ -112,19 +145,25 @@
 				{business.name}
 			</h1>
 			<div class="mb-4 flex items-center justify-end gap-2">
-				<span class="text-xl font-bold text-yellow-500">{averageRating}</span>
-				<div class="flex gap-0.5" dir="ltr">
-					{#each Array(5) as _, i}
-						<span
-							class="text-xl {i < Math.floor(averageRating)
-								? 'bg-gradient-to-br from-[#3d2b1f] via-[#FCF6BA] to-[#3d2b1f] bg-clip-text text-transparent drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] filter'
-								: 'text-gray-300 dark:text-gray-600'}"
-						>
-							★
-						</span>
-					{/each}
-				</div>
-				<span class="text-sm text-gray-500 dark:text-gray-400">({reviews.length} {t.reviews})</span>
+				{#if reviews.length > 0}
+					<span class="text-xl font-bold text-yellow-500">{averageRating}</span>
+					<div class="flex gap-0.5" dir="ltr">
+						{#each Array(5) as _, i}
+							<span
+								class="text-xl {i < Math.floor(averageRating)
+									? 'bg-gradient-to-br from-[#3d2b1f] via-[#FCF6BA] to-[#3d2b1f] bg-clip-text text-transparent drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] filter'
+									: 'text-gray-300 dark:text-gray-600'}"
+							>
+								★
+							</span>
+						{/each}
+					</div>
+					<span class="text-sm text-gray-500 dark:text-gray-400"
+						>({reviews.length} {t.reviews})</span
+					>
+				{:else}
+					<span class="text-sm text-gray-500 dark:text-gray-400">{t.noReviews}</span>
+				{/if}
 			</div>
 
 			<div class="mt-6 flex flex-wrap justify-end gap-4">
@@ -290,62 +329,101 @@
 						in:fly={{ y: 20 }}
 						class="mb-8 rounded-2xl bg-gray-50 p-6 shadow-inner dark:border dark:border-gray-700 dark:bg-gray-800"
 					>
-						<h3 class="mb-4 font-bold text-gray-800 dark:text-gray-100">{t.whatDoYouThink}</h3>
-						<div class="space-y-4">
-							<input
-								type="text"
-								bind:value={newReview.user}
-								placeholder={t.yourNamePlaceholder}
-								class="w-full rounded-lg border border-gray-200 p-2 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-							/>
-							<select
-								bind:value={newReview.rating}
-								class="w-full rounded-lg border border-gray-200 p-2 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-							>
-								<option value={5}>5 ★ - Excellent</option>
-								<option value={4}>4 ★ - Good</option>
-								<option value={3}>3 ★ - Okay</option>
-								<option value={2}>2 ★ - Needs improvement</option>
-								<option value={1}>1 ★ - Bad</option>
-							</select>
-							<textarea
-								bind:value={newReview.comment}
-								placeholder={t.reviewPlaceholder}
-								class="h-32 w-full rounded-lg border border-gray-200 p-2 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-							></textarea>
-							<button
-								onclick={submitReview}
-								class="rounded-full bg-blue-600 px-6 py-2 font-bold text-white transition hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800"
-							>
-								{t.submitReview}
-							</button>
-						</div>
+						{#if !user}
+							<div class="text-center">
+								<p class="mb-4 text-gray-600 dark:text-gray-400">{t.loginToReview}</p>
+								<div class="flex justify-center gap-4">
+									<a
+										href="/auth/login"
+										class="rounded-full bg-blue-600 px-6 py-2 font-bold text-white transition hover:bg-blue-700"
+									>
+										{t.login}
+									</a>
+									<a
+										href="/auth/register"
+										class="rounded-full border border-blue-600 px-6 py-2 font-bold text-blue-600 transition hover:bg-blue-600 hover:text-white"
+									>
+										{t.register}
+									</a>
+								</div>
+							</div>
+						{:else}
+							<h3 class="mb-4 font-bold text-gray-800 dark:text-gray-100">{t.whatDoYouThink}</h3>
+							<div class="space-y-4">
+								<div class="flex items-center gap-2">
+									<span class="text-sm text-gray-500 dark:text-gray-400">{t.fullName}:</span>
+									<span class="font-bold text-gray-800 dark:text-gray-100">{user.name}</span>
+								</div>
+								<select
+									bind:value={newReview.rating}
+									class="w-full rounded-lg border border-gray-200 p-2 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+								>
+									<option value={5}>5 ★ - Excellent</option>
+									<option value={4}>4 ★ - Good</option>
+									<option value={3}>3 ★ - Okay</option>
+									<option value={2}>2 ★ - Needs improvement</option>
+									<option value={1}>1 ★ - Bad</option>
+								</select>
+								<textarea
+									bind:value={newReview.comment}
+									placeholder={t.reviewPlaceholder}
+									class="h-32 w-full rounded-lg border border-gray-200 p-2 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+								></textarea>
+								<button
+									onclick={submitReview}
+									class="rounded-full bg-blue-600 px-6 py-2 font-bold text-white transition hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800"
+								>
+									{t.submitReview}
+								</button>
+							</div>
+						{/if}
 					</div>
 				{/if}
 
 				<div class="space-y-6">
-					{#each reviews as review}
+					{#if reviews.length === 0}
 						<div
-							class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800"
+							class="rounded-2xl border border-dashed border-gray-200 p-12 text-center dark:border-gray-700"
 						>
-							<div class="mb-2 flex items-center justify-between">
-								<span class="font-bold text-gray-800 dark:text-gray-100">{review.user}</span>
-								<span class="text-sm text-gray-400 dark:text-gray-500">{review.date}</span>
-							</div>
-							<div class="mb-3 flex gap-0.5" dir="ltr">
-								{#each Array(5) as _, i}
-									<span
-										class="text-xl {i < Math.floor(review.rating)
-											? 'bg-gradient-to-br from-[#3d2b1f] via-[#FCF6BA] to-[#3d2b1f] bg-clip-text text-transparent drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] filter'
-											: 'text-gray-300 dark:text-gray-600'}"
-									>
-										★
-									</span>
-								{/each}
-							</div>
-							<p class="text-gray-600 dark:text-gray-300">{review.comment}</p>
+							<svg
+								class="mx-auto mb-4 h-12 w-12 text-gray-300"
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+								/>
+							</svg>
+							<p class="text-lg font-medium text-gray-500 dark:text-gray-400">{t.noReviews}</p>
 						</div>
-					{/each}
+					{:else}
+						{#each reviews as review}
+							<div
+								class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800"
+							>
+								<div class="mb-2 flex items-center justify-between">
+									<span class="font-bold text-gray-800 dark:text-gray-100">{review.user}</span>
+									<span class="text-sm text-gray-400 dark:text-gray-500">{review.date}</span>
+								</div>
+								<div class="mb-3 flex gap-0.5" dir="ltr">
+									{#each Array(5) as _, i}
+										<span
+											class="text-xl {i < Math.floor(review.rating)
+												? 'bg-gradient-to-br from-[#3d2b1f] via-[#FCF6BA] to-[#3d2b1f] bg-clip-text text-transparent drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] filter'
+												: 'text-gray-300 dark:text-gray-600'}"
+										>
+											★
+										</span>
+									{/each}
+								</div>
+								<p class="text-gray-600 dark:text-gray-300">{review.comment}</p>
+							</div>
+						{/each}
+					{/if}
 				</div>
 			</section>
 

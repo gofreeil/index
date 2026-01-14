@@ -1,60 +1,59 @@
 import { json } from '@sveltejs/kit';
 import { google } from 'googleapis';
-import {
-  GOOGLE_CLIENT_EMAIL,
-  GOOGLE_PRIVATE_KEY,
-  SPREADSHEET_ID
-} from '$env/static/private';
+import { GOOGLE_CLIENT_EMAIL, GOOGLE_PRIVATE_KEY, SPREADSHEET_ID } from '$env/static/private';
 
 /**
  * @param {string} str
  * @returns {string}
  */
 const clean = (str) => {
-  if (!str) return '';
+	if (!str) return '';
 
-  // Convert any type of newline representation to standard \n
-  let cleaned = str.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n').replace(/\r\n/g, '\n');
+	// Convert any type of newline representation to standard \n
+	let cleaned = str
+		.replace(/\\r\\n/g, '\n')
+		.replace(/\\n/g, '\n')
+		.replace(/\r\n/g, '\n');
 
-  // Handle backslash line continuations
-  cleaned = cleaned.replace(/\\\n/g, '\n');
+	// Handle backslash line continuations
+	cleaned = cleaned.replace(/\\\n/g, '\n');
 
-  cleaned = cleaned.trim();
+	cleaned = cleaned.trim();
 
-  // Remove wrapping quotes
-  if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
-    cleaned = cleaned.substring(1, cleaned.length - 1);
-  }
+	// Remove wrapping quotes
+	if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
+		cleaned = cleaned.substring(1, cleaned.length - 1);
+	}
 
-  if (cleaned.includes('BEGIN')) {
-    const header = '-----BEGIN PRIVATE KEY-----';
-    const footer = '-----END PRIVATE KEY-----';
+	if (cleaned.includes('BEGIN')) {
+		const header = '-----BEGIN PRIVATE KEY-----';
+		const footer = '-----END PRIVATE KEY-----';
 
-    // Extract only the base64 part, removing headers, footers, whitespace and backslashes
-    let body = cleaned
-      .replace(/-----BEGIN[\s\S]*?KEY-----/g, '')
-      .replace(/-----END[\s\S]*?KEY-----/g, '')
-      .replace(/\\/g, '')
-      .replace(/\s+/g, '');
+		// Extract only the base64 part, removing headers, footers, whitespace and backslashes
+		let body = cleaned
+			.replace(/-----BEGIN[\s\S]*?KEY-----/g, '')
+			.replace(/-----END[\s\S]*?KEY-----/g, '')
+			.replace(/\\/g, '')
+			.replace(/\s+/g, '');
 
-    // Format body with standard 64-character lines
-    let formattedBody = '';
-    for (let i = 0; i < body.length; i += 64) {
-      formattedBody += body.substring(i, i + 64) + '\n';
-    }
+		// Format body with standard 64-character lines
+		let formattedBody = '';
+		for (let i = 0; i < body.length; i += 64) {
+			formattedBody += body.substring(i, i + 64) + '\n';
+		}
 
-    cleaned = `${header}\n${formattedBody}${footer}`;
-  }
+		cleaned = `${header}\n${formattedBody}${footer}`;
+	}
 
-  return cleaned;
+	return cleaned;
 };
 
 const auth = new google.auth.GoogleAuth({
-  credentials: {
-    client_email: clean(GOOGLE_CLIENT_EMAIL),
-    private_key: clean(GOOGLE_PRIVATE_KEY),
-  },
-  scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+	credentials: {
+		client_email: clean(GOOGLE_CLIENT_EMAIL),
+		private_key: clean(GOOGLE_PRIVATE_KEY)
+	},
+	scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly']
 });
 
 const sheets = google.sheets({ version: 'v4', auth });
@@ -71,123 +70,134 @@ const CACHE_DURATION = 15 * 60 * 1000; // 15 minutes
  * @returns {string}
  */
 const getDirectImageUrl = (url) => {
-  if (!url) return '';
-  const trimmedUrl = url.trim();
+	if (!url) return '';
+	const trimmedUrl = url.trim();
 
-  // Handle Google Drive links
-  if (trimmedUrl.includes('drive.google.com') || trimmedUrl.includes('googledrive.com')) {
-    let id = '';
-    const idPatterns = [
-      /\/file\/d\/([a-zA-Z0-9_-]+)/,
-      /id=([a-zA-Z0-9_-]+)/,
-      /\/d\/([a-zA-Z0-9_-]+)/,
-      /drive\/folders\/([a-zA-Z0-9_-]+)/
-    ];
+	// Handle Google Drive links
+	if (trimmedUrl.includes('drive.google.com') || trimmedUrl.includes('googledrive.com')) {
+		let id = '';
+		const idPatterns = [
+			/\/file\/d\/([a-zA-Z0-9_-]+)/,
+			/id=([a-zA-Z0-9_-]+)/,
+			/\/d\/([a-zA-Z0-9_-]+)/,
+			/drive\/folders\/([a-zA-Z0-9_-]+)/
+		];
 
-    for (const pattern of idPatterns) {
-      const match = trimmedUrl.match(pattern);
-      if (match && match[1]) {
-        id = match[1];
-        break;
-      }
-    }
+		for (const pattern of idPatterns) {
+			const match = trimmedUrl.match(pattern);
+			if (match && match[1]) {
+				id = match[1];
+				break;
+			}
+		}
 
-    if (id) {
-      // thumbnail endpoint is much more reliable for embedding than uc?export=view
-      return `https://drive.google.com/thumbnail?id=${id}&sz=w800`;
-    }
-  }
-  return trimmedUrl;
+		if (id) {
+			// thumbnail endpoint is much more reliable for embedding than uc?export=view
+			return `https://drive.google.com/thumbnail?id=${id}&sz=w800`;
+		}
+	}
+	return trimmedUrl;
 };
 
 export async function GET() {
-  const now = Date.now();
-  if (cachedData && now - lastFetchTime < CACHE_DURATION) {
-    return json(cachedData);
-  }
+	const now = Date.now();
+	if (cachedData && now - lastFetchTime < CACHE_DURATION) {
+		return json(cachedData);
+	}
 
-  try {
-    const spreadsheetId = clean(SPREADSHEET_ID);
+	try {
+		const spreadsheetId = clean(SPREADSHEET_ID);
 
-    // Get spreadsheet metadata
-    const metaResponse = await sheets.spreadsheets.get({
-      spreadsheetId,
-    });
-    const sheetsList = metaResponse.data.sheets;
+		// Get spreadsheet metadata
+		const metaResponse = await sheets.spreadsheets.get({
+			spreadsheetId
+		});
+		const sheetsList = metaResponse.data.sheets;
 
-    if (!sheetsList || sheetsList.length === 0) {
-      return json({ error: 'No sheets found in spreadsheet' }, { status: 404 });
-    }
+		if (!sheetsList || sheetsList.length === 0) {
+			return json({ error: 'No sheets found in spreadsheet' }, { status: 404 });
+		}
 
-    const sheetName = sheetsList[0]?.properties?.title;
+		const sheetName = sheetsList[0]?.properties?.title;
 
-    if (!sheetName) {
-      return json({ error: 'Unable to find sheet name' }, { status: 500 });
-    }
+		if (!sheetName) {
+			return json({ error: 'Unable to find sheet name' }, { status: 500 });
+		}
 
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId,
-      range: sheetName,
-    });
+		const response = await sheets.spreadsheets.values.get({
+			spreadsheetId,
+			range: sheetName
+		});
 
-    /** @type {any[][]} */
-    const rows = response.data.values || [];
+		/** @type {any[][]} */
+		const rows = response.data.values || [];
 
-    if (rows.length === 0) {
-      return json([]);
-    }
+		if (rows.length === 0) {
+			return json([]);
+		}
 
-    const headers = rows[0];
-    const approvedIndex = headers.findIndex(h =>
-      h.toLowerCase().includes('אושר') ||
-      h.toLowerCase().includes('approved')
-    );
+		const headers = rows[0];
+		const approvedIndex = headers.findIndex(
+			(h) => h.toLowerCase().includes('אושר') || h.toLowerCase().includes('approved')
+		);
 
-    const businesses = rows.slice(1)
-      .filter((row) => {
-        if (approvedIndex !== -1) {
-          return row[approvedIndex]?.toLowerCase() === 'כן' ||
-            row[approvedIndex]?.toLowerCase() === 'yes' ||
-            row[approvedIndex] === '1';
-        }
-        return true;
-      })
-      .map((row, index) => {
-        /** @type {Record<string, any>} */
-        const business = {};
-        headers.forEach((header, i) => {
-          let value = row[i] || '';
+		const businesses = rows
+			.slice(1)
+			.filter((row) => {
+				if (approvedIndex !== -1) {
+					return (
+						row[approvedIndex]?.toLowerCase() === 'כן' ||
+						row[approvedIndex]?.toLowerCase() === 'yes' ||
+						row[approvedIndex] === '1'
+					);
+				}
+				return true;
+			})
+			.map((row, index) => {
+				/** @type {Record<string, any>} */
+				const business = {};
+				headers.forEach((header, i) => {
+					let value = row[i] || '';
 
-          // Automatically convert Google Drive links in ANY column if they look like links
-          if (typeof value === 'string' && (value.includes('drive.google.com') || value.includes('googledrive.com'))) {
-            // If it's a comma-separated list of links (common for banners)
-            if (value.includes(',')) {
-              value = value.split(',').map(v => getDirectImageUrl(v.trim())).join(',');
-            } else {
-              value = getDirectImageUrl(value);
-            }
-          }
+					// Automatically convert Google Drive links in ANY column if they look like links
+					if (
+						typeof value === 'string' &&
+						(value.includes('drive.google.com') || value.includes('googledrive.com'))
+					) {
+						// If it's a comma-separated list of links (common for banners)
+						if (value.includes(',')) {
+							value = value
+								.split(',')
+								.map((v) => getDirectImageUrl(v.trim()))
+								.join(',');
+						} else {
+							value = getDirectImageUrl(value);
+						}
+					}
 
-          business[header] = value;
-        });
-        business.id = index;
+					business[header] = value;
+				});
+				business.id = index;
 
-        // Also handle the specific Column J logo
-        const logoFromJ = row[9] || '';
-        business.logoFromColumnJ = getDirectImageUrl(logoFromJ);
+				// Also handle the specific Column J logo
+				const logoFromJ = row[9] || '';
+				business.logoFromColumnJ = getDirectImageUrl(logoFromJ);
 
-        return business;
-      });
+				return business;
+			});
 
-    cachedData = businesses;
-    lastFetchTime = now;
+		cachedData = businesses;
+		lastFetchTime = now;
 
-    return json(businesses);
-  } catch (error) {
-    console.error('Error fetching businesses:', error);
-    return json({
-      error: 'Failed to fetch businesses',
-      details: error instanceof Error ? error.message : String(error)
-    }, { status: 500 });
-  }
+		return json(businesses);
+	} catch (error) {
+		console.error('Error fetching businesses:', error);
+		return json(
+			{
+				error: 'Failed to fetch businesses',
+				details: error instanceof Error ? error.message : String(error)
+			},
+			{ status: 500 }
+		);
+	}
 }

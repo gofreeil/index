@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import { google } from 'googleapis';
 import { GOOGLE_CLIENT_EMAIL, GOOGLE_PRIVATE_KEY, SPREADSHEET_ID } from '$env/static/private';
 
+/** @param {string} str */
 const clean = (str) => {
 	if (!str) return '';
 	let cleaned = str
@@ -39,12 +40,13 @@ const auth = new google.auth.GoogleAuth({
 });
 
 const sheets = google.sheets({ version: 'v4', auth });
-const SHEET_NAME = 'SiteData';
+const USERS_SHEET_NAME = 'Users';
 
-async function ensureSheetExists(spreadsheetId) {
+/** @param {string} spreadsheetId */
+async function ensureUsersSheetExists(spreadsheetId) {
 	try {
 		const meta = await sheets.spreadsheets.get({ spreadsheetId });
-		const sheetExists = meta.data.sheets?.some((s) => s.properties?.title === SHEET_NAME);
+		const sheetExists = meta.data.sheets?.some((s) => s.properties?.title === USERS_SHEET_NAME);
 
 		if (!sheetExists) {
 			await sheets.spreadsheets.batchUpdate({
@@ -53,75 +55,63 @@ async function ensureSheetExists(spreadsheetId) {
 					requests: [
 						{
 							addSheet: {
-								properties: { title: SHEET_NAME }
+								properties: { title: USERS_SHEET_NAME }
 							}
 						}
 					]
 				}
 			});
 
-			// Initialize with headers
+			// Initialize with headers: ID, Name, Email, Password, CreatedAt
 			await sheets.spreadsheets.values.update({
 				spreadsheetId,
-				range: `${SHEET_NAME}!A1:B1`,
+				range: `${USERS_SHEET_NAME}!A1:E1`,
 				valueInputOption: 'RAW',
 				requestBody: {
-					values: [
-						['Counter Name', 'Value'],
-						['Total Visits', '1000']
-					]
+					values: [['ID', 'Name', 'Email', 'Password', 'CreatedAt']]
 				}
 			});
 		}
 	} catch (error) {
-		console.error('Error ensuring sheet exists:', error);
+		console.error('Error ensuring users sheet exists:', error);
 	}
 }
 
-export async function POST() {
+export async function POST({ request }) {
 	try {
+		const { name, email, password } = await request.json();
 		const spreadsheetId = clean(SPREADSHEET_ID);
-		await ensureSheetExists(spreadsheetId);
 
-		// Read current value
-		const readRes = await sheets.spreadsheets.values.get({
+		await ensureUsersSheetExists(spreadsheetId);
+
+		// Check if user already exists
+		const response = await sheets.spreadsheets.values.get({
 			spreadsheetId,
-			range: `${SHEET_NAME}!B2`
+			range: `${USERS_SHEET_NAME}!C:C`
 		});
+		const emails = response.data.values?.map((r) => r[0]) || [];
+		if (emails.includes(email)) {
+			return json({ success: false, error: 'User already exists' }, { status: 400 });
+		}
 
-		let currentVal = parseInt(readRes.data.values?.[0]?.[0] || '1000');
-		const newVal = currentVal + 1;
+		const id = Date.now().toString();
+		const createdAt = new Date().toISOString();
 
-		// Write new value
-		await sheets.spreadsheets.values.update({
+		await sheets.spreadsheets.values.append({
 			spreadsheetId,
-			range: `${SHEET_NAME}!B2`,
+			range: `${USERS_SHEET_NAME}!A:E`,
 			valueInputOption: 'RAW',
 			requestBody: {
-				values: [[newVal.toString()]]
+				values: [[id, name, email, password, createdAt]]
 			}
 		});
 
-		return json({ count: newVal });
-	} catch (error) {
-		console.error('Counter API Error:', error);
-		return json({ count: 1000, error: 'Failed to update' }, { status: 500 });
-	}
-}
-
-export async function GET() {
-	try {
-		const spreadsheetId = clean(SPREADSHEET_ID);
-		await ensureSheetExists(spreadsheetId);
-
-		const readRes = await sheets.spreadsheets.values.get({
-			spreadsheetId,
-			range: `${SHEET_NAME}!B2`
+		return json({
+			success: true,
+			user: { id, name, email }
 		});
-
-		let currentVal = parseInt(readRes.data.values?.[0]?.[0] || '1000');
-		return json({ count: currentVal });
 	} catch (error) {
-		return json({ count: 1000, error: 'Failed to read' });
+		console.error('Registration API Error:', error);
+		return json({ success: false, error: 'Registration failed' }, { status: 500 });
 	}
 }

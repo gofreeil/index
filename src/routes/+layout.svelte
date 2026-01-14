@@ -5,6 +5,7 @@
 	import { get } from 'svelte/store';
 	import VisitorCounter from '$lib/components/VisitorCounter.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
+	import { authUser, logout } from '$lib/auth';
 
 	let { children } = $props();
 
@@ -16,10 +17,15 @@
 
 	let isLangMenuOpen = $state(false);
 
+	/** @param {string} l */
 	const changeLang = (l) => {
 		lang.set(l);
 		isLangMenuOpen = false;
 	};
+
+	/** @type {any} */
+	let user = $state(null);
+	authUser.subscribe((v) => (user = v));
 
 	const flags = {
 		he: '🇮🇱',
@@ -148,6 +154,28 @@
 					</div>
 
 					<ThemeToggle />
+
+					<!-- User Auth Section -->
+					{#if user}
+						<div class="flex items-center gap-2">
+							<span class="hidden text-sm font-bold text-gray-700 sm:inline dark:text-gray-200"
+								>{user.name}</span
+							>
+							<button
+								onclick={logout}
+								class="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-bold text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:text-red-600 sm:px-4 sm:py-2 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+							>
+								{t.logout}
+							</button>
+						</div>
+					{:else}
+						<a
+							href="/auth/login"
+							class="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm font-bold text-blue-600 shadow-sm transition-all hover:bg-gray-50 hover:shadow-md sm:px-4 sm:py-2 dark:border-gray-700 dark:bg-gray-800 dark:text-blue-400"
+						>
+							{t.login}
+						</a>
+					{/if}
 
 					<!-- Community Policy Button -->
 					<a
