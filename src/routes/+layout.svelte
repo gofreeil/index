@@ -83,8 +83,10 @@
 						>
 							מדריך בעלי מקצוע כשירים
 						</h1>
-						<p class="hidden text-right text-sm text-gray-600 sm:block">
-							בהנחות והטבות ייחודיות לחברי יוצאים לחירות
+						<p
+							class="hidden text-right text-sm font-bold text-blue-400 sm:block dark:text-blue-300"
+						>
+							{t.subtitle}
 						</p>
 					</div>
 				</a>
@@ -218,7 +220,7 @@
 					</a>
 				</div>
 			</div>
-			<p class="mt-2 text-right text-xs text-gray-600 sm:hidden">
+			<p class="mt-2 text-right text-xs font-bold text-blue-400 sm:hidden dark:text-blue-300">
 				{t.subtitle}
 			</p>
 		</div>
