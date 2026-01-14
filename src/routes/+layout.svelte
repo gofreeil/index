@@ -83,9 +83,7 @@
 						>
 							מדריך בעלי מקצוע כשירים
 						</h1>
-						<p
-							class="hidden text-right text-sm font-bold text-blue-400 sm:block dark:text-blue-300"
-						>
+						<p class="hidden text-right text-sm font-bold text-blue-50/90 sm:block dark:text-white">
 							{t.subtitle}
 						</p>
 					</div>
@@ -220,7 +218,7 @@
 					</a>
 				</div>
 			</div>
-			<p class="mt-2 text-right text-xs font-bold text-blue-400 sm:hidden dark:text-blue-300">
+			<p class="mt-2 text-right text-xs font-bold text-blue-100 sm:hidden dark:text-blue-300">
 				{t.subtitle}
 			</p>
 		</div>
