@@ -118,7 +118,8 @@ export const translations = {
 		removeFromFavorites: 'הסר מהמועדפים',
 		manageBusiness: 'ניהול ועדכון פרטי עסק',
 		updateBusiness: 'עדכון פרטים',
-		share: 'שיתוף'
+		share: 'שיתוף',
+		loginWithGoogle: 'התחבר באמצעות Google'
 	},
 	en: {
 		dir: 'ltr',
@@ -189,7 +190,8 @@ export const translations = {
 		dontHaveAccount: "Don't have an account? Register",
 		logout: 'Logout',
 		privacyFooter: 'For any questions regarding privacy, you can contact us at:',
-		loadMore: 'Load {count} more businesses'
+		loadMore: 'Load {count} more businesses',
+		loginWithGoogle: 'Sign in with Google'
 	},
 	ru: {
 		dir: 'ltr',
@@ -262,6 +264,7 @@ export const translations = {
 		logout: 'Выйти',
 		privacyFooter:
 			'По любым вопросам, касающимся конфиденциальности, вы можете связаться с нами по адресу:',
-		loadMore: 'Загрузить еще {count} предприятий'
+		loadMore: 'Загрузить еще {count} предприятий',
+		loginWithGoogle: 'Войти через Google'
 	}
 };

@@ -2,6 +2,9 @@
 	import { lang, translations } from '$lib/i18n';
 	import { setAuthUser } from '$lib/auth';
 	import { goto } from '$app/navigation';
+	import { onMount } from 'svelte';
+	import * as publicVars from '$env/static/public';
+	const PUBLIC_GOOGLE_CLIENT_ID = publicVars['PUBLIC_GOOGLE_CLIENT_ID'] || '';
 
 	let currentLang = $state('he');
 	lang.subscribe((v) => (currentLang = v));
@@ -12,6 +15,51 @@
 	let password = $state('');
 	let loading = $state(false);
 	let error = $state('');
+
+	/** @param {any} response */
+	async function handleGoogleResponse(response) {
+		loading = true;
+		try {
+			const res = await fetch('/api/auth/google', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ credential: response.credential })
+			});
+			const result = await res.json();
+			if (result.success) {
+				setAuthUser(result.user);
+				const prev = document.referrer;
+				if (prev && prev.includes(window.location.host)) {
+					window.history.back();
+				} else {
+					goto('/');
+				}
+			} else {
+				error = result.error;
+			}
+		} catch (e) {
+			error = 'Google Sign-In failed';
+		} finally {
+			loading = false;
+		}
+	}
+
+	onMount(() => {
+		const googleAuth = /** @type {any} */ (window).google;
+		if (typeof window !== 'undefined' && googleAuth && PUBLIC_GOOGLE_CLIENT_ID) {
+			googleAuth.accounts.id.initialize({
+				client_id: PUBLIC_GOOGLE_CLIENT_ID,
+				callback: handleGoogleResponse
+			});
+			googleAuth.accounts.id.renderButton(document.getElementById('google-button'), {
+				theme: 'outline',
+				size: 'large',
+				width: '100%',
+				text: 'signup_with',
+				shape: 'pill'
+			});
+		}
+	});
 
 	async function handleRegister() {
 		loading = true;
@@ -118,6 +166,17 @@
 					{loading ? '...' : t.register}
 				</button>
 			</div>
+
+			<div class="relative py-4">
+				<div class="absolute inset-0 flex items-center">
+					<div class="w-full border-t border-gray-200 dark:border-gray-700"></div>
+				</div>
+				<div class="relative flex justify-center text-sm">
+					<span class="bg-white px-2 text-gray-500 dark:bg-gray-800">או</span>
+				</div>
+			</div>
+
+			<div id="google-button" class="flex justify-center"></div>
 
 			<div class="text-center">
 				<a

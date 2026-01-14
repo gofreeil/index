@@ -39,6 +39,7 @@
 		"vite-plugin-devtools-json": "^1.0.0"
 	},
 	"dependencies": {
-		"@sveltejs/adapter-vercel": "^6.2.0"
+		"@sveltejs/adapter-vercel": "^6.2.0",
+		"google-auth-library": "^10.5.0"
 	}
 }
