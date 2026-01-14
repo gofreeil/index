@@ -100,7 +100,7 @@ export const translations = {
 		privacyFooter: 'בכל שאלה בנושא פרטיות, ניתן ליצור קשר בכתובת:',
 		favorites: 'מועדפים',
 		noFavorites: 'אין עדיין עסקים במועדפים',
-		loadMore: 'טען עוד {count} עסקים נוספים',
+		loadMore: 'טען {count} עסקים נוספים',
 		writtenReviews: 'ביקורות כתובות',
 		noReviews: 'עסק זה עדיין לא דורג. היה הראשון לדרג!',
 		loginToReview: 'יש להתחבר כדי להוסיף חוות דעת',
