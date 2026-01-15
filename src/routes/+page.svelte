@@ -25,8 +25,8 @@
 	let hoveredCity = $state('');
 
 	// Pagination
-	let visibleCount = $state(12);
-	const incrementBy = 12;
+	let visibleCount = $state(9);
+	let incrementBy = 12;
 
 	function loadMore() {
 		visibleCount += incrementBy;
@@ -40,6 +40,12 @@
 			favoriteIds = JSON.parse(localStorage.getItem('favorites') || '[]');
 		};
 		updateFavorites();
+
+		// Adjust initial count for mobile
+		if (window.innerWidth < 768) {
+			visibleCount = 6;
+		}
+
 		window.addEventListener('storage', updateFavorites);
 		// Listen for custom event if local storage is modified in same tab
 		const _setItem = localStorage.setItem;
