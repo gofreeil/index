@@ -26,7 +26,7 @@
 
 	// Pagination
 	let visibleCount = $state(9);
-	let incrementBy = 12;
+	let incrementBy = $state(21);
 
 	function loadMore() {
 		visibleCount += incrementBy;
@@ -44,6 +44,7 @@
 		// Adjust initial count for mobile
 		if (window.innerWidth < 768) {
 			visibleCount = 6;
+			incrementBy = 12;
 		}
 
 		window.addEventListener('storage', updateFavorites);
