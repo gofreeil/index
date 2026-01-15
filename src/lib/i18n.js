@@ -18,7 +18,7 @@ export const translations = {
 		topRated: 'המדורגים ביותר לשנת 2026',
 		newBusinesses: 'עסקים חדשים שהצטרפו',
 		mapTitle: 'העסקים שלנו פרוסים בארץ',
-		allBusinesses: 'כלל העסקים המשרתים אותנו',
+		allBusinesses: 'לכלל ההטבות והעסקים עבורנו',
 		loading: 'טוען עסקים...',
 		error: 'שגיאה בטעינת העסקים',
 		contact: 'צור קשר',
