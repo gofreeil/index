@@ -79,7 +79,7 @@
 					/>
 					<div class="flex flex-col text-right">
 						<h1
-							class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-right text-base font-bold text-transparent sm:text-4xl"
+							class="xs:text-base bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-right text-sm leading-tight font-black text-transparent sm:text-4xl"
 						>
 							מדריך בעלי מקצוע כשירים
 						</h1>
