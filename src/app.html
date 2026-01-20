@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="he" class="dark">
 
 <head>
 	<meta charset="utf-8" />
@@ -7,12 +7,17 @@
 	<script src="https://accounts.google.com/gsi/client" async defer></script>
 	%sveltekit.head%
 	<script>
-		// Check if theme is light in localStorage, otherwise default to dark
-		if (localStorage.theme === 'light') {
-			document.documentElement.classList.remove('dark');
-		} else {
+		// Check for light mode preference, otherwise stay dark (default in html class)
+		try {
+			if (localStorage.theme === 'light') {
+				document.documentElement.classList.remove('dark');
+			} else {
+				// Default to dark
+				document.documentElement.classList.add('dark');
+			}
+		} catch (e) {
+			// In case localStorage is blocked
 			document.documentElement.classList.add('dark');
-			localStorage.theme = 'dark';
 		}
 	</script>
 </head>
