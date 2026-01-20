@@ -32,7 +32,7 @@
 
 <button
 	onclick={toggleTheme}
-	class="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100 transition-all hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700"
+	class="relative flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 transition-all hover:bg-gray-200 sm:h-10 sm:w-10 sm:rounded-xl dark:bg-gray-800 dark:hover:bg-gray-700"
 	title={isDark ? t.lightMode : t.darkMode}
 >
 	{#if isDark}

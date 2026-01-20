@@ -70,16 +70,16 @@
 				<!-- Title & Logo Section -->
 				<a
 					href="/"
-					class="flex flex-1 items-center gap-1 transition-opacity hover:opacity-80 sm:gap-3"
+					class="flex min-w-0 flex-1 items-center gap-1 transition-opacity hover:opacity-80 sm:gap-3"
 				>
 					<img
 						src="/logo.png"
 						alt="לוגו"
-						class="h-8 w-8 rounded-full object-cover shadow-sm sm:h-14 sm:w-14"
+						class="h-6 w-6 rounded-full object-cover shadow-sm sm:h-14 sm:w-14"
 					/>
 					<div class="flex flex-col text-right">
 						<h1
-							class="xs:text-base bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-right text-sm leading-tight font-black text-transparent sm:text-4xl"
+							class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-right text-xs leading-tight font-black text-transparent sm:text-4xl"
 						>
 							מדריך בעלי מקצוע כשירים
 						</h1>
@@ -90,12 +90,12 @@
 				</a>
 
 				<!-- Action Buttons -->
-				<div class="flex items-center gap-2 sm:gap-3">
+				<div class="flex flex-shrink-0 items-center gap-1 sm:gap-3">
 					<!-- Language Selector -->
 					<div class="relative flex items-center">
 						<button
 							onclick={() => (isLangMenuOpen = !isLangMenuOpen)}
-							class="dark:hover:bg-gray-750 flex items-center gap-2 rounded-full border border-gray-200 bg-white px-2.5 py-1.5 text-xl shadow-sm transition-all hover:bg-gray-50 hover:shadow-md sm:px-4 sm:py-2 dark:border-gray-700 dark:bg-gray-800"
+							class="dark:hover:bg-gray-750 flex items-center gap-1 rounded-full border border-gray-200 bg-white px-2 py-1 text-lg shadow-sm transition-all hover:bg-gray-50 hover:shadow-md sm:gap-2 sm:px-4 sm:py-2 sm:text-xl dark:border-gray-700 dark:bg-gray-800"
 							title="Change Language"
 						>
 							<span class="flex items-center justify-center leading-none">
@@ -171,7 +171,7 @@
 					{:else}
 						<a
 							href="/auth/login"
-							class="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm font-bold text-blue-600 shadow-sm transition-all hover:bg-gray-50 hover:shadow-md sm:px-4 sm:py-2 dark:border-gray-700 dark:bg-gray-800 dark:text-blue-400"
+							class="rounded-full border border-gray-200 bg-white px-2 py-1 text-xs font-bold text-blue-600 shadow-sm transition-all hover:bg-gray-50 hover:shadow-md sm:px-4 sm:py-2 sm:text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-blue-400"
 						>
 							{t.login}
 						</a>
@@ -180,7 +180,7 @@
 					<!-- Community Policy Button -->
 					<a
 						href="/policy"
-						class="flex items-center gap-2 rounded-full bg-gradient-to-r from-yellow-200 to-yellow-400 px-3 py-2 text-sm font-bold text-yellow-900 shadow-sm transition-all hover:scale-105 hover:shadow-md active:scale-95 sm:px-4 sm:py-2.5"
+						class="hidden items-center gap-2 rounded-full bg-gradient-to-r from-yellow-200 to-yellow-400 px-3 py-2 text-sm font-bold text-yellow-900 shadow-sm transition-all hover:scale-105 hover:shadow-md active:scale-95 sm:px-4 sm:py-2.5 lg:flex"
 						title={t.policy}
 					>
 						<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -198,7 +198,7 @@
 					<a
 						href="https://docs.google.com/forms/d/e/1FAIpQLSe2wvCp484_PyoJyDZ_n8GupIQVy00ozt5rxOhsWklr7UPkXQ/viewform?usp=header"
 						target="_blank"
-						class="group flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 px-3 py-2 text-sm font-bold text-white shadow-md transition-all hover:scale-105 hover:shadow-lg active:scale-95 sm:px-5 sm:py-2.5"
+						class="group flex items-center gap-1 overflow-hidden rounded-full bg-gradient-to-r from-blue-600 to-purple-600 px-2 py-1.5 text-sm font-bold text-white shadow-md transition-all hover:scale-105 hover:shadow-lg active:scale-95 sm:gap-2 sm:px-5 sm:py-2.5"
 						title={t.addStore}
 					>
 						<svg
@@ -218,7 +218,7 @@
 					</a>
 				</div>
 			</div>
-			<p class="mt-2 text-right text-xs font-bold text-blue-100 sm:hidden dark:text-blue-300">
+			<p class="mt-2 text-right text-xs font-bold text-blue-600 sm:hidden dark:text-blue-300">
 				{t.subtitle}
 			</p>
 		</div>
