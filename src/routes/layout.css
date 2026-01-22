@@ -1,4 +1,7 @@
 @import 'tailwindcss';
+@theme {
+	--dark-mode: selector;
+}
 @plugin '@tailwindcss/typography';
 
 html,

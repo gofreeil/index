@@ -7,18 +7,17 @@
 	<script src="https://accounts.google.com/gsi/client" async defer></script>
 	%sveltekit.head%
 	<script>
-		// Check for light mode preference, otherwise stay dark (default in html class)
-		try {
-			if (localStorage.theme === 'light') {
+		// Strictly enforce dark mode as default
+		(function () {
+			const theme = localStorage.getItem('theme');
+			if (theme === 'light') {
 				document.documentElement.classList.remove('dark');
 			} else {
-				// Default to dark
+				// Default to dark for 'dark', null, or any other value
 				document.documentElement.classList.add('dark');
+				if (!theme) localStorage.setItem('theme', 'dark');
 			}
-		} catch (e) {
-			// In case localStorage is blocked
-			document.documentElement.classList.add('dark');
-		}
+		})();
 	</script>
 </head>
 
