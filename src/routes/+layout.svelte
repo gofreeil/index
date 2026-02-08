@@ -4,7 +4,6 @@
 	import { lang, translations } from '$lib/i18n';
 	import { get } from 'svelte/store';
 	import VisitorCounter from '$lib/components/VisitorCounter.svelte';
-	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import { authUser, logout } from '$lib/auth';
 
 	let { children } = $props();
@@ -57,14 +56,9 @@
 	<meta name="twitter:image" content="/og-image.png" />
 </svelte:head>
 
-<div
-	class="relative min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 transition-colors duration-300 dark:from-gray-900 dark:via-gray-950 dark:to-gray-900"
-	dir={t.dir}
->
+<div class="relative min-h-screen bg-gray-950 text-gray-100" dir={t.dir}>
 	<!-- Header -->
-	<header
-		class="sticky top-0 z-50 bg-white/80 shadow-sm backdrop-blur-md dark:border-b dark:border-gray-800 dark:bg-gray-900/80"
-	>
+	<header class="sticky top-0 z-50 border-b border-gray-800 bg-gray-900/80 backdrop-blur-md">
 		<div class="mx-auto max-w-7xl px-2 py-3 sm:px-6 lg:px-8">
 			<div class="flex items-center justify-between">
 				<!-- Title & Logo Section -->
@@ -153,8 +147,6 @@
 						{/if}
 					</div>
 
-					<ThemeToggle />
-
 					<!-- User Auth Section -->
 					{#if user}
 						<div class="flex items-center gap-2">
@@ -226,9 +218,7 @@
 
 	{@render children()}
 
-	<footer
-		class="mt-8 border-t bg-gray-50 py-4 sm:mt-16 sm:py-8 dark:border-gray-800 dark:bg-gray-900/50"
-	>
+	<footer class="mt-8 border-t border-gray-800 bg-gray-900/50 py-4 sm:mt-16 sm:py-8">
 		<div class="mx-auto max-w-7xl px-4 text-right text-gray-600 dark:text-gray-400">
 			<div class="flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-12">
 				<!-- Action Group (Right aligned in RTL) -->

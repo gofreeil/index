@@ -13,8 +13,10 @@
 		isDark = localStorage.theme !== 'light';
 		if (isDark) {
 			document.documentElement.classList.add('dark');
+			document.documentElement.style.backgroundColor = '#030712';
 		} else {
 			document.documentElement.classList.remove('dark');
+			document.documentElement.style.backgroundColor = '#ffffff';
 		}
 	});
 
@@ -22,9 +24,11 @@
 		isDark = !isDark;
 		if (isDark) {
 			document.documentElement.classList.add('dark');
+			document.documentElement.style.backgroundColor = '#030712';
 			localStorage.theme = 'dark';
 		} else {
 			document.documentElement.classList.remove('dark');
+			document.documentElement.style.backgroundColor = '#ffffff';
 			localStorage.theme = 'light';
 		}
 	}

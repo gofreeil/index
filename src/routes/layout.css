@@ -4,18 +4,25 @@
 }
 @plugin '@tailwindcss/typography';
 
+/* PERMANENT DARK MODE ENFORCEMENT */
+:root {
+	background-color: #030712 !important; /* Tailwind's gray-950 */
+	color: #f3f4f6 !important;
+	color-scheme: dark !important;
+}
+
 html,
 body {
 	width: 100%;
 	margin: 0;
 	padding: 0;
-	overflow-x: clip; /* Prevent horizontal scroll causing empty spaces without breaking sticky */
-	transition:
-		background-color 0.3s ease,
-		color 0.3s ease;
+	overflow-x: clip;
+	background-color: #030712 !important;
+	color: #f3f4f6 !important;
+	/* Force the background of any inherited elements */
 }
 
-html.dark body {
-	background-color: #111827;
-	color: #f3f4f6;
+/* Ensure all elements default to dark if not specified */
+* {
+	border-color: rgba(255, 255, 255, 0.1);
 }

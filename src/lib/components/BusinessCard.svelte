@@ -34,12 +34,12 @@
 
 <a
 	href="/business/{business.id}"
-	class="group flex w-[calc(50%-8px)] flex-col overflow-hidden rounded-lg bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md sm:w-auto sm:rounded-xl sm:shadow-md sm:hover:shadow-xl dark:border dark:border-gray-700 dark:bg-gray-800"
+	class="group flex w-[calc(50%-8px)] flex-col overflow-hidden rounded-lg border border-gray-700 bg-gray-800 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md sm:w-auto sm:rounded-xl sm:shadow-md sm:hover:shadow-xl"
 >
-	<div class="relative h-28 w-full overflow-hidden bg-gray-100 sm:h-48 dark:bg-gray-700">
+	<div class="relative h-28 w-full overflow-hidden bg-gray-700 sm:h-48">
 		<button
 			onclick={toggleFavorite}
-			class="absolute top-2 left-2 z-30 rounded-full bg-white/80 p-1.5 shadow-sm transition hover:bg-white dark:bg-gray-800/80 dark:hover:bg-gray-800"
+			class="absolute top-2 left-2 z-30 rounded-full bg-gray-800/80 p-1.5 shadow-sm transition hover:bg-gray-800"
 			aria-label={isFavorite ? t.removeFromFavorites : t.saveToFavorites}
 		>
 			<svg
@@ -88,12 +88,12 @@
 	<div class="flex flex-1 flex-col p-3 sm:p-6">
 		<div class="mb-2 sm:mb-4">
 			<h3
-				class="line-clamp-1 text-xs font-bold text-gray-800 transition group-hover:text-blue-600 sm:text-xl dark:text-gray-100"
+				class="line-clamp-1 text-xs font-bold text-gray-100 transition group-hover:text-blue-400 sm:text-xl"
 			>
 				{business.name}
 			</h3>
 			<span
-				class="mt-1 inline-block rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700 sm:px-3 sm:py-1 sm:text-xs dark:bg-blue-900/30 dark:text-blue-400"
+				class="mt-1 inline-block rounded-full bg-blue-900/30 px-2 py-0.5 text-[10px] font-medium text-blue-400 sm:px-3 sm:py-1 sm:text-xs"
 			>
 				{business.category}
 			</span>
@@ -101,18 +101,16 @@
 
 		{#if business.discount}
 			<div
-				class="mb-2 rounded border border-green-100 bg-green-50 p-1.5 sm:mb-4 sm:rounded-lg sm:p-3 dark:border-green-800/30 dark:bg-green-900/20"
+				class="mb-2 rounded border border-green-800/30 bg-green-900/20 p-1.5 sm:mb-4 sm:rounded-lg sm:p-3"
 			>
-				<p
-					class="line-clamp-2 text-[10px] leading-tight text-green-800 sm:text-sm dark:text-green-400"
-				>
+				<p class="line-clamp-2 text-[10px] leading-tight text-green-400 sm:text-sm">
 					{business.discount}
 				</p>
 			</div>
 		{/if}
 
 		<div
-			class="mt-auto border-t pt-2 text-[10px] text-gray-600 sm:space-y-2 sm:pt-4 sm:text-sm dark:border-gray-700 dark:text-gray-400"
+			class="mt-auto border-t border-gray-700 pt-2 text-[10px] text-gray-400 sm:space-y-2 sm:pt-4 sm:text-sm"
 		>
 			<div class="flex items-center gap-1.5">
 				<svg

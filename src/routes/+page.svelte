@@ -277,7 +277,7 @@
 		<!-- Main Content Area -->
 		<div class="flex-1">
 			{#if loading}
-				<div class="mb-8 h-12 w-full animate-pulse rounded-xl bg-gray-200 dark:bg-gray-800"></div>
+				<div class="mb-8 h-12 w-full animate-pulse rounded-xl bg-gray-800"></div>
 				<div class="flex flex-wrap justify-center gap-3 md:grid md:grid-cols-3 md:gap-6">
 					{#each Array(6) as _}
 						<SkeletonCard />
@@ -295,7 +295,7 @@
 							type="text"
 							bind:value={searchTerm}
 							placeholder={t.search}
-							class="w-full rounded-xl border border-gray-200 px-4 py-3 pr-12 transition outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:focus:ring-blue-900/30"
+							class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 pr-12 text-gray-100 transition outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-900/30"
 						/>
 						<svg
 							class="absolute top-3.5 right-4 h-5 w-5 text-gray-400"
@@ -312,9 +312,7 @@
 						</svg>
 					</div>
 
-					<div
-						class="mt-2 flex flex-wrap items-center gap-2 px-1 text-sm text-gray-500 dark:text-gray-400"
-					>
+					<div class="mt-2 flex flex-wrap items-center gap-2 px-1 text-sm text-gray-400">
 						<svg
 							class="h-4 w-4 text-blue-500"
 							fill="none"
@@ -374,22 +372,22 @@
 
 							{#if isMenuOpen}
 								<div
-									class="absolute right-0 z-[100] mt-1 flex w-64 flex-col rounded-xl border border-gray-100 bg-white py-2 shadow-2xl dark:border-gray-700 dark:bg-gray-800"
+									class="absolute right-0 z-[100] mt-1 flex w-64 flex-col rounded-xl border border-gray-700 bg-gray-800 py-2 shadow-2xl"
 								>
 									<button
 										onclick={() => {
 											selectedCategory = 'all';
 											isMenuOpen = false;
 										}}
-										class="px-4 py-2 text-right transition hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20 {selectedCategory ===
+										class="px-4 py-2 text-right text-gray-300 transition hover:bg-blue-900/20 {selectedCategory ===
 										'all'
-											? 'font-bold text-blue-600 dark:text-blue-400'
-											: 'text-gray-700 dark:text-gray-300'}"
+											? 'font-bold text-blue-400'
+											: ''}"
 									>
 										{t.all}
 									</button>
 
-									<div class="my-1 border-t border-gray-100 dark:border-gray-700"></div>
+									<div class="my-1 border-t border-gray-700"></div>
 
 									{#each Object.keys(catHier) as mainCat}
 										<!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -399,10 +397,10 @@
 													selectedCategory = mainCat;
 													isMenuOpen = false;
 												}}
-												class="flex w-full items-center justify-between px-4 py-2 text-right transition hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20 {selectedCategory ===
+												class="flex w-full items-center justify-between px-4 py-2 text-right text-gray-300 transition hover:bg-blue-900/20 {selectedCategory ===
 												mainCat
-													? 'font-bold text-blue-600 dark:text-blue-400'
-													: 'text-gray-700 dark:text-gray-300'}"
+													? 'font-bold text-blue-400'
+													: ''}"
 											>
 												<span class="ml-2">←</span>
 												<span>{mainCat}</span>
@@ -410,7 +408,7 @@
 
 											{#if hoveredCategory === mainCat && catHier[mainCat].length > 0}
 												<div
-													class="static w-full bg-blue-50/50 py-1 lg:absolute lg:top-0 lg:right-full lg:z-[101] lg:mr-1 lg:w-56 lg:rounded-xl lg:border lg:border-gray-100 lg:bg-white lg:py-2 lg:shadow-xl dark:bg-gray-800 dark:lg:border-gray-700"
+													class="static w-full bg-blue-900/20 py-1 lg:absolute lg:top-0 lg:right-full lg:z-[101] lg:mr-1 lg:w-56 lg:rounded-xl lg:border lg:border-gray-700 lg:bg-gray-800 lg:py-2 lg:shadow-xl"
 													role="none"
 												>
 													{#each catHier[mainCat] as subCat}
@@ -419,10 +417,10 @@
 																selectedCategory = subCat;
 																isMenuOpen = false;
 															}}
-															class="block w-full px-8 py-2 text-right text-sm transition hover:bg-blue-100 hover:text-blue-700 lg:px-4 dark:hover:bg-blue-900/30 {selectedCategory ===
+															class="block w-full px-8 py-2 text-right text-sm text-gray-300 transition hover:bg-blue-900/30 lg:px-4 {selectedCategory ===
 															subCat
-																? 'font-bold text-blue-700 dark:text-blue-400'
-																: 'text-gray-700 dark:text-gray-300'}"
+																? 'font-bold text-blue-400'
+																: ''}"
 														>
 															{subCat}
 														</button>
@@ -480,28 +478,25 @@
 
 							{#if isLocationMenuOpen}
 								<div
-									class="scrollbar-thin scrollbar-thumb-gray-200 absolute right-0 z-[100] mt-1 flex max-h-[70vh] w-64 flex-col overflow-y-auto rounded-xl border border-gray-100 bg-white py-2 shadow-2xl dark:border-gray-700 dark:bg-gray-800"
+									class="scrollbar-thin scrollbar-thumb-gray-700 absolute right-0 z-[100] mt-1 flex max-h-[70vh] w-64 flex-col overflow-y-auto rounded-xl border border-gray-700 bg-gray-800 py-2 shadow-2xl"
 								>
 									<button
 										onclick={() => {
 											selectedLocation = 'all';
 											isLocationMenuOpen = false;
 										}}
-										class="px-4 py-2 text-right transition hover:bg-purple-50 hover:text-purple-600 dark:hover:bg-purple-900/20 {selectedLocation ===
+										class="px-4 py-2 text-right text-gray-300 transition hover:bg-purple-900/20 {selectedLocation ===
 										'all'
-											? 'font-bold text-purple-600 dark:text-purple-400'
-											: 'text-gray-700 dark:text-gray-300'}"
+											? 'font-bold text-purple-400'
+											: ''}"
 									>
 										כל הארץ
 									</button>
 
-									<div class="my-1 border-t border-gray-100 dark:border-gray-700"></div>
+									<div class="my-1 border-t border-gray-700"></div>
 
 									{#each sortedCities as city}
-										<div
-											class="relative border-b border-gray-50 last:border-0 dark:border-gray-700"
-											role="none"
-										>
+										<div class="relative border-b border-gray-700 last:border-0" role="none">
 											<button
 												onmouseenter={() => (hoveredCity = city)}
 												onclick={() => {
@@ -513,10 +508,10 @@
 														hoveredCity = hoveredCity === city ? '' : city;
 													}
 												}}
-												class="flex w-full items-center justify-between px-4 py-3 text-right transition hover:bg-purple-50 hover:text-purple-600 dark:hover:bg-purple-900/20 {selectedLocation ===
+												class="flex w-full items-center justify-between px-4 py-3 text-right text-gray-300 transition hover:bg-purple-900/20 {selectedLocation ===
 												city
-													? 'font-bold text-purple-600 dark:text-purple-400'
-													: 'text-gray-700 dark:text-gray-300'}"
+													? 'font-bold text-purple-400'
+													: ''}"
 											>
 												<span class="text-base">{city}</span>
 												{#if cityHier[city]?.length > 0}
@@ -539,17 +534,17 @@
 											</button>
 
 											{#if hoveredCity === city && cityHier[city]?.length > 0}
-												<div class="bg-gray-50 py-1 shadow-inner dark:bg-gray-900/50">
+												<div class="bg-gray-900/50 py-1 shadow-inner">
 													{#each cityHier[city] as neighborhood}
 														<button
 															onclick={() => {
 																selectedLocation = neighborhood;
 																isLocationMenuOpen = false;
 															}}
-															class="block w-full border-r-4 border-transparent px-8 py-2 text-right text-sm transition hover:border-purple-400 hover:bg-purple-100/50 hover:text-purple-700 dark:hover:bg-purple-900/30 {selectedLocation ===
+															class="block w-full border-r-4 border-transparent px-8 py-2 text-right text-sm text-gray-300 transition hover:border-purple-400 hover:bg-purple-900/30 {selectedLocation ===
 															neighborhood
-																? 'font-bold text-purple-700 dark:text-purple-400'
-																: 'text-gray-600 dark:text-gray-300'}"
+																? 'font-bold text-purple-400'
+																: ''}"
 														>
 															{neighborhood}
 														</button>
@@ -678,7 +673,7 @@
 						<div class="mt-12 flex justify-center">
 							<button
 								onclick={loadMore}
-								class="rounded-full bg-white px-8 py-3 text-lg font-bold text-blue-600 shadow-md transition-all hover:bg-blue-50 hover:shadow-lg active:scale-95 dark:bg-gray-800 dark:text-blue-400 dark:hover:bg-gray-700"
+								class="rounded-full bg-gray-800 px-8 py-3 text-lg font-bold text-blue-400 shadow-md transition-all hover:bg-gray-700 hover:shadow-lg active:scale-95"
 							>
 								{t.loadMore.replace('{count}', filteredBusinesses.length - visibleCount)}
 							</button>
@@ -751,11 +746,13 @@
 
 						<!-- Placeholder Ad -->
 						<div
-							class="rounded-xl border-2 border-dashed border-orange-400 bg-gradient-to-br from-yellow-50 to-orange-50 p-4 shadow-sm"
+							class="rounded-xl border-2 border-dashed border-orange-500/50 bg-gradient-to-br from-orange-900/20 to-orange-800/20 p-4 shadow-sm"
 						>
-							<div class="mb-2 flex h-24 w-full items-center justify-center rounded-lg bg-white/60">
+							<div
+								class="mb-2 flex h-24 w-full items-center justify-center rounded-lg bg-gray-800/50"
+							>
 								<svg
-									class="h-10 w-10 text-orange-400"
+									class="h-10 w-10 text-orange-500"
 									fill="none"
 									stroke="currentColor"
 									viewBox="0 0 24 24"
@@ -768,18 +765,18 @@
 									/>
 								</svg>
 							</div>
-							<h4 class="text-center text-sm font-bold text-orange-600">מקום פרסום זה</h4>
-							<p class="mt-1 text-center text-xs font-medium text-orange-500">יכול להיות שלך</p>
+							<h4 class="text-center text-sm font-bold text-orange-500">מקום פרסום זה</h4>
+							<p class="mt-1 text-center text-xs font-medium text-orange-400">יכול להיות שלך</p>
 						</div>
 					</div>
 				</div>
 
 				<!-- Action Call -->
-				<div class="rounded-xl border border-blue-100 bg-blue-50 p-4">
-					<p class="text-xs font-medium text-blue-800">{t.wantToAdvertise}</p>
+				<div class="rounded-xl border border-blue-900/30 bg-blue-900/20 p-4">
+					<p class="text-xs font-medium text-blue-300">{t.wantToAdvertise}</p>
 					<a
 						href="mailto:support@melecshop.com"
-						class="mt-2 block text-xs font-bold text-blue-600 hover:underline">{t.contact}</a
+						class="mt-2 block text-xs font-bold text-blue-400 hover:underline">{t.contact}</a
 					>
 				</div>
 			</div>
