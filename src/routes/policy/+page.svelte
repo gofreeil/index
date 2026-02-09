@@ -62,16 +62,19 @@
 					{t.policySection1}
 				</h2>
 				<p class="{t.dir === 'rtl' ? 'pr-9' : 'pl-9'} text-lg">
-					{t.policySection1Prefix}
-					<a
-						href="https://www.melecshop.com/page/uecc"
-						target="_blank"
-						rel="noopener noreferrer"
-						class="text-blue-600 underline decoration-blue-300 underline-offset-4 transition-colors hover:text-blue-800 hover:decoration-blue-500"
-					>
-						{t.policySection1LinkName}
-					</a>
-					{t.policySection1Suffix}
+					{#if currentLang === 'he'}
+						{t.policySection1Text}
+						<a
+							href="https://www.melecshop.com/page/uecc"
+							target="_blank"
+							rel="noopener noreferrer"
+							class="text-blue-600 underline decoration-blue-300 underline-offset-4 transition-colors hover:text-blue-800 hover:decoration-blue-500"
+						>
+							{t.policySection1LinkName}
+						</a>
+					{:else}
+						Acceptance of the Global Ethical Code based on the 7 Noahide Laws.
+					{/if}
 				</p>
 			</section>
 
@@ -90,14 +93,6 @@
 					<span class="text-blue-600">🟦</span>
 					{t.policySection2}
 				</h2>
-				<p class="{t.dir === 'rtl' ? 'pr-9' : 'pl-9'} text-lg">{t.policySection2Text}</p>
-			</section>
-
-			<section class="space-y-4">
-				<h2 class="flex items-center gap-3 text-2xl font-bold text-gray-900">
-					<span class="text-blue-600">🟦</span>
-					{t.policySection3}
-				</h2>
 				{#if currentLang === 'he'}
 					<ul class="list-disc space-y-2 pr-14 text-lg">
 						<li>ההטבה המוצעת חייבת להיות משמעותית, אמיתית ולא שיווקית בלבד.</li>
@@ -114,34 +109,22 @@
 			<section class="space-y-4">
 				<h2 class="flex items-center gap-3 text-2xl font-bold text-gray-900">
 					<span class="text-blue-600">🟦</span>
-					{t.policySection4}
+					{t.policySection3}
 				</h2>
-				{#if currentLang === 'he'}
-					<ul class="list-disc space-y-2 pr-14 text-lg">
-						<li>בעלי העסקים מתחייבים להעניק שירות מקצועי, מכבד ואחראי.</li>
-						<li>אין להפלות, להטעות או לנצל את הפלטפורמה לצרכים שאינם תואמים את רוח הקהילה.</li>
-						<li>במקרים של עומס או זמינות מוגבלת — יש ליידע את הלקוח מראש.</li>
-					</ul>
-				{:else}
-					<p class="{t.dir === 'rtl' ? 'pr-9' : 'pl-9'} text-lg">
-						Business owners commit to providing professional, respectful, and responsible service.
-					</p>
-				{/if}
-			</section>
-
-			<section class="space-y-4">
-				<h2 class="flex items-center gap-3 text-2xl font-bold text-gray-900">
-					<span class="text-blue-600">🟦</span>
-					{t.policySection5}
-				</h2>
-				<p class="rounded-lg bg-gray-50 p-4 text-lg italic {t.dir === 'rtl' ? 'pr-9' : 'pl-9'}">
+				<p class="{t.dir === 'rtl' ? 'pr-9' : 'pl-9'} text-lg">
 					{#if currentLang === 'he'}
-						בעל העסק אחראי לאיכות השירות, למוצרים ולתנאי העבודה שלו. הקהילה אינה צד בעסקה ואינה
-						אחראית לנזקים, תקלות או אי־התאמות — האחריות היא של נותן השירות בלבד.
+						אם חלילה יש טענה של הלקוח, בעל העסק מתחייב להתדיין בבתי הפיוס / דין של יוצאים לחירות,
+						ניתן לעשות זאת גם בצורה וירטואלית פרטים כאן:
+						<a
+							href="https://www.melecshop.com/page/peace-on-earth"
+							target="_blank"
+							rel="noopener noreferrer"
+							class="text-blue-600 underline decoration-blue-300 underline-offset-4 transition-colors hover:text-blue-800 hover:decoration-blue-500"
+						>
+							בתי הפיוס
+						</a>
 					{:else}
-						The business owner is responsible for the quality of service, products, and working
-						conditions. The community is not a party to the transaction and is not responsible for
-						any damages or discrepancies.
+						In case of disputes, business owners commit to mediation in "Yotzim L'cherut" courts.
 					{/if}
 				</p>
 			</section>
@@ -149,7 +132,7 @@
 			<section class="space-y-4">
 				<h2 class="flex items-center gap-3 text-2xl font-bold text-gray-900">
 					<span class="text-blue-600">🟦</span>
-					{t.policySection6}
+					{t.policySection4}
 				</h2>
 				<p
 					class="mb-4 text-lg font-bold underline decoration-blue-200 underline-offset-4 {t.dir ===
@@ -167,6 +150,7 @@
 					<ul class="list-disc space-y-2 pr-14 text-lg">
 						<li>חירות ועצמאות</li>
 						<li>הוגנות ושקיפות</li>
+						<li>אחריות עסקית הן למוצריו הן לשרותיו</li>
 						<li>ביזור כוח וחיזוק עסקים קטנים</li>
 						<li>ערבות הדדית ושיתוף פעולה</li>
 						<li>אפשרות לשימוש במזומן תמיד לכל מי שמגיע לעסק</li>
@@ -197,7 +181,7 @@
 			<section class="space-y-4 border-b border-gray-100 pb-8">
 				<h2 class="flex items-center gap-3 text-2xl font-bold text-gray-900">
 					<span class="text-blue-600">🟦</span>
-					{t.policySection7}
+					{t.policySection5}
 				</h2>
 				<p class="mb-2 text-lg {t.dir === 'rtl' ? 'pr-9' : 'pl-9'}">
 					{#if currentLang === 'he'}

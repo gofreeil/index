@@ -76,16 +76,12 @@ export const translations = {
 		policyCashText:
 			'אני מתחייב לאפשר ללקוחות המגיעים לעיסקי לשלם במזומן בכל תנאי אף אם הממשלה תנסה להוציא את המזומן מחוץ לחוק! ובזה אני מצטרף לחיזוק זכות הקניין והפרטיות של התושבים!',
 		policySection1: '1. קבלת הקוד האתי העולמי',
-		policySection1Prefix: 'קבלת ',
+		policySection1Text: 'המבוסס על 7 מצוות בני נח לקריאה: ',
 		policySection1LinkName: 'הקוד האתי העולמי',
-		policySection1Suffix: ' המבוסס על 7 מצוות בני נח.',
-		policySection2: '3. שקיפות מלאה',
-		policySection2Text: 'בעל העסק מתחייב להציג מידע מדויק, ברור ועדכני לגבי סוג השירות.',
-		policySection3: '4. הטבה אמיתית לחברי הקהילה',
-		policySection4: '5. שירות הוגן ומקצועי',
-		policySection5: '6. אחריות אישית ועסקית',
-		policySection6: '7. ערכי הקהילה',
-		policySection7: '8. הסרת עסק מהמאגר',
+		policySection2: '3. הטבה אמיתית לחברי הקהילה',
+		policySection3: '4. שימוש בבתי הפיוס של יוצאים לחירות בעת מחלוקת',
+		policySection4: '5. ערכי הקהילה',
+		policySection5: '6. הסרת עסק מהמאגר',
 		policySummary:
 			'מדיניות זו נועדה להבטיח שהמאגר יישאר מרחב אמין, הוגן ומעצים את העסקים הקטנים ואת חברי הקהילה כאחד, ומקדם את החזון של יוצאים לחירות לחברה מתוקנת וחופשית.',
 		privacyIntro:
@@ -190,6 +186,11 @@ export const translations = {
 		dontHaveAccount: "Don't have an account? Register",
 		logout: 'Logout',
 		privacyFooter: 'For any questions regarding privacy, you can contact us at:',
+		policySection1: '1. Acceptance of the Global Ethical Code',
+		policySection2: '3. Real Benefit for Community Members',
+		policySection3: '4. Use of Mediation Courts',
+		policySection4: '5. Community Values',
+		policySection5: '6. Business Removal',
 		loadMore: 'Load {count} more businesses',
 		loginWithGoogle: 'Sign in with Google'
 	},
@@ -264,6 +265,11 @@ export const translations = {
 		logout: 'Выйти',
 		privacyFooter:
 			'По любым вопросам, касающимся конфиденциальности, вы можете связаться с нами по адресу:',
+		policySection1: '1. Принятие Всемирного этического кодекса',
+		policySection2: '3. Реальная выгода для членов сообщества',
+		policySection3: '4. Использование судов примирения',
+		policySection4: '5. Ценности сообщества',
+		policySection5: '6. Удаление бизнеса',
 		loadMore: 'Загрузить еще {count} предприятий',
 		loginWithGoogle: 'Войти через Google'
 	}
