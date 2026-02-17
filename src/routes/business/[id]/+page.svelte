@@ -146,17 +146,23 @@
 			</h1>
 			<div class="mb-4 flex items-center justify-end gap-2">
 				{#if reviews.length > 0}
-					<span class="text-xl font-bold text-yellow-500">{averageRating}</span>
-					<div class="flex gap-0.5" dir="ltr">
-						{#each Array(5) as _, i}
-							<span
-								class="text-xl {i < Math.floor(averageRating)
-									? 'bg-gradient-to-br from-[#3d2b1f] via-[#FCF6BA] to-[#3d2b1f] bg-clip-text text-transparent drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] filter'
-									: 'text-gray-300 dark:text-gray-600'}"
-							>
-								★
-							</span>
-						{/each}
+					<div
+						class="flex items-center gap-2"
+						role="img"
+						aria-label="{averageRating} out of 5 stars"
+					>
+						<span class="text-xl font-bold text-yellow-500">{averageRating}</span>
+						<div class="flex gap-0.5" dir="ltr" aria-hidden="true">
+							{#each Array(5) as _, i}
+								<span
+									class="text-xl {i < Math.floor(averageRating)
+										? 'bg-gradient-to-br from-[#3d2b1f] via-[#FCF6BA] to-[#3d2b1f] bg-clip-text text-transparent drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] filter'
+										: 'text-gray-300 dark:text-gray-600'}"
+								>
+									★
+								</span>
+							{/each}
+						</div>
 					</div>
 					<span class="text-sm text-gray-500 dark:text-gray-400"
 						>({reviews.length} {t.reviews})</span
@@ -174,7 +180,13 @@
 							class="flex items-center gap-2 rounded-full bg-blue-600 px-6 py-2 font-bold text-white transition hover:bg-blue-700"
 						>
 							<span>{business.phone}</span>
-							<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<svg
+								class="h-5 w-5"
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+								aria-hidden="true"
+							>
 								<path
 									stroke-linecap="round"
 									stroke-linejoin="round"
@@ -186,10 +198,17 @@
 					{:else}
 						<button
 							onclick={revealPhoneAndLog}
+							aria-expanded={isPhoneRevealed}
 							class="flex items-center gap-2 rounded-full border border-blue-600 px-6 py-2 font-bold text-blue-600 transition hover:bg-blue-600 hover:text-white dark:border-blue-500 dark:text-blue-400 dark:hover:bg-blue-600 dark:hover:text-white"
 						>
 							<span>{t.revealPhone}</span>
-							<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<svg
+								class="h-5 w-5"
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+								aria-hidden="true"
+							>
 								<path
 									stroke-linecap="round"
 									stroke-linejoin="round"
@@ -251,7 +270,13 @@
 				<div
 					class="flex h-full w-full items-center justify-center bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500"
 				>
-					<svg class="h-20 w-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<svg
+						class="h-20 w-20"
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+						aria-hidden="true"
+					>
 						<path
 							stroke-linecap="round"
 							stroke-linejoin="round"
@@ -390,6 +415,7 @@
 								fill="none"
 								stroke="currentColor"
 								viewBox="0 0 24 24"
+								aria-hidden="true"
 							>
 								<path
 									stroke-linecap="round"
@@ -463,7 +489,13 @@
 							<div
 								class="mt-1 flex h-10 w-10 items-center justify-center rounded-xl bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
 							>
-								<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<svg
+									class="h-6 w-6"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+									aria-hidden="true"
+								>
 									<path
 										stroke-linecap="round"
 										stroke-linejoin="round"

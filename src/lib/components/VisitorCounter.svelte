@@ -1,20 +1,21 @@
 <script>
 	import { onMount } from 'svelte';
+	import { lang, translations } from '$lib/i18n';
 
+	let currentLang = $state('he');
+	lang.subscribe((v) => (currentLang = v));
+	const t = $derived(/** @type {any} */ (translations)[currentLang] || translations.he);
+
+	/** @type {number | null} */
 	let count = $state(null);
 	let loading = $state(true);
 
 	onMount(async () => {
 		try {
-			// First try to just get the current count without incrementing (to show immediately if cached?)
-			// Actually, standard hit counter logic is to increment on load.
-			// To prevent spamming on refresh, we can use sessionStorage
 			const hasVisited = sessionStorage.getItem('visited_session');
-
-			let method = 'POST'; // Default to increment
-
+			let method = 'POST';
 			if (hasVisited) {
-				method = 'GET'; // Just read if already visited this session
+				method = 'GET';
 			} else {
 				sessionStorage.setItem('visited_session', 'true');
 			}
@@ -45,12 +46,14 @@
 			stroke-width="2"
 			stroke-linecap="round"
 			stroke-linejoin="round"
+			aria-hidden="true"
 		>
 			<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
 			<circle cx="12" cy="12" r="3"></circle>
 		</svg>
 		<span
-			>מספר כניסות לאתר: <span class="font-mono font-medium">{count.toLocaleString()}</span></span
+			>{t.visitorCount}<span class="font-mono font-medium">{(count ?? 0).toLocaleString()}</span
+			></span
 		>
 	</div>
 {/if}

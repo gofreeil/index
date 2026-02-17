@@ -37,7 +37,7 @@
 <button
 	onclick={toggleTheme}
 	class="relative flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 transition-all hover:bg-gray-200 sm:h-10 sm:w-10 sm:rounded-xl dark:bg-gray-800 dark:hover:bg-gray-700"
-	title={isDark ? t.lightMode : t.darkMode}
+	aria-label={isDark ? t.lightMode : t.darkMode}
 >
 	{#if isDark}
 		<svg
@@ -46,6 +46,7 @@
 			fill="none"
 			viewBox="0 0 24 24"
 			stroke="currentColor"
+			aria-hidden="true"
 		>
 			<path
 				stroke-linecap="round"
@@ -61,6 +62,7 @@
 			fill="none"
 			viewBox="0 0 24 24"
 			stroke="currentColor"
+			aria-hidden="true"
 		>
 			<path
 				stroke-linecap="round"

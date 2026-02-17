@@ -10,7 +10,13 @@
 
 	// Support for Svelte 5 state-like behavior from store
 	let currentLang = $state('he');
-	lang.subscribe((v) => (currentLang = v));
+	lang.subscribe((v) => {
+		currentLang = v;
+		if (typeof document !== 'undefined') {
+			document.documentElement.lang = v;
+			document.documentElement.dir = translations[v]?.dir || 'rtl';
+		}
+	});
 
 	const t = $derived(/** @type {any} */ (translations)[currentLang] || translations.he);
 
@@ -55,6 +61,13 @@
 	/>
 	<meta name="twitter:image" content="/og-image.png" />
 </svelte:head>
+
+<a
+	href="#main-content"
+	class="sr-only absolute top-4 left-4 z-[100] rounded-lg bg-blue-600 px-4 py-2 text-white transition-all focus:not-sr-only focus:ring-2 focus:ring-blue-500 focus:outline-none"
+>
+	דלג לתוכן המרכזי
+</a>
 
 <div class="relative min-h-screen bg-gray-950 text-gray-100" dir={t.dir}>
 	<!-- Header -->
@@ -105,6 +118,7 @@
 								fill="none"
 								stroke="currentColor"
 								viewBox="0 0 24 24"
+								aria-hidden="true"
 							>
 								<path
 									stroke-linecap="round"
@@ -175,7 +189,13 @@
 						class="hidden items-center gap-2 rounded-full bg-gradient-to-r from-yellow-200 to-yellow-400 px-3 py-2 text-sm font-bold text-yellow-900 shadow-sm transition-all hover:scale-105 hover:shadow-md active:scale-95 sm:px-4 sm:py-2.5 lg:flex"
 						title={t.policy}
 					>
-						<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<svg
+							class="h-5 w-5"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+							aria-hidden="true"
+						>
 							<path
 								stroke-linecap="round"
 								stroke-linejoin="round"
@@ -216,14 +236,16 @@
 		</div>
 	</header>
 
-	{@render children()}
+	<main id="main-content">
+		{@render children()}
+	</main>
 
 	<footer class="mt-8 border-t border-gray-800 bg-gray-900/50 py-4 sm:mt-16 sm:py-8">
 		<div class="mx-auto max-w-7xl px-4 text-right text-gray-600 dark:text-gray-400">
 			<div class="flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-12">
 				<!-- Action Group (Right aligned in RTL) -->
 				<div class="flex flex-col items-center gap-1 sm:gap-2">
-					<p class="text-[9px] font-medium text-gray-500 sm:text-[11px] dark:text-gray-500">
+					<p class="text-[11px] font-medium text-gray-500 sm:text-xs dark:text-gray-400">
 						{t.movementAction}
 					</p>
 					<a
@@ -232,7 +254,7 @@
 						class="flex shrink-0 flex-col items-center rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-3 py-0.5 text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-95 sm:px-4"
 					>
 						<span class="text-sm font-black tracking-wider sm:text-base">יוצאים לחירות</span>
-						<span class="text-[8px] font-medium opacity-90 sm:text-[10px]">{t.movementSlogan}</span>
+						<span class="text-[10px] font-medium opacity-90 sm:text-xs">{t.movementSlogan}</span>
 					</a>
 				</div>
 
@@ -265,7 +287,7 @@
 					</a>
 					<a
 						href="/privacy"
-						class="text-[10px] text-gray-500 transition-colors hover:text-blue-600 sm:text-xs dark:text-gray-500 dark:hover:text-blue-400"
+						class="text-xs text-gray-500 transition-colors hover:text-blue-600 dark:text-gray-500 dark:hover:text-blue-400"
 					>
 						{t.privacy}
 					</a>
@@ -275,7 +297,7 @@
 			<div
 				class="mt-2 border-t border-gray-200 pt-2 text-center sm:mt-4 sm:pt-4 dark:border-gray-800"
 			>
-				<p class="text-[10px] text-gray-500 sm:text-xs dark:text-gray-600">
+				<p class="text-xs text-gray-500 dark:text-gray-600">
 					{t.dedication}
 				</p>
 				<VisitorCounter />

@@ -295,6 +295,7 @@
 							type="text"
 							bind:value={searchTerm}
 							placeholder={t.search}
+							aria-label={t.search}
 							class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 pr-12 text-gray-100 transition outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-900/30"
 						/>
 						<svg
@@ -302,6 +303,7 @@
 							fill="none"
 							stroke="currentColor"
 							viewBox="0 0 24 24"
+							aria-hidden="true"
 						>
 							<path
 								stroke-linecap="round"
@@ -318,6 +320,7 @@
 							fill="none"
 							stroke="currentColor"
 							viewBox="0 0 24 24"
+							aria-hidden="true"
 						>
 							<path
 								stroke-linecap="round"
@@ -336,7 +339,6 @@
 					</div>
 
 					<div class="flex w-full items-center gap-2 sm:w-auto sm:flex-wrap sm:gap-4">
-						<!-- svelte-ignore a11y_no_static_element_interactions -->
 						<div
 							class="menu-container relative flex-1 sm:flex-initial"
 							onmouseenter={() => {
@@ -350,6 +352,8 @@
 									isMenuOpen = !isMenuOpen;
 									if (isMenuOpen) isLocationMenuOpen = false;
 								}}
+								aria-haspopup="listbox"
+								aria-expanded={isMenuOpen}
 								class="flex h-full w-full items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-2 py-3 text-xs font-bold text-white shadow-md transition-all hover:bg-blue-700 sm:gap-2 sm:px-6 sm:text-base"
 							>
 								<svg
@@ -357,6 +361,7 @@
 									fill="none"
 									stroke="currentColor"
 									viewBox="0 0 24 24"
+									aria-hidden="true"
 								>
 									<path
 										stroke-linecap="round"
@@ -434,11 +439,8 @@
 						</div>
 
 						<!-- Location Filter (Neighborhoods) -->
-						<!-- svelte-ignore a11y_no_static_element_interactions -->
 						<div
 							class="menu-container relative flex-1 sm:flex-initial"
-							role="button"
-							tabindex="-1"
 							onmouseenter={() => {
 								isLocationMenuOpen = true;
 								isMenuOpen = false;
@@ -450,6 +452,8 @@
 									isLocationMenuOpen = !isLocationMenuOpen;
 									if (isLocationMenuOpen) isMenuOpen = false;
 								}}
+								aria-haspopup="listbox"
+								aria-expanded={isLocationMenuOpen}
 								class="flex h-full w-full items-center justify-center gap-1.5 rounded-xl bg-purple-600 px-2 py-3 text-xs font-bold text-white shadow-md transition-all hover:bg-purple-700 sm:gap-2 sm:px-6 sm:text-base"
 							>
 								<svg
@@ -457,6 +461,7 @@
 									fill="none"
 									stroke="currentColor"
 									viewBox="0 0 24 24"
+									aria-hidden="true"
 								>
 									<path
 										stroke-linecap="round"
@@ -522,6 +527,7 @@
 														fill="none"
 														stroke="currentColor"
 														viewBox="0 0 24 24"
+														aria-hidden="true"
 													>
 														<path
 															stroke-linecap="round"
@@ -602,6 +608,7 @@
 									fill="none"
 									xmlns="http://www.w3.org/2000/svg"
 									class="h-full w-full drop-shadow-[0_3px_5px_rgba(0,0,0,0.7)]"
+									aria-hidden="true"
 								>
 									<defs>
 										<linearGradient id="gold-gradient-{i}" x1="0%" y1="0%" x2="100%" y2="100%">

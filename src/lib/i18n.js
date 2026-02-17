@@ -115,7 +115,8 @@ export const translations = {
 		manageBusiness: 'ניהול ועדכון פרטי עסק',
 		updateBusiness: 'עדכון פרטים',
 		share: 'שיתוף',
-		loginWithGoogle: 'התחבר באמצעות Google'
+		loginWithGoogle: 'התחבר באמצעות Google',
+		visitorCount: 'מספר כניסות לאתר: '
 	},
 	en: {
 		dir: 'ltr',
@@ -192,7 +193,8 @@ export const translations = {
 		policySection4: '5. Community Values',
 		policySection5: '6. Business Removal',
 		loadMore: 'Load {count} more businesses',
-		loginWithGoogle: 'Sign in with Google'
+		loginWithGoogle: 'Sign in with Google',
+		visitorCount: 'Website visitor count: '
 	},
 	ru: {
 		dir: 'ltr',
@@ -271,6 +273,7 @@ export const translations = {
 		policySection4: '5. Ценности сообщества',
 		policySection5: '6. Удаление бизнеса',
 		loadMore: 'Загрузить еще {count} предприятий',
-		loginWithGoogle: 'Войти через Google'
+		loginWithGoogle: 'Войти через Google',
+		visitorCount: 'Количество посещений сайта: '
 	}
 };
