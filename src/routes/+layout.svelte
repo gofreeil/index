@@ -249,7 +249,7 @@
 						{t.movementAction}
 					</p>
 					<a
-						href="https://www.melecshop.com/"
+						href="https://freedom-gamma-five.vercel.app/"
 						target="_blank"
 						class="flex shrink-0 flex-col items-center rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-3 py-0.5 text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-95 sm:px-4"
 					>
