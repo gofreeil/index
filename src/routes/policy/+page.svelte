@@ -117,7 +117,7 @@
 						אם חלילה יש טענה של הלקוח, בעל העסק מתחייב להתדיין בבתי הפיוס / דין של יוצאים לחירות,
 						ניתן לעשות זאת גם בצורה וירטואלית פרטים כאן:
 						<a
-							href="https://www.melecshop.com/page/peace-on-earth"
+							href="https://chachmim.vercel.app/"
 							target="_blank"
 							rel="noopener noreferrer"
 							class="text-blue-600 underline decoration-blue-300 underline-offset-4 transition-colors hover:text-blue-800 hover:decoration-blue-500"
