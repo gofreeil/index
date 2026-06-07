@@ -1,0 +1,530 @@
+<script>
+	import { ads } from '$lib/adsData.js';
+	import { authUser } from '$lib/auth.js';
+	import { page } from '$app/state';
+
+	/** @type {any} */
+	let user = $state(null);
+	authUser.subscribe((v) => (user = v));
+
+	let isAuthPage = $derived(
+		page.url.pathname === '/auth/login' ||
+		page.url.pathname === '/auth/register'
+	);
+
+	let open = $state(false);
+
+	// ---- Swipe gestures (Drawer) ----
+	let drawerTouchStartX = 0;
+	let drawerTouchStartY = 0;
+
+	/** @param {TouchEvent} e */
+	function onDrawerTouchStart(e) {
+		drawerTouchStartX = e.touches[0].clientX;
+		drawerTouchStartY = e.touches[0].clientY;
+	}
+
+	// על הדרואר: משיכה שמאלה → סגור
+	/** @param {TouchEvent} e */
+	function onDrawerTouchEnd(e) {
+		const dx = e.changedTouches[0].clientX - drawerTouchStartX;
+		const dy = e.changedTouches[0].clientY - drawerTouchStartY;
+		if (dx < -50 && Math.abs(dx) > Math.abs(dy)) {
+			open = false;
+		}
+	}
+
+	// ---- לשונית: גרירה אנכית + פתיחה ----
+	let tabY = $state(0);
+	let tabDragging = $state(false);
+	let tabDragStartClientY = 0;
+	let tabDragStartTabY = 0;
+	let tabTouchStartX = 0;
+	let tabTouchStartY = 0;
+	let tabTouchStartTime = 0;
+
+	$effect(() => {
+		if (typeof window !== 'undefined' && tabY === 0) {
+			tabY = Math.round(window.innerHeight * 2 / 3);
+		}
+	});
+
+	/** @param {TouchEvent} e */
+	function onTabTouchStart(e) {
+		tabTouchStartX = e.touches[0].clientX;
+		tabTouchStartY = e.touches[0].clientY;
+		tabDragStartClientY = e.touches[0].clientY;
+		tabDragStartTabY = tabY;
+		tabTouchStartTime = Date.now();
+		tabDragging = false;
+	}
+
+	/** @param {TouchEvent} e */
+	function onTabTouchMove(e) {
+		const dx = e.touches[0].clientX - tabTouchStartX;
+		const dy = e.touches[0].clientY - tabDragStartClientY;
+		if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 20) {
+			tabDragging = true;
+			let newY = tabDragStartTabY + dy;
+			newY = Math.max(60, Math.min(window.innerHeight - 60, newY));
+			tabY = newY;
+		}
+	}
+
+	/** @param {TouchEvent} e */
+	function onTabTouchEnd(e) {
+		const dx = e.changedTouches[0].clientX - tabTouchStartX;
+		const dy = e.changedTouches[0].clientY - tabTouchStartY;
+		const totalMove = Math.sqrt(dx * dx + dy * dy);
+
+		const isTap = totalMove < 15;
+		const isSwipeRight = dx > 35 && Math.abs(dx) > Math.abs(dy);
+
+		if (!tabDragging && (isTap || isSwipeRight)) {
+			open = true;
+			e.preventDefault();
+		}
+		tabDragging = false;
+	}
+
+	$effect(() => {
+		/** @param {KeyboardEvent} e */
+		function handleKeydown(e) {
+			if (e.key === 'Escape' && open) {
+				open = false;
+			}
+		}
+		document.addEventListener('keydown', handleKeydown);
+		return () => document.removeEventListener('keydown', handleKeydown);
+	});
+</script>
+
+<!-- מוצג רק בנייד -->
+<div class="lg:hidden" dir="rtl">
+
+	<!-- Overlay כהה כשפתוח -->
+	{#if open}
+	<button
+		class="overlay"
+		onclick={() => open = false}
+		aria-label="סגור פרסומות"
+	></button>
+	{/if}
+
+	<!-- Drawer -->
+	<div class="drawer" class:drawer-open={open}
+		role="dialog"
+		aria-modal="true"
+		aria-label="האזור האישי וההטבות מהקהילה הארצית"
+		aria-hidden={!open}
+		ontouchstart={onDrawerTouchStart}
+		ontouchend={onDrawerTouchEnd}
+	>
+		<!-- כפתור התחברות / אזור אישי -->
+		<div class="section-title section-title-first">
+			האזור האישי
+			<button
+				type="button"
+				class="close-btn"
+				onclick={() => open = false}
+				aria-label="סגור"
+			>×</button>
+		</div>
+		<div class="auth-section">
+			{#if user}
+			<a href="/" class="profile-btn" onclick={() => open = false}>
+				<span class="profile-avatar-placeholder">👤</span>
+				<div class="profile-btn-text">
+					<span class="profile-btn-name">{user.name}</span>
+					<span class="profile-btn-sub">ברוך הבא ←</span>
+				</div>
+			</a>
+			{:else}
+			<a href="/auth/login" class="login-btn" onclick={() => open = false}>
+				<div class="anon-avatar-wrap">
+					<span class="anon-avatar">
+						<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" width="40" height="40">
+							<circle cx="20" cy="20" r="20" fill="#374151"/>
+							<circle cx="20" cy="16" r="7" fill="#6b7280"/>
+							<ellipse cx="20" cy="34" rx="12" ry="8" fill="#6b7280"/>
+						</svg>
+					</span>
+					<span class="login-icon">🔐</span>
+				</div>
+				<div class="login-btn-text">
+					<span class="login-btn-title">התחברות / הרשמה</span>
+					<span class="login-btn-sub">לאזור האישי שלך ←</span>
+				</div>
+			</a>
+			{/if}
+		</div>
+
+		<!-- רשימת פרסומות -->
+		<div class="ads-list">
+			<div class="section-title section-title-benefits">הטבות ארציות <span class="title-gold">יוצאים לחירות</span></div>
+
+			{#each ads as ad (ad.id)}
+			<a
+				href={ad.href}
+				target="_blank"
+				rel="noopener noreferrer"
+				class="ad-card"
+				onclick={() => open = false}
+			>
+				<div class="ad-img-wrap">
+					<img
+						src={ad.image}
+						alt={ad.title}
+						class="ad-img"
+						decoding="async"
+					/>
+				</div>
+				<div class="ad-body">
+					<p class="ad-title">{ad.title}</p>
+					<p class="ad-desc">{ad.description}</p>
+					<span class="ad-cta">← {ad.cta}</span>
+				</div>
+			</a>
+			{/each}
+		</div>
+	</div>
+
+	<!-- לשונית קטנה בצד שמאל -->
+	{#if !open && tabY > 0 && !isAuthPage}
+	<button
+		class="tab"
+		class:tab-dragging={tabDragging}
+		style="top: {tabY}px; transform: translateY(-50%);"
+		onclick={() => open = true}
+		ontouchstart={onTabTouchStart}
+		ontouchmove={onTabTouchMove}
+		ontouchend={onTabTouchEnd}
+		aria-label="פתח הטבות לקהילה"
+	>
+		<span class="tab-text">לאזור האישי ולהטבות</span>
+	</button>
+	{/if}
+
+</div>
+
+<style>
+	.overlay {
+		position: fixed;
+		inset: 0;
+		background: rgba(0, 0, 0, 0.55);
+		z-index: 1100;
+		cursor: pointer;
+		border: none;
+		padding: 0;
+	}
+
+	.drawer {
+		position: fixed;
+		top: 0;
+		left: 0;
+		height: 100dvh;
+		width: min(340px, 92vw);
+		background: linear-gradient(180deg, #0a0f1e 0%, #070b14 100%);
+		border-left: none;
+		border-right: 1px solid rgba(99, 102, 241, 0.2);
+		z-index: 1200;
+		display: flex;
+		flex-direction: column;
+		transform: translateX(-100%);
+		transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		box-shadow: 8px 0 32px rgba(0, 0, 0, 0.5);
+	}
+
+	.drawer-open {
+		transform: translateX(0);
+	}
+
+	.section-title {
+		font-size: 1.25rem;
+		font-weight: 900;
+		background: linear-gradient(90deg, #38bdf8, #818cf8, #a78bfa);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		background-clip: text;
+		text-align: center;
+		padding: 0.9rem 1.25rem 0.6rem;
+		letter-spacing: 0.05em;
+		flex-shrink: 0;
+		border-top: 2px solid rgba(56, 189, 248, 0.25);
+		text-shadow: none;
+		position: relative;
+	}
+
+	.section-title:first-of-type,
+	.section-title-first {
+		border-top: none;
+	}
+
+	.section-title-first {
+		padding-top: 0.5rem;
+		padding-bottom: 0.4rem;
+	}
+
+	.section-title.section-title-benefits {
+		border-top: 2px solid rgba(56, 189, 248, 0.25);
+		margin: 0 -0.75rem 0.5rem;
+	}
+
+	.close-btn {
+		position: absolute;
+		top: 50%;
+		left: 0.6rem;
+		transform: translateY(-50%);
+		width: 28px;
+		height: 28px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		background: rgba(99, 102, 241, 0.15);
+		border: 1px solid rgba(99, 102, 241, 0.35);
+		border-radius: 50%;
+		color: #e0e7ff;
+		font-size: 1.05rem;
+		font-weight: 700;
+		line-height: 1;
+		cursor: pointer;
+		padding: 0;
+		-webkit-text-fill-color: #e0e7ff;
+		background-clip: border-box;
+		-webkit-background-clip: border-box;
+		transition: background 0.2s, border-color 0.2s;
+	}
+
+	.close-btn:hover {
+		background: rgba(99, 102, 241, 0.3);
+		border-color: rgba(99, 102, 241, 0.6);
+	}
+
+	.title-gold {
+		color: #fbbf24;
+	}
+
+	.auth-section {
+		padding: 0.5rem 0.75rem 0.65rem;
+		margin-bottom: 0.25rem;
+		border-bottom: 1px solid rgba(99,102,241,0.15);
+		flex-shrink: 0;
+	}
+
+	.profile-btn, .login-btn {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		width: 100%;
+		padding: 0.75rem 1rem;
+		border-radius: 0.75rem;
+		text-decoration: none;
+		transition: background 0.2s;
+	}
+
+	.profile-btn {
+		background: rgba(99,102,241,0.12);
+		border: 1px solid rgba(99,102,241,0.3);
+	}
+	.profile-btn:hover { background: rgba(99,102,241,0.22); }
+
+	.login-btn {
+		background: rgba(250,204,21,0.1);
+		border: 1px solid rgba(250,204,21,0.3);
+	}
+	.login-btn:hover { background: rgba(250,204,21,0.18); }
+
+	.profile-avatar-placeholder {
+		width: 40px;
+		height: 40px;
+		border-radius: 50%;
+		background: rgba(99,102,241,0.2);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 1.2rem;
+		flex-shrink: 0;
+	}
+
+	.anon-avatar-wrap {
+		position: relative;
+		flex-shrink: 0;
+		display: flex;
+		align-items: center;
+	}
+
+	.anon-avatar {
+		border-radius: 50%;
+		overflow: hidden;
+		display: flex;
+	}
+
+	.login-icon {
+		font-size: 0.9rem;
+		position: absolute;
+		bottom: -2px;
+		left: -4px;
+	}
+
+	.profile-btn-text, .login-btn-text {
+		display: flex;
+		flex-direction: column;
+		text-align: right;
+		flex: 1;
+	}
+
+	.profile-btn-name {
+		font-size: 0.9rem;
+		font-weight: 700;
+		color: #e0e7ff;
+	}
+
+	.profile-btn-sub, .login-btn-sub {
+		font-size: 0.7rem;
+		color: #94a3b8;
+	}
+
+	.login-btn-title {
+		font-size: 0.9rem;
+		font-weight: 700;
+		color: #fde047;
+	}
+
+	.ads-list {
+		overflow-y: auto;
+		-webkit-overflow-scrolling: touch;
+		flex: 1;
+		min-height: 0;
+		padding: 0.75rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		scrollbar-width: thin;
+		scrollbar-color: rgba(99,102,241,0.3) transparent;
+	}
+
+	.ad-card {
+		display: flex;
+		gap: 0.75rem;
+		background: rgba(255,255,255,0.05);
+		border: 1px solid rgba(99,102,241,0.15);
+		border-radius: 0.75rem;
+		text-decoration: none;
+		transition: background 0.2s, border-color 0.2s, transform 0.15s;
+		padding: 0.75rem;
+		align-items: stretch;
+	}
+
+	.ad-card:hover {
+		background: rgba(99,102,241,0.12);
+		border-color: rgba(99,102,241,0.35);
+		transform: scale(1.01);
+	}
+
+	.ad-img-wrap {
+		position: relative;
+		width: 88px;
+		min-height: 88px;
+		border-radius: 0.5rem;
+		overflow: hidden;
+		flex-shrink: 0;
+		background: #1e293b;
+	}
+
+	.ad-img {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.ad-body {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.ad-title {
+		font-size: 0.9rem;
+		font-weight: 700;
+		color: #f1f5f9;
+		margin: 0 0 0.2rem;
+		line-height: 1.3;
+		white-space: normal;
+		word-break: break-word;
+	}
+
+	.ad-desc {
+		font-size: 0.75rem;
+		color: #94a3b8;
+		margin: 0 0 0.3rem;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+		line-height: 1.4;
+	}
+
+	.ad-cta {
+		display: inline-block;
+		font-size: 0.7rem;
+		color: #a5b4fc;
+		font-weight: 600;
+		background: rgba(99,102,241,0.12);
+		border-radius: 4px;
+		padding: 0.15rem 0.45rem;
+	}
+
+	/* ---- לשונית ---- */
+	.tab {
+		position: fixed;
+		left: 0;
+		z-index: 1050;
+		background: linear-gradient(180deg, rgba(79, 70, 229, 0.78), rgba(124, 58, 237, 0.78));
+		backdrop-filter: blur(3px);
+		-webkit-backdrop-filter: blur(3px);
+		border: none;
+		border-radius: 0 10px 10px 0;
+		padding: 0.75rem 0.4rem;
+		cursor: grab;
+		box-shadow: 2px 0 6px rgba(79,70,229,0.25);
+		transition: padding 0.2s, box-shadow 0.2s;
+		touch-action: none;
+		user-select: none;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.4rem;
+	}
+
+	.tab::after {
+		content: '';
+		width: 0;
+		height: 0;
+		border-top: 5px solid transparent;
+		border-bottom: 5px solid transparent;
+		border-left: 6px solid rgba(255, 255, 255, 0.9);
+		filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.4));
+	}
+
+	.tab:hover {
+		box-shadow: 2px 0 10px rgba(79,70,229,0.45);
+	}
+
+	.tab-dragging {
+		cursor: grabbing;
+		opacity: 0.85;
+		transition: none;
+	}
+
+	.tab-text {
+		writing-mode: vertical-rl;
+		text-orientation: mixed;
+		transform: rotate(180deg);
+		font-size: 0.65rem;
+		font-weight: 700;
+		color: #fff;
+		letter-spacing: 0.06em;
+	}
+</style>

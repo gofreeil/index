@@ -4,6 +4,7 @@
 	import { lang, translations } from '$lib/i18n';
 	import { get } from 'svelte/store';
 	import VisitorCounter from '$lib/components/VisitorCounter.svelte';
+	import MobileAdsDrawer from '$lib/components/MobileAdsDrawer.svelte';
 	import { authUser, logout } from '$lib/auth';
 
 	let { children } = $props();
@@ -68,6 +69,8 @@
 >
 	דלג לתוכן המרכזי
 </a>
+
+<MobileAdsDrawer />
 
 <div class="relative min-h-screen bg-gray-950 text-gray-100" dir={t.dir}>
 	<!-- Header -->
