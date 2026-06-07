@@ -45,7 +45,8 @@
 
 	$effect(() => {
 		if (typeof window !== 'undefined' && tabY === 0) {
-			tabY = Math.round(window.innerHeight * 2 / 3);
+			// ברירת מחדל: החלק התחתון של המסך (4/5 מהגובה)
+			tabY = Math.round(window.innerHeight * 4 / 5);
 		}
 	});
 
