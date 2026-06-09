@@ -13,6 +13,12 @@
 	);
 
 	let open = $state(false);
+	let collapsed = $state(false);
+
+	function closeAll() {
+		open = false;
+		collapsed = false;
+	}
 
 	// ---- Swipe gestures (Drawer) ----
 	let drawerTouchStartX = 0;
@@ -24,17 +30,16 @@
 		drawerTouchStartY = e.touches[0].clientY;
 	}
 
-	// על הדרואר: משיכה שמאלה → סגור
 	/** @param {TouchEvent} e */
 	function onDrawerTouchEnd(e) {
 		const dx = e.changedTouches[0].clientX - drawerTouchStartX;
 		const dy = e.changedTouches[0].clientY - drawerTouchStartY;
 		if (dx < -50 && Math.abs(dx) > Math.abs(dy)) {
-			open = false;
+			closeAll();
 		}
 	}
 
-	// ---- לשונית: גרירה אנכית + פתיחה ----
+	// ---- לשונית ----
 	let tabY = $state(0);
 	let tabDragging = $state(false);
 	let tabDragStartClientY = 0;
@@ -42,10 +47,21 @@
 	let tabTouchStartX = 0;
 	let tabTouchStartY = 0;
 	let tabTouchStartTime = 0;
+	let tabSwipeHandled = false;
+	/** @type {'h' | 'v' | null} */
+	let tabAxis = null;
+
+	/** @type {HTMLElement | null} */
+	let drawerSystemEl = null;
+	let isDraggingH = false;
+	let dragStartLeftPx = -340;
+	const DRAWER_WIDTH = 340;
+	const OPEN_THRESHOLD = 100;
+	const CLOSE_THRESHOLD = -100;
+	const COLLAPSE_THRESHOLD = -20;
 
 	$effect(() => {
 		if (typeof window !== 'undefined' && tabY === 0) {
-			// ברירת מחדל: החלק התחתון של המסך (4/5 מהגובה)
 			tabY = Math.round(window.innerHeight * 4 / 5);
 		}
 	});
@@ -58,13 +74,40 @@
 		tabDragStartTabY = tabY;
 		tabTouchStartTime = Date.now();
 		tabDragging = false;
+		tabSwipeHandled = false;
+		tabAxis = null;
+		isDraggingH = false;
+		dragStartLeftPx = open ? 0 : -DRAWER_WIDTH;
 	}
 
 	/** @param {TouchEvent} e */
 	function onTabTouchMove(e) {
 		const dx = e.touches[0].clientX - tabTouchStartX;
 		const dy = e.touches[0].clientY - tabDragStartClientY;
-		if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 20) {
+		const absX = Math.abs(dx), absY = Math.abs(dy);
+
+		if (tabAxis === null && (absX > 10 || absY > 10)) {
+			tabAxis = absX > absY ? 'h' : 'v';
+		}
+
+		if (tabAxis !== null) {
+			try { e.preventDefault(); } catch { /* passive */ }
+		}
+
+		if (tabAxis === 'h' && drawerSystemEl) {
+			isDraggingH = true;
+			let newLeft = dragStartLeftPx + dx;
+			if (newLeft > 0) newLeft = 0;
+			if (newLeft < -DRAWER_WIDTH - 20) newLeft = -DRAWER_WIDTH - 20;
+			drawerSystemEl.style.transition = 'none';
+			drawerSystemEl.style.left = newLeft + 'px';
+
+			if (!open) {
+				collapsed = dx <= COLLAPSE_THRESHOLD;
+			}
+		}
+
+		if (tabAxis === 'v' && absY > 20) {
 			tabDragging = true;
 			let newY = tabDragStartTabY + dy;
 			newY = Math.max(60, Math.min(window.innerHeight - 60, newY));
@@ -72,27 +115,72 @@
 		}
 	}
 
+	/** @param {HTMLElement} node */
+	function nonPassiveTouch(node) {
+		const opts = { passive: false };
+		node.addEventListener('touchstart', onTabTouchStart, opts);
+		node.addEventListener('touchmove',  onTabTouchMove,  opts);
+		node.addEventListener('touchend',   onTabTouchEnd,   opts);
+		return {
+			destroy() {
+				node.removeEventListener('touchstart', onTabTouchStart, opts);
+				node.removeEventListener('touchmove',  onTabTouchMove,  opts);
+				node.removeEventListener('touchend',   onTabTouchEnd,   opts);
+			}
+		};
+	}
+
 	/** @param {TouchEvent} e */
 	function onTabTouchEnd(e) {
 		const dx = e.changedTouches[0].clientX - tabTouchStartX;
 		const dy = e.changedTouches[0].clientY - tabTouchStartY;
 		const totalMove = Math.sqrt(dx * dx + dy * dy);
-
 		const isTap = totalMove < 15;
-		const isSwipeRight = dx > 35 && Math.abs(dx) > Math.abs(dy);
 
-		if (!tabDragging && (isTap || isSwipeRight)) {
-			open = true;
+		if (isDraggingH && drawerSystemEl) {
+			drawerSystemEl.style.transition = '';
+			drawerSystemEl.style.left = '';
+
+			if (!open) {
+				if (dx >= OPEN_THRESHOLD) {
+					open = true;
+					collapsed = false;
+				}
+			} else {
+				if (dx <= CLOSE_THRESHOLD) {
+					open = false;
+					collapsed = false;
+				}
+			}
+			tabSwipeHandled = true;
+			e.preventDefault();
+		} else if (tabDragging) {
+			tabSwipeHandled = true;
+		} else if (isTap) {
+			if (open) closeAll();
+			else open = true;
+			tabSwipeHandled = true;
 			e.preventDefault();
 		}
+
+		isDraggingH = false;
 		tabDragging = false;
+	}
+
+	function onTabClick() {
+		if (tabSwipeHandled) {
+			tabSwipeHandled = false;
+			return;
+		}
+		if (open) closeAll();
+		else open = true;
 	}
 
 	$effect(() => {
 		/** @param {KeyboardEvent} e */
 		function handleKeydown(e) {
 			if (e.key === 'Escape' && open) {
-				open = false;
+				closeAll();
 			}
 		}
 		document.addEventListener('keydown', handleKeydown);
@@ -107,13 +195,16 @@
 	{#if open}
 	<button
 		class="overlay"
-		onclick={() => open = false}
+		onclick={closeAll}
 		aria-label="סגור פרסומות"
 	></button>
 	{/if}
 
+	<!-- ה-Drawer והלשונית נעים יחד כיחידה אחת -->
+	<div class="drawer-system" class:is-open={open} bind:this={drawerSystemEl}>
+
 	<!-- Drawer -->
-	<div class="drawer" class:drawer-open={open}
+	<div class="drawer"
 		role="dialog"
 		aria-modal="true"
 		aria-label="האזור האישי וההטבות מהקהילה הארצית"
@@ -127,13 +218,13 @@
 			<button
 				type="button"
 				class="close-btn"
-				onclick={() => open = false}
+				onclick={closeAll}
 				aria-label="סגור"
 			>×</button>
 		</div>
 		<div class="auth-section">
 			{#if user}
-			<a href="/" class="profile-btn" onclick={() => open = false}>
+			<a href="/" class="profile-btn" onclick={closeAll}>
 				<span class="profile-avatar-placeholder">👤</span>
 				<div class="profile-btn-text">
 					<span class="profile-btn-name">{user.name}</span>
@@ -141,7 +232,7 @@
 				</div>
 			</a>
 			{:else}
-			<a href="/auth/login" class="login-btn" onclick={() => open = false}>
+			<a href="/auth/login" class="login-btn" onclick={closeAll}>
 				<div class="anon-avatar-wrap">
 					<span class="anon-avatar">
 						<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" width="40" height="40">
@@ -170,7 +261,7 @@
 				target="_blank"
 				rel="noopener noreferrer"
 				class="ad-card"
-				onclick={() => open = false}
+				onclick={closeAll}
 			>
 				<div class="ad-img-wrap">
 					<img
@@ -190,21 +281,24 @@
 		</div>
 	</div>
 
-	<!-- לשונית קטנה בצד שמאל -->
-	{#if !open && tabY > 0 && !isAuthPage}
+	<!-- לשונית מחוברת לקצה הימני של הבאנר -->
+	{#if tabY > 0 && !isAuthPage}
 	<button
 		class="tab"
 		class:tab-dragging={tabDragging}
+		class:tab-collapsed={collapsed && !open}
 		style="top: {tabY}px; transform: translateY(-50%);"
-		onclick={() => open = true}
-		ontouchstart={onTabTouchStart}
-		ontouchmove={onTabTouchMove}
-		ontouchend={onTabTouchEnd}
+		onclick={onTabClick}
+		use:nonPassiveTouch
 		aria-label="פתח הטבות לקהילה"
 	>
-		<span class="tab-text">לאזור האישי ולהטבות</span>
+		{#if !(collapsed && !open)}
+			<span class="tab-text">לאזור האישי ולהטבות</span>
+		{/if}
 	</button>
 	{/if}
+
+	</div>
 
 </div>
 
@@ -219,25 +313,36 @@
 		padding: 0;
 	}
 
-	.drawer {
+	/* ---- מערכת drawer+tab שזזה כיחידה אחת ---- */
+	.drawer-system {
 		position: fixed;
 		top: 0;
-		left: 0;
+		left: -340px;
 		height: 100dvh;
-		width: min(340px, 92vw);
+		width: 340px;
+		max-width: 92vw;
+		z-index: 1200;
+		transition: left 0.55s cubic-bezier(0.32, 0.72, 0.24, 1);
+		pointer-events: none;
+	}
+
+	.drawer-system.is-open {
+		left: 0px;
+	}
+
+	.drawer {
+		position: absolute;
+		top: 0;
+		left: 0;
+		height: 100%;
+		width: 100%;
 		background: linear-gradient(180deg, #0a0f1e 0%, #070b14 100%);
 		border-left: none;
 		border-right: 1px solid rgba(99, 102, 241, 0.2);
-		z-index: 1200;
 		display: flex;
 		flex-direction: column;
-		transform: translateX(-100%);
-		transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 		box-shadow: 8px 0 32px rgba(0, 0, 0, 0.5);
-	}
-
-	.drawer-open {
-		transform: translateX(0);
+		pointer-events: auto;
 	}
 
 	.section-title {
@@ -477,26 +582,28 @@
 		padding: 0.15rem 0.45rem;
 	}
 
-	/* ---- לשונית ---- */
+	/* ---- לשונית — מחוברת לקצה הימני של ה-drawer ---- */
 	.tab {
-		position: fixed;
-		left: 0;
-		z-index: 1050;
+		position: absolute;
+		left: 100%;
+		z-index: 2;
 		background: linear-gradient(180deg, rgba(79, 70, 229, 0.78), rgba(124, 58, 237, 0.78));
 		backdrop-filter: blur(3px);
 		-webkit-backdrop-filter: blur(3px);
 		border: none;
-		border-radius: 0 10px 10px 0;
-		padding: 0.75rem 0.4rem;
+		border-radius: 0 9px 9px 0;
+		padding: 0.6rem 0.3rem;
 		cursor: grab;
 		box-shadow: 2px 0 6px rgba(79,70,229,0.25);
-		transition: padding 0.2s, box-shadow 0.2s;
+		transition: padding 0.2s ease, box-shadow 0.2s, border-radius 0.2s;
 		touch-action: none;
+		overscroll-behavior: contain;
 		user-select: none;
+		pointer-events: auto;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 0.4rem;
+		gap: 0.35rem;
 	}
 
 	.tab::after {
@@ -519,11 +626,23 @@
 		transition: none;
 	}
 
+	.tab.tab-collapsed {
+		padding: 0.35rem 0.2rem;
+		gap: 0;
+		border-radius: 0 6px 6px 0;
+	}
+
+	.tab.tab-collapsed::after {
+		border-top-width: 4px;
+		border-bottom-width: 4px;
+		border-left-width: 5px;
+	}
+
 	.tab-text {
 		writing-mode: vertical-rl;
 		text-orientation: mixed;
 		transform: rotate(180deg);
-		font-size: 0.65rem;
+		font-size: 0.6rem;
 		font-weight: 700;
 		color: #fff;
 		letter-spacing: 0.06em;
