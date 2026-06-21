@@ -12,6 +12,15 @@
 /** @type {Ad[]} */
 export const ads = [
 	{
+		id: 12,
+		title: 'קהילה בשכונה',
+		description: 'כל יתרונות השכונה תחת קורת גג אחת',
+		cta: 'תהנה מכל היתרונות של הקהילה בשכונה שלך',
+		href: 'https://community-il.vercel.app/',
+		image: '/community-neighborhood.png',
+		color: 'from-blue-500 to-purple-600'
+	},
+	{
 		id: 1,
 		title: 'בתי הפיוס',
 		description: 'מתנדבים לתת לך עזרה מלאה בדין / פיוס בכל סיכסוך',
@@ -37,15 +46,6 @@ export const ads = [
 		href: 'https://purchasing-groups.vercel.app/',
 		image: '/whatsapp_cta.png',
 		color: 'from-green-800 to-emerald-900'
-	},
-	{
-		id: 4,
-		title: 'מועדון המשקיעים החברתי',
-		description: 'התחבר עם קבוצת המשקיעים שלנו',
-		cta: 'התחבר עם קבוצת המשקיעים שלנו',
-		href: 'https://www.melecshop.com/page/free',
-		image: '/partners/investments.png',
-		color: 'from-amber-600 to-orange-600'
 	},
 	{
 		id: 5,
