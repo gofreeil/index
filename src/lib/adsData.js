@@ -16,7 +16,7 @@ export const ads = [
 		title: 'קהילה בשכונה',
 		description: 'כל יתרונות השכונה תחת קורת גג אחת',
 		cta: 'תהנה מכל היתרונות של הקהילה בשכונה שלך',
-		href: 'https://community-il.vercel.app/',
+		href: 'https://community.gofreeil.com/',
 		image: '/community-neighborhood.png',
 		color: 'from-blue-500 to-purple-600'
 	},
@@ -25,7 +25,7 @@ export const ads = [
 		title: 'בתי הפיוס',
 		description: 'מתנדבים לתת לך עזרה מלאה בדין / פיוס בכל סיכסוך',
 		cta: 'יש לך סיכסוך? לחץ לפתרון',
-		href: 'https://chachmim.vercel.app/',
+		href: 'https://chachmim.gofreeil.com/',
 		image: '/bati-hapius.png',
 		color: 'from-orange-600 to-red-600'
 	},
@@ -34,7 +34,7 @@ export const ads = [
 		title: 'ועדי שכונות',
 		description: 'מהפכת משילות העם על המוסדות',
 		cta: 'הכר והשתתף במהפכת משילות העם על מוסדותיו',
-		href: 'https://neighborhoods-il.vercel.app/',
+		href: 'https://neighborhoods.gofreeil.com/',
 		image: '/news/vaadei-shchunot.png',
 		color: 'from-blue-600 to-cyan-600'
 	},
@@ -43,7 +43,7 @@ export const ads = [
 		title: 'קבוצת רכישה',
 		description: 'הוזל את ההוצאות שלך',
 		cta: 'הצטרף לקבוצת הרכישה שלנו והוזל מיד את ההוצאות!',
-		href: 'https://purchasing-groups.vercel.app/',
+		href: 'https://groups.gofreeil.com/',
 		image: '/whatsapp_cta.png',
 		color: 'from-green-800 to-emerald-900'
 	},
@@ -61,7 +61,7 @@ export const ads = [
 		title: 'בעלי מקצוע כשירים',
 		description: 'חתמו על תנאי הקהילה ונותנים לנו הנחות והטבות יחודיות',
 		cta: 'מחפש בעל מקצוע איכותי באזורך?',
-		href: 'https://index-chi-sage.vercel.app/',
+		href: 'https://index.gofreeil.com/',
 		image: '/professionals.png',
 		color: 'from-yellow-500 to-orange-500'
 	},
@@ -70,7 +70,7 @@ export const ads = [
 		title: 'ביקורת על העיריה',
 		description: 'הזכות לחיות - תלונות לעיריה',
 		cta: 'יש לך תלונה לעיריה שמזלזלים בה? - לא עוד',
-		href: 'https://criticism.vercel.app/',
+		href: 'https://criticism.gofreeil.com/',
 		image: '/bikoret-iriya.png',
 		color: 'from-red-600 to-pink-600'
 	},
@@ -88,7 +88,7 @@ export const ads = [
 		title: 'החנות החברתית',
 		description: 'מוצרים נבחרים לבריאות טבעית, חקלאות ביתית, טכנולוגיה ועוד',
 		cta: 'כנסו לחנות לחיים טובים יותר',
-		href: 'https://heirut-shop.vercel.app/',
+		href: 'https://shop.gofreeil.com/',
 		image: '/yotzim-lecherut.png',
 		color: 'from-emerald-600 to-teal-700'
 	}
