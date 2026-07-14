@@ -1,56 +1,24 @@
 // ============================================================
-// import-to-strapi.mjs — ייבוא חד-פעמי של העסקים מ-Google Sheet ל-idx-business ב-Strapi.
+// import-to-strapi.mjs — ייבוא חד-פעמי של העסקים ל-idx-business ב-Strapi.
+//
+// מקור ברירת-המחדל: ה-endpoint החי https://index.gofreeil.com/api/businesses
+// (עדיין מבוסס-גיליון עד לפריסת הענף) — מחזיר את העסקים המאושרים בצורת-הגיליון,
+// בלי צורך ב-Google creds. ⚠️ להריץ *לפני* פריסת ענף המעבר.
 //
 // הרצה (Node 20+):
-//   node --env-file=.env scripts/import-to-strapi.mjs            # ריצת-אמת
-//   node --env-file=.env scripts/import-to-strapi.mjs --dry      # בדיקה בלי כתיבה
+//   node --env-file=.env scripts/import-to-strapi.mjs              # ריצת-אמת
+//   node --env-file=.env scripts/import-to-strapi.mjs --dry        # בדיקה בלי כתיבה
+//   node --env-file=.env scripts/import-to-strapi.mjs --no-geo     # בלי גיאוקודינג (מהיר)
 //
-// דורש ב-.env: STRAPI_TOKEN (Full Access), SPREADSHEET_ID,
-//              GOOGLE_CLIENT_EMAIL, GOOGLE_PRIVATE_KEY. אופציונלי: STRAPI_URL.
-//
-// - ממפה כל שורה לפי כותרות עבריות (התאמת תת-מחרוזת, כמו ה-importer של community).
-// - external_id יציב = slug של "name|phone" (תואם ל-stableId של community).
-// - upsert לפי external_id → הרצה חוזרת מעדכנת, לא מכפילה.
-// - גיאוקודינג best-effort דרך Nominatim (OSM, ללא מפתח); עסק בלי מיקום → אין lat/lng.
-// - status: 'approved' אם עמודת "אושר" מסמנת כן, אחרת 'pending'.
+// דורש ב-.env: STRAPI_TOKEN (Full Access). אופציונלי: STRAPI_URL, SOURCE_URL.
 // ============================================================
-import { google } from 'googleapis';
-
 const DRY = process.argv.includes('--dry');
+const NO_GEO = process.argv.includes('--no-geo');
 const STRAPI = (process.env.STRAPI_URL || 'https://api.gofreeil.com').replace(/\/$/, '');
+const SOURCE_URL = process.env.SOURCE_URL || 'https://index.gofreeil.com/api/businesses';
 const TOKEN = process.env.STRAPI_TOKEN;
-const SPREADSHEET_ID = clean(process.env.SPREADSHEET_ID || '');
 
 if (!TOKEN) throw new Error('חסר STRAPI_TOKEN ב-env');
-if (!SPREADSHEET_ID) throw new Error('חסר SPREADSHEET_ID ב-env');
-
-/** ניקוי ערכי env (מפתח פרטי רב-שורתי, מרכאות עוטפות). @param {string} str */
-function clean(str) {
-	if (!str) return '';
-	let c = str.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n').replace(/\r\n/g, '\n');
-	c = c.replace(/\\\n/g, '\n').trim();
-	if (c.startsWith('"') && c.endsWith('"')) c = c.slice(1, -1);
-	if (c.includes('BEGIN')) {
-		const body = c
-			.replace(/-----BEGIN[\s\S]*?KEY-----/g, '')
-			.replace(/-----END[\s\S]*?KEY-----/g, '')
-			.replace(/\\/g, '')
-			.replace(/\s+/g, '');
-		let f = '';
-		for (let i = 0; i < body.length; i += 64) f += body.slice(i, i + 64) + '\n';
-		c = `-----BEGIN PRIVATE KEY-----\n${f}-----END PRIVATE KEY-----`;
-	}
-	return c;
-}
-
-const auth = new google.auth.GoogleAuth({
-	credentials: {
-		client_email: clean(process.env.GOOGLE_CLIENT_EMAIL || ''),
-		private_key: clean(process.env.GOOGLE_PRIVATE_KEY || '')
-	},
-	scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly']
-});
-const sheets = google.sheets({ version: 'v4', auth });
 
 /** @param {Record<string,any>} row @param {string} needle */
 const col = (row, needle) => {
@@ -81,22 +49,22 @@ function externalId(name, phone) {
 	return `index-${s}`.slice(0, 80);
 }
 
-const geocodeCache = new Map();
+const geoCache = new Map();
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /** @param {string} q */
 async function geocode(q) {
-	if (!q) return { lat: null, lng: null };
-	if (geocodeCache.has(q)) return geocodeCache.get(q);
+	if (!q || NO_GEO) return { lat: null, lng: null };
+	if (geoCache.has(q)) return geoCache.get(q);
 	try {
 		const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=il&q=${encodeURIComponent(q)}`;
 		const res = await fetch(url, { headers: { 'User-Agent': 'gofreeil-index-import/1.0' } });
-		await sleep(1100); // כיבוד rate-limit של OSM (1 בקשה/שנייה)
+		await sleep(1100); // rate-limit של OSM
 		if (res.ok) {
 			const arr = await res.json();
 			if (arr[0]) {
 				const out = { lat: parseFloat(arr[0].lat), lng: parseFloat(arr[0].lon) };
-				geocodeCache.set(q, out);
+				geoCache.set(q, out);
 				return out;
 			}
 		}
@@ -104,11 +72,11 @@ async function geocode(q) {
 		/* best-effort */
 	}
 	const miss = { lat: null, lng: null };
-	geocodeCache.set(q, miss);
+	geoCache.set(q, miss);
 	return miss;
 }
 
-/** @param {string} path @param {object} [init] */
+/** @param {string} path @param {any} [init] */
 async function strapi(path, init = {}) {
 	const res = await fetch(`${STRAPI}${path}`, {
 		...init,
@@ -123,38 +91,26 @@ async function strapi(path, init = {}) {
 }
 
 async function main() {
-	// שם הגיליון הראשון
-	const meta = await sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID });
-	const sheetName = meta.data.sheets?.[0]?.properties?.title;
-	const resp = await sheets.spreadsheets.values.get({ spreadsheetId: SPREADSHEET_ID, range: sheetName });
-	const rows = resp.data.values || [];
-	if (rows.length < 2) {
-		console.log('אין שורות בגיליון.');
-		return;
-	}
-	const headers = rows[0];
-	const records = rows.slice(1).map((r) => {
-		/** @type {Record<string,any>} */
-		const o = {};
-		headers.forEach((h, i) => (o[h] = r[i] || ''));
-		o.__logoJ = r[9] || ''; // עמודה J
-		return o;
-	});
+	console.log(`מקור: ${SOURCE_URL}`);
+	const res = await fetch(SOURCE_URL);
+	if (!res.ok) throw new Error(`מקור → ${res.status}`);
+	const rows = await res.json();
+	if (!Array.isArray(rows)) throw new Error('תשובת מקור לא צפויה (לא מערך)');
+	console.log(`התקבלו ${rows.length} עסקים.\n`);
 
 	let created = 0,
 		updated = 0,
 		skipped = 0;
 
-	for (const row of records) {
-		const name = col(row, 'שם העסק');
+	for (const row of rows) {
+		const name = col(row, 'שם העסק') || String(row.name || '').trim();
 		const phone = col(row, 'טלפון');
 		const discount = col(row, 'ההנחה הבלעדית');
-		const terms = col(row, 'אני מקבל על עצמי את תנאי הקהילה');
-		if (!name || !discount) {
+		if (!name) {
 			skipped++;
 			continue;
 		}
-		const approvedCell = col(row, 'אושר');
+		const terms = col(row, 'אני מקבל על עצמי את תנאי הקהילה');
 		const address = col(row, 'מיקום המפעל');
 		const salesArea = col(row, 'אזור מכירה');
 
@@ -170,7 +126,7 @@ async function main() {
 		const payload = {
 			name,
 			phone,
-			discount,
+			discount: discount || '—',
 			description: col(row, 'תיאור העסק') || col(row, 'הערות'),
 			unique_content: col(row, 'תוכן ייחודי'),
 			category: col(row, 'קטגוריה'),
@@ -181,18 +137,19 @@ async function main() {
 			facebook: col(row, 'קישור לדף הפייסבוק'),
 			website: col(row, 'קישור לאתר') || col(row, 'אתר'),
 			instagram: col(row, 'קישור לאינסטגרם'),
-			logo_url: driveDirect(row.__logoJ || col(row, 'לוגו')),
+			logo_url: driveDirect(row.logoFromColumnJ || col(row, 'לוגו')),
 			banners_urls,
-			accepted_terms: !!terms,
+			accepted_terms: !!terms || !!discount,
 			external_id: externalId(name, phone),
 			source: 'sheet-import',
-			status: /כן|yes|1|true|✓/i.test(approvedCell) ? 'approved' : 'pending',
+			// המקור כבר החזיר רק מאושרים (סינון עמודת "אושר" ב-endpoint) → מייבאים כמאושרים
+			status: 'approved',
 			lat,
 			lng
 		};
 
 		if (DRY) {
-			console.log(`[dry] ${payload.status.padEnd(8)} ${name} ${lat ? '📍' : '  '} (${payload.category})`);
+			console.log(`[dry] ${name} ${lat ? '📍' : '  '} (${payload.category || '—'})`);
 			continue;
 		}
 
