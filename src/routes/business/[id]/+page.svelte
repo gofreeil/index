@@ -1,7 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
-	import IsraelMap from '$lib/components/IsraelMap.svelte';
 	import { lang, translations } from '$lib/i18n';
 	import { authUser } from '$lib/auth';
 
@@ -9,47 +8,53 @@
 	let { data } = $props();
 	const business = $derived(data.business);
 
-	// Support for Svelte 5 state-like behavior from store
 	let currentLang = $state('he');
 	lang.subscribe((v) => (currentLang = v));
-
 	const t = $derived(/** @type {any} */ (translations)[currentLang] || translations.he);
 
 	const PLACEHOLDER_IMG =
 		'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGNsYXNzPSJoLTYgdy02IiBmaWxsPSJub25lIiBzdHJva2U9IiM5Q0EzQUYiIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2Utd2lkdGg9IjIiIGQ9Ik0xOSAyMVY1YTIgMiAwIDAwLTItMkg3YTIgMiAwIDAwLTIgMnYxNm0xNCAwaDJtLTIgMGgtNW0tOSAweDNtMiAwaDVNOSA3aDFtLTEgNGgxbTQtNGgxbS0xIDRoMW0tNSAxMHYtNWExIDEgMCAwMTEtMWgyYTEgMSAwIDAxMSAxdjVtLTQgMGg0IiAvPjwvc3ZnPg==';
 
+	// המרת קישור יוטיוב ל-embed. בלי fallback קבוע — עסק בלי סרטון פשוט לא מציג וידאו.
+	/** @param {string} url */
+	function youtubeEmbed(url) {
+		if (!url) return '';
+		const patterns = [
+			/(?:youtube\.com\/watch\?v=)([^&]+)/,
+			/(?:youtu\.be\/)([^?]+)/,
+			/(?:youtube\.com\/embed\/)([^?]+)/
+		];
+		for (const p of patterns) {
+			const m = url.match(p);
+			if (m) return `https://www.youtube.com/embed/${m[1]}`;
+		}
+		return '';
+	}
+	const ytEmbed = $derived(youtubeEmbed(business.youtube));
+
 	let currentImageIndex = $state(0);
 	/** @type {any} */
 	let interval;
-	let showReviewForm = $state(false);
-	let newReview = $state({ rating: 5, comment: '', user: '' });
-
-	onMount(() => {
-		if (business.banners.length > 1) {
-			interval = setInterval(() => {
-				currentImageIndex = (currentImageIndex + 1) % business.banners.length;
-			}, 5000);
-		}
-		return () => clearInterval(interval);
-	});
 
 	/** @type {any[]} */
 	let reviews = $state([]);
-	let averageRating = $derived(
-		reviews.length > 0
-			? Number((reviews.reduce((acc, r) => acc + Number(r.rating), 0) / reviews.length).toFixed(1))
-			: 0
-	);
+	let showReviewForm = $state(false);
+	let newReview = $state({ rating: 5, comment: '' });
+	let reviewSubmitted = $state(false);
+	let reviewError = $state('');
+
 	/** @type {any} */
 	let user = $state(null);
 	authUser.subscribe((v) => (user = v));
 
+	// דירוג הכותרת: הממוצע המחושב בבאקאנד (rating_avg/rating_count).
+	const avgRating = $derived(business.rating || 0);
+	const ratingCount = $derived(business.rating_count || 0);
+
 	async function fetchReviews() {
 		try {
-			const res = await fetch(`/api/reviews?businessId=${business.id}`);
-			if (res.ok) {
-				reviews = await res.json();
-			}
+			const res = await fetch(`/api/reviews?businessId=${encodeURIComponent(business.documentId)}`);
+			if (res.ok) reviews = await res.json();
 		} catch (e) {
 			console.error('Failed to fetch reviews:', e);
 		}
@@ -57,6 +62,12 @@
 
 	onMount(() => {
 		fetchReviews();
+		// מונה צפייה אטומי (לא כתיבה לגיליון write-only)
+		fetch('/api/stats', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ documentId: business.documentId, action: 'view' })
+		}).catch(() => {});
 
 		if (business.banners.length > 1) {
 			interval = setInterval(() => {
@@ -67,52 +78,45 @@
 	});
 
 	let isPhoneRevealed = $state(false);
-
 	async function revealPhoneAndLog() {
 		if (isPhoneRevealed) return;
-
 		isPhoneRevealed = true;
-
 		try {
 			await fetch('/api/stats', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					businessId: business.id,
-					businessName: business.name,
-					action: 'phone_click'
-				})
+				body: JSON.stringify({ documentId: business.documentId, action: 'reveal_phone' })
 			});
 		} catch (e) {
-			console.error('Failed to log click:', e);
+			console.error('reveal failed:', e);
 		}
 	}
 
 	async function submitReview() {
 		if (!user) return;
+		reviewError = '';
 		try {
-			const response = await fetch('/api/reviews', {
+			const res = await fetch('/api/reviews', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
-					businessId: business.id,
-					userId: user.id,
-					userName: user.name,
+					businessId: business.documentId,
+					businessSlug: business.slug,
 					rating: newReview.rating,
-					comment: newReview.comment
+					comment: newReview.comment,
+					authorName: user.name
 				})
 			});
-			const result = await response.json();
+			const result = await res.json();
 			if (result.success) {
-				alert('תודה על חוות הדעת! היא תפורסם לאחר אישור.');
+				reviewSubmitted = true;
 				showReviewForm = false;
-				newReview = { rating: 5, comment: '', user: '' };
-				// We don't fetchReviews again because it needs approval
+				newReview = { rating: 5, comment: '' };
 			} else {
-				alert('שגיאה בשליחת חוות הדעת');
+				reviewError = result.error || 'שגיאה בשליחת חוות הדעת';
 			}
 		} catch (e) {
-			alert('שגיאה בשליחת חוות הדעת');
+			reviewError = 'שגיאה בשליחת חוות הדעת';
 		}
 	}
 </script>
@@ -120,55 +124,38 @@
 <svelte:head>
 	<title>{business.name} - {t.title}</title>
 	<meta name="description" content={business.description || t.subtitle} />
-
-	<!-- Open Graph -->
 	<meta property="og:title" content="{business.name} - {t.title}" />
 	<meta property="og:description" content={business.description || t.subtitle} />
-	{#if business.logo}
-		<meta property="og:image" content={business.logo} />
-	{/if}
+	{#if business.logo}<meta property="og:image" content={business.logo} />{/if}
 	<meta property="og:type" content="business.business" />
-
-	<!-- Twitter -->
-	<meta name="twitter:title" content="{business.name} - {t.title}" />
-	<meta name="twitter:description" content={business.description || t.subtitle} />
-	{#if business.logo}
-		<meta name="twitter:image" content={business.logo} />
-	{/if}
 </svelte:head>
 
 <main class="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-	<!-- Top Section: Logo & Basic Info -->
+	<a href="/" class="mb-6 inline-flex items-center gap-1 text-sm text-blue-400 hover:underline"
+		>→ {t.backToDirectory}</a
+	>
+
+	<!-- Top: Logo & Basic Info -->
 	<div class="mb-12 flex flex-col items-center gap-8 md:flex-row md:items-start md:justify-between">
 		<div class="flex-1 text-right">
-			<h1 class="mb-2 text-4xl font-extrabold text-gray-900 md:text-5xl dark:text-gray-100">
-				{business.name}
-			</h1>
+			<h1 class="mb-2 text-4xl font-extrabold text-gray-100 md:text-5xl">{business.name}</h1>
 			<div class="mb-4 flex items-center justify-end gap-2">
-				{#if reviews.length > 0}
-					<div
-						class="flex items-center gap-2"
-						role="img"
-						aria-label="{averageRating} out of 5 stars"
-					>
-						<span class="text-xl font-bold text-yellow-500">{averageRating}</span>
+				{#if ratingCount > 0}
+					<div class="flex items-center gap-2" role="img" aria-label="{avgRating} מתוך 5">
+						<span class="text-xl font-bold text-yellow-500">{avgRating}</span>
 						<div class="flex gap-0.5" dir="ltr" aria-hidden="true">
 							{#each Array(5) as _, i}
 								<span
-									class="text-xl {i < Math.floor(averageRating)
-										? 'bg-gradient-to-br from-[#3d2b1f] via-[#FCF6BA] to-[#3d2b1f] bg-clip-text text-transparent drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] filter'
-										: 'text-gray-300 dark:text-gray-600'}"
+									class="text-xl {i < Math.round(avgRating)
+										? 'text-yellow-400'
+										: 'text-gray-600'}">★</span
 								>
-									★
-								</span>
 							{/each}
 						</div>
+						<span class="text-sm text-gray-400">({ratingCount} {t.reviews})</span>
 					</div>
-					<span class="text-sm text-gray-500 dark:text-gray-400"
-						>({reviews.length} {t.reviews})</span
-					>
 				{:else}
-					<span class="text-sm text-gray-500 dark:text-gray-400">{t.noReviews}</span>
+					<span class="text-sm text-gray-400">{t.noReviews}</span>
 				{/if}
 			</div>
 
@@ -179,49 +166,14 @@
 							href="tel:{business.phone}"
 							class="flex items-center gap-2 rounded-full bg-blue-600 px-6 py-2 font-bold text-white transition hover:bg-blue-700"
 						>
-							<span>{business.phone}</span>
-							<svg
-								class="h-5 w-5"
-								fill="none"
-								stroke="currentColor"
-								viewBox="0 0 24 24"
-								aria-hidden="true"
-							>
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									stroke-width="2"
-									d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-								/>
-							</svg>
+							<span dir="ltr">{business.phone}</span>
 						</a>
 					{:else}
 						<button
 							onclick={revealPhoneAndLog}
-							aria-expanded={isPhoneRevealed}
-							class="flex items-center gap-2 rounded-full border border-blue-600 px-6 py-2 font-bold text-blue-600 transition hover:bg-blue-600 hover:text-white dark:border-blue-500 dark:text-blue-400 dark:hover:bg-blue-600 dark:hover:text-white"
+							class="flex items-center gap-2 rounded-full border border-blue-500 px-6 py-2 font-bold text-blue-400 transition hover:bg-blue-600 hover:text-white"
 						>
 							<span>{t.revealPhone}</span>
-							<svg
-								class="h-5 w-5"
-								fill="none"
-								stroke="currentColor"
-								viewBox="0 0 24 24"
-								aria-hidden="true"
-							>
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									stroke-width="2"
-									d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-								/>
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									stroke-width="2"
-									d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-								/>
-							</svg>
 						</button>
 					{/if}
 				{/if}
@@ -229,25 +181,17 @@
 					<a
 						href={business.website}
 						target="_blank"
-						class="flex items-center gap-2 rounded-full bg-blue-600 px-6 py-2 font-bold text-white shadow-lg transition hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800"
+						rel="noopener"
+						class="flex items-center gap-2 rounded-full bg-blue-700 px-6 py-2 font-bold text-white shadow-lg transition hover:bg-blue-800"
 					>
 						<span>{t.businessSite}</span>
-						<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-							/>
-						</svg>
 					</a>
 				{/if}
 			</div>
 		</div>
 
-		<!-- Logo on the right -->
 		<div
-			class="order-first h-40 w-40 overflow-hidden rounded-2xl bg-white p-4 shadow-xl md:order-last md:h-56 md:w-56 dark:border dark:border-gray-700 dark:bg-gray-800"
+			class="order-first h-40 w-40 overflow-hidden rounded-2xl border border-gray-700 bg-gray-800 p-4 shadow-xl md:order-last md:h-56 md:w-56"
 		>
 			{#if business.logo}
 				<img
@@ -256,27 +200,12 @@
 					class="h-full w-full object-contain"
 					onerror={(e) => {
 						const img = /** @type {HTMLImageElement} */ (e.target);
-						if (business.fallbackLogo && img.src !== business.fallbackLogo) {
-							img.src = business.fallbackLogo;
-						} else {
-							img.src = PLACEHOLDER_IMG;
-							img.style.padding = '20px';
-							img.style.backgroundColor = '#f3f4f6';
-							img.style.objectFit = 'contain';
-						}
+						img.src = PLACEHOLDER_IMG;
 					}}
 				/>
 			{:else}
-				<div
-					class="flex h-full w-full items-center justify-center bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500"
-				>
-					<svg
-						class="h-20 w-20"
-						fill="none"
-						stroke="currentColor"
-						viewBox="0 0 24 24"
-						aria-hidden="true"
-					>
+				<div class="flex h-full w-full items-center justify-center text-gray-500">
+					<svg class="h-20 w-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path
 							stroke-linecap="round"
 							stroke-linejoin="round"
@@ -289,37 +218,31 @@
 		</div>
 	</div>
 
-	<!-- Gallery & Details Grid -->
 	<div class="grid grid-cols-1 gap-12 lg:grid-cols-3">
-		<!-- Left: Gallery and Reviews -->
 		<div class="lg:col-span-2">
 			<!-- Gallery -->
 			{#if business.banners.length > 0}
-				<div
-					class="relative mb-12 h-64 overflow-hidden rounded-3xl shadow-2xl md:h-[400px] dark:border dark:border-gray-800 dark:shadow-none"
-				>
+				<div class="relative mb-12 h-64 overflow-hidden rounded-3xl shadow-2xl md:h-[400px]">
 					{#each business.banners as banner, i}
 						{#if i === currentImageIndex}
 							<img
 								in:fade={{ duration: 500 }}
 								out:fade={{ duration: 500 }}
 								src={banner}
-								alt="{business.name} banner {i}"
+								alt="{business.name} {i + 1}"
 								class="absolute inset-0 h-full w-full object-cover"
 							/>
 						{/if}
 					{/each}
-
-					<!-- Gallery Controls -->
 					{#if business.banners.length > 1}
 						<div class="absolute right-0 bottom-4 left-0 flex justify-center gap-2">
 							{#each business.banners as _, i}
 								<button
 									onclick={() => (currentImageIndex = i)}
 									aria-label="תמונה {i + 1}"
-									class="h-2 w-2 rounded-full transition-all {i === currentImageIndex
+									class="h-2 rounded-full transition-all {i === currentImageIndex
 										? 'w-6 bg-white'
-										: 'bg-white/50'}"
+										: 'w-2 bg-white/50'}"
 								></button>
 							{/each}
 						</div>
@@ -329,77 +252,80 @@
 
 			<!-- Description -->
 			<section class="mb-12">
-				<h2 class="mb-4 text-2xl font-bold text-gray-800 dark:text-gray-100">{t.aboutBusiness}</h2>
+				<h2 class="mb-4 text-2xl font-bold text-gray-100">{t.aboutBusiness}</h2>
 				<div
-					class="rounded-2xl border border-blue-50 bg-blue-50/30 p-8 text-lg leading-relaxed text-gray-700 dark:border-blue-900/20 dark:bg-blue-900/10 dark:text-gray-300"
+					class="rounded-2xl border border-blue-900/20 bg-blue-900/10 p-8 text-lg leading-relaxed text-gray-300"
 				>
 					{business.description || t.noDescription}
 				</div>
 			</section>
 
-			<!-- Reviews Section -->
+			<!-- Reviews -->
 			<section>
 				<div class="mb-6 flex items-center justify-between">
-					<h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100">{t.reviews}</h2>
+					<h2 class="text-2xl font-bold text-gray-100">{t.reviews}</h2>
 					<button
 						onclick={() => (showReviewForm = !showReviewForm)}
-						class="text-sm font-bold text-blue-600 hover:underline dark:text-blue-400"
+						class="text-sm font-bold text-blue-400 hover:underline"
 					>
 						{showReviewForm ? t.cancel : t.addReview}
 					</button>
 				</div>
 
-				{#if showReviewForm}
+				{#if reviewSubmitted}
 					<div
-						in:fly={{ y: 20 }}
-						class="mb-8 rounded-2xl bg-gray-50 p-6 shadow-inner dark:border dark:border-gray-700 dark:bg-gray-800"
+						class="mb-8 rounded-2xl border border-green-500/30 bg-green-900/20 p-6 text-center text-green-300"
 					>
+						תודה! חוות הדעת נשלחה ותפורסם לאחר אישור.
+					</div>
+				{/if}
+
+				{#if showReviewForm}
+					<div in:fly={{ y: 20 }} class="mb-8 rounded-2xl border border-gray-700 bg-gray-800 p-6">
 						{#if !user}
 							<div class="text-center">
-								<p class="mb-4 text-gray-600 dark:text-gray-400">{t.loginToReview}</p>
+								<p class="mb-4 text-gray-400">{t.loginToReview}</p>
 								<div class="flex justify-center gap-4">
 									<a
 										href="/auth/login"
-										class="rounded-full bg-blue-600 px-6 py-2 font-bold text-white transition hover:bg-blue-700"
+										class="rounded-full bg-blue-600 px-6 py-2 font-bold text-white hover:bg-blue-700"
+										>{t.login}</a
 									>
-										{t.login}
-									</a>
 									<a
 										href="/auth/register"
-										class="rounded-full border border-blue-600 px-6 py-2 font-bold text-blue-600 transition hover:bg-blue-600 hover:text-white"
+										class="rounded-full border border-blue-500 px-6 py-2 font-bold text-blue-400 hover:bg-blue-600 hover:text-white"
+										>{t.register}</a
 									>
-										{t.register}
-									</a>
 								</div>
 							</div>
 						{:else}
-							<h3 class="mb-4 font-bold text-gray-800 dark:text-gray-100">{t.whatDoYouThink}</h3>
+							<h3 class="mb-4 font-bold text-gray-100">{t.whatDoYouThink}</h3>
 							<div class="space-y-4">
 								<div class="flex items-center gap-2">
-									<span class="text-sm text-gray-500 dark:text-gray-400">{t.fullName}:</span>
-									<span class="font-bold text-gray-800 dark:text-gray-100">{user.name}</span>
+									<span class="text-sm text-gray-400">{t.fullName}:</span>
+									<span class="font-bold text-gray-100">{user.name}</span>
 								</div>
 								<select
 									bind:value={newReview.rating}
-									class="w-full rounded-lg border border-gray-200 p-2 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+									class="w-full rounded-lg border border-gray-600 bg-gray-700 p-2 text-white"
 								>
-									<option value={5}>5 ★ - Excellent</option>
-									<option value={4}>4 ★ - Good</option>
-									<option value={3}>3 ★ - Okay</option>
-									<option value={2}>2 ★ - Needs improvement</option>
-									<option value={1}>1 ★ - Bad</option>
+									<option value={5}>5 ★</option>
+									<option value={4}>4 ★</option>
+									<option value={3}>3 ★</option>
+									<option value={2}>2 ★</option>
+									<option value={1}>1 ★</option>
 								</select>
 								<textarea
 									bind:value={newReview.comment}
 									placeholder={t.reviewPlaceholder}
-									class="h-32 w-full rounded-lg border border-gray-200 p-2 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+									class="h-32 w-full rounded-lg border border-gray-600 bg-gray-700 p-2 text-white"
 								></textarea>
+								{#if reviewError}<p class="text-sm text-red-400">{reviewError}</p>{/if}
 								<button
 									onclick={submitReview}
-									class="rounded-full bg-blue-600 px-6 py-2 font-bold text-white transition hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800"
+									class="rounded-full bg-blue-700 px-6 py-2 font-bold text-white hover:bg-blue-800"
+									>{t.submitReview}</button
 								>
-									{t.submitReview}
-								</button>
 							</div>
 						{/if}
 					</div>
@@ -407,64 +333,38 @@
 
 				<div class="space-y-6">
 					{#if reviews.length === 0}
-						<div
-							class="rounded-2xl border border-dashed border-gray-200 p-12 text-center dark:border-gray-700"
-						>
-							<svg
-								class="mx-auto mb-4 h-12 w-12 text-gray-300"
-								fill="none"
-								stroke="currentColor"
-								viewBox="0 0 24 24"
-								aria-hidden="true"
-							>
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									stroke-width="2"
-									d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-								/>
-							</svg>
-							<p class="text-lg font-medium text-gray-500 dark:text-gray-400">{t.noReviews}</p>
+						<div class="rounded-2xl border border-dashed border-gray-700 p-12 text-center">
+							<p class="text-lg font-medium text-gray-400">{t.noReviews}</p>
 						</div>
 					{:else}
 						{#each reviews as review}
-							<div
-								class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800"
-							>
+							<div class="rounded-2xl border border-gray-700 bg-gray-800 p-6">
 								<div class="mb-2 flex items-center justify-between">
-									<span class="font-bold text-gray-800 dark:text-gray-100">{review.user}</span>
-									<span class="text-sm text-gray-400 dark:text-gray-500">{review.date}</span>
+									<span class="font-bold text-gray-100">{review.author_name}</span>
+									<span class="text-sm text-gray-500">{review.date}</span>
 								</div>
 								<div class="mb-3 flex gap-0.5" dir="ltr">
 									{#each Array(5) as _, i}
-										<span
-											class="text-xl {i < Math.floor(review.rating)
-												? 'bg-gradient-to-br from-[#3d2b1f] via-[#FCF6BA] to-[#3d2b1f] bg-clip-text text-transparent drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] filter'
-												: 'text-gray-300 dark:text-gray-600'}"
+										<span class="text-xl {i < Math.round(review.rating) ? 'text-yellow-400' : 'text-gray-600'}"
+											>★</span
 										>
-											★
-										</span>
 									{/each}
 								</div>
-								<p class="text-gray-600 dark:text-gray-300">{review.comment}</p>
+								{#if review.title}<p class="mb-1 font-semibold text-gray-200">{review.title}</p>{/if}
+								<p class="text-gray-300">{review.body}</p>
 							</div>
 						{/each}
 					{/if}
 				</div>
 			</section>
 
-			<!-- Video Section -->
-			{#if business.youtube}
+			<!-- Video (רק אם קיים) -->
+			{#if ytEmbed}
 				<section class="mt-12">
-					<h2 class="mb-4 text-2xl font-bold text-gray-800 dark:text-gray-100">
-						{t.businessVideo}
-					</h2>
-					<div
-						class="relative w-full overflow-hidden rounded-3xl shadow-2xl"
-						style="padding-top: 56.25%;"
-					>
+					<h2 class="mb-4 text-2xl font-bold text-gray-100">{t.businessVideo}</h2>
+					<div class="relative w-full overflow-hidden rounded-3xl shadow-2xl" style="padding-top: 56.25%;">
 						<iframe
-							src={business.youtube}
+							src={ytEmbed}
 							title={business.name}
 							class="absolute inset-0 h-full w-full border-0"
 							allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -475,116 +375,39 @@
 			{/if}
 		</div>
 
-		<!-- Right: Map and Info -->
+		<!-- Right: Info & Map -->
 		<div class="space-y-8">
-			<!-- Info Card -->
-			<div
-				class="rounded-3xl border border-gray-100 bg-white p-8 shadow-xl dark:border-gray-700 dark:bg-gray-800"
-			>
-				<h3 class="mb-6 text-xl font-bold text-gray-800 dark:text-gray-100">{t.contactInfo}</h3>
-
+			<div class="rounded-3xl border border-gray-700 bg-gray-800 p-8 shadow-xl">
+				<h3 class="mb-6 text-xl font-bold text-gray-100">{t.contactInfo}</h3>
 				<div class="space-y-6">
 					{#if business.address}
-						<div class="flex items-start gap-4">
-							<div
-								class="mt-1 flex h-10 w-10 items-center justify-center rounded-xl bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
-							>
-								<svg
-									class="h-6 w-6"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-									aria-hidden="true"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-									/>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-									/>
-								</svg>
-							</div>
-							<div>
-								<p class="font-bold text-gray-800 dark:text-gray-200">כתובת</p>
-								<p class="text-gray-600 dark:text-gray-400">{business.address}</p>
-							</div>
+						<div>
+							<p class="font-bold text-gray-200">כתובת</p>
+							<p class="text-gray-400">{business.address}</p>
 						</div>
 					{/if}
-
 					{#if business.discount}
-						<div class="flex items-start gap-4">
-							<div
-								class="mt-1 flex h-10 w-10 items-center justify-center rounded-xl bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
-							>
-								<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-									/>
-								</svg>
-							</div>
-							<div>
-								<p class="font-bold text-green-700 dark:text-green-400">{t.exclusiveBenefit}</p>
-								<p class="text-green-800 dark:text-green-300">{business.discount}</p>
-							</div>
+						<div>
+							<p class="font-bold text-green-400">{t.exclusiveBenefit}</p>
+							<p class="text-green-300">{business.discount}</p>
 						</div>
 					{/if}
-
-					{#if business.deliveries}
-						<div class="flex items-start gap-4">
-							<div
-								class="mt-1 flex h-10 w-10 items-center justify-center rounded-xl bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400"
-							>
-								<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
-									/>
-								</svg>
-							</div>
-							<div>
-								<p class="font-bold text-gray-800 dark:text-gray-200">{t.deliveries}</p>
-								<p class="text-gray-600 dark:text-gray-400">{business.deliveries}</p>
-							</div>
+					{#if business.sales_area}
+						<div>
+							<p class="font-bold text-gray-200">{t.serviceBorders}</p>
+							<p class="text-gray-400">{business.sales_area}</p>
 						</div>
 					{/if}
 				</div>
 			</div>
 
-			<!-- Map & Territory Section -->
-			<div
-				class="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-800"
-			>
-				<div class="bg-gray-50 p-6 dark:bg-gray-900/50">
-					<h3 class="text-xl font-bold text-gray-800 dark:text-gray-100">{t.serviceZones}</h3>
-					{#if business.address}
-						<p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-							<strong>{t.businessLocationLabel}</strong>
-							{business.address}
-						</p>
-					{/if}
-					<p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-						<strong>{t.serviceBorders}</strong>
-						{business.salesArea || t.all}
-					</p>
-				</div>
-
-				<div class="space-y-6 p-8 sm:p-6">
-					<!-- Google Maps Embed for Address -->
-					{#if business.address}
-						<div
-							class="h-64 w-full overflow-hidden rounded-2xl border border-gray-200 shadow-inner md:h-80 dark:border-gray-700"
-						>
+			{#if business.address}
+				<div class="overflow-hidden rounded-3xl border border-gray-700 bg-gray-800 shadow-xl">
+					<div class="bg-gray-900/50 p-6">
+						<h3 class="text-xl font-bold text-gray-100">{t.serviceZones}</h3>
+					</div>
+					<div class="p-4">
+						<div class="h-64 w-full overflow-hidden rounded-2xl border border-gray-700 md:h-80">
 							<iframe
 								title="מפה של {business.name}"
 								width="100%"
@@ -598,29 +421,9 @@
 								)}&t=&z=14&ie=UTF8&iwloc=&output=embed"
 							></iframe>
 						</div>
-					{/if}
-
-					<!-- Territory Map (IsraelMap) -->
-					<div
-						class="relative rounded-2xl border border-gray-100 bg-gray-50/50 p-4 dark:border-gray-700 dark:bg-gray-900/30"
-					>
-						<div class="absolute top-4 right-4 z-10">
-							<span
-								class="rounded-lg border border-gray-100 bg-white/90 px-3 py-1 text-xs font-bold text-gray-700 shadow-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
-							>
-								{t.serviceMap}
-							</span>
-						</div>
-						<IsraelMap salesArea={business.salesArea} address={business.address} />
 					</div>
 				</div>
-			</div>
+			{/if}
 		</div>
 	</div>
 </main>
-
-<style>
-	:global(body) {
-		background-color: #f8fafc;
-	}
-</style>

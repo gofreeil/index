@@ -3,11 +3,13 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import { lang, translations } from '$lib/i18n';
 	import { get } from 'svelte/store';
-	import VisitorCounter from '$lib/components/VisitorCounter.svelte';
 	import MobileAdsDrawer from '$lib/components/MobileAdsDrawer.svelte';
-	import { authUser, logout } from '$lib/auth';
+	import { authUser, hydrateAuth, logout } from '$lib/auth';
 
-	let { children } = $props();
+	let { children, data } = $props();
+
+	// מקור-האמת לזהות המשתמש הוא ה-session בשרת (data.user מ-+layout.server.js).
+	$effect(() => hydrateAuth(data.user));
 
 	// Support for Svelte 5 state-like behavior from store
 	let currentLang = $state('he');
@@ -211,8 +213,7 @@
 
 					<!-- Add Store Button -->
 					<a
-						href="https://docs.google.com/forms/d/e/1FAIpQLSe2wvCp484_PyoJyDZ_n8GupIQVy00ozt5rxOhsWklr7UPkXQ/viewform?usp=header"
-						target="_blank"
+						href="/submit-business"
 						class="group flex items-center gap-1 overflow-hidden rounded-full bg-gradient-to-r from-blue-600 to-purple-600 px-2 py-1.5 text-sm font-bold text-white shadow-md transition-all hover:scale-105 hover:shadow-lg active:scale-95 sm:gap-2 sm:px-5 sm:py-2.5"
 						title={t.addStore}
 					>
@@ -303,7 +304,6 @@
 				<p class="text-xs text-gray-500 dark:text-gray-600">
 					{t.dedication}
 				</p>
-				<VisitorCounter />
 			</div>
 		</div>
 	</footer>

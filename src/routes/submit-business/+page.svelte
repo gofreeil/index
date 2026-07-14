@@ -1,0 +1,292 @@
+<script>
+	import { enhance } from '$app/forms';
+	import { onMount } from 'svelte';
+	import { CATEGORIES } from '$lib/categories.js';
+
+	/** @type {{ form: any }} */
+	let { form } = $props();
+
+	let submitting = $state(false);
+	let renderedAt = $state(0);
+	onMount(() => (renderedAt = Date.now()));
+
+	// ערכים חוזרים אחרי כישלון ולידציה (כדי לא לאבד מילוי)
+	const v = $derived(form?.values ?? {});
+	const errors = $derived(form?.errors ?? {});
+</script>
+
+<svelte:head>
+	<title>הוספת עסק - מדריך בעלי מקצוע כשירים</title>
+	<meta name="description" content="הצטרפו למדריך בעלי המקצוע הכשירים של יוצאים לחירות" />
+</svelte:head>
+
+<main class="mx-auto max-w-2xl px-4 py-10 sm:px-6" dir="rtl">
+	{#if form?.success}
+		<div
+			class="rounded-3xl border border-green-500/30 bg-green-900/10 p-10 text-center shadow-xl"
+		>
+			<div class="mb-4 text-6xl">✅</div>
+			<h1 class="mb-3 text-2xl font-black text-green-400">הבקשה התקבלה!</h1>
+			<p class="mx-auto mb-8 max-w-md leading-relaxed text-gray-300">
+				העסק נשלח לצוות האינדקס ויופיע במדריך לאחר בדיקה ואישור. תודה שהצטרפתם לקהילת בעלי המקצוע
+				הכשירים של יוצאים לחירות.
+			</p>
+			<div class="flex flex-col justify-center gap-3 sm:flex-row">
+				<a
+					href="/"
+					class="rounded-full bg-gray-800 px-6 py-3 font-bold text-blue-400 transition hover:bg-gray-700"
+					>חזרה למדריך</a
+				>
+				<a
+					href="/submit-business"
+					data-sveltekit-reload
+					class="rounded-full bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-3 font-bold text-white transition hover:scale-105"
+					>הגשת עסק נוסף</a
+				>
+			</div>
+		</div>
+	{:else}
+		<div class="mb-8 text-center">
+			<h1
+				class="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-3xl font-extrabold text-transparent sm:text-4xl"
+			>
+				הוספת עסק למדריך
+			</h1>
+			<p class="mt-3 text-sm leading-relaxed text-gray-400">
+				המדריך פתוח לבעלי מקצוע שמתחייבים להטבה בלעדית לחברי הקהילה ולתנאי הקהילה. מלאו את הפרטים —
+				העסק יעבור בדיקה ויתפרסם לאחר אישור.
+			</p>
+		</div>
+
+		{#if form?.error}
+			<div class="mb-6 rounded-xl border border-red-500/30 bg-red-900/20 p-4 text-center text-red-300">
+				{form.error}
+			</div>
+		{/if}
+
+		<form
+			method="POST"
+			enctype="multipart/form-data"
+			use:enhance={() => {
+				submitting = true;
+				return async ({ update }) => {
+					await update();
+					submitting = false;
+				};
+			}}
+			class="space-y-6"
+		>
+			<!-- honeypot (מוסתר מבני-אדם) -->
+			<input
+				type="text"
+				name="company_website"
+				tabindex="-1"
+				autocomplete="off"
+				class="absolute right-[-9999px] h-0 w-0 opacity-0"
+				aria-hidden="true"
+			/>
+			<input type="hidden" name="form_rendered_at" value={renderedAt} />
+
+			<!-- פרטי העסק -->
+			<fieldset class="space-y-4 rounded-2xl border border-gray-800 bg-gray-900/40 p-5">
+				<legend class="px-2 text-sm font-bold text-blue-400">פרטי העסק</legend>
+
+				<div>
+					<label for="name" class="mb-1 block text-sm font-medium text-gray-300"
+						>שם העסק / השירות *</label
+					>
+					<input id="name" name="name" required value={v.name ?? ''} class="field" />
+					{#if errors.name}<p class="err">{errors.name}</p>{/if}
+				</div>
+
+				<div class="grid gap-4 sm:grid-cols-2">
+					<div>
+						<label for="category" class="mb-1 block text-sm font-medium text-gray-300"
+							>קטגוריה *</label
+						>
+						<select id="category" name="category" required class="field">
+							<option value="" disabled selected={!v.category}>בחרו קטגוריה…</option>
+							{#each CATEGORIES as cat}
+								<option value={cat} selected={v.category === cat}>{cat}</option>
+							{/each}
+						</select>
+						{#if errors.category}<p class="err">{errors.category}</p>{/if}
+					</div>
+					<div>
+						<label for="subcategory" class="mb-1 block text-sm font-medium text-gray-300"
+							>תת-תחום (חופשי)</label
+						>
+						<input id="subcategory" name="subcategory" value={v.subcategory ?? ''} class="field" />
+					</div>
+				</div>
+
+				<div>
+					<label for="description" class="mb-1 block text-sm font-medium text-gray-300"
+						>תיאור קצר *</label
+					>
+					<textarea id="description" name="description" required rows="3" class="field"
+						>{v.description ?? ''}</textarea
+					>
+					{#if errors.description}<p class="err">{errors.description}</p>{/if}
+				</div>
+
+				<div>
+					<label for="unique_content" class="mb-1 block text-sm font-medium text-gray-300"
+						>מה מייחד אתכם? (אופציונלי)</label
+					>
+					<textarea id="unique_content" name="unique_content" rows="2" class="field"
+						>{v.unique_content ?? ''}</textarea
+					>
+				</div>
+			</fieldset>
+
+			<!-- הטבה + תנאים (חובה, load-bearing) -->
+			<fieldset class="space-y-4 rounded-2xl border border-green-800/40 bg-green-900/10 p-5">
+				<legend class="px-2 text-sm font-bold text-green-400">ההטבה לחברי הקהילה</legend>
+				<div>
+					<label for="discount" class="mb-1 block text-sm font-medium text-gray-300"
+						>ההטבה / ההנחה הבלעדית לחברי יוצאים לחירות *</label
+					>
+					<input
+						id="discount"
+						name="discount"
+						required
+						value={v.discount ?? ''}
+						placeholder="למשל: 10% הנחה לחברי הקהילה"
+						class="field"
+					/>
+					{#if errors.discount}<p class="err">{errors.discount}</p>{/if}
+				</div>
+				<label class="flex items-start gap-3 text-sm text-gray-300">
+					<input type="checkbox" name="accepted_terms" class="mt-1 h-4 w-4 shrink-0" />
+					<span
+						>אני מקבל/ת על עצמי את
+						<a href="/policy" target="_blank" class="text-blue-400 underline">תנאי הקהילה</a>
+						(כולל הקוד האתי העולמי וזכות המזומן) ומתחייב/ת להטבה שציינתי לחברי הקהילה. *</span
+					>
+				</label>
+				{#if errors.accepted_terms}<p class="err">{errors.accepted_terms}</p>{/if}
+			</fieldset>
+
+			<!-- קשר ומיקום -->
+			<fieldset class="space-y-4 rounded-2xl border border-gray-800 bg-gray-900/40 p-5">
+				<legend class="px-2 text-sm font-bold text-blue-400">קשר ומיקום</legend>
+				<div class="grid gap-4 sm:grid-cols-2">
+					<div>
+						<label for="contact_name" class="mb-1 block text-sm font-medium text-gray-300"
+							>שם איש קשר *</label
+						>
+						<input id="contact_name" name="contact_name" required value={v.contact_name ?? ''} class="field" />
+						{#if errors.contact_name}<p class="err">{errors.contact_name}</p>{/if}
+					</div>
+					<div>
+						<label for="phone" class="mb-1 block text-sm font-medium text-gray-300">טלפון *</label>
+						<input id="phone" name="phone" type="tel" required value={v.phone ?? ''} class="field" />
+						{#if errors.phone}<p class="err">{errors.phone}</p>{/if}
+					</div>
+				</div>
+				<div>
+					<label for="email" class="mb-1 block text-sm font-medium text-gray-300"
+						>אימייל * <span class="text-gray-500">(פרטי — לעריכת העסק בעתיד)</span></label
+					>
+					<input id="email" name="email" type="email" required value={v.email ?? ''} class="field" />
+					{#if errors.email}<p class="err">{errors.email}</p>{/if}
+				</div>
+				<div class="grid gap-4 sm:grid-cols-3">
+					<div>
+						<label for="city" class="mb-1 block text-sm font-medium text-gray-300">עיר</label>
+						<input id="city" name="city" value={v.city ?? ''} class="field" />
+					</div>
+					<div>
+						<label for="neighborhood" class="mb-1 block text-sm font-medium text-gray-300">שכונה</label>
+						<input id="neighborhood" name="neighborhood" value={v.neighborhood ?? ''} class="field" />
+					</div>
+					<div>
+						<label for="sales_area" class="mb-1 block text-sm font-medium text-gray-300"
+							>אזור מכירה</label
+						>
+						<input id="sales_area" name="sales_area" value={v.sales_area ?? ''} placeholder="ארצי / אונליין" class="field" />
+					</div>
+				</div>
+				<div>
+					<label for="address" class="mb-1 block text-sm font-medium text-gray-300"
+						>כתובת מלאה <span class="text-gray-500">(לפין על המפה)</span></label
+					>
+					<input id="address" name="address" value={v.address ?? ''} class="field" />
+					{#if errors.address}<p class="err">{errors.address}</p>{/if}
+				</div>
+			</fieldset>
+
+			<!-- נוכחות דיגיטלית + לוגו -->
+			<fieldset class="space-y-4 rounded-2xl border border-gray-800 bg-gray-900/40 p-5">
+				<legend class="px-2 text-sm font-bold text-blue-400">נוכחות דיגיטלית (אופציונלי)</legend>
+				<div class="grid gap-4 sm:grid-cols-2">
+					<div>
+						<label for="website" class="mb-1 block text-sm font-medium text-gray-300">אתר</label>
+						<input id="website" name="website" value={v.website ?? ''} placeholder="https://" class="field" />
+						{#if errors.website}<p class="err">{errors.website}</p>{/if}
+					</div>
+					<div>
+						<label for="whatsapp" class="mb-1 block text-sm font-medium text-gray-300">וואטסאפ</label>
+						<input id="whatsapp" name="whatsapp" value={v.whatsapp ?? ''} placeholder="https://wa.me/…" class="field" />
+						{#if errors.whatsapp}<p class="err">{errors.whatsapp}</p>{/if}
+					</div>
+					<div>
+						<label for="facebook" class="mb-1 block text-sm font-medium text-gray-300">פייסבוק</label>
+						<input id="facebook" name="facebook" value={v.facebook ?? ''} placeholder="https://" class="field" />
+						{#if errors.facebook}<p class="err">{errors.facebook}</p>{/if}
+					</div>
+					<div>
+						<label for="instagram" class="mb-1 block text-sm font-medium text-gray-300">אינסטגרם</label>
+						<input id="instagram" name="instagram" value={v.instagram ?? ''} placeholder="https://" class="field" />
+						{#if errors.instagram}<p class="err">{errors.instagram}</p>{/if}
+					</div>
+				</div>
+				<div>
+					<label for="youtube" class="mb-1 block text-sm font-medium text-gray-300"
+						>סרטון יוטיוב (אופציונלי)</label
+					>
+					<input id="youtube" name="youtube" value={v.youtube ?? ''} placeholder="https://youtube.com/…" class="field" />
+					{#if errors.youtube}<p class="err">{errors.youtube}</p>{/if}
+				</div>
+				<div>
+					<label for="logo" class="mb-1 block text-sm font-medium text-gray-300"
+						>לוגו העסק (תמונה עד 3MB)</label
+					>
+					<input id="logo" name="logo" type="file" accept="image/*" class="field file:mr-3 file:rounded-full file:border-0 file:bg-blue-600 file:px-4 file:py-1 file:text-white" />
+					{#if errors.logo}<p class="err">{errors.logo}</p>{/if}
+				</div>
+			</fieldset>
+
+			<button
+				type="submit"
+				disabled={submitting}
+				class="w-full rounded-full bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-3.5 text-lg font-bold text-white shadow-lg transition hover:scale-[1.02] active:scale-95 disabled:opacity-50"
+			>
+				{submitting ? 'שולח…' : 'שליחת העסק לאישור'}
+			</button>
+			<p class="text-center text-xs text-gray-500">* שדות חובה. הפרטים נשלחים לצוות האינדקס לאישור.</p>
+		</form>
+	{/if}
+</main>
+
+<style>
+	.field {
+		width: 100%;
+		border-radius: 0.6rem;
+		border: 1px solid #374151;
+		background: #1f2937;
+		padding: 0.55rem 0.75rem;
+		color: #f3f4f6;
+		outline: none;
+	}
+	.field:focus {
+		border-color: #3b82f6;
+		box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+	}
+	.err {
+		margin-top: 0.25rem;
+		font-size: 0.8rem;
+		color: #f87171;
+	}
+</style>

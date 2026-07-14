@@ -1,7 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
-	import { setAuthUser } from '$lib/auth';
+	import { goto, invalidateAll } from '$app/navigation';
 
 	let { data } = $props();
 
@@ -9,7 +8,9 @@
 
 	onMount(async () => {
 		if (data.status === 'ok' && data.user) {
-			setAuthUser(data.user);
+			// ה-cookie המשותף (gofreeil-auth) כבר נקרא ב-hooks → locals.user; מרעננים
+			// כדי שה-layout יאכלס את authUser, ואז חוזרים ליעד.
+			await invalidateAll();
 			await goto(data.returnTo || '/');
 			return;
 		}

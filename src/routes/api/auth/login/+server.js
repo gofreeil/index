@@ -1,8 +1,10 @@
 import { json } from '@sveltejs/kit';
 import { strapiLogin } from '$lib/server/strapi';
+import { setSession } from '$lib/server/session';
 
 // התחברות מול ה-Strapi המשותף של יוצאים לחירות (רשימת המשתמשים המאוחדת).
-export async function POST({ request }) {
+// ה-JWT נשמר ב-cookie httpOnly (לא מוחזר ללקוח / לא ב-localStorage).
+export async function POST({ request, cookies }) {
 	try {
 		const { email, password } = await request.json();
 		if (!email || !password) {
@@ -10,7 +12,8 @@ export async function POST({ request }) {
 		}
 
 		const identifier = String(email).trim().toLowerCase();
-		const { user } = await strapiLogin(identifier, password);
+		const { jwt, user } = await strapiLogin(identifier, password);
+		if (jwt) setSession(cookies, jwt);
 
 		return json({
 			success: true,

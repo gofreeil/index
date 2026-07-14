@@ -1,6 +1,6 @@
 <script>
 	import { lang, translations } from '$lib/i18n';
-	import { onMount } from 'svelte';
+	import { favorites, toggleFavorite as toggleFav } from '$lib/favorites.js';
 
 	let { business } = $props();
 
@@ -8,25 +8,12 @@
 	lang.subscribe((v) => (currentLang = v));
 	const t = $derived(/** @type {any} */ (translations)[currentLang] || translations.he);
 
-	let isFavorite = $state(false);
-
-	onMount(() => {
-		const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
-		isFavorite = favorites.includes(business.id);
-	});
+	const isFavorite = $derived($favorites.includes(business.id));
 
 	/** @param {MouseEvent} e */
 	function toggleFavorite(e) {
 		e.preventDefault();
-		const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
-		if (isFavorite) {
-			const index = favorites.indexOf(business.id);
-			if (index > -1) favorites.splice(index, 1);
-		} else {
-			favorites.push(business.id);
-		}
-		localStorage.setItem('favorites', JSON.stringify(favorites));
-		isFavorite = !isFavorite;
+		toggleFav(business.id);
 	}
 
 	let failedImage = $state(false);
@@ -65,13 +52,7 @@
 					alt={business.name}
 					class="absolute inset-0 z-10 h-full w-full object-contain p-2 transition duration-500 group-hover:scale-105"
 					loading="lazy"
-					onerror={() => {
-						if (business.fallbackLogo) {
-							business.logo = business.fallbackLogo;
-						} else {
-							failedImage = true;
-						}
-					}}
+					onerror={() => (failedImage = true)}
 				/>
 			{/if}
 			{#if business.banner}

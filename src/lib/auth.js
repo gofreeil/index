@@ -1,28 +1,26 @@
 import { writable } from 'svelte/store';
 
-// We'll use a writable store for the current user
-export const authUser = writable(null);
+// המשתמש המחובר. מקור-האמת הוא ה-session ב-cookie httpOnly (locals.user →
+// data.user דרך +layout.server.js), לא localStorage. ה-store מאוכלס ב-root layout.
+export const authUser = writable(/** @type {any} */ (null));
 
-// Initialize from localStorage if on browser
-if (typeof window !== 'undefined') {
-	const stored = localStorage.getItem('user');
-	if (stored) {
-		authUser.set(JSON.parse(stored));
-	}
+/** אכלוס מנתוני השרת (data.user). @param {any} user */
+export function hydrateAuth(user) {
+	authUser.set(user ?? null);
 }
 
-/**
- * @param {any} user
- */
+/** תאימות לאחור — מעדכן את ה-store בלבד (ה-session מנוהל ב-cookie). @param {any} user */
 export function setAuthUser(user) {
-	if (user) {
-		localStorage.setItem('user', JSON.stringify(user));
-	} else {
-		localStorage.removeItem('user');
-	}
-	authUser.set(user);
+	authUser.set(user ?? null);
 }
 
-export function logout() {
-	setAuthUser(null);
+/** ניתוק: מנקה את עוגיית ה-session בשרת ואז מרענן. */
+export async function logout() {
+	try {
+		await fetch('/api/auth/logout', { method: 'POST' });
+	} catch {
+		/* ניקוי מקומי בכל מקרה */
+	}
+	authUser.set(null);
+	if (typeof window !== 'undefined') window.location.href = '/';
 }

@@ -1,0 +1,126 @@
+import { fail } from '@sveltejs/kit';
+import { createBusiness, uploadImage } from '$lib/server/strapi.js';
+
+// ── Anti-spam: rate-limit per-IP (token bucket בזיכרון) ──────────
+/** @type {Map<string, {count:number, resetAt:number}>} */
+const buckets = new Map();
+const WINDOW_MS = 60 * 60 * 1000; // שעה
+const MAX_PER_WINDOW = 5;
+
+/** @param {string} ip */
+function rateLimited(ip) {
+	const now = Date.now();
+	const b = buckets.get(ip);
+	if (!b || now > b.resetAt) {
+		buckets.set(ip, { count: 1, resetAt: now + WINDOW_MS });
+		return false;
+	}
+	if (b.count >= MAX_PER_WINDOW) return true;
+	b.count += 1;
+	return false;
+}
+
+const PHONE_RE = /^0\d[\d\-\s]{6,}$/;
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+const URL_RE = /^https?:\/\/.+/i;
+
+/** @param {FormDataEntryValue|null} v */
+const str = (v) => (typeof v === 'string' ? v.trim() : '');
+
+/** @param {string} v */
+const normUrl = (v) => (v && !/^https?:\/\//i.test(v) ? `https://${v}` : v);
+
+export const actions = {
+	default: async ({ request, getClientAddress, locals }) => {
+		const fd = await request.formData();
+
+		// honeypot — שדה נסתר שבוט ימלא; משתמש אמיתי לא רואה אותו.
+		if (str(fd.get('company_website'))) return { success: true };
+
+		// זמן-מילוי מינימלי — הגשה מהירה מדי = בוט.
+		const renderedAt = Number(fd.get('form_rendered_at'));
+		if (renderedAt && Date.now() - renderedAt < 3000) {
+			return fail(400, { error: 'הטופס נשלח מהר מדי, נסו שוב.' });
+		}
+
+		if (rateLimited(getClientAddress())) {
+			return fail(429, { error: 'נשלחו יותר מדי בקשות מהכתובת הזו. נסו שוב בעוד שעה.' });
+		}
+
+		// ── שדות ──
+		const values = {
+			name: str(fd.get('name')),
+			category: str(fd.get('category')),
+			subcategory: str(fd.get('subcategory')),
+			description: str(fd.get('description')),
+			unique_content: str(fd.get('unique_content')),
+			contact_name: str(fd.get('contact_name')),
+			phone: str(fd.get('phone')),
+			email: str(fd.get('email')),
+			website: normUrl(str(fd.get('website'))),
+			whatsapp: normUrl(str(fd.get('whatsapp'))),
+			facebook: normUrl(str(fd.get('facebook'))),
+			instagram: normUrl(str(fd.get('instagram'))),
+			youtube: normUrl(str(fd.get('youtube'))),
+			address: str(fd.get('address')),
+			city: str(fd.get('city')),
+			neighborhood: str(fd.get('neighborhood')),
+			sales_area: str(fd.get('sales_area')),
+			discount: str(fd.get('discount'))
+		};
+		const accepted_terms = fd.get('accepted_terms') === 'on';
+
+		// ── ולידציה בצד-שרת (מקור-האמת) ──
+		/** @type {Record<string,string>} */
+		const errors = {};
+		if (!values.name) errors.name = 'שם העסק חובה';
+		if (!values.category) errors.category = 'יש לבחור קטגוריה';
+		if (!values.description) errors.description = 'תיאור קצר חובה';
+		if (!values.contact_name) errors.contact_name = 'שם איש קשר חובה';
+		if (!PHONE_RE.test(values.phone)) errors.phone = 'מספר טלפון לא תקין';
+		if (!EMAIL_RE.test(values.email)) errors.email = 'אימייל לא תקין (משמש לעריכה עתידית של העסק)';
+		if (!values.address && !values.sales_area)
+			errors.address = 'יש למלא כתובת או אזור מכירה';
+		if (!values.discount) errors.discount = 'ההטבה הבלעדית לחברי הקהילה חובה';
+		if (!accepted_terms) errors.accepted_terms = 'יש לאשר את תנאי הקהילה';
+		for (const k of ['website', 'whatsapp', 'facebook', 'instagram', 'youtube']) {
+			const val = /** @type {any} */ (values)[k];
+			if (val && !URL_RE.test(val)) errors[k] = 'קישור לא תקין';
+		}
+
+		if (Object.keys(errors).length) {
+			return fail(400, { errors, values });
+		}
+
+		// ── העלאת לוגו (אופציונלי) ──
+		let logoId = null;
+		const file = fd.get('logo');
+		if (file && typeof file !== 'string' && file.size > 0) {
+			if (!file.type.startsWith('image/') || file.size > 3_000_000) {
+				return fail(400, { errors: { logo: 'קובץ לוגו חייב להיות תמונה עד 3MB' }, values });
+			}
+			try {
+				logoId = await uploadImage(file);
+			} catch {
+				logoId = null; // לא לחסום הגשה על כשל העלאה
+			}
+		}
+
+		// ── כתיבה ל-Strapi (status=pending נכפה ב-controller) ──
+		try {
+			await createBusiness({
+				...values,
+				accepted_terms: true,
+				logo: logoId ?? undefined,
+				source: 'index-form',
+				user: locals.user?.id ?? undefined,
+				user_id: locals.user?.id ?? undefined
+			});
+		} catch (e) {
+			console.error('createBusiness failed:', e);
+			return fail(502, { error: 'שמירת העסק נכשלה. נסו שוב עוד רגע.', values });
+		}
+
+		return { success: true };
+	}
+};

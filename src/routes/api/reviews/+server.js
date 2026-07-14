@@ -1,143 +1,52 @@
 import { json } from '@sveltejs/kit';
-import { google } from 'googleapis';
-import { GOOGLE_CLIENT_EMAIL, GOOGLE_PRIVATE_KEY, SPREADSHEET_ID } from '$env/static/private';
+import { listReviews, createReview } from '$lib/server/strapi.js';
 
-/** @param {string} str */
-const clean = (str) => {
-	if (!str) return '';
-	let cleaned = str
-		.replace(/\\r\\n/g, '\n')
-		.replace(/\\n/g, '\n')
-		.replace(/\r\n/g, '\n');
-	cleaned = cleaned.replace(/\\\n/g, '\n');
-	cleaned = cleaned.trim();
-	if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
-		cleaned = cleaned.substring(1, cleaned.length - 1);
-	}
-	if (cleaned.includes('BEGIN')) {
-		const header = '-----BEGIN PRIVATE KEY-----';
-		const footer = '-----END PRIVATE KEY-----';
-		let body = cleaned
-			.replace(/-----BEGIN[\s\S]*?KEY-----/g, '')
-			.replace(/-----END[\s\S]*?KEY-----/g, '')
-			.replace(/\\/g, '')
-			.replace(/\s+/g, '');
-		let formattedBody = '';
-		for (let i = 0; i < body.length; i += 64) {
-			formattedBody += body.substring(i, i + 64) + '\n';
-		}
-		cleaned = `${header}\n${formattedBody}${footer}`;
-	}
-	return cleaned;
-};
-
-const auth = new google.auth.GoogleAuth({
-	credentials: {
-		client_email: clean(GOOGLE_CLIENT_EMAIL),
-		private_key: clean(GOOGLE_PRIVATE_KEY)
-	},
-	scopes: ['https://www.googleapis.com/auth/spreadsheets']
-});
-
-const sheets = google.sheets({ version: 'v4', auth });
-const REVIEWS_SHEET_NAME = 'Reviews';
-
-/** @param {string} spreadsheetId */
-async function ensureReviewsSheetExists(spreadsheetId) {
-	try {
-		const meta = await sheets.spreadsheets.get({ spreadsheetId });
-		const sheetExists = meta.data.sheets?.some((s) => s.properties?.title === REVIEWS_SHEET_NAME);
-
-		if (!sheetExists) {
-			await sheets.spreadsheets.batchUpdate({
-				spreadsheetId,
-				requestBody: {
-					requests: [
-						{
-							addSheet: {
-								properties: { title: REVIEWS_SHEET_NAME }
-							}
-						}
-					]
-				}
-			});
-
-			// Headers: ID, BusinessID, UserID, UserName, Rating, Comment, Date, Approved
-			await sheets.spreadsheets.values.update({
-				spreadsheetId,
-				range: `${REVIEWS_SHEET_NAME}!A1:H1`,
-				valueInputOption: 'RAW',
-				requestBody: {
-					values: [
-						['ID', 'BusinessID', 'UserID', 'UserName', 'Rating', 'Comment', 'Date', 'Approved']
-					]
-				}
-			});
-		}
-	} catch (error) {
-		console.error('Error ensuring reviews sheet exists:', error);
-	}
-}
-
+// ביקורות על עסקי האינדקס — מגובות ב-idx-review ב-Strapi (מודרציה אמיתית).
+// GET מחזיר רק ביקורות מאושרות של העסק (לפי documentId).
 export async function GET({ url }) {
+	const businessId = url.searchParams.get('businessId');
+	if (!businessId) return json([]);
 	try {
-		const businessId = url.searchParams.get('businessId');
-		const spreadsheetId = clean(SPREADSHEET_ID);
-
-		const response = await sheets.spreadsheets.values.get({
-			spreadsheetId,
-			range: `${REVIEWS_SHEET_NAME}!A:H`
-		});
-
-		const rows = response.data.values || [];
-		if (rows.length === 0) return json([]);
-
-		const headers = rows[0];
-		const reviews = rows
-			.slice(1)
-			.map((row) => {
-				/** @type {any} */
-				const review = {};
-				headers.forEach((header, i) => {
-					review[header.toLowerCase()] = row[i];
-				});
-				return review;
-			})
-			.filter((r) => {
-				const matchBusiness = !businessId || String(r.businessid) === String(businessId);
-				const isApproved = r.approved === 'TRUE' || r.approved === '1' || r.approved === 'yes';
-				return matchBusiness && isApproved;
-			});
-
-		return json(reviews);
-	} catch (error) {
-		console.error('Reviews Fetch Error:', error);
+		const rows = await listReviews(businessId);
+		return json(
+			rows.map((/** @type {any} */ r) => ({
+				id: r.documentId,
+				author_name: r.author_name || 'אנונימי',
+				author_city: r.author_city || '',
+				rating: Number(r.rating || 0),
+				title: r.title || '',
+				body: r.body || '',
+				date: (r.submitted_at || r.createdAt || '').slice(0, 10)
+			}))
+		);
+	} catch (e) {
+		console.error('reviews GET error:', e);
 		return json([]);
 	}
 }
 
-export async function POST({ request }) {
+// POST — יצירת ביקורת (status=pending נכפה בבאקאנד). אם המשתמש מחובר, מצורף כבעלים
+// דרך ה-session (locals). כתיבה עוברת עם STRAPI_TOKEN, לא ישירות מהדפדפן ל-Strapi.
+export async function POST({ request, locals }) {
 	try {
-		const { businessId, userId, userName, rating, comment } = await request.json();
-		const spreadsheetId = clean(SPREADSHEET_ID);
-
-		await ensureReviewsSheetExists(spreadsheetId);
-
-		const id = Date.now().toString();
-		const date = new Date().toISOString().split('T')[0];
-
-		await sheets.spreadsheets.values.append({
-			spreadsheetId,
-			range: `${REVIEWS_SHEET_NAME}!A:H`,
-			valueInputOption: 'RAW',
-			requestBody: {
-				values: [[id, businessId, userId, userName, rating, comment, date, 'FALSE']]
-			}
+		const { businessId, businessSlug, rating, comment, title, authorName, authorCity } =
+			await request.json();
+		const r = Math.max(1, Math.min(5, Number(rating) || 0));
+		if (!businessId || !r) {
+			return json({ success: false, error: 'חסרים פרטים' }, { status: 400 });
+		}
+		await createReview({
+			business: businessId,
+			business_slug: businessSlug || '',
+			rating: r,
+			title: (title || '').slice(0, 120),
+			body: (comment || '').slice(0, 2000),
+			author_name: (authorName || locals.user?.name || 'אנונימי').slice(0, 80),
+			author_city: (authorCity || '').slice(0, 80)
 		});
-
 		return json({ success: true });
-	} catch (error) {
-		console.error('Review Post Error:', error);
-		return json({ success: false, error: 'Failed to post review' }, { status: 500 });
+	} catch (e) {
+		console.error('reviews POST error:', e);
+		return json({ success: false, error: 'שליחת חוות הדעת נכשלה' }, { status: 502 });
 	}
 }

@@ -1,7 +1,6 @@
 <script>
 	import { lang, translations } from '$lib/i18n';
-	import { setAuthUser } from '$lib/auth';
-	import { goto } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import * as publicVars from '$env/static/public';
 	const PUBLIC_GOOGLE_CLIENT_ID = publicVars['PUBLIC_GOOGLE_CLIENT_ID'] || '';
@@ -27,7 +26,7 @@
 			});
 			const result = await res.json();
 			if (result.success) {
-				setAuthUser(result.user);
+				await invalidateAll();
 				const prev = document.referrer;
 				if (prev && prev.includes(window.location.host)) {
 					window.history.back();
@@ -72,7 +71,7 @@
 			});
 			const result = await response.json();
 			if (result.success) {
-				setAuthUser(result.user);
+				await invalidateAll();
 				// Return to previous page or home
 				const prev = document.referrer;
 				if (prev && prev.includes(window.location.host)) {
