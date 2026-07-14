@@ -26,6 +26,10 @@ const col = (row, needle) => {
 	return '';
 };
 
+// שדות מסוג string ב-Strapi הם varchar(255) — חיתוך למניעת 500 (שדות text ללא הגבלה).
+/** @param {string} v @param {number} [max] */
+const s = (v, max = 255) => String(v ?? '').slice(0, max);
+
 /** @param {string} url */
 function driveDirect(url) {
 	if (!url) return '';
@@ -100,9 +104,11 @@ async function main() {
 
 	let created = 0,
 		updated = 0,
-		skipped = 0;
+		skipped = 0,
+		failed = 0;
 
 	for (const row of rows) {
+	  try {
 		const name = col(row, 'שם העסק') || String(row.name || '').trim();
 		const phone = col(row, 'טלפון');
 		const discount = col(row, 'ההנחה הבלעדית');
@@ -124,19 +130,19 @@ async function main() {
 			: '';
 
 		const payload = {
-			name,
-			phone,
+			name: s(name),
+			phone: s(phone, 60),
 			discount: discount || '—',
 			description: col(row, 'תיאור העסק') || col(row, 'הערות'),
 			unique_content: col(row, 'תוכן ייחודי'),
-			category: col(row, 'קטגוריה'),
-			contact_name: col(row, 'שם איש קשר'),
-			address,
-			sales_area: salesArea,
-			whatsapp: col(row, 'קישור לווצאפ'),
-			facebook: col(row, 'קישור לדף הפייסבוק'),
-			website: col(row, 'קישור לאתר') || col(row, 'אתר'),
-			instagram: col(row, 'קישור לאינסטגרם'),
+			category: s(col(row, 'קטגוריה'), 120),
+			contact_name: s(col(row, 'שם איש קשר')),
+			address: s(address),
+			sales_area: s(salesArea),
+			whatsapp: s(col(row, 'קישור לווצאפ')),
+			facebook: s(col(row, 'קישור לדף הפייסבוק')),
+			website: s(col(row, 'קישור לאתר') || col(row, 'אתר')),
+			instagram: s(col(row, 'קישור לאינסטגרם')),
 			logo_url: driveDirect(row.logoFromColumnJ || col(row, 'לוגו')),
 			banners_urls,
 			accepted_terms: !!terms || !!discount,
@@ -169,9 +175,13 @@ async function main() {
 			created++;
 			console.log(`+ נוצר: ${name} ${lat ? '📍' : ''}`);
 		}
+	  } catch (e) {
+	    failed++;
+	    console.log(`✗ נכשל: ${String(row?.['שם העסק'] || row?.name || '').slice(0, 40)} — ${e instanceof Error ? e.message.slice(0, 120) : e}`);
+	  }
 	}
 
-	console.log(`\nסיכום: נוצרו ${created}, עודכנו ${updated}, דולגו ${skipped}${DRY ? ' (dry-run)' : ''}.`);
+	console.log(`\nסיכום: נוצרו ${created}, עודכנו ${updated}, דולגו ${skipped}, נכשלו ${failed}${DRY ? ' (dry-run)' : ''}.`);
 }
 
 main().catch((e) => {
