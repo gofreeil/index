@@ -182,6 +182,13 @@ export async function createReview(data, jwt) {
 	});
 }
 
+// ── Reports (idx-report) ─────────────────────────────────────
+
+/** דיווח על עסק המפר את מדיניות הקהילה (token-only, לא ציבורי). @param {Record<string,any>} data */
+export async function createReport(data) {
+	return apiJson('/api/idx-reports', { method: 'POST', body: JSON.stringify({ data }) });
+}
+
 // ── Upload ───────────────────────────────────────────────────
 
 /** העלאת תמונה ל-Strapi media; מחזיר id או null. @param {File} file */

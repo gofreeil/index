@@ -269,8 +269,7 @@
 				<div class="flex flex-col gap-1 sm:gap-2">
 					<p>
 						<a
-							href="https://docs.google.com/forms/d/e/1FAIpQLScwLo3V6wBwv-PcZYNGx9TDsVAQUvsRuQw5wUeuO_h_90C1tQ/viewform?usp=header"
-							target="_blank"
+							href="/report"
 							class="text-sm font-medium text-red-500 hover:underline sm:text-lg"
 						>
 							{t.reportViolation}
