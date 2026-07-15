@@ -1,4 +1,4 @@
-import { getStrapiMe } from '$lib/server/strapi';
+import { getStrapiMe, displayName } from '$lib/server/strapi';
 
 /**
  * חזרה מ-SSO של "יוצאים לחירות" (community.gofreeil.com/sso).
@@ -27,6 +27,6 @@ export async function load({ cookies, url }) {
 	return {
 		status: 'ok',
 		returnTo,
-		user: { id: String(me.id), name: me.username || me.email, email: me.email }
+		user: { id: String(me.id), name: displayName(me), email: me.email }
 	};
 }

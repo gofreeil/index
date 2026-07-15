@@ -1,4 +1,4 @@
-import { getStrapiMe } from '$lib/server/strapi';
+import { getStrapiMe, displayName } from '$lib/server/strapi';
 import { SESSION_COOKIE, SHARED_SSO_COOKIE } from '$lib/server/session';
 
 // מאכלס את event.locals.user מתוך ה-JWT ב-cookie (idx-auth, או gofreeil-auth המשותף).
@@ -11,7 +11,7 @@ export async function handle({ event, resolve }) {
 		if (me?.email) {
 			event.locals.user = {
 				id: String(me.id),
-				name: me.username || me.email,
+				name: displayName(me),
 				email: me.email,
 				app_role: me.app_role || null
 			};

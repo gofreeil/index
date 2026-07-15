@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { strapiRegister } from '$lib/server/strapi';
+import { strapiRegister, displayName } from '$lib/server/strapi';
 import { setSession } from '$lib/server/session';
 
 // הרשמה מול ה-Strapi המשותף של יוצאים לחירות (רשימת המשתמשים המאוחדת).
@@ -19,7 +19,7 @@ export async function POST({ request, cookies }) {
 			if (jwt) setSession(cookies, jwt);
 			return json({
 				success: true,
-				user: { id: String(user.id), name: user.username || name || '', email: user.email }
+				user: { id: String(user.id), name: displayName(user) || name || '', email: user.email }
 			});
 		} catch (err) {
 			const msg = String(/** @type {any} */ (err)?.message || '');

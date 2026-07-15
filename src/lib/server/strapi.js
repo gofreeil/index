@@ -55,6 +55,20 @@ export async function strapiRegister(username, email, password) {
 	});
 }
 
+/**
+ * שם תצוגה ידידותי. username אוטומטי מספק OAuth (google_/facebook_/github_ + ספרות)
+ * הוא מזהה פנימי של Strapi — לא מציגים אותו גולמי; נופלים לחלק שלפני @ במייל.
+ * @param {any} u אובייקט משתמש עם username/email
+ * @returns {string}
+ */
+export function displayName(u) {
+	const username = String(u?.username ?? '').trim();
+	const email = String(u?.email ?? '');
+	const isAutoUsername = /^google_\d+$|^facebook_\d+$|^github_\d+$/.test(username);
+	if (username && !isAutoUsername) return username;
+	return email.split('@')[0] || username || email;
+}
+
 /** אימות JWT → פרטי המשתמש, או null. @param {string} jwt */
 export async function getStrapiMe(jwt) {
 	if (!jwt) return null;
@@ -108,7 +122,7 @@ export async function strapiGoogleUpsert(email, name) {
 	if (!me?.email) return null;
 	return {
 		jwt,
-		user: { id: String(me.id), name: me.username || name || me.email, email: me.email }
+		user: { id: String(me.id), name: displayName(me) || name, email: me.email }
 	};
 }
 
