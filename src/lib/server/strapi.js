@@ -260,3 +260,19 @@ export async function setStatus(kind, documentId, status) {
 		body: JSON.stringify({ data: { status } })
 	});
 }
+
+/**
+ * חישוב-מחדש של דירוג העסק מהביקורות המאושרות שלו (best-effort). נקרא אחרי
+ * אישור/דחיית ביקורת עם ה-documentId של העסק (שמסך המודרציה כבר מחזיק).
+ * @param {string} bizDocId
+ */
+export async function recomputeBusinessRating(bizDocId) {
+	if (!bizDocId) return;
+	try {
+		await api(`/api/idx-businesses/${encodeURIComponent(bizDocId)}/recompute-rating`, {
+			method: 'POST'
+		});
+	} catch {
+		/* best-effort — לא מפיל את פעולת המודרציה */
+	}
+}

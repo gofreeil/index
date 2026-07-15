@@ -4,7 +4,8 @@ import {
 	listPendingBusinesses,
 	listPendingReviews,
 	listOpenReports,
-	setStatus
+	setStatus,
+	recomputeBusinessRating
 } from '$lib/server/strapi.js';
 
 /** @type {import('./$types').PageServerLoad} */
@@ -44,6 +45,10 @@ export const actions = {
 			return fail(502, {
 				error: 'העדכון נכשל: ' + (e instanceof Error ? e.message.slice(0, 140) : '')
 			});
+		}
+		// אחרי אישור/דחיית ביקורת — חישוב-מחדש של דירוג העסק (הפרונט מחזיק את ה-documentId).
+		if (kind === 'review') {
+			await recomputeBusinessRating(String(fd.get('businessDocId') || ''));
 		}
 		return { ok: true, kind, documentId, status };
 	}

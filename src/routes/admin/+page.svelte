@@ -193,6 +193,7 @@
 									<form method="POST" action="?/moderate" use:enhance={submitFn(r.documentId + st)}>
 										<input type="hidden" name="kind" value="review" />
 										<input type="hidden" name="documentId" value={r.documentId} />
+										<input type="hidden" name="businessDocId" value={r.business?.documentId ?? ''} />
 										<input type="hidden" name="status" value={st} />
 										<button
 											disabled={busy === r.documentId + st}
