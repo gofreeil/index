@@ -7,7 +7,7 @@
 	import RightAdBanner from '$lib/components/RightAdBanner.svelte';
 	import AdsSidebar from '$lib/components/AdsSidebar.svelte';
 	import Footer from '$lib/components/Footer.svelte';
-	import { authUser, hydrateAuth, logout } from '$lib/auth';
+	import { authUser, hydrateAuth } from '$lib/auth';
 
 	let { children, data } = $props();
 
@@ -169,19 +169,16 @@
 						{/if}
 					</div>
 
-					<!-- User Auth Section -->
+					<!-- User Auth Section — אווטאר בלבד; ההתנתקות ופרטי המשתמש בעמוד /profile -->
 					{#if user}
-						<div class="flex items-center gap-2">
-							<span class="hidden text-sm font-bold text-gray-700 sm:inline dark:text-gray-200"
-								>{user.name}</span
-							>
-							<button
-								onclick={logout}
-								class="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-bold text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:text-red-600 sm:px-4 sm:py-2 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
-							>
-								{t.logout}
-							</button>
-						</div>
+						<a
+							href="/profile"
+							class="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-sm font-bold text-white shadow-sm transition-all hover:scale-105 hover:shadow-md sm:h-10 sm:w-10"
+							title={t.myArea}
+							aria-label="{t.myArea} – {user.name}"
+						>
+							{(user.name || '?').trim().charAt(0).toUpperCase()}
+						</a>
 					{:else}
 						<a
 							href="/auth/login"

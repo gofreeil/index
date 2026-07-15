@@ -225,11 +225,11 @@
 		</div>
 		<div class="auth-section">
 			{#if user}
-			<a href="/" class="profile-btn" onclick={closeAll}>
+			<a href="/profile" class="profile-btn" onclick={closeAll}>
 				<span class="profile-avatar-placeholder">👤</span>
 				<div class="profile-btn-text">
 					<span class="profile-btn-name">{user.name}</span>
-					<span class="profile-btn-sub">ברוך הבא ←</span>
+					<span class="profile-btn-sub">האזור האישי ←</span>
 				</div>
 			</a>
 			{:else}
