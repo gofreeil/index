@@ -118,14 +118,15 @@
 	/** @param {HTMLElement} node */
 	function nonPassiveTouch(node) {
 		const opts = { passive: false };
+		const removeOpts = false;
 		node.addEventListener('touchstart', onTabTouchStart, opts);
 		node.addEventListener('touchmove',  onTabTouchMove,  opts);
 		node.addEventListener('touchend',   onTabTouchEnd,   opts);
 		return {
 			destroy() {
-				node.removeEventListener('touchstart', onTabTouchStart, opts);
-				node.removeEventListener('touchmove',  onTabTouchMove,  opts);
-				node.removeEventListener('touchend',   onTabTouchEnd,   opts);
+				node.removeEventListener('touchstart', onTabTouchStart, removeOpts);
+				node.removeEventListener('touchmove',  onTabTouchMove,  removeOpts);
+				node.removeEventListener('touchend',   onTabTouchEnd,   removeOpts);
 			}
 		};
 	}

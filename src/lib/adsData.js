@@ -7,6 +7,9 @@
  * @property {string} href
  * @property {string} image
  * @property {string} color
+ * @property {string} [imageHeight] גובה מותאם לתמונה (ברירת מחדל: 160px)
+ * @property {number} [imageScale] זום על התמונה (ברירת מחדל: 1)
+ * @property {string} [hover] טקסט tooltip בריחוף מעל כפתור ה-CTA
  */
 
 /** @type {Ad[]} */
@@ -16,9 +19,11 @@ export const ads = [
 		title: 'קהילה בשכונה',
 		description: 'כל יתרונות השכונה תחת קורת גג אחת',
 		cta: 'תהנה מכל היתרונות של הקהילה בשכונה שלך',
+		hover: 'הקהילה שלך, בשכונה שלך',
 		href: 'https://community.gofreeil.com/',
-		image: '/community-neighborhood.png',
-		color: 'from-blue-500 to-purple-600'
+		image: '/images/community-neighborhood.webp',
+		color: 'from-blue-500 to-purple-600',
+		imageHeight: '110px'
 	},
 	{
 		id: 1,
@@ -26,8 +31,18 @@ export const ads = [
 		description: 'מתנדבים לתת לך עזרה מלאה בדין / פיוס בכל סיכסוך',
 		cta: 'יש לך סיכסוך? לחץ לפתרון',
 		href: 'https://chachmim.gofreeil.com/',
-		image: '/bati-hapius.png',
+		image: '/images/bati-hapius.webp',
 		color: 'from-orange-600 to-red-600'
+	},
+	{
+		id: 9,
+		title: 'הגמ"ח הארצי',
+		description: 'כל הגמחים תחת קורת גג אחת',
+		cta: 'לאתר הגמ"ח הארצי',
+		hover: 'מצא כל גמח בקלות!',
+		href: 'https://gemach.gofreeil.com/',
+		image: '/images/gemach-harzi.webp',
+		color: 'from-pink-600 via-fuchsia-600 to-purple-700'
 	},
 	{
 		id: 2,
@@ -35,8 +50,41 @@ export const ads = [
 		description: 'מהפכת משילות העם על המוסדות',
 		cta: 'הכר והשתתף במהפכת משילות העם על מוסדותיו',
 		href: 'https://neighborhoods.gofreeil.com/',
-		image: '/news/vaadei-shchunot.png',
-		color: 'from-blue-600 to-cyan-600'
+		image: '/images/news/vaadei-shchunot.webp',
+		color: 'from-blue-600 to-cyan-600',
+		imageHeight: '110px'
+	},
+	{
+		id: 5,
+		title: 'מבקר רשויות המדינה',
+		description: 'מבקרים את הרשויות, ממצים את זכות התושב',
+		cta: 'מבקרים את הרשויות, ממצים את זכות התושב',
+		href: 'https://criticism.gofreeil.com/',
+		image: '/images/mevaker-rashuyot.webp',
+		color: 'from-blue-700 to-indigo-700',
+		imageHeight: '120px',
+		imageScale: 1.2
+	},
+	{
+		id: 10,
+		title: 'דירוג ציבורי',
+		description: 'העם מדרג את הרשויות ועובדי הציבור',
+		cta: 'העם מדרג את הרשויות ועובדי הציבור',
+		href: 'https://rating.gofreeil.com/',
+		image: '/images/public-rating.webp',
+		color: 'from-indigo-600 to-blue-600',
+		imageHeight: '110px',
+		imageScale: 0.9
+	},
+	{
+		id: 8,
+		title: 'משאלי העם',
+		description: 'הבע דעתך על הסוגיות האקטואליות',
+		cta: 'הבע דעתך על הסוגיות האקטואליות',
+		hover: 'הבע דעתך על הסוגיות האקטואליות',
+		href: 'https://referendum.gofreeil.com/',
+		image: '/images/referendum.webp',
+		color: 'from-purple-600 to-indigo-700'
 	},
 	{
 		id: 3,
@@ -44,52 +92,18 @@ export const ads = [
 		description: 'הוזל את ההוצאות שלך',
 		cta: 'הצטרף לקבוצת הרכישה שלנו והוזל מיד את ההוצאות!',
 		href: 'https://groups.gofreeil.com/',
-		image: '/whatsapp_cta.png',
+		image: '/images/whatsapp_cta.webp',
 		color: 'from-green-800 to-emerald-900'
 	},
 	{
-		id: 5,
-		title: 'גידול ביתי',
-		description: 'מערכת לגידול ביתי (בקרוב)',
-		cta: 'מערכת לגידול ביתי - לחץ לפרטים',
-		href: 'https://www.melecshop.com/page/free',
-		image: '/partners/growing-system.png',
-		color: 'from-teal-500 to-teal-600'
-	},
-	{
-		id: 6,
-		title: 'בעלי מקצוע כשירים',
-		description: 'חתמו על תנאי הקהילה ונותנים לנו הנחות והטבות יחודיות',
-		cta: 'מחפש בעל מקצוע איכותי באזורך?',
-		href: 'https://index.gofreeil.com/',
-		image: '/professionals.png',
-		color: 'from-yellow-500 to-orange-500'
-	},
-	{
 		id: 7,
-		title: 'ביקורת על העיריה',
-		description: 'הזכות לחיות - תלונות לעיריה',
-		cta: 'יש לך תלונה לעיריה שמזלזלים בה? - לא עוד',
-		href: 'https://criticism.gofreeil.com/',
-		image: '/bikoret-iriya.png',
-		color: 'from-red-600 to-pink-600'
-	},
-	{
-		id: 8,
-		title: 'סיוע לנפגעים מינית',
-		description: 'תמיכה וסיוע לנפגעים מינית',
-		cta: 'לחץ לפרטים',
-		href: 'https://www.melecshop.com/page/kids_FNL3',
-		image: '/support-victims.jpeg',
-		color: 'from-fuchsia-600 to-pink-600'
-	},
-	{
-		id: 11,
-		title: 'החנות החברתית',
+		title: 'חנות החירות',
 		description: 'מוצרים נבחרים לבריאות טבעית, חקלאות ביתית, טכנולוגיה ועוד',
 		cta: 'כנסו לחנות לחיים טובים יותר',
+		hover: 'החנות שלנו!',
 		href: 'https://shop.gofreeil.com/',
-		image: '/yotzim-lecherut.png',
-		color: 'from-emerald-600 to-teal-700'
+		image: '/images/shop.webp',
+		color: 'from-emerald-600 to-teal-700',
+		imageHeight: '110px'
 	}
 ];

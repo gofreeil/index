@@ -4,6 +4,9 @@
 	import { lang, translations } from '$lib/i18n';
 	import { get } from 'svelte/store';
 	import MobileAdsDrawer from '$lib/components/MobileAdsDrawer.svelte';
+	import RightAdBanner from '$lib/components/RightAdBanner.svelte';
+	import AdsSidebar from '$lib/components/AdsSidebar.svelte';
+	import Footer from '$lib/components/Footer.svelte';
 	import { authUser, hydrateAuth, logout } from '$lib/auth';
 
 	let { children, data } = $props();
@@ -17,7 +20,7 @@
 		currentLang = v;
 		if (typeof document !== 'undefined') {
 			document.documentElement.lang = v;
-			document.documentElement.dir = translations[v]?.dir || 'rtl';
+			document.documentElement.dir = /** @type {any} */ (translations)[v]?.dir || 'rtl';
 		}
 	});
 
@@ -85,9 +88,9 @@
 					class="flex min-w-0 flex-1 items-center gap-1 transition-opacity hover:opacity-80 sm:gap-3"
 				>
 					<img
-						src="/logo.png"
+						src="/logo-professionals.png"
 						alt="לוגו"
-						class="h-6 w-6 rounded-full object-cover shadow-sm sm:h-14 sm:w-14"
+						class="h-8 w-auto rounded-lg object-contain shadow-sm sm:h-14"
 					/>
 					<div class="flex flex-col text-right">
 						<h1
@@ -240,77 +243,50 @@
 		</div>
 	</header>
 
-	<main id="main-content">
-		{@render children()}
-	</main>
+	<div class="layout-container">
+		<RightAdBanner />
+		<main id="main-content" tabindex="-1" class="main-content">
+			{@render children()}
+		</main>
+		<AdsSidebar />
+	</div>
 
-	<footer class="mt-8 border-t border-gray-800 bg-gray-900/50 py-4 sm:mt-16 sm:py-8">
-		<div class="mx-auto max-w-7xl px-4 text-right text-gray-600 dark:text-gray-400">
-			<div class="flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-12">
-				<!-- Action Group (Right aligned in RTL) -->
-				<div class="flex flex-col items-center gap-1 sm:gap-2">
-					<p class="text-[11px] font-medium text-gray-500 sm:text-xs dark:text-gray-400">
-						{t.movementAction}
-					</p>
-					<a
-						href="https://gofreeil.com/"
-						target="_blank"
-						class="flex shrink-0 flex-col items-center rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-3 py-0.5 text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-95 sm:px-4"
-					>
-						<span class="text-sm font-black tracking-wider sm:text-base">יוצאים לחירות</span>
-						<span class="text-[10px] font-medium opacity-90 sm:text-xs">{t.movementSlogan}</span>
-					</a>
-				</div>
-
-				<!-- Vertical Divider (Hidden on mobile) -->
-				<div class="hidden h-12 w-px bg-gray-300 sm:block dark:bg-gray-700"></div>
-
-				<!-- Legal link Group -->
-				<div class="flex flex-col gap-1 sm:gap-2">
-					<p>
-						<a
-							href="/report"
-							class="text-sm font-medium text-red-500 hover:underline sm:text-lg"
-						>
-							{t.reportViolation}
-						</a>
-					</p>
-				</div>
-
-				<!-- Second Vertical Divider -->
-				<div class="hidden h-12 w-px bg-gray-300 sm:block dark:bg-gray-700"></div>
-
-				<!-- Contact & Privacy Group -->
-				<div class="flex flex-col gap-0.5 sm:gap-1">
-					<a
-						href="mailto:support@melecshop.com"
-						class="text-xs font-bold text-gray-700 transition-colors hover:text-blue-600 sm:text-sm dark:text-gray-300 dark:hover:text-blue-400"
-					>
-						{t.contact}
-					</a>
-					<a
-						href="/privacy"
-						class="text-xs text-gray-500 transition-colors hover:text-blue-600 dark:text-gray-500 dark:hover:text-blue-400"
-					>
-						{t.privacy}
-					</a>
-				</div>
-			</div>
-
-			<div
-				class="mt-2 border-t border-gray-200 pt-2 text-center sm:mt-4 sm:pt-4 dark:border-gray-800"
-			>
-				<p class="text-xs text-gray-500 dark:text-gray-600">
-					{t.dedication}
-				</p>
-			</div>
-		</div>
-	</footer>
+	<Footer />
 </div>
 
 <style>
 	:global(body) {
 		font-family:
 			-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+	}
+
+	/* פריסת התוכן עם שני מסילות פרסום (מפורט מקהילה) */
+	.layout-container {
+		max-width: 1440px;
+		margin: 0 auto;
+		display: flex;
+		gap: 2rem;
+		padding: 2rem 2rem 0 2rem;
+		width: 100%;
+	}
+
+	.main-content {
+		flex: 1;
+		min-width: 0;
+	}
+
+	@media (max-width: 1024px) {
+		.layout-container {
+			padding: 0;
+			gap: 0;
+			flex-direction: column;
+			max-width: 100vw;
+			/* clip ולא hidden: hidden הופך את האלמנט ל-scroll container ושובר position:sticky של צאצאים */
+			overflow-x: clip;
+		}
+		.main-content {
+			max-width: 100vw;
+			overflow-x: clip;
+		}
 	}
 </style>
