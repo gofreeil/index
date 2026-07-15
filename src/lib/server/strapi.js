@@ -214,3 +214,49 @@ export async function uploadImage(file) {
 	const arr = await res.json().catch(() => null);
 	return Array.isArray(arr) && arr[0]?.id ? arr[0].id : null;
 }
+
+// ── Moderation (מסך /admin) ──────────────────────────────────
+// כל הקריאות server-side עם STRAPI_TOKEN (trusted) — רואות pending ורשאיות לשנות status.
+
+/** עסקים שממתינים לאישור. @returns {Promise<any[]>} */
+export async function listPendingBusinesses() {
+	const qs = `filters[status][$eq]=pending&${BIZ_POPULATE}&sort=createdAt:desc&pagination[pageSize]=200`;
+	const data = await apiJson(`/api/idx-businesses?${qs}`);
+	return Array.isArray(data?.data) ? data.data : [];
+}
+
+/** ביקורות שממתינות לאישור (עם העסק המקושר). @returns {Promise<any[]>} */
+export async function listPendingReviews() {
+	const qs =
+		'filters[status][$eq]=pending&populate[business][fields][0]=name&populate[business][fields][1]=documentId' +
+		'&sort=createdAt:desc&pagination[pageSize]=200';
+	const data = await apiJson(`/api/idx-reviews?${qs}`);
+	return Array.isArray(data?.data) ? data.data : [];
+}
+
+/** דיווחים פתוחים (pending/reviewing). @returns {Promise<any[]>} */
+export async function listOpenReports() {
+	const qs =
+		'filters[status][$in][0]=pending&filters[status][$in][1]=reviewing&sort=createdAt:desc&pagination[pageSize]=200';
+	const data = await apiJson(`/api/idx-reports?${qs}`);
+	return Array.isArray(data?.data) ? data.data : [];
+}
+
+const COLLECTION = /** @type {const} */ ({
+	business: 'idx-businesses',
+	review: 'idx-reviews',
+	report: 'idx-reports'
+});
+
+/**
+ * שינוי status של פריט מודרציה. @param {'business'|'review'|'report'} kind
+ * @param {string} documentId @param {string} status
+ */
+export async function setStatus(kind, documentId, status) {
+	const path = COLLECTION[kind];
+	if (!path) throw new Error(`kind לא ידוע: ${kind}`);
+	return apiJson(`/api/${path}/${encodeURIComponent(documentId)}`, {
+		method: 'PUT',
+		body: JSON.stringify({ data: { status } })
+	});
+}
