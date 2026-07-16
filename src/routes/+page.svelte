@@ -88,8 +88,9 @@
 		);
 	}
 
+	// ה-API כבר מחזיר מהחדש לישן (createdAt:desc) — אין צורך להפוך (ה-reverse היה שריד מ-Google Sheets)
 	const filteredBusinesses = $derived(
-		[...businesses].reverse().filter((b) => {
+		businesses.filter((b) => {
 			const okCat = selectedCategory === 'all' || b.category === selectedCategory;
 			const okLoc =
 				selectedLocation === 'all' ||

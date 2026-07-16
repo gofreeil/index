@@ -88,7 +88,8 @@
 	});
 </script>
 
-<div class="relative">
+<!-- isolate: כולא את ה-z-index הגבוהים של Leaflet (400–1000) בתוך stacking context משלו, שלא יצוירו מעל ההדר (z-50) -->
+<div class="relative isolate">
 	<div bind:this={mapEl} class="h-[350px] w-full rounded-2xl sm:h-[450px]"></div>
 	{#if mapped.length === 0}
 		<div
