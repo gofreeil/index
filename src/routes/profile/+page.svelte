@@ -60,6 +60,16 @@
 			</a>
 		</div>
 
+		<!-- ניהול — רק למורשים (הבדיקה האמיתית נאכפת בשרת של /admin) -->
+		{#if data.isAdmin}
+			<a
+				href="/admin"
+				class="mt-3 flex w-full items-center justify-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-bold text-amber-700 transition hover:bg-amber-100 dark:border-amber-700/50 dark:bg-amber-950/30 dark:text-amber-400 dark:hover:bg-amber-950/50"
+			>
+				🛡️ ניהול ומודרציה
+			</a>
+		{/if}
+
 		<!-- התנתקות -->
 		<button
 			type="button"
