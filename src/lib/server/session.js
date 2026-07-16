@@ -22,4 +22,9 @@ export function setSession(cookies, jwt) {
 /** @param {import('@sveltejs/kit').Cookies} cookies */
 export function clearSession(cookies) {
 	cookies.delete(SESSION_COOKIE, { path: '/' });
+	// חובה למחוק גם את עוגיית ה-SSO המשותפת — hooks מאמת דרכה כ-fallback,
+	// ובלעדי זה המשתמש "מתחבר מחדש" מיד אחרי התנתקות. היא נכתבת על הדומיין
+	// ההורה (.gofreeil.com), ומחיקה תופסת רק עם אותו domain; מוחקים גם host-only ליתר ביטחון.
+	cookies.delete(SHARED_SSO_COOKIE, { path: '/' });
+	if (!dev) cookies.delete(SHARED_SSO_COOKIE, { path: '/', domain: '.gofreeil.com' });
 }
