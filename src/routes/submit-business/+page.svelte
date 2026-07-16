@@ -132,7 +132,7 @@
 
 				<div>
 					<label for="unique_content" class="mb-1 block text-sm font-medium text-gray-300"
-						>מה מייחד אתכם? (אופציונלי)</label
+						>מה מייחד אתכם?</label
 					>
 					<textarea id="unique_content" name="unique_content" rows="2" class="field"
 						>{v.unique_content ?? ''}</textarea
@@ -210,16 +210,19 @@
 				</div>
 				<div>
 					<label for="address" class="mb-1 block text-sm font-medium text-gray-300"
-						>כתובת מלאה <span class="text-gray-500">(לפין על המפה)</span></label
+						>כתובת מלאה *</label
 					>
-					<input id="address" name="address" value={v.address ?? ''} class="field" />
+					<input id="address" name="address" required value={v.address ?? ''} class="field" />
+					<p class="mt-1 text-xs text-gray-500">
+						העסק יופיע אוטומטית על המפה — גם כאן במדריך וגם באתר "קהילה בשכונה".
+					</p>
 					{#if errors.address}<p class="err">{errors.address}</p>{/if}
 				</div>
 			</fieldset>
 
 			<!-- נוכחות דיגיטלית + לוגו -->
 			<fieldset class="space-y-4 rounded-2xl border border-gray-800 bg-gray-900/40 p-5">
-				<legend class="px-2 text-sm font-bold text-blue-400">נוכחות דיגיטלית (אופציונלי)</legend>
+				<legend class="px-2 text-sm font-bold text-blue-400">נוכחות דיגיטלית</legend>
 				<div class="grid gap-4 sm:grid-cols-2">
 					<div>
 						<label for="website" class="mb-1 block text-sm font-medium text-gray-300">אתר</label>
@@ -244,7 +247,7 @@
 				</div>
 				<div>
 					<label for="youtube" class="mb-1 block text-sm font-medium text-gray-300"
-						>סרטון יוטיוב (אופציונלי)</label
+						>סרטון יוטיוב</label
 					>
 					<input id="youtube" name="youtube" value={v.youtube ?? ''} placeholder="https://youtube.com/…" class="field" />
 					{#if errors.youtube}<p class="err">{errors.youtube}</p>{/if}
@@ -255,6 +258,20 @@
 					>
 					<input id="logo" name="logo" type="file" accept="image/*" class="field file:mr-3 file:rounded-full file:border-0 file:bg-blue-600 file:px-4 file:py-1 file:text-white" />
 					{#if errors.logo}<p class="err">{errors.logo}</p>{/if}
+				</div>
+				<div>
+					<label for="banners" class="mb-1 block text-sm font-medium text-gray-300"
+						>תמונות העסק (עד 4 תמונות, כל אחת עד 3MB)</label
+					>
+					<input
+						id="banners"
+						name="banners"
+						type="file"
+						accept="image/*"
+						multiple
+						class="field file:mr-3 file:rounded-full file:border-0 file:bg-blue-600 file:px-4 file:py-1 file:text-white"
+					/>
+					{#if errors.banners}<p class="err">{errors.banners}</p>{/if}
 				</div>
 			</fieldset>
 

@@ -79,8 +79,8 @@ export const actions = {
 		if (!values.contact_name) errors.contact_name = 'שם איש קשר חובה';
 		if (!PHONE_RE.test(values.phone)) errors.phone = 'מספר טלפון לא תקין';
 		if (!EMAIL_RE.test(values.email)) errors.email = 'אימייל לא תקין (משמש לעריכה עתידית של העסק)';
-		if (!values.address && !values.sales_area)
-			errors.address = 'יש למלא כתובת או אזור מכירה';
+		if (!values.address)
+			errors.address = 'כתובת מלאה חובה — דרושה להצגת העסק על המפה';
 		if (!values.discount) errors.discount = 'ההטבה הבלעדית לחברי הקהילה חובה';
 		if (!accepted_terms) errors.accepted_terms = 'יש לאשר את תנאי הקהילה';
 		for (const k of ['website', 'whatsapp', 'facebook', 'instagram', 'youtube']) {
@@ -106,12 +106,37 @@ export const actions = {
 			}
 		}
 
+		// ── העלאת תמונות העסק (banners, עד 4) ──
+		/** @type {number[]} */
+		const bannerIds = [];
+		const bannerFiles = /** @type {File[]} */ (
+			fd.getAll('banners').filter((f) => f && typeof f !== 'string' && f.size > 0)
+		);
+		if (bannerFiles.length > 4) {
+			return fail(400, { errors: { banners: 'אפשר לצרף עד 4 תמונות' }, values });
+		}
+		for (const f of bannerFiles) {
+			if (!f.type.startsWith('image/') || f.size > 3_000_000) {
+				return fail(400, {
+					errors: { banners: 'כל תמונה חייבת להיות קובץ תמונה עד 3MB' },
+					values
+				});
+			}
+			try {
+				const id = await uploadImage(f);
+				if (id) bannerIds.push(id);
+			} catch {
+				/* לא לחסום הגשה על כשל העלאה */
+			}
+		}
+
 		// ── כתיבה ל-Strapi (status=pending נכפה ב-controller) ──
 		try {
 			await createBusiness({
 				...values,
 				accepted_terms: true,
 				logo: logoId ?? undefined,
+				banners: bannerIds.length ? bannerIds : undefined,
 				source: 'index-form',
 				user: locals.user?.id ?? undefined,
 				user_id: locals.user?.id ?? undefined
