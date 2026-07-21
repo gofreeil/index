@@ -7,6 +7,7 @@
 	import RightAdBanner from '$lib/components/RightAdBanner.svelte';
 	import AdsSidebar from '$lib/components/AdsSidebar.svelte';
 	import Footer from '$lib/components/Footer.svelte';
+	import WelcomeScreen from '$lib/components/WelcomeScreen.svelte';
 	import { authUser, hydrateAuth } from '$lib/auth';
 
 	let { children, data } = $props();
@@ -74,6 +75,9 @@
 >
 	דלג לתוכן המרכזי
 </a>
+
+<!-- מסך פתיחה אחרי הרשמה / זיהוי ראשון — גלובלי, מופעל ע"י ?welcome ב-URL -->
+<WelcomeScreen />
 
 <MobileAdsDrawer />
 

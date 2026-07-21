@@ -1,6 +1,5 @@
 <script>
 	import { lang, translations } from '$lib/i18n';
-	import { goto, invalidateAll } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import * as publicVars from '$env/static/public';
 	const PUBLIC_GOOGLE_CLIENT_ID = publicVars['PUBLIC_GOOGLE_CLIENT_ID'] || '';
@@ -18,14 +17,12 @@
 	let loading = $state(false);
 	let error = $state('');
 
-	/** ניווט אחרי הצלחה: חזרה לדף הקודם באתר, אחרת לדף הבית */
-	function goBackOrHome() {
-		const prev = document.referrer;
-		if (prev && prev.includes(window.location.host)) {
-			window.history.back();
-		} else {
-			goto('/');
-		}
+	/**
+	 * אחרי הרשמה מוצלחת = משתמש חדש → טעינה מלאה עם welcome=new כדי שה-WelcomeScreen
+	 * שב-layout ייטען מחדש ויציג את מסך "ברוכים המצטרפים" עם רשת האתרים.
+	 */
+	function goWelcome() {
+		window.location.href = '/?welcome=new';
 	}
 
 	/** @param {any} response */
@@ -39,8 +36,7 @@
 			});
 			const result = await res.json();
 			if (result.success) {
-				await invalidateAll();
-				goBackOrHome();
+				goWelcome();
 			} else {
 				error = result.error;
 			}
@@ -90,8 +86,7 @@
 			});
 			const result = await response.json();
 			if (result.success) {
-				await invalidateAll();
-				goBackOrHome();
+				goWelcome();
 			} else {
 				error = result.error;
 			}

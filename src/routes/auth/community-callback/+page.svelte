@@ -8,6 +8,21 @@
 
 	onMount(async () => {
 		if (data.status === 'ok' && data.user) {
+			// פעם ראשונה בדפדפן הזה → welcome=new מפעיל את מסך "ברוכים המצטרפים";
+			// משתמש חוזר לא מקבל שום פרמטר ולא רואה מסך.
+			let welcomed = true;
+			try {
+				welcomed = !!localStorage.getItem('gofreeil-welcomed');
+			} catch {
+				/* localStorage חסום — מתייחסים כאילו כבר בורך */
+			}
+			if (!welcomed) {
+				// טעינה מלאה כדי שה-WelcomeScreen שב-layout ייטען מחדש ויקרא את הפרמטר
+				const target = new URL(data.returnTo || '/', window.location.origin);
+				target.searchParams.set('welcome', 'new');
+				window.location.href = `${target.pathname}${target.search}${target.hash}`;
+				return;
+			}
 			// ה-cookie המשותף (gofreeil-auth) כבר נקרא ב-hooks → locals.user; מרעננים
 			// כדי שה-layout יאכלס את authUser, ואז חוזרים ליעד.
 			await invalidateAll();
