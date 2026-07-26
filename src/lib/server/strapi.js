@@ -145,18 +145,21 @@ export { isSuperAdmin };
 
 /**
  * אדמין (או סופר-אדמין) — רשאי לאשר/לדחות/להקפיא עסקים ופרסומות ולערוך כרטיסיות.
+ * לכל אתר אדמין משלו: כאן מכובד רק idx_admin (אדמיני אתרים אחרים, כמו ch_admin
+ * של חכמי העדה, לא מקבלים גישה).
  * @param {any} me
  */
 const isPrivileged = (me) => {
 	if (isSuperAdmin(me)) return true;
-	return ['idx_admin', 'ch_admin'].includes(me?.app_role);
+	return me?.app_role === 'idx_admin';
 };
 export { isPrivileged };
 
 // ── ניהול אדמינים (users-permissions, רשימת המשתמשים המשותפת) ──
-// מינוי אדמין = קביעת app_role על המשתמש. התפקידים המוכרים:
-//   super_admin — כל האתרים; idx_admin — האינדקס; ch_admin — הקהילה (מכובד גם כאן).
-export const ADMIN_ROLES = ['super_admin', 'idx_admin', 'ch_admin'];
+// מינוי אדמין = קביעת app_role על המשתמש. לכל אתר אדמין משלו — כאן מנהלים
+// רק את אדמיני האינדקס (idx_admin) והסופר-אדמינים; תפקידים של אתרים אחרים
+// (למשל ch_admin של חכמי העדה) לא מוצגים ולא ניתנים למינוי מכאן.
+export const ADMIN_ROLES = ['super_admin', 'idx_admin'];
 
 // אובייקט המשתמש המלא מכיל שדות רגישים (שאלות אבטחה, totp_secret) —
 // לעולם לא מחזירים אותו ללקוח; ממפים לצורה רזה בלבד.

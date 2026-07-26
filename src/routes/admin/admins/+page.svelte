@@ -13,9 +13,11 @@
 	const ROLE_HE = {
 		super_admin: ['👑 סופר-אדמין', 'bg-amber-900/40 text-amber-300 border-amber-500/40'],
 		idx_admin: ['🛡️ אדמין האינדקס', 'bg-blue-900/40 text-blue-300 border-blue-500/40'],
-		ch_admin: ['🛡️ אדמין הקהילה', 'bg-purple-900/40 text-purple-300 border-purple-500/40'],
 		user: ['משתמש רגיל', 'bg-gray-800 text-gray-300 border-gray-600/40']
 	};
+	// תפקיד של אתר אחר (ch_admin וכד') — לא מנוהל מכאן
+	/** @param {any} u */
+	const foreignRole = (u) => u.app_role && !(u.app_role in ROLE_HE);
 	/** @param {string} r */
 	const roleHe = (r) => ROLE_HE[r] ?? [r, 'bg-gray-800 text-gray-300 border-gray-600/40'];
 
@@ -64,8 +66,8 @@
 		<div>
 			<h1 class="text-2xl font-extrabold text-gray-100">👥 ניהול אדמינים</h1>
 			<p class="mt-1 text-sm text-gray-500">
-				מינוי והסרה של אדמינים — לסופר-אדמין בלבד. התפקיד נשמר על המשתמש ברשימה המשותפת, כך שאדמין
-				קהילה מקבל גישה גם כאן.
+				מינוי והסרה של אדמינים לאתר הזה — לסופר-אדמין בלבד. לכל אתר אדמינים משלו; תפקידים של אתרים
+				אחרים לא מוצגים ולא ניתנים לשינוי מכאן.
 			</p>
 		</div>
 		<a href="/admin" class="text-sm text-gray-400 hover:text-blue-400">← לפאנל</a>
@@ -135,7 +137,6 @@
 										>
 											<option value="super_admin">סופר-אדמין</option>
 											<option value="idx_admin">אדמין האינדקס</option>
-											<option value="ch_admin">אדמין הקהילה</option>
 										</select>
 										<button
 											disabled={busy === u.id + 'role'}
@@ -212,28 +213,36 @@
 										{u.email} · #{u.id}{u.registered_site ? ' · ' + u.registered_site : ''}
 									</p>
 								</div>
-								<form
-									method="POST"
-									action="?/setRole"
-									use:enhance={submitFn(u.id + 'appoint')}
-									class="flex flex-shrink-0 items-center gap-2"
-								>
-									<input type="hidden" name="userId" value={u.id} />
-									<select
-										name="role"
-										class="rounded-lg border border-gray-700 bg-gray-900/60 px-2 py-1.5 text-xs text-gray-100 focus:outline-none"
+								{#if foreignRole(u)}
+									<span
+										class="rounded-full border border-gray-600/40 bg-gray-800 px-3 py-1 text-[11px] font-bold text-gray-400"
+										title="app_role: {u.app_role}"
 									>
-										<option value="idx_admin">אדמין האינדקס</option>
-										<option value="ch_admin">אדמין הקהילה</option>
-										<option value="super_admin">סופר-אדמין</option>
-									</select>
-									<button
-										disabled={busy === u.id + 'appoint'}
-										class="rounded-lg bg-green-600 px-4 py-1.5 text-xs font-bold text-white transition hover:bg-green-700 disabled:opacity-40"
+										תפקיד באתר אחר — מנוהל משם
+									</span>
+								{:else}
+									<form
+										method="POST"
+										action="?/setRole"
+										use:enhance={submitFn(u.id + 'appoint')}
+										class="flex flex-shrink-0 items-center gap-2"
 									>
-										{busy === u.id + 'appoint' ? '…' : '✚ מנה'}
-									</button>
-								</form>
+										<input type="hidden" name="userId" value={u.id} />
+										<select
+											name="role"
+											class="rounded-lg border border-gray-700 bg-gray-900/60 px-2 py-1.5 text-xs text-gray-100 focus:outline-none"
+										>
+											<option value="idx_admin">אדמין האינדקס</option>
+											<option value="super_admin">סופר-אדמין</option>
+										</select>
+										<button
+											disabled={busy === u.id + 'appoint'}
+											class="rounded-lg bg-green-600 px-4 py-1.5 text-xs font-bold text-white transition hover:bg-green-700 disabled:opacity-40"
+										>
+											{busy === u.id + 'appoint' ? '…' : '✚ מנה'}
+										</button>
+									</form>
+								{/if}
 							</div>
 						</div>
 					{/each}
