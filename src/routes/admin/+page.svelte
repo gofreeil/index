@@ -226,7 +226,17 @@
 				</h1>
 				<p class="mt-1 text-sm text-gray-500">מחובר: {data.user.name} · {data.user.email}</p>
 			</div>
-			<a href="/" class="text-sm text-gray-400 hover:text-blue-400">← לאתר</a>
+			<div class="flex flex-shrink-0 items-center gap-3">
+				{#if data.superAdmin}
+					<a
+						href="/admin/admins"
+						class="rounded-full border border-amber-500/40 bg-amber-900/20 px-4 py-2 text-sm font-bold text-amber-300 transition hover:bg-amber-900/40"
+					>
+						👥 ניהול אדמינים
+					</a>
+				{/if}
+				<a href="/" class="text-sm text-gray-400 hover:text-blue-400">← לאתר</a>
+			</div>
 		</div>
 
 		{#if form?.error}

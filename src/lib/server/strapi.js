@@ -153,6 +153,63 @@ const isPrivileged = (me) => {
 };
 export { isPrivileged };
 
+// ── ניהול אדמינים (users-permissions, רשימת המשתמשים המשותפת) ──
+// מינוי אדמין = קביעת app_role על המשתמש. התפקידים המוכרים:
+//   super_admin — כל האתרים; idx_admin — האינדקס; ch_admin — הקהילה (מכובד גם כאן).
+export const ADMIN_ROLES = ['super_admin', 'idx_admin', 'ch_admin'];
+
+// אובייקט המשתמש המלא מכיל שדות רגישים (שאלות אבטחה, totp_secret) —
+// לעולם לא מחזירים אותו ללקוח; ממפים לצורה רזה בלבד.
+/** @param {any} u */
+const toSlimUser = (u) => ({
+	id: u.id,
+	name: displayName(u),
+	email: u.email || '',
+	app_role: u.app_role || 'user',
+	created_at: u.createdAt || '',
+	registered_site: u.registered_site || ''
+});
+
+/** כל המשתמשים בעלי תפקיד ניהולי. @returns {Promise<any[]>} */
+export async function listAdminUsers() {
+	const qs =
+		ADMIN_ROLES.map((r, i) => `filters[app_role][$in][${i}]=${r}`).join('&') +
+		'&pagination[pageSize]=200&sort=id:asc';
+	const arr = await apiJson(`/api/users?${qs}`);
+	return (Array.isArray(arr) ? arr : []).map(toSlimUser);
+}
+
+/** חיפוש משתמשים למינוי — לפי אימייל / שם משתמש / כינוי. @param {string} q */
+export async function searchUsers(q) {
+	const enc = encodeURIComponent(q);
+	const qs =
+		`filters[$or][0][email][$containsi]=${enc}` +
+		`&filters[$or][1][username][$containsi]=${enc}` +
+		`&filters[$or][2][nickname][$containsi]=${enc}` +
+		'&pagination[pageSize]=20&sort=id:desc';
+	const arr = await apiJson(`/api/users?${qs}`);
+	return (Array.isArray(arr) ? arr : []).map(toSlimUser);
+}
+
+/** משתמש בודד (רזה) לבדיקות הגנה לפני שינוי תפקיד. @param {string|number} userId */
+export async function getUserSlim(userId) {
+	const res = await api(`/api/users/${encodeURIComponent(String(userId))}`);
+	if (!res.ok) return null;
+	const u = await res.json().catch(() => null);
+	return u?.id ? toSlimUser(u) : null;
+}
+
+/**
+ * קביעת app_role למשתמש. users-permissions מצפה לגוף שטוח (בלי עטיפת data).
+ * @param {string|number} userId @param {string} role
+ */
+export async function setUserRole(userId, role) {
+	return apiJson(`/api/users/${encodeURIComponent(String(userId))}`, {
+		method: 'PUT',
+		body: JSON.stringify({ app_role: role })
+	});
+}
+
 const BIZ_POPULATE = 'populate[logo]=true&populate[banners]=true';
 
 /** כל העסקים המאושרים, ממוינים מהחדש לישן. @returns {Promise<any[]>} */
