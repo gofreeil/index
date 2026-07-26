@@ -16,7 +16,7 @@
 
 	const WELCOME_MS = 7000;
 	// לוגו האתר — המשתנה היחיד שמשתנה בין אתרי הרשת
-	const LOGO_SRC = '/logo-professionals.png';
+	const LOGO_SRC = '/logo-professionals.png?v=2';
 
 	let kind = $state<'new' | 'back' | null>(null);
 	let visible = $state(false);

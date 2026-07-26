@@ -1,6 +1,5 @@
 <script>
 	import './layout.css';
-	import favicon from '$lib/assets/favicon.svg';
 	import { lang, translations } from '$lib/i18n';
 	import { get } from 'svelte/store';
 	import MobileAdsDrawer from '$lib/components/MobileAdsDrawer.svelte';
@@ -47,7 +46,8 @@
 </script>
 
 <svelte:head>
-	<link rel="icon" href={favicon} />
+	<link rel="icon" type="image/png" href="/favicon.png" />
+	<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 	<title>{t.title} - יוצאים לחירות</title>
 
 	<!-- Meta Tags for Social Media (Open Graph) -->
@@ -56,7 +56,9 @@
 		property="og:description"
 		content="בעלי מקצוע כשירים בהנחות והטבות ייחודיות לחברי יוצאים לחירות"
 	/>
-	<meta property="og:image" content="/og-image.png" />
+	<meta property="og:image" content="/og-image.png?v=2" />
+	<meta property="og:image:width" content="1200" />
+	<meta property="og:image:height" content="630" />
 	<meta property="og:type" content="website" />
 
 	<!-- Twitter Meta Tags -->
@@ -66,7 +68,7 @@
 		name="twitter:description"
 		content="בעלי מקצוע כשירים בהנחות והטבות ייחודיות לחברי יוצאים לחירות"
 	/>
-	<meta name="twitter:image" content="/og-image.png" />
+	<meta name="twitter:image" content="/og-image.png?v=2" />
 </svelte:head>
 
 <a
@@ -92,8 +94,8 @@
 					class="flex min-w-0 flex-1 items-center gap-1 transition-opacity hover:opacity-80 sm:gap-3"
 				>
 					<img
-						src="/logo-professionals.png"
-						alt="לוגו"
+						src="/logo-professionals.png?v=2"
+						alt="לוגו בעלי מקצוע כשירים — סדר בכל עניין"
 						class="h-8 w-auto rounded-lg object-contain shadow-sm sm:h-14"
 					/>
 					<div class="flex flex-col text-right">
