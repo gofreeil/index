@@ -1,6 +1,5 @@
 <script>
 	import { lang, translations } from '$lib/i18n';
-	import { goto, invalidateAll } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import * as publicVars from '$env/static/public';
 	const PUBLIC_GOOGLE_CLIENT_ID = publicVars['PUBLIC_GOOGLE_CLIENT_ID'] || '';
@@ -14,6 +13,22 @@
 	let loading = $state(false);
 	let error = $state('');
 
+	// מוסיף welcome=back ליעד — מפעיל את מסך "ברוכים השבים" אחרי ההתחברות.
+	// טעינה מלאה (window.location) כדי שה-WelcomeScreen שב-layout ייטען מחדש
+	// ויקרא את הפרמטר, וגם ירענן את מצב ההתחברות מהשרת.
+	function backWithWelcome() {
+		let dest = '/';
+		const prev = document.referrer;
+		if (prev && prev.includes(window.location.host)) dest = prev;
+		try {
+			const u = new URL(dest, window.location.origin);
+			u.searchParams.set('welcome', 'back');
+			window.location.href = `${u.pathname}${u.search}${u.hash}`;
+		} catch {
+			window.location.href = '/?welcome=back';
+		}
+	}
+
 	/** @param {any} response */
 	async function handleGoogleResponse(response) {
 		loading = true;
@@ -25,13 +40,8 @@
 			});
 			const result = await res.json();
 			if (result.success) {
-				await invalidateAll();
-				const prev = document.referrer;
-				if (prev && prev.includes(window.location.host)) {
-					window.history.back();
-				} else {
-					goto('/');
-				}
+				backWithWelcome();
+				return;
 			} else {
 				error = result.error;
 			}
@@ -77,14 +87,9 @@
 			});
 			const result = await response.json();
 			if (result.success) {
-				await invalidateAll();
-				// Return to previous page or home
-				const prev = document.referrer;
-				if (prev && prev.includes(window.location.host)) {
-					window.history.back();
-				} else {
-					goto('/');
-				}
+				// חזרה לעמוד הקודם / הבית עם welcome=back ("ברוכים השבים")
+				backWithWelcome();
+				return;
 			} else {
 				error = result.error;
 			}

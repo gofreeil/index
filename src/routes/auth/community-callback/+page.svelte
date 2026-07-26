@@ -1,32 +1,25 @@
 <script>
 	import { onMount } from 'svelte';
-	import { goto, invalidateAll } from '$app/navigation';
 
 	let { data } = $props();
 
 	let phase = $state('working');
 
-	onMount(async () => {
+	onMount(() => {
 		if (data.status === 'ok' && data.user) {
-			// פעם ראשונה בדפדפן הזה → welcome=new מפעיל את מסך "ברוכים המצטרפים";
-			// משתמש חוזר לא מקבל שום פרמטר ולא רואה מסך.
-			let welcomed = true;
+			// פעם ראשונה בדפדפן הזה → welcome=new ("ברוכים המצטרפים");
+			// אחרת welcome=back ("ברוכים השבים") — כמו בכל אתרי הרשת.
+			let kind = 'back';
 			try {
-				welcomed = !!localStorage.getItem('gofreeil-welcomed');
+				if (!localStorage.getItem('gofreeil-welcomed')) kind = 'new';
 			} catch {
-				/* localStorage חסום — מתייחסים כאילו כבר בורך */
+				/* localStorage חסום — נשארים 'back' */
 			}
-			if (!welcomed) {
-				// טעינה מלאה כדי שה-WelcomeScreen שב-layout ייטען מחדש ויקרא את הפרמטר
-				const target = new URL(data.returnTo || '/', window.location.origin);
-				target.searchParams.set('welcome', 'new');
-				window.location.href = `${target.pathname}${target.search}${target.hash}`;
-				return;
-			}
-			// ה-cookie המשותף (gofreeil-auth) כבר נקרא ב-hooks → locals.user; מרעננים
-			// כדי שה-layout יאכלס את authUser, ואז חוזרים ליעד.
-			await invalidateAll();
-			await goto(data.returnTo || '/');
+			// טעינה מלאה כדי שה-WelcomeScreen שב-layout ייטען מחדש ויקרא את
+			// הפרמטר; ה-cookie המשותף (gofreeil-auth) כבר נקרא ב-hooks → locals.user.
+			const target = new URL(data.returnTo || '/', window.location.origin);
+			target.searchParams.set('welcome', kind);
+			window.location.href = `${target.pathname}${target.search}${target.hash}`;
 			return;
 		}
 		phase = 'not_registered';

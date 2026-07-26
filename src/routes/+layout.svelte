@@ -78,8 +78,8 @@
 	דלג לתוכן המרכזי
 </a>
 
-<!-- מסך פתיחה אחרי הרשמה / זיהוי ראשון — גלובלי, מופעל ע"י ?welcome ב-URL -->
-<WelcomeScreen />
+<!-- מסך פתיחה אחרי הרשמה / התחברות — גלובלי, מופעל ע"י ?welcome ב-URL -->
+<WelcomeScreen userName={user?.name || ''} />
 
 <MobileAdsDrawer />
 
