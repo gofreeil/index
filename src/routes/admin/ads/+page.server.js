@@ -108,7 +108,10 @@ export const actions = {
 		const formData = await request.formData();
 		const id = String(formData.get('id') || '');
 		if (!id) return fail(400, { error: 'חסר מזהה' });
-		const r = await runAdAction(() => approveAd(id, user.email));
+		// תקופת הפרסום שסומנה במסך (ברירת המחדל = מה שהמפרסם ביקש בשליחה)
+		const durRaw = Number(formData.get('durationDays'));
+		const durationDays = durRaw === 180 ? 180 : durRaw === 30 ? 30 : undefined;
+		const r = await runAdAction(() => approveAd(id, user.email, durationDays));
 		if ('failResp' in r) return r.failResp;
 		return { success: true, message: `אושרה ופורסמה: ${r.result.title}` };
 	},

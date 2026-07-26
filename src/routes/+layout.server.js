@@ -1,7 +1,8 @@
 import { listApproved, computeSchedule } from '$lib/server/adsStore.js';
 
 // חושף את המשתמש המחובר (מ-hooks) לכל הדפים; הלקוח מאכלס ממנו את authUser.
-// בנוסף — הפרסומות המאושרות (submitted-ads מהבילדר של הקהילה) לסרגל הצד.
+// בנוסף — הפרסומות המאושרות (submitted-ads מבילדר הפרסומות המקומי
+// /advertise/builder, ומהאתרים האחרים שחולקים את האוסף) לסרגל הצד.
 export async function load({ locals }) {
 	const ads = await listApproved();
 	const approvedAds = ads

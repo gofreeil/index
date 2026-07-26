@@ -430,7 +430,20 @@
 									</div>
 								</form>
 							{:else}
-								<h3 class="mb-1 text-base font-black text-white md:text-lg">{ad.title}</h3>
+								<div class="mb-1 flex flex-wrap items-center gap-2">
+									<h3 class="text-base font-black text-white md:text-lg">{ad.title}</h3>
+									{#if ad.payment === 'code'}
+										<span
+											class="rounded-full border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-[11px] font-black whitespace-nowrap text-emerald-300"
+											>💳 קוד תנועה — כמו שולם</span
+										>
+									{:else}
+										<span
+											class="rounded-full border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 text-[11px] font-black whitespace-nowrap text-amber-300"
+											>⌛ תשלום לתיאום</span
+										>
+									{/if}
+								</div>
 								<p class="mb-1 text-xs text-gray-300 md:text-sm">{ad.subtitle}</p>
 								{#if ad.cta}
 									<p class="mb-2 text-[10px] text-amber-300 md:text-xs">CTA: {ad.cta}</p>
@@ -486,8 +499,32 @@
 						<!-- פעולות לפי טאב -->
 						<div class="mt-4 flex flex-wrap gap-2">
 							{#if activeTab === 'pending'}
-								<form method="POST" action="?/approve" use:enhance>
+								<form
+									method="POST"
+									action="?/approve"
+									use:enhance
+									class="flex flex-wrap items-center gap-2"
+								>
 									<input type="hidden" name="id" value={ad.id} />
+									<label class="flex items-center gap-1.5 text-xs font-bold text-gray-400">
+										שולם עבור:
+										<!-- ברירת המחדל = התקופה שהמפרסם בחר בשליחה -->
+										<select
+											name="durationDays"
+											class="rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-xs text-white focus:border-amber-400/50 focus:outline-none"
+										>
+											<option
+												value="30"
+												selected={ad.requestedDurationDays !== 180}
+												style="background:#fff;color:#111">חודש</option
+											>
+											<option
+												value="180"
+												selected={ad.requestedDurationDays === 180}
+												style="background:#fff;color:#111">חצי שנה</option
+											>
+										</select>
+									</label>
 									<button
 										type="submit"
 										class="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-black text-black hover:bg-emerald-400"

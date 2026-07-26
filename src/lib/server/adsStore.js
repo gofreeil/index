@@ -1,11 +1,16 @@
 // ============================================================
 // adsStore.js — מאגר פרסומות שנשלחו לאישור / אושרו
 // פורט מ-community/my_new_project/src/lib/server/adsStore.ts אל index.
-// אחסון: אוסף submitted-ad ב-Strapi המשותף (api.gofreeil.com) — אותו
-// מאגר שהבילדר של הקהילה (community.gofreeil.com/about/advertise/builder)
-// כותב אליו, כך שפרסומת שהוגשה שם ניתנת לאישור גם מכאן.
+// אחסון: אוסף submitted-ad ב-Strapi המשותף (api.gofreeil.com).
+// ההגשה נעשית בבילדר המקומי של האתר (/advertise/builder →
+// /api/ads/submit → submitAd כאן); פרסומות שהוגשו מאתרים אחרים
+// באותו אוסף ניתנות לאישור גם מכאן.
 // הושמט ביחס למקור: מנגנון התזכורות (נשען על מערכת ההודעות של הקהילה
-// שלא קיימת ב-index) ו-submitAd (ההגשה נעשית בבילדר של הקהילה).
+// שלא קיימת ב-index).
+// לאוסף עמודות מוקלדות בלבד — אי אפשר להוסיף שדות חדשים, ולכן שני
+// ערכי ההגשה החדשים ארוזים בתוך ה-JSON של landing:
+//   landing._payment               'code' (קוד תנועה — כמו שולם) | 'pending'
+//   landing._requestedDurationDays 30 | 180 (התקופה שהמפרסם ביקש)
 // ============================================================
 
 import { env } from '$env/dynamic/private';
@@ -43,6 +48,8 @@ const TTL_ADS = 120_000;
  * @property {string} logo
  * @property {string} mainImage
  * @property {any} landing
+ * @property {string} payment "code" = הוזן קוד התנועה בשליחה (כמו שולם); "pending" = תשלום לתיאום
+ * @property {number} requestedDurationDays התקופה שהמפרסם ביקש בשליחה (30/180) — ברירת המחדל באישור
  */
 
 /** @param {string} path @param {any} [init] */
@@ -99,7 +106,10 @@ function fromStrapi(s) {
 		gradient: s.gradient ?? '',
 		logo: s.logo ?? '',
 		mainImage: s.main_image ?? '',
-		landing: s.landing ?? emptyLanding()
+		landing: s.landing ?? emptyLanding(),
+		// ערכי ההגשה הארוזים ב-landing (ראו כותרת הקובץ)
+		payment: s.landing?._payment === 'code' ? 'code' : 'pending',
+		requestedDurationDays: Number(s.landing?._requestedDurationDays) === 180 ? 180 : 30
 	};
 }
 
@@ -175,6 +185,57 @@ export async function getAd(id) {
 }
 
 /**
+ * שליחת פרסומת חדשה מהבילדר המקומי (ad_status: pending).
+ * payment ו-requestedDurationDays נארזים בתוך ה-JSON של landing —
+ * לאוסף המשותף עמודות מוקלדות ואי אפשר להוסיף שדות חדשים.
+ * @param {{
+ *   title: string,
+ *   subtitle?: string,
+ *   hoverText?: string,
+ *   cta?: string,
+ *   gradient?: string,
+ *   logo?: string,
+ *   mainImage?: string,
+ *   landing?: any,
+ *   submittedBy?: { id?: string, email?: string, name?: string },
+ *   payment?: string,
+ *   requestedDurationDays?: number
+ * }} payload
+ * @returns {Promise<SubmittedAd>}
+ */
+export async function submitAd(payload) {
+	const landing = {
+		...(payload.landing ?? emptyLanding()),
+		_payment: payload.payment === 'code' ? 'code' : 'pending',
+		_requestedDurationDays: Number(payload.requestedDurationDays) === 180 ? 180 : 30
+	};
+	const res = await api(ENDPOINT, {
+		method: 'POST',
+		body: JSON.stringify({
+			data: {
+				ad_status: 'pending',
+				title: payload.title,
+				subtitle: payload.subtitle ?? '',
+				hover_text: payload.hoverText ?? '',
+				cta: payload.cta ?? '',
+				gradient: payload.gradient ?? '',
+				logo: payload.logo ?? '',
+				main_image: payload.mainImage ?? '',
+				landing,
+				submitted_by_id: payload.submittedBy?.id ?? null,
+				submitted_by_email: payload.submittedBy?.email ?? null,
+				submitted_by_name: payload.submittedBy?.name ?? null,
+				submitted_at: new Date().toISOString()
+			}
+		})
+	});
+	if (!res.ok) throw new Error(`strapi submitAd → ${res.status}`);
+	invalidateAds();
+	const data = await res.json();
+	return fromStrapi(data.data);
+}
+
+/**
  * אישור ופרסום: קובע תאריך תפוגה לפי durationDays (ברירת מחדל 30 יום).
  * @param {string} id @param {string} decidedBy @param {number} [durationDays]
  * @returns {Promise<SubmittedAd|null>}
@@ -182,7 +243,10 @@ export async function getAd(id) {
 export async function approveAd(id, decidedBy, durationDays) {
 	const existing = await findByDocumentId(id);
 	if (!existing) return null;
-	const days = durationDays ?? existing.duration_days ?? DEFAULT_DURATION_DAYS;
+	// ברירת מחדל: התקופה שהמפרסם ביקש בשליחה (landing._requestedDurationDays)
+	const requested =
+		Number(existing.landing?._requestedDurationDays) === 180 ? 180 : DEFAULT_DURATION_DAYS;
+	const days = durationDays ?? existing.duration_days ?? requested;
 	const now = new Date();
 	const expires = new Date(now.getTime() + days * DAY_MS);
 	const res = await api(`${ENDPOINT}/${encodeURIComponent(id)}`, {

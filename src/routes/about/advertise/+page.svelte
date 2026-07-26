@@ -4,7 +4,7 @@
 	// שומר על המבנה, העיצוב והזרימה של דף הפרסום, אך בלי התשתיות
 	// הספציפיות ל-community: בורר הערים/שכונות, קרן המעשר (CoinAnimation),
 	// ו-endpoint שליחת המייל. במקומם: מחיר טבלה שטוח (ללא הכפלה בשכונות),
-	// שליחת תיעוד ההזמנה ב-mailto, וקישורי בילדר לאתר הקהילה.
+	// שליחת תיעוד ההזמנה ב-mailto, ובילדר פרסומות מקומי (/advertise/builder).
 	//
 	// כל הטקסט (עברית) מוטמע ישירות ב-markup — לא דרך $lib/i18n. הדף בעברית בלבד.
 	// המרה מ-TS ל-JS + Svelte 5 runes.
@@ -14,14 +14,13 @@
 	import {
 		DEFAULT_DISCOUNT_CODES,
 		FREE_PROMO,
-		FREE_PROMO_CODE_TEXT,
 		FREE_PROMO_DISCOUNT,
 		evaluateDiscount,
 		discountAmount
 	} from './discountCodes.js';
 
-	// קישור הבילדר של הקהילה (index אינו כולל בילדר משלו).
-	const BUILDER_URL = 'https://community.gofreeil.com/about/advertise/builder';
+	// בילדר הפרסומות המקומי — המפרסם נשאר באתר, לא נשלח לאתר הקהילה.
+	const BUILDER_URL = '/advertise/builder';
 	// מספר הוואטסאפ האמיתי של התנועה (050-875-0632).
 	const WA_PHONE = '972508750632';
 	// כתובת המייל ליצירת קשר.
@@ -368,27 +367,18 @@
 		</p>
 	</div>
 
-	{#if FREE_PROMO}
-		<!-- מבצע השקה: פרסום חינם באמצעות קוד בשדה ההנחה -->
-		<div
-			class="mb-10 rounded-2xl border-2 border-green-500/60 bg-gradient-to-br from-green-900/30 to-emerald-900/20 p-6 text-center shadow-lg shadow-green-500/10"
-			style="animation: slideDown 0.4s ease-out;"
+	<!-- ה-CTA הראשי: קודם מעצבים בבילדר המקומי — התשלום מגיע רק בשלב השליחה -->
+	<div class="mb-10 text-center">
+		<a
+			href={BUILDER_URL}
+			class="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-pink-600 px-8 py-4 text-lg font-black text-white shadow-xl transition-all hover:scale-[1.02] hover:opacity-90"
 		>
-			<div class="mb-2 text-4xl">🎉</div>
-			<h2 class="mb-2 text-2xl font-black text-green-300 md:text-3xl">
-				בתקופה הראשונית - הפרסום חינם!
-			</h2>
-			<p class="text-base leading-relaxed text-gray-200 md:text-lg">
-				בשדה קוד ההנחה שבתחתית הדף רשמו
-				<span
-					class="inline-block rounded-lg border border-green-400/50 bg-green-500/20 px-3 py-0.5 font-black whitespace-nowrap text-green-200"
-					>"{FREE_PROMO_CODE_TEXT}"</span
-				>
-				<br class="hidden md:block" />
-				ותוכלו להעלות את הפרסום <span class="font-black text-green-300">ללא תשלום</span>.
-			</p>
-		</div>
-	{/if}
+			🎨 לעיצוב הפרסומת — מתחילים כאן
+		</a>
+		<p class="mt-3 text-sm text-gray-400">
+			קודם מעצבים את הפרסומת צעד-צעד — עניין התשלום מגיע רק בשלב השליחה.
+		</p>
+	</div>
 
 	<!-- Packages -->
 	<h2 class="mb-4 text-center text-xl font-black text-white md:text-2xl">אפשרויות הפרסום</h2>
@@ -1200,15 +1190,9 @@
 			>
 				🎟️ קוד הנחה
 			</label>
-			{#if FREE_PROMO}
-				<p class="mb-2.5 text-right text-xs font-bold text-green-300 md:text-sm">
-					🎉 בתקופה הראשונית: רשמו כאן "{FREE_PROMO_CODE_TEXT}" והעלאת הפרסום חינם - ללא תשלום.
-				</p>
-			{:else}
-				<p class="mb-2.5 text-right text-xs text-gray-400">
-					יש לך קוד הנחה? הזן/י אותו כאן והסכום יתעדכן אוטומטית.
-				</p>
-			{/if}
+			<p class="mb-2.5 text-right text-xs text-gray-400">
+				יש לך קוד הנחה? הזן/י אותו כאן והסכום יתעדכן אוטומטית.
+			</p>
 			<input
 				id="discount-code"
 				type="text"
@@ -1257,8 +1241,6 @@
 				<p class="mb-5 text-sm text-gray-300">הקוד התקבל - אפשר להעלות את הפרסום ללא כל עלות.</p>
 				<a
 					href={BUILDER_URL}
-					target="_blank"
-					rel="noopener noreferrer"
 					class="inline-flex items-center justify-center gap-2 rounded-xl bg-green-600 px-7 py-3.5 text-base font-black text-white shadow-lg shadow-green-500/20 transition-all hover:scale-105 hover:bg-green-500"
 				>
 					🎨 להעלות את הפרסום בחינם
@@ -1312,8 +1294,6 @@
 					</a>
 					<a
 						href={BUILDER_URL}
-						target="_blank"
-						rel="noopener noreferrer"
 						class="inline-flex items-center justify-center gap-2 rounded-xl bg-green-600 px-6 py-3 text-sm font-black text-white transition-all hover:scale-105 hover:bg-green-500"
 					>
 						🎨 כבר שילמתי - לבנות את הפרסומת
@@ -1341,8 +1321,6 @@
 						<li>
 							תועברו אוטומטית ל<a
 								href={BUILDER_URL}
-								target="_blank"
-								rel="noopener noreferrer"
 								class="font-bold text-amber-300 underline hover:text-amber-200">בילדר הפרסומת</a
 							> - שלב אחר שלב, עם תצוגה מקדימה חיה.
 						</li>
