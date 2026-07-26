@@ -249,7 +249,7 @@
 		<main id="main-content" tabindex="-1" class="main-content">
 			{@render children()}
 		</main>
-		<AdsSidebar />
+		<AdsSidebar approvedAds={data.approvedAds ?? []} />
 	</div>
 
 	<Footer />

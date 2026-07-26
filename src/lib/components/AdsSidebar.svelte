@@ -85,23 +85,35 @@
 				class="group relative block overflow-hidden rounded-lg shadow-lg transition-transform hover:scale-105"
 			>
 				<div class="relative overflow-hidden" style="height: {ad.imageHeight ?? '160px'}">
-					<div class="absolute inset-0 overflow-hidden">
-						<img
-							src={ad.image}
-							alt={ad.title}
-							loading="lazy"
-							decoding="async"
-							class="h-full w-full object-cover transition-opacity duration-[1500ms] group-hover:opacity-0"
-						/>
-					</div>
-					<div
-						class="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 backdrop-blur-sm transition-opacity duration-[1500ms] group-hover:opacity-100"
-					>
-						<div class="relative z-10 px-4 text-center">
-							<h3 class="mb-1 text-base font-bold text-white">{ad.title}</h3>
-							<p class="text-xs text-gray-200">{ad.description}</p>
+					{#if ad.image}
+						<div class="absolute inset-0 overflow-hidden">
+							<img
+								src={ad.image}
+								alt={ad.title}
+								loading="lazy"
+								decoding="async"
+								class="h-full w-full object-cover transition-opacity duration-[1500ms] group-hover:opacity-0"
+							/>
 						</div>
-					</div>
+						<div
+							class="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 backdrop-blur-sm transition-opacity duration-[1500ms] group-hover:opacity-100"
+						>
+							<div class="relative z-10 px-4 text-center">
+								<h3 class="mb-1 text-base font-bold text-white">{ad.title}</h3>
+								<p class="text-xs text-gray-200">{ad.description}</p>
+							</div>
+						</div>
+					{:else}
+						<!-- פרסומת ללא תמונה — גרדיאנט עם הכותרת והתיאור -->
+						<div
+							class="absolute inset-0 flex items-center justify-center bg-gradient-to-br {ad.color} px-3 text-center"
+						>
+							<div>
+								<h3 class="mb-1 text-base font-bold text-white">{ad.title}</h3>
+								<p class="text-xs text-gray-100/90">{ad.description}</p>
+							</div>
+						</div>
+					{/if}
 				</div>
 				<div class="group/cta relative bg-gradient-to-r {ad.color} p-3 text-center">
 					<p class="text-xs leading-tight font-bold text-white">{ad.cta}</p>

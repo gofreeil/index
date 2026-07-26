@@ -9,6 +9,14 @@ export function mediaUrl(m) {
 	return url.startsWith('http') ? url : MEDIA_BASE + url;
 }
 
+/** תוויות סטטוס בעברית + צבעי pill — לפאנל הניהול. */
+export const STATUS_HE = /** @type {Record<string, [string, string]>} */ ({
+	pending: ['ממתין', 'bg-blue-900/40 text-blue-300 border-blue-500/30'],
+	approved: ['מאושר', 'bg-green-900/40 text-green-300 border-green-500/30'],
+	rejected: ['נדחה', 'bg-red-900/40 text-red-300 border-red-500/30'],
+	frozen: ['מוקפא', 'bg-gray-800 text-gray-300 border-gray-600/40']
+});
+
 /** @param {any} b רשומת idx-business מ-Strapi (מבנה שטוח של Strapi 5) */
 export function toBusiness(b) {
 	const logo = mediaUrl(b.logo) || (b.logo_url ? String(b.logo_url).trim() : '');

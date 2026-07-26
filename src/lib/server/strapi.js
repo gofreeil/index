@@ -128,11 +128,28 @@ export async function strapiGoogleUpsert(email, name) {
 
 // ── Businesses (idx-business) ────────────────────────────────
 
-/** @param {any} me */
+const OWNER_EMAIL = 'yahavanter@gmail.com';
+
+/**
+ * סופר-אדמין — בעל האתר או app_role=super_admin. בנוסף לכל סמכויות האדמין,
+ * רשאי גם למחוק רשומות לצמיתות (עסקים, פרסומות, ביקורות, דיווחים).
+ * @param {any} me
+ */
+const isSuperAdmin = (me) => {
+	const email = String(me?.email ?? '')
+		.trim()
+		.toLowerCase();
+	return email === OWNER_EMAIL || me?.app_role === 'super_admin';
+};
+export { isSuperAdmin };
+
+/**
+ * אדמין (או סופר-אדמין) — רשאי לאשר/לדחות/להקפיא עסקים ופרסומות ולערוך כרטיסיות.
+ * @param {any} me
+ */
 const isPrivileged = (me) => {
-	const email = String(me?.email ?? '').trim().toLowerCase();
-	if (email === 'yahavanter@gmail.com') return true;
-	return ['super_admin', 'idx_admin', 'ch_admin'].includes(me?.app_role);
+	if (isSuperAdmin(me)) return true;
+	return ['idx_admin', 'ch_admin'].includes(me?.app_role);
 };
 export { isPrivileged };
 
@@ -260,6 +277,48 @@ export async function setStatus(kind, documentId, status) {
 		body: JSON.stringify({ data: { status } })
 	});
 }
+
+/**
+ * מחיקה לצמיתות — סופר-אדמין בלבד (נאכף ב-actions של הפאנל).
+ * @param {'business'|'review'|'report'} kind @param {string} documentId
+ */
+export async function deleteItem(kind, documentId) {
+	const path = COLLECTION[kind];
+	if (!path) throw new Error(`kind לא ידוע: ${kind}`);
+	const res = await api(`/api/${path}/${encodeURIComponent(documentId)}`, { method: 'DELETE' });
+	if (!res.ok && res.status !== 204) {
+		const text = await res.text().catch(() => '');
+		throw new Error(`strapi DELETE ${path} → ${res.status} ${text.slice(0, 200)}`);
+	}
+}
+
+// ── ניהול כרטיסיות (פאנל /admin) ─────────────────────────────
+
+/** כל העסקים בכל סטטוס — לטאב "כרטיסיות". @returns {Promise<any[]>} */
+export async function listAllBusinesses() {
+	const qs = `${BIZ_POPULATE}&sort=createdAt:desc&pagination[pageSize]=1000`;
+	const data = await apiJson(`/api/idx-businesses?${qs}`);
+	return Array.isArray(data?.data) ? data.data : [];
+}
+
+/** עסק בודד בכל סטטוס (לעמוד העריכה בפאנל). @param {string} documentId */
+export async function getBusinessAdmin(documentId) {
+	const res = await api(`/api/idx-businesses/${encodeURIComponent(documentId)}?${BIZ_POPULATE}`);
+	if (!res.ok) return null;
+	const data = await res.json().catch(() => null);
+	return data?.data ?? null;
+}
+
+/** עדכון שדות עסק מפאנל הניהול. @param {string} documentId @param {Record<string,any>} data */
+export async function updateBusiness(documentId, data) {
+	return apiJson(`/api/idx-businesses/${encodeURIComponent(documentId)}`, {
+		method: 'PUT',
+		body: JSON.stringify({ data })
+	});
+}
+
+// ── Ads — ראו src/lib/server/adsStore.js ─────────────────────
+// ניהול הפרסומות (submitted-ads) פורט מהקהילה וחי בקובץ נפרד.
 
 /**
  * חישוב-מחדש של דירוג העסק מהביקורות המאושרות שלו (best-effort). נקרא אחרי
