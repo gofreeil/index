@@ -139,6 +139,7 @@
 	let fading = $state(false);
 
 	onMount(() => {
+		/** @type {ReturnType<typeof setTimeout> | undefined} */
 		let fadeTimer;
 		// דעיכה החוצה → החלפת הקבוצה בזמן שהטור שקוף → דעיכה פנימה.
 		// כך אין קפיצה: המשבצות לא מתחלפות מול העין אלא מתוך שקיפות מלאה.
