@@ -61,7 +61,7 @@
 	<header class="bg-gradient-to-br {ad.gradient} px-4 py-8 md:py-12">
 		<div
 			class="mx-auto grid max-w-5xl items-center gap-6 text-center {heroImage
-				? 'md:grid-cols-[minmax(0,1fr)_minmax(0,20rem)] md:text-right'
+				? 'md:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] md:text-right'
 				: ''}"
 		>
 			<div class="min-w-0">
@@ -69,7 +69,7 @@
 					<img
 						src={ad.logo}
 						alt=""
-						class="mb-3 h-14 w-14 rounded-2xl bg-white/10 object-contain p-2 {heroImage
+						class="mb-3 h-[68px] w-[68px] rounded-2xl bg-white/10 object-contain p-2 md:h-[88px] md:w-[88px] {heroImage
 							? 'mx-auto md:mx-0'
 							: 'mx-auto'}"
 					/>
@@ -134,7 +134,7 @@
 					<img
 						src={heroImage}
 						alt={ad.title}
-						class="mx-auto block max-h-[19rem] w-auto max-w-full rounded-2xl shadow-2xl"
+						class="mx-auto block max-h-[17rem] w-auto max-w-full rounded-2xl shadow-2xl md:max-h-[27rem]"
 					/>
 				</div>
 			{/if}
