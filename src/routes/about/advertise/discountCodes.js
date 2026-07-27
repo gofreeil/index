@@ -53,12 +53,13 @@ export const DEFAULT_DISCOUNT_CODES = [
 ];
 
 // ---- מבצע השקה: פרסום חינם עם קוד בשדה ההנחה ----
-// FREE_PROMO = true  → מוצגת מודעת מבצע, והקוד "יוצאים לחירות" נותן פטור מלא.
-// לעצירת המבצע: לשנות ל-false.
-export const FREE_PROMO = true;
+// כבוי לצמיתות: קוד הבעלים עבר לאימות בצד השרת בלבד
+// (ADS_OWNER_CODE, ראו $lib/server/adsCode.js) — קוד שנבדק בצד
+// הלקוח מופיע בהכרח בקוד המקור הציבורי ולכן אינו סודי.
+export const FREE_PROMO = false;
 
-/** המילים שהמשתמש מקליד בשדה ההנחה כדי לקבל פטור מלא */
-export const FREE_PROMO_CODE_TEXT = 'יוצאים לחירות';
+/** ריק — הקוד לא נמצא יותר בקוד הלקוח */
+export const FREE_PROMO_CODE_TEXT = '';
 
 /** @type {DiscountCode} */
 export const FREE_PROMO_DISCOUNT = {
@@ -68,7 +69,7 @@ export const FREE_PROMO_DISCOUNT = {
 	kind: 'free',
 	percent: 100,
 	requiresCoordinator: false,
-	active: true,
+	active: false,
 	note: 'קוד מבצע ההשקה.'
 };
 

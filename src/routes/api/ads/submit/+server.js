@@ -1,5 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import { submitAd } from '$lib/server/adsStore.js';
+import { isOwnerCode, notifyOwnerCodeUse } from '$lib/server/adsCode.js';
 
 // קליטת פרסומת חדשה מהבילדר המקומי (/advertise/builder) — נשמרת באוסף
 // submitted-ads המשותף במצב "ממתינה לאישור". אין דרישת התחברות —
@@ -24,6 +25,9 @@ export async function POST({ request, locals }) {
 	}
 
 	const user = locals.user;
+	// הקוד מאומת כאן, בשרת — לא סומכים על דגל payment מהדפדפן
+	const usedOwnerCode = isOwnerCode(payload.ownerCode);
+	const requestedDurationDays = Number(payload.requestedDurationDays) === 180 ? 180 : 30;
 	try {
 		const ad = await submitAd({
 			submittedBy: user
@@ -35,9 +39,8 @@ export async function POST({ request, locals }) {
 				: undefined,
 			title: payload.title,
 			subtitle: payload.subtitle,
-			// "code" = הוזן קוד התנועה בשליחה — נשלח כמי ששולם; אחרת התשלום לתיאום
-			payment: payload.payment === 'code' ? 'code' : 'pending',
-			requestedDurationDays: Number(payload.requestedDurationDays) === 180 ? 180 : 30,
+			payment: usedOwnerCode ? 'code' : 'pending',
+			requestedDurationDays,
 			hoverText: payload.hoverText ?? '',
 			cta: payload.cta ?? '',
 			gradient: payload.gradient,
@@ -63,6 +66,14 @@ export async function POST({ request, locals }) {
 				products: Array.isArray(payload.landing.products) ? payload.landing.products : []
 			}
 		});
+		// התראה לבעלים על שימוש בקוד — לא חוסמת ולא מפילה את ההגשה
+		if (usedOwnerCode) {
+			await notifyOwnerCodeUse({
+				adTitle: payload.title,
+				durationDays: requestedDurationDays,
+				submitter: user ? { name: user.name ?? '', email: user.email ?? '' } : null
+			});
+		}
 		return json({ ok: true, id: ad.id, status: ad.status });
 	} catch (err) {
 		console.error('ads/submit failed:', err);
