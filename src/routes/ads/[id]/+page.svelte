@@ -1,10 +1,52 @@
 <script>
 	// דף הנחיתה של פרסומת — פורט מ-community/my_new_project/src/routes/ads/[id].
+	// עיצוב מינימליסטי: הכותרת, משפט הפתיחה והיתרונות יושבים *ליד* התמונה
+	// ולא מתחתיה — כדי לחסוך גלילה. הגולש רואה את כל העיקר במסך הראשון.
 	/** @type {{ data: any }} */
 	let { data } = $props();
 
 	const ad = $derived(data.ad);
 	const lp = $derived(ad.landing ?? {});
+
+	const heroImage = $derived(lp.image || ad.mainImage || '');
+	const advList = $derived(
+		(lp.advantages ?? []).filter((/** @type {string} */ a) => a?.trim())
+	);
+
+	// "אם נכנס בצורה סמטרית" — היתרונות נכנסים לטור שליד התמונה רק כשמשפט
+	// הפתיחה קצר; אחרת הטור היה גבוה מהתמונה, ואז הם יורדים לשורה רחבה מתחת.
+	// נמדד לפי האורך *המוצג* — כתובות ארוכות מתכווצות לגלולה עם שם האתר.
+	const pitchLength = $derived(
+		segments(lp.pitch).reduce((/** @type {number} */ n, s) => n + s.text.length, 0)
+	);
+	const advInHero = $derived(Boolean(heroImage) && advList.length > 0 && pitchLength <= 300);
+
+	// כתובות שהמפרסם הדביק בתוך הטקסט הופכות לגלולת קישור קצרה (שם האתר)
+	// במקום שורות ארוכות של URL שמנפחות את הדף.
+	/** @param {string} raw */
+	function segments(raw) {
+		const text = String(raw ?? '');
+		/** @type {Array<{ text: string, url: string }>} */
+		const out = [];
+		let last = 0;
+		for (const m of text.matchAll(/https?:\/\/\S+/g)) {
+			const start = m.index ?? 0;
+			const url = m[0].replace(/[.,;:!?)\]]+$/, '');
+			if (start > last) out.push({ text: text.slice(last, start), url: '' });
+			out.push({ text: linkLabel(url), url });
+			last = start + url.length;
+		}
+		if (last < text.length) out.push({ text: text.slice(last), url: '' });
+		return out;
+	}
+	/** @param {string} url */
+	function linkLabel(url) {
+		try {
+			return new URL(url).hostname.replace(/^www\./, '');
+		} catch {
+			return url;
+		}
+	}
 </script>
 
 <svelte:head>
@@ -12,58 +54,135 @@
 	<meta name="description" content={ad.subtitle || ad.title} />
 </svelte:head>
 
-<div class="min-h-screen text-white" dir="rtl">
-	<header class="relative bg-gradient-to-br {ad.gradient} px-4 py-12 text-center md:py-20">
-		{#if ad.logo}
-			<img
-				src={ad.logo}
-				alt=""
-				class="mx-auto mb-4 h-20 w-20 rounded-2xl bg-white/10 object-contain p-2"
-			/>
-		{/if}
-		<h1 class="mb-2 text-3xl font-black drop-shadow md:text-5xl">{lp.headline || ad.title}</h1>
-		{#if lp.pitch}
-			<p class="mx-auto max-w-2xl text-base opacity-95 md:text-xl">{lp.pitch}</p>
-		{/if}
-		{#if ad.mainImage}
-			<img
-				src={ad.mainImage}
-				alt={ad.title}
-				class="mx-auto mt-6 max-h-72 rounded-2xl object-cover shadow-2xl md:max-h-96"
-			/>
-		{/if}
-	</header>
+{#snippet rich(/** @type {string} */ raw)}{#each segments(raw) as s}{#if s.url}<a href={s.url} target="_blank" rel="noopener noreferrer" class="inline-block rounded-full bg-white/20 px-2 text-sm font-bold whitespace-nowrap hover:bg-white/30">{s.text} ↗</a>{:else}{s.text}{/if}{/each}{/snippet}
 
-	<main class="mx-auto max-w-3xl space-y-8 px-4 py-8 md:py-12">
-		{#if lp.advantages?.some((/** @type {string} */ a) => a?.trim())}
-			<section>
-				<ul class="mx-auto grid max-w-xl gap-3">
-					{#each lp.advantages as a, i (i)}
-						{#if a?.trim()}
-							<li class="flex items-center gap-3 px-2 py-1">
+<div class="min-h-screen text-white" dir="rtl">
+	<!-- קומה 1+2+3 — הכל במסך הראשון, ליד התמונה -->
+	<header class="bg-gradient-to-br {ad.gradient} px-4 py-8 md:py-12">
+		<div
+			class="mx-auto grid max-w-5xl items-center gap-6 text-center {heroImage
+				? 'md:grid-cols-[minmax(0,1fr)_minmax(0,20rem)] md:text-right'
+				: ''}"
+		>
+			<div class="min-w-0">
+				{#if ad.logo}
+					<img
+						src={ad.logo}
+						alt=""
+						class="mb-3 h-14 w-14 rounded-2xl bg-white/10 object-contain p-2 {heroImage
+							? 'mx-auto md:mx-0'
+							: 'mx-auto'}"
+					/>
+				{/if}
+				<h1 class="mb-2 text-2xl leading-tight font-black drop-shadow md:text-4xl">
+					{lp.headline || ad.title}
+				</h1>
+				{#if lp.pitch}
+					<p class="text-base whitespace-pre-line opacity-95 [overflow-wrap:anywhere]">
+						{@render rich(lp.pitch)}
+					</p>
+				{/if}
+
+				{#if advInHero}
+					<ul class="mt-4 grid gap-2 text-right">
+						{#each advList as a, i (i)}
+							<li class="flex items-center gap-2">
 								<span
-									class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br {ad.gradient} font-black"
+									class="flex h-[22px] w-[22px] flex-shrink-0 items-center justify-center rounded-full bg-white/90 text-xs font-black text-gray-900"
 									>✓</span
 								>
-								<span class="text-base">{a}</span>
+								<span class="text-sm font-semibold">{a}</span>
 							</li>
+						{/each}
+					</ul>
+				{/if}
+
+				{#if lp.phone || lp.whatsapp || lp.website}
+					<div
+						class="mt-4 flex flex-wrap justify-center gap-2 {heroImage ? 'md:justify-start' : ''}"
+					>
+						{#if lp.phone}
+							<a
+								href={`tel:${lp.phone}`}
+								class="inline-flex items-center rounded-full bg-white px-4 py-2 font-extrabold text-gray-900"
+								>📞 {lp.phone}</a
+							>
 						{/if}
-					{/each}
-				</ul>
-			</section>
+						{#if lp.whatsapp}
+							<a
+								href={`https://wa.me/${lp.whatsapp.replace(/[^0-9]/g, '')}`}
+								target="_blank"
+								rel="noopener"
+								class="inline-flex items-center rounded-full bg-emerald-600 px-4 py-2 font-extrabold text-white"
+								>וואטסאפ</a
+							>
+						{:else if lp.website}
+							<a
+								href={lp.website}
+								target="_blank"
+								rel="noopener"
+								class="inline-flex items-center rounded-full border border-white/35 bg-white/15 px-4 py-2 font-extrabold"
+								>לאתר ←</a
+							>
+						{/if}
+					</div>
+				{/if}
+			</div>
+
+			{#if heroImage}
+				<div class="min-w-0">
+					<img
+						src={heroImage}
+						alt={ad.title}
+						class="mx-auto block max-h-[19rem] w-auto max-w-full rounded-2xl shadow-2xl"
+					/>
+				</div>
+			{/if}
+		</div>
+	</header>
+
+	<main class="mx-auto max-w-5xl space-y-6 px-4 py-6 md:py-8">
+		<!-- יתרונות — רק אם לא נכנסו ליד התמונה; שורה רחבה, לא רשימה גבוהה -->
+		{#if advList.length && !advInHero}
+			<ul class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+				{#each advList as a, i (i)}
+					<li class="flex items-center gap-2">
+						<span
+							class="flex h-[22px] w-[22px] flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br {ad.gradient} text-xs font-black"
+							>✓</span
+						>
+						<span class="text-sm font-semibold">{a}</span>
+					</li>
+				{/each}
+			</ul>
 		{/if}
 
-		{#if lp.extended}
-			<section>
-				<h2 class="mb-2 text-xl font-black">הסיפור שלנו</h2>
-				<p class="whitespace-pre-line text-gray-200">{lp.extended}</p>
-			</section>
+		<!-- הסיפור + הייחוד זה לצד זה, במקום שתי קומות נפרדות -->
+		{#if lp.extended || lp.uniqueness}
+			<div class="grid gap-6 md:grid-cols-2">
+				{#if lp.extended}
+					<section>
+						<h2 class="mb-2 text-lg font-black">הסיפור שלנו</h2>
+						<p class="text-sm whitespace-pre-line text-gray-200 [overflow-wrap:anywhere]">
+							{@render rich(lp.extended)}
+						</p>
+					</section>
+				{/if}
+				{#if lp.uniqueness}
+					<section>
+						<h2 class="mb-2 text-lg font-black">מה מייחד אותנו</h2>
+						<p class="text-sm whitespace-pre-line text-gray-200 [overflow-wrap:anywhere]">
+							{@render rich(lp.uniqueness)}
+						</p>
+					</section>
+				{/if}
+			</div>
 		{/if}
 
 		{#if lp.products?.length}
 			<section>
-				<h2 class="mb-3 text-xl font-black">מוצרים / שירותים</h2>
-				<div class="grid gap-3 sm:grid-cols-2">
+				<h2 class="mb-3 text-lg font-black">מוצרים / שירותים</h2>
+				<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
 					{#each lp.products as p (p.id)}
 						<article class="flex gap-3 rounded-xl border border-white/10 bg-white/5 p-3">
 							{#if p.image}
@@ -80,41 +199,49 @@
 			</section>
 		{/if}
 
-		{#if lp.uniqueness}
-			<section>
-				<h2 class="mb-2 text-xl font-black">מה מייחד אותנו</h2>
-				<p class="whitespace-pre-line text-gray-200">{lp.uniqueness}</p>
-			</section>
-		{/if}
-
-		<section class="rounded-2xl border border-white/10 bg-white/5 p-4 md:p-6">
-			<h2 class="mb-3 text-xl font-black">פרטי קשר</h2>
-			<div class="grid gap-2 text-sm sm:grid-cols-2">
-				{#if lp.phone}<div>
-						📞 <a href={`tel:${lp.phone}`} class="text-amber-300 hover:underline">{lp.phone}</a>
-					</div>{/if}
-				{#if lp.whatsapp}<div>
-						💬 <a
-							href={`https://wa.me/${lp.whatsapp.replace(/[^0-9]/g, '')}`}
-							target="_blank"
-							rel="noopener"
-							class="text-emerald-300 hover:underline">{lp.whatsapp}</a
-						>
-					</div>{/if}
-				{#if lp.email}<div>
-						✉️ <a href={`mailto:${lp.email}`} class="text-amber-300 hover:underline">{lp.email}</a>
-					</div>{/if}
-				{#if lp.website}<div>
-						🌐 <a
-							href={lp.website}
-							target="_blank"
-							rel="noopener"
-							class="text-amber-300 hover:underline">{lp.website}</a
-						>
-					</div>{/if}
-				{#if lp.address}<div>📍 {lp.address}</div>{/if}
-				{#if lp.hours}<div>🕒 {lp.hours}</div>{/if}
+		<!-- פרטי קשר — שורת גלולות, לא רשימה מתמשכת -->
+		<section class="text-center">
+			<div class="flex flex-wrap justify-center gap-2">
+				{#if lp.phone}
+					<a
+						href={`tel:${lp.phone}`}
+						class="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm font-bold hover:border-amber-300/45 hover:text-amber-200"
+						>📞 {lp.phone}</a
+					>
+				{/if}
+				{#if lp.whatsapp}
+					<a
+						href={`https://wa.me/${lp.whatsapp.replace(/[^0-9]/g, '')}`}
+						target="_blank"
+						rel="noopener"
+						class="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm font-bold hover:border-amber-300/45 hover:text-amber-200"
+						>💬 {lp.whatsapp}</a
+					>
+				{/if}
+				{#if lp.email}
+					<a
+						href={`mailto:${lp.email}`}
+						class="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm font-bold hover:border-amber-300/45 hover:text-amber-200"
+						>✉️ {lp.email}</a
+					>
+				{/if}
+				{#if lp.website}
+					<a
+						href={lp.website}
+						target="_blank"
+						rel="noopener"
+						class="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm font-bold hover:border-amber-300/45 hover:text-amber-200"
+						>🌐 {linkLabel(lp.website)}</a
+					>
+				{/if}
 			</div>
+			{#if lp.address || lp.hours}
+				<p class="mt-3 text-xs text-gray-400">
+					{#if lp.address}📍 {lp.address}{/if}{#if lp.address && lp.hours}
+						·
+					{/if}{#if lp.hours}🕒 {lp.hours}{/if}
+				</p>
+			{/if}
 		</section>
 
 		<p class="text-center">
