@@ -3,6 +3,9 @@
 	import { fade, fly } from 'svelte/transition';
 	import { lang, translations } from '$lib/i18n';
 	import { authUser } from '$lib/auth';
+	import JsonLd from '$lib/components/JsonLd.svelte';
+	import Seo from '$lib/components/Seo.svelte';
+	import { SITE_NAME, DEFAULT_OG_IMAGE, professionalSchema, breadcrumbSchema } from '$lib/seo';
 
 	/** @type {{ data: any }} */
 	let { data } = $props();
@@ -119,16 +122,67 @@
 			reviewError = 'שגיאה בשליחת חוות הדעת';
 		}
 	}
+
+	/* ═══════════ SEO ═══════════
+	   דף עסק הוא דף הנחיתה שאמור להיתפס בחיפושים כמו "חשמלאי בפתח תקווה".
+	   לכן הכותרת נושאת גם את התחום וגם את העיר, והתיאור נבנה מהתוכן האמיתי
+	   של העסק — כדי שלא ייווצרו תיאורים כפולים בין דפי עסקים. */
+	const bizPath = $derived(`/business/${business.documentId}`);
+	const bizArea = $derived(business.city || business.sales_area || '');
+	const pageTitle = $derived(
+		[business.name, business.category, bizArea ? `ב${bizArea}` : '']
+			.filter(Boolean)
+			.join(' — ') + ` | ${SITE_NAME}`
+	);
+	const metaDescription = $derived(
+		(
+			business.description ||
+			business.unique_content ||
+			`${business.name}${business.category ? ` — ${business.category}` : ''}${bizArea ? ` ב${bizArea}` : ''}. פרטי התקשרות, אזור שירות, דירוגים וחוות דעת של לקוחות.`
+		)
+			.replace(/\s+/g, ' ')
+			.slice(0, 300) +
+		(business.discount ? ` · הטבה לחברי הקהילה: ${business.discount}`.slice(0, 100) : '')
+	);
+	const bizImage = $derived(business.logo || business.banner || DEFAULT_OG_IMAGE);
+
+	const schemas = $derived([
+		professionalSchema({
+			name: business.name,
+			description: business.description || business.unique_content || undefined,
+			path: bizPath,
+			category: business.category || undefined,
+			phone: business.phone || undefined,
+			website: business.website || undefined,
+			image: business.logo || business.banner || undefined,
+			address: business.address || undefined,
+			city: business.city || undefined,
+			areaServed: business.sales_area || business.city || undefined,
+			lat: business.lat,
+			lng: business.lng,
+			rating: avgRating,
+			ratingCount: ratingCount,
+			sameAs: [business.facebook, business.instagram, business.youtube].filter(Boolean)
+		}),
+		breadcrumbSchema([
+			{ name: 'אינדקס בעלי מקצוע', path: '/' },
+			...(business.category ? [{ name: business.category, path: '/' }] : []),
+			{ name: business.name, path: bizPath }
+		])
+	]);
 </script>
 
-<svelte:head>
-	<title>{business.name} - {t.title}</title>
-	<meta name="description" content={business.description || t.subtitle} />
-	<meta property="og:title" content="{business.name} - {t.title}" />
-	<meta property="og:description" content={business.description || t.subtitle} />
-	{#if business.logo}<meta property="og:image" content={business.logo} />{/if}
-	<meta property="og:type" content="business.business" />
-</svelte:head>
+<Seo
+	title={pageTitle}
+	description={metaDescription}
+	path={bizPath}
+	image={bizImage}
+	type="business.business"
+	keywords={[business.category, business.city, business.name, 'בעל מקצוע מומלץ', 'דירוג וחוות דעת']
+		.filter(Boolean)
+		.join(', ')}
+/>
+<JsonLd data={schemas} />
 
 <main class="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
 	<a href="/" class="mb-6 inline-flex items-center gap-1 text-sm text-blue-400 hover:underline"

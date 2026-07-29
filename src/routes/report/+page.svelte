@@ -1,4 +1,5 @@
 <script>
+	import Seo from '$lib/components/Seo.svelte';
 	import { enhance } from '$app/forms';
 	import { onMount } from 'svelte';
 
@@ -20,10 +21,12 @@
 	];
 </script>
 
-<svelte:head>
-	<title>דיווח על עסק - מדריך בעלי מקצוע כשירים</title>
-	<meta name="robots" content="noindex" />
-</svelte:head>
+<Seo
+	title="דיווח על עסק - מדריך בעלי מקצוע כשירים"
+	description="טופס דיווח על עסק באינדקס בעלי המקצוע."
+	path="/report"
+	noindex
+/>
 
 <main class="mx-auto max-w-xl px-4 py-10 sm:px-6" dir="rtl">
 	{#if form?.success}

@@ -1,4 +1,5 @@
 <script>
+	import Seo from '$lib/components/Seo.svelte';
 	import { enhance } from '$app/forms';
 	import { onMount } from 'svelte';
 	import { CATEGORIES } from '$lib/categories.js';
@@ -15,10 +16,12 @@
 	const errors = $derived(form?.errors ?? {});
 </script>
 
-<svelte:head>
-	<title>הוספת עסק - מדריך בעלי מקצוע כשירים</title>
-	<meta name="description" content="הצטרפו למדריך בעלי המקצוע הכשירים של יוצאים לחירות" />
-</svelte:head>
+<Seo
+	title="הוספת עסק לאינדקס בעלי המקצוע — רישום חינם"
+	description="בעלי מקצוע: הצטרפו בחינם לאינדקס בעלי המקצוע הכשירים של יוצאים לחירות. מקבלים דף עסק שמופיע בגוגל, עם תיאור, אזור שירות, טלפון, וואטסאפ ודירוגים של לקוחות. התנאי: חתימה על אמנת הקהילה והטבה לחברי הקהילה."
+	path="/submit-business"
+	keywords="הוספת עסק, רישום בעל מקצוע, פרסום עסק חינם, אינדקס בעלי מקצוע"
+/>
 
 <main class="mx-auto max-w-2xl px-4 py-10 sm:px-6" dir="rtl">
 	{#if form?.success}

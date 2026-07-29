@@ -1,11 +1,18 @@
 <script>
 	import { lang, translations } from '$lib/i18n';
+	import Seo from '$lib/components/Seo.svelte';
 
 	let currentLang = $state('he');
 	lang.subscribe((v) => (currentLang = v));
 
 	const t = $derived(/** @type {any} */ (translations)[currentLang]);
 </script>
+
+<Seo
+	title="תנאי שימוש ומדיניות האתר | בעלי מקצוע כשירים"
+	description="תנאי השימוש באינדקס בעלי המקצוע הכשירים: כללי הרישום לבעלי מקצוע, אמנת הקהילה, כתיבת חוות דעת ודירוגים, והאחריות על ההתקשרות בין הלקוח לבעל המקצוע."
+	path="/policy"
+/>
 
 <div class="px-4 py-12 sm:px-6 lg:px-8" dir={t.dir}>
 	<div class="mx-auto max-w-4xl rounded-3xl border border-gray-100 bg-white p-8 shadow-2xl sm:p-16">

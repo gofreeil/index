@@ -1,3 +1,46 @@
-# allow crawling everything by default
+# בעלי מקצוע כשירים — https://index.gofreeil.com
+# סריקה מלאה של האינדקס ושל דפי בעלי המקצוע,
+# חסימה של אזורים אישיים/ניהוליים ושל ה-API.
+
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /admin
+Disallow: /api/
+Disallow: /auth/
+Disallow: /profile
+Disallow: /report
+Disallow: /advertise/builder
+Disallow: /ads/
+
+# בוטים של AI (ChatGPT, Claude, Perplexity, Gemini) — מורשים לסרוק ולצטט
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+Sitemap: https://index.gofreeil.com/sitemap.xml

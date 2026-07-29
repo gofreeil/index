@@ -48,27 +48,12 @@
 <svelte:head>
 	<link rel="icon" type="image/png" href="/favicon.png" />
 	<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+	<!-- כותרת גיבוי בלבד: כל דף ציבורי דורס אותה דרך <Seo> ($lib/components/Seo.svelte) -->
 	<title>{t.title} - יוצאים לחירות</title>
-
-	<!-- Meta Tags for Social Media (Open Graph) -->
-	<meta property="og:title" content="מדריך בעלי מקצוע כשירים - יוצאים לחירות" />
-	<meta
-		property="og:description"
-		content="בעלי מקצוע כשירים בהנחות והטבות ייחודיות לחברי יוצאים לחירות"
-	/>
-	<meta property="og:image" content="/og-image.png?v=2" />
-	<meta property="og:image:width" content="1200" />
-	<meta property="og:image:height" content="630" />
-	<meta property="og:type" content="website" />
-
-	<!-- Twitter Meta Tags -->
-	<meta name="twitter:card" content="summary_large_image" />
-	<meta name="twitter:title" content="מדריך בעלי מקצוע כשירים - יוצאים לחירות" />
-	<meta
-		name="twitter:description"
-		content="בעלי מקצוע כשירים בהנחות והטבות ייחודיות לחברי יוצאים לחירות"
-	/>
-	<meta name="twitter:image" content="/og-image.png?v=2" />
+	<!-- תגי ה-Open Graph / Twitter מוגדרים פר-דף ברכיב <Seo>. תג גלובלי כאן היה
+	     מקדים את הפר-דפי ב-HTML, וכל שיתוף של דף עסק בוואטסאפ היה מציג את שם
+	     האתר במקום את שם העסק. גם מידות התמונה יצאו מכאן: לדף עסק יש לוגו משלו,
+	     ומידות קשיחות היו משקרות לגביו. -->
 </svelte:head>
 
 <a
@@ -99,11 +84,14 @@
 						class="h-8 w-auto rounded-lg object-contain shadow-sm sm:h-14"
 					/>
 					<div class="flex flex-col text-right">
-						<h1
+						<!-- שם המותג בכותרת הוא <p> ולא <h1>: ה-h1 שייך לכותרת הייחודית של כל דף
+						     (שם העסק בדף עסק, כותרת האינדקס בדף הבית). h1 גלובלי זהה בכל הדפים
+						     היה מטשטש לגוגל במה כל דף עוסק. -->
+						<p
 							class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-right text-xs leading-tight font-black text-transparent sm:text-4xl"
 						>
 							מדריך בעלי מקצוע כשירים
-						</h1>
+						</p>
 						<p class="hidden text-right text-sm font-bold text-blue-50/90 sm:block dark:text-white">
 							{t.subtitle}
 						</p>

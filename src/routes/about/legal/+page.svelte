@@ -1,4 +1,5 @@
 <script>
+	import Seo from '$lib/components/Seo.svelte';
 	// דף המסמכים המשפטיים: תנאי שימוש, מדיניות פרטיות ו-Cookies, תקנון האתר והצהרת נגישות.
 	// התוכן המשפטי הארוך מוטמע ישירות ב-markup (עברית), ולא עובר דרך $lib/i18n —
 	// i18n של index הוא אובייקט שטוח וקצר למחרוזות ממשק, לא לתוכן ארוך.
@@ -57,9 +58,11 @@
 	}
 </script>
 
-<svelte:head>
-	<title>תנאי שימוש ומדיניות – מדריך בעלי מקצוע כשירים</title>
-</svelte:head>
+<Seo
+	title="תנאי שימוש, פרטיות ונגישות | בעלי מקצוע כשירים"
+	description="תנאי השימוש, מדיניות הפרטיות והצהרת הנגישות של אינדקס בעלי המקצוע הכשירים של יוצאים לחירות."
+	path="/about/legal"
+/>
 
 <div class="page-bg min-h-screen px-4 py-10" dir="rtl">
 	<div class="mx-auto max-w-4xl">

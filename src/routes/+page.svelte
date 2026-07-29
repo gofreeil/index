@@ -3,18 +3,30 @@
 	import LazyMap from '$lib/components/LazyMap.svelte';
 	import { lang, translations } from '$lib/i18n';
 	import BusinessCard from '$lib/components/BusinessCard.svelte';
-	import SkeletonCard from '$lib/components/SkeletonCard.svelte';
+	import JsonLd from '$lib/components/JsonLd.svelte';
+	import Seo from '$lib/components/Seo.svelte';
 	import { CATEGORIES } from '$lib/categories.js';
 	import { favorites } from '$lib/favorites.js';
+	import {
+		SITE_NAME,
+		SITE_DESCRIPTION,
+		websiteSchema,
+		organizationSchema,
+		serviceSchema,
+		collectionSchema,
+		faqSchema
+	} from '$lib/seo';
+
+	/** @type {{ data: { businesses: any[], loadError: string | null } }} */
+	let { data } = $props();
 
 	let currentLang = $state('he');
 	lang.subscribe((v) => (currentLang = v));
 	const t = $derived(/** @type {any} */ (translations)[currentLang] || translations.he);
 
-	/** @type {any[]} */
-	let businesses = $state([]);
-	let loading = $state(true);
-	let error = $state(null);
+	// הרשימה מגיעה מהשרת (+page.server.js) ולכן מוגשת בתוך ה-HTML לגוגל ול-AI.
+	const businesses = $derived(data.businesses);
+	const error = $derived(data.loadError);
 	let searchTerm = $state('');
 	let selectedCategory = $state('all');
 	let selectedLocation = $state('all');
@@ -26,39 +38,10 @@
 		visibleCount += incrementBy;
 	}
 
-	onMount(async () => {
+	onMount(() => {
 		if (typeof window !== 'undefined' && window.innerWidth < 768) {
 			visibleCount = 6;
 			incrementBy = 12;
-		}
-		try {
-			const response = await fetch('/api/businesses');
-			if (!response.ok) throw new Error('Failed to fetch businesses');
-			const rawData = await response.json();
-			businesses = rawData.map((/** @type {any} */ b) => ({
-				id: b.documentId,
-				documentId: b.documentId,
-				slug: b.slug,
-				name: b.name || 'ללא שם',
-				phone: b.phone || '',
-				category: b.category || '',
-				banners: b.banners || [],
-				banner: b.banner || '',
-				description: b.description || '',
-				discount: b.discount || '',
-				salesArea: b.sales_area || '',
-				address: b.address || '',
-				city: b.city || '',
-				website: b.website || '',
-				logo: b.logo || '',
-				rating: Number(b.rating || 0),
-				lat: typeof b.lat === 'number' ? b.lat : null,
-				lng: typeof b.lng === 'number' ? b.lng : null
-			}));
-		} catch (/** @type {any} */ err) {
-			error = err.message;
-		} finally {
-			loading = false;
 		}
 	});
 
@@ -116,17 +99,83 @@
 		selectedLocation = 'all';
 		searchTerm = '';
 	}
+
+	/* ═══════════ SEO ═══════════
+	   דף הבית הוא דף הכניסה המרכזי מגוגל וממנועי ה-AI: כותרת ותיאור מלאים,
+	   canonical, JSON-LD (WebSite, Organization, Service, ItemList של כל
+	   בעלי המקצוע, FAQ), וכן אינדקס טקסטואלי מלא בתחתית הדף שמקשר לכל עסק. */
+	const pageTitle = `בעלי מקצוע מומלצים ומדורגים בכל הארץ | ${SITE_NAME}`;
+
+	/** כל בעלי המקצוע לפי קטגוריה — לאינדקס הטקסטואלי שבתחתית הדף */
+	const businessesByCategory = $derived.by(() => {
+		/** @type {Map<string, any[]>} */
+		const map = new Map();
+		for (const b of businesses) {
+			const key = b.category || 'אחר';
+			const list = map.get(key);
+			if (list) list.push(b);
+			else map.set(key, [b]);
+		}
+		return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0], 'he'));
+	});
+
+	const faqs = [
+		{
+			q: 'מה זה "בעל מקצוע כשיר"?',
+			a: 'בעל מקצוע שנרשם לאינדקס, חתם על אמנת הקהילה — מחיר הוגן, שירות אמין ואחריות על העבודה — והתחייב להנחה או להטבה ייחודית לחברי הקהילה. הלקוחות מדרגים אותו באתר, והדירוג גלוי לכולם.'
+		},
+		{
+			q: 'איך מוצאים בעל מקצוע באזור שלי?',
+			a: 'בוחרים תחום (חשמל, אינסטלציה, שיפוצים, מזגנים, הובלות, מחשבים, עורכי דין ועוד) ואת העיר או האזור, או מקלידים בחיפוש החופשי. אפשר גם להשתמש במפה כדי לראות מי עובד בסביבה.'
+		},
+		{
+			q: 'האם השירות בתשלום?',
+			a: 'לא. החיפוש והצפייה בפרטי בעלי המקצוע חינמיים לחלוטין, ואין עמלת תיווך — פונים ישירות לבעל המקצוע.'
+		},
+		{
+			q: 'אני בעל מקצוע — איך נרשמים לאינדקס?',
+			a: 'ממלאים את טופס הגשת העסק, מסמנים קבלה של תנאי הקהילה ומציינים את ההטבה לחברי הקהילה. אחרי אישור המערכת מתפרסם דף עסק עם תיאור, תחום, אזור שירות, טלפון, קישורים ודירוגים.'
+		},
+		{
+			q: 'איך הדירוגים נקבעים?',
+			a: 'לקוחות מדרגים בין כוכב אחד לחמישה וכותבים חוות דעת בדף העסק. הדירוג המוצג הוא ממוצע כל חוות הדעת, כך שאף עסק לא יכול "לקנות" דירוג.'
+		}
+	];
+
+	const schemas = $derived([
+		websiteSchema(),
+		organizationSchema(),
+		serviceSchema(),
+		collectionSchema({
+			name: `${SITE_NAME} — אינדקס בעלי המקצוע`,
+			description: SITE_DESCRIPTION,
+			path: '/',
+			numberOfItems: businesses.length,
+			items: businesses.map((b) => ({ name: b.name, path: `/business/${b.id}` }))
+		}),
+		faqSchema(faqs)
+	]);
 </script>
 
+<Seo
+	title={pageTitle}
+	description={SITE_DESCRIPTION}
+	path="/"
+	keywords="בעלי מקצוע, בעל מקצוע מומלץ, אינדקס בעלי מקצוע, חשמלאי, אינסטלטור, שיפוצניק, מזגנים, הובלות, מחשבים, עורך דין, בייביסיטר, דירוג בעלי מקצוע, המלצות"
+/>
+<JsonLd data={schemas} />
+
 <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-	{#if loading}
-		<div class="mb-8 h-12 w-full animate-pulse rounded-xl bg-gray-800"></div>
-		<div class="flex flex-wrap justify-center gap-3 md:grid md:grid-cols-3 md:gap-6">
-			{#each Array(6) as _}
-				<SkeletonCard />
-			{/each}
-		</div>
-	{:else if error}
+	<!-- H1 — הכותרת הראשית של הדף. עד כאן לא היה בדף אף h1, וגוגל לא ידע במה הדף עוסק. -->
+	<h1 class="mb-2 text-center text-2xl font-extrabold text-gray-100 sm:text-4xl">
+		בעלי מקצוע כשירים — מומלצים, מדורגים ובהטבה לחברי הקהילה
+	</h1>
+	<p class="mb-8 text-center text-sm text-gray-400 sm:text-base">
+		{businesses.length} בעלי מקצוע בכל הארץ — חשמל, אינסטלציה, שיפוצים, מזגנים, הובלות, מחשבים,
+		אירועים, יופי וטיפוח, בריאות, עורכי דין ועוד. חיפוש לפי תחום ולפי עיר, בחינם.
+	</p>
+
+	{#if error}
 		<div class="rounded-lg border border-red-800 bg-red-900/20 p-6 text-center">
 			<p class="text-red-400">{t.error}: {error}</p>
 		</div>
@@ -278,5 +327,75 @@
 				</div>
 			{/if}
 		</div>
+
+		<!-- ═══ אינדקס טקסטואלי מלא לפי תחום ═══
+		     הכרטיסים למעלה מוצגים 9 בכל פעם ("טען עוד"), ולכן רובם אינם מקושרים
+		     ב-HTML הראשון. הרשימה הזו מקשרת לכל עסק ועסק בעוגן טקסטואלי, וכך גוגל
+		     מגלה ומאנדקס את כולם — וגם גולש יכול לסרוק את התחום שלו במבט אחד. -->
+		{#if businessesByCategory.length > 0}
+			<nav class="mt-20 border-t border-gray-800 pt-10" aria-labelledby="full-index-title">
+				<h2 id="full-index-title" class="mb-2 text-xl font-extrabold text-gray-100">
+					כל בעלי המקצוע לפי תחום
+				</h2>
+				<p class="mb-6 text-sm text-gray-400">
+					אינדקס מלא של {businesses.length} בעלי המקצוע באתר, מסודר לפי תחום עיסוק.
+				</p>
+				<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+					{#each businessesByCategory as [category, list] (category)}
+						<div>
+							<h3 class="mb-2 text-sm font-bold text-blue-400">{category} ({list.length})</h3>
+							<ul class="space-y-1 text-sm text-gray-400">
+								{#each list as b (b.id)}
+									<li>
+										<a href="/business/{b.id}" class="hover:text-gray-100 hover:underline">
+											{b.name}{b.city ? ` — ${b.city}` : ''}
+										</a>
+									</li>
+								{/each}
+							</ul>
+						</div>
+					{/each}
+				</div>
+			</nav>
+		{/if}
 	{/if}
+
+	<!-- ═══ תוכן SEO: הסבר + שאלות ותשובות ═══
+	     זה הטקסט שגוגל ומנועי ה-AI מצטטים כשמישהו שואל "איך מוצאים בעל מקצוע אמין".
+	     מקביל ל-FAQPage שב-JSON-LD למעלה. -->
+	<section class="mt-20 border-t border-gray-800 pt-10 text-gray-300" aria-labelledby="about-index-title">
+		<h2 id="about-index-title" class="mb-3 text-2xl font-extrabold text-gray-100">
+			אינדקס בעלי מקצוע כשירים — איך זה עובד
+		</h2>
+		<p class="mb-3 leading-relaxed">
+			<strong>בעלי מקצוע כשירים</strong> הוא אינדקס בעלי המקצוע של רשת
+			<a href="https://gofreeil.com" rel="noopener" class="text-blue-400 hover:underline">יוצאים לחירות</a>.
+			כל בעל מקצוע שמופיע כאן חתם על <strong>אמנת הקהילה</strong> — מחיר הוגן, שירות אמין
+			ואחריות על העבודה — והתחייב ל<strong>הנחה או הטבה ייחודית</strong> לחברי הקהילה. הלקוחות
+			מדרגים את בעלי המקצוע וכותבים חוות דעת, כך שהבחירה נעשית לפי ניסיון אמיתי של שכנים
+			ולא לפי מי שקנה את המקום הראשון בפרסום.
+		</p>
+		<p class="mb-3 leading-relaxed">
+			באינדקס תמצאו <strong>חשמלאים</strong>, <strong>אינסטלטורים</strong>,
+			<strong>שיפוצניקים</strong>, טכנאי <strong>מזגנים</strong> ומוצרי חשמל,
+			<strong>הובלות</strong>, טכנאי <strong>מחשבים</strong> ואבטחת מידע, <strong>עורכי דין</strong>
+			ושירותים פיננסיים, <strong>אוכל ומזון</strong> ואירועים, <strong>יופי וטיפוח</strong>,
+			<strong>בריאות ותזונה</strong>, טיפול וייעוץ, חוגים ופנאי ובייביסיטר — בכל הארץ.
+			הפנייה היא ישירה לבעל המקצוע, בלי תיווך ובלי עמלה.
+		</p>
+		<p class="mb-6 leading-relaxed">
+			בעל מקצוע? <a href="/submit-business" class="font-bold text-blue-400 hover:underline">הגישו את העסק לאינדקס</a>
+			וקבלו דף עסק שמופיע בגוגל, עם תיאור, אזור שירות, דירוגים וקישור ישיר לוואטסאפ.
+		</p>
+
+		<h2 class="mb-3 text-xl font-extrabold text-gray-100">שאלות נפוצות</h2>
+		<div class="space-y-2">
+			{#each faqs as f (f.q)}
+				<details class="rounded-xl border border-gray-800 bg-gray-900/60 px-4">
+					<summary class="cursor-pointer py-3 font-bold text-gray-100">{f.q}</summary>
+					<p class="pb-3 text-sm leading-relaxed text-gray-400">{f.a}</p>
+				</details>
+			{/each}
+		</div>
+	</section>
 </div>
