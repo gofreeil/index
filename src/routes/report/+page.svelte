@@ -2,6 +2,7 @@
 	import Seo from '$lib/components/Seo.svelte';
 	import { enhance } from '$app/forms';
 	import { onMount } from 'svelte';
+	import { formDraft, clearDraft, resumeDraft } from '$lib/formDraft';
 
 	/** @type {{ form: any }} */
 	let { form } = $props();
@@ -9,6 +10,21 @@
 	let submitting = $state(false);
 	let renderedAt = $state(0);
 	onMount(() => (renderedAt = Date.now()));
+
+	// טיוטה אוטומטית — דיווח מפורט שנכתב ולא נשלח לא הולך לאיבוד.
+	// חותמת הזמן וה-honeypot שייכים לשליחה הנוכחית ולכן לא נשמרים.
+	const DRAFT_KEY = 'index-report';
+	const DRAFT_EXCLUDE = ['form_rendered_at', 'company_website'];
+	let draftRestored = $state(false);
+	/** @type {HTMLFormElement | null} */
+	let formEl = $state(null);
+
+	function discardDraft() {
+		clearDraft(DRAFT_KEY);
+		resumeDraft(DRAFT_KEY);
+		formEl?.reset();
+		draftRestored = false;
+	}
 
 	const v = $derived(form?.values ?? {});
 	const errors = $derived(form?.errors ?? {});
@@ -56,11 +72,24 @@
 			</div>
 		{/if}
 
+		{#if draftRestored}
+			<div class="mb-5 flex flex-wrap items-center gap-3 rounded-xl border border-green-500/30 bg-green-900/20 px-4 py-3 text-sm text-green-200">
+				<span class="font-bold">💾 שחזרנו את מה שמילאת קודם — הטופס ממשיך מהמקום שעצרת.</span>
+				<button type="button" onclick={discardDraft}
+					class="rounded-full border border-green-500/40 bg-green-900/40 px-3 py-1 text-xs font-bold text-green-100 transition hover:bg-green-800/50">
+					התחל מטופס ריק
+				</button>
+			</div>
+		{/if}
+
 		<form
+			bind:this={formEl}
 			method="POST"
+			use:formDraft={{ key: DRAFT_KEY, exclude: DRAFT_EXCLUDE, onRestore: () => (draftRestored = true) }}
 			use:enhance={() => {
 				submitting = true;
-				return async ({ update }) => {
+				return async ({ result, update }) => {
+					if (result.type === 'redirect' || result.type === 'success') clearDraft(DRAFT_KEY);
 					await update();
 					submitting = false;
 				};
@@ -81,7 +110,7 @@
 				<label for="business_name" class="mb-1 block text-sm font-medium text-gray-300"
 					>שם העסק המדווח *</label
 				>
-				<input id="business_name" name="business_name" required value={v.business_name ?? ''} class="field" />
+				<input id="business_name" name="business_name" required defaultValue={v.business_name ?? ''} class="field" />
 				{#if errors.business_name}<p class="err">{errors.business_name}</p>{/if}
 			</div>
 
@@ -107,13 +136,13 @@
 					<label for="reporter_name" class="mb-1 block text-sm font-medium text-gray-300"
 						>שמך (לא חובה)</label
 					>
-					<input id="reporter_name" name="reporter_name" value={v.reporter_name ?? ''} class="field" />
+					<input id="reporter_name" name="reporter_name" defaultValue={v.reporter_name ?? ''} class="field" />
 				</div>
 				<div>
 					<label for="reporter_contact" class="mb-1 block text-sm font-medium text-gray-300"
 						>ליצירת קשר (לא חובה)</label
 					>
-					<input id="reporter_contact" name="reporter_contact" value={v.reporter_contact ?? ''} class="field" />
+					<input id="reporter_contact" name="reporter_contact" defaultValue={v.reporter_contact ?? ''} class="field" />
 				</div>
 			</div>
 

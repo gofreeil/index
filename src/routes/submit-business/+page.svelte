@@ -3,6 +3,7 @@
 	import { enhance } from '$app/forms';
 	import { onMount } from 'svelte';
 	import { CATEGORIES } from '$lib/categories.js';
+	import { formDraft, clearDraft, resumeDraft } from '$lib/formDraft';
 
 	/** @type {{ form: any }} */
 	let { form } = $props();
@@ -10,6 +11,21 @@
 	let submitting = $state(false);
 	let renderedAt = $state(0);
 	onMount(() => (renderedAt = Date.now()));
+
+	// טיוטה אוטומטית — טופס ארוך; יציאה לדף אחר או רענון לא ימחקו אותו.
+	// חותמת הזמן וה-honeypot לא נשמרים: הם בדיקת אנטי-ספאם של השליחה הנוכחית.
+	const DRAFT_KEY = 'index-submit-business';
+	const DRAFT_EXCLUDE = ['form_rendered_at', 'company_website'];
+	let draftRestored = $state(false);
+	/** @type {HTMLFormElement | null} */
+	let formEl = $state(null);
+
+	function discardDraft() {
+		clearDraft(DRAFT_KEY);
+		resumeDraft(DRAFT_KEY);
+		formEl?.reset();
+		draftRestored = false;
+	}
 
 	// ערכים חוזרים אחרי כישלון ולידציה (כדי לא לאבד מילוי)
 	const v = $derived(form?.values ?? {});
@@ -67,12 +83,26 @@
 			</div>
 		{/if}
 
+		{#if draftRestored}
+			<div class="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-green-500/30 bg-green-900/20 px-4 py-3 text-sm text-green-200">
+				<span class="font-bold">💾 שחזרנו את מה שמילאת קודם — הטופס ממשיך מהמקום שעצרת.</span>
+				<button type="button" onclick={discardDraft}
+					class="rounded-full border border-green-500/40 bg-green-900/40 px-3 py-1 text-xs font-bold text-green-100 transition hover:bg-green-800/50">
+					התחל מטופס ריק
+				</button>
+			</div>
+		{/if}
+
 		<form
+			bind:this={formEl}
 			method="POST"
 			enctype="multipart/form-data"
+			use:formDraft={{ key: DRAFT_KEY, exclude: DRAFT_EXCLUDE, onRestore: () => (draftRestored = true) }}
 			use:enhance={() => {
 				submitting = true;
-				return async ({ update }) => {
+				return async ({ result, update }) => {
+					// נשלח בהצלחה — הטיוטה סיימה את תפקידה (לפני הרינדור מחדש)
+					if (result.type === 'redirect' || result.type === 'success') clearDraft(DRAFT_KEY);
 					await update();
 					submitting = false;
 				};
@@ -98,7 +128,7 @@
 					<label for="name" class="mb-1 block text-sm font-medium text-gray-300"
 						>שם העסק / השירות *</label
 					>
-					<input id="name" name="name" required value={v.name ?? ''} class="field" />
+					<input id="name" name="name" required defaultValue={v.name ?? ''} class="field" />
 					{#if errors.name}<p class="err">{errors.name}</p>{/if}
 				</div>
 
@@ -119,7 +149,7 @@
 						<label for="subcategory" class="mb-1 block text-sm font-medium text-gray-300"
 							>תת-תחום (חופשי)</label
 						>
-						<input id="subcategory" name="subcategory" value={v.subcategory ?? ''} class="field" />
+						<input id="subcategory" name="subcategory" defaultValue={v.subcategory ?? ''} class="field" />
 					</div>
 				</div>
 
@@ -154,7 +184,7 @@
 						id="discount"
 						name="discount"
 						required
-						value={v.discount ?? ''}
+						defaultValue={v.discount ?? ''}
 						placeholder="למשל: 10% הנחה לחברי הקהילה"
 						class="field"
 					/>
@@ -179,12 +209,12 @@
 						<label for="contact_name" class="mb-1 block text-sm font-medium text-gray-300"
 							>שם איש קשר *</label
 						>
-						<input id="contact_name" name="contact_name" required value={v.contact_name ?? ''} class="field" />
+						<input id="contact_name" name="contact_name" required defaultValue={v.contact_name ?? ''} class="field" />
 						{#if errors.contact_name}<p class="err">{errors.contact_name}</p>{/if}
 					</div>
 					<div>
 						<label for="phone" class="mb-1 block text-sm font-medium text-gray-300">טלפון *</label>
-						<input id="phone" name="phone" type="tel" required value={v.phone ?? ''} class="field" />
+						<input id="phone" name="phone" type="tel" required defaultValue={v.phone ?? ''} class="field" />
 						{#if errors.phone}<p class="err">{errors.phone}</p>{/if}
 					</div>
 				</div>
@@ -192,30 +222,30 @@
 					<label for="email" class="mb-1 block text-sm font-medium text-gray-300"
 						>אימייל * <span class="text-gray-500">(פרטי — לעריכת העסק בעתיד)</span></label
 					>
-					<input id="email" name="email" type="email" required value={v.email ?? ''} class="field" />
+					<input id="email" name="email" type="email" required defaultValue={v.email ?? ''} class="field" />
 					{#if errors.email}<p class="err">{errors.email}</p>{/if}
 				</div>
 				<div class="grid gap-4 sm:grid-cols-3">
 					<div>
 						<label for="city" class="mb-1 block text-sm font-medium text-gray-300">עיר</label>
-						<input id="city" name="city" value={v.city ?? ''} class="field" />
+						<input id="city" name="city" defaultValue={v.city ?? ''} class="field" />
 					</div>
 					<div>
 						<label for="neighborhood" class="mb-1 block text-sm font-medium text-gray-300">שכונה</label>
-						<input id="neighborhood" name="neighborhood" value={v.neighborhood ?? ''} class="field" />
+						<input id="neighborhood" name="neighborhood" defaultValue={v.neighborhood ?? ''} class="field" />
 					</div>
 					<div>
 						<label for="sales_area" class="mb-1 block text-sm font-medium text-gray-300"
 							>אזור מכירה</label
 						>
-						<input id="sales_area" name="sales_area" value={v.sales_area ?? ''} placeholder="ארצי / אונליין" class="field" />
+						<input id="sales_area" name="sales_area" defaultValue={v.sales_area ?? ''} placeholder="ארצי / אונליין" class="field" />
 					</div>
 				</div>
 				<div>
 					<label for="address" class="mb-1 block text-sm font-medium text-gray-300"
 						>כתובת מלאה *</label
 					>
-					<input id="address" name="address" required value={v.address ?? ''} class="field" />
+					<input id="address" name="address" required defaultValue={v.address ?? ''} class="field" />
 					<p class="mt-1 text-xs text-gray-500">
 						העסק יופיע אוטומטית על המפה — גם כאן במדריך וגם באתר "קהילה בשכונה".
 					</p>
@@ -229,22 +259,22 @@
 				<div class="grid gap-4 sm:grid-cols-2">
 					<div>
 						<label for="website" class="mb-1 block text-sm font-medium text-gray-300">אתר</label>
-						<input id="website" name="website" value={v.website ?? ''} placeholder="https://" class="field" />
+						<input id="website" name="website" defaultValue={v.website ?? ''} placeholder="https://" class="field" />
 						{#if errors.website}<p class="err">{errors.website}</p>{/if}
 					</div>
 					<div>
 						<label for="whatsapp" class="mb-1 block text-sm font-medium text-gray-300">וואטסאפ</label>
-						<input id="whatsapp" name="whatsapp" value={v.whatsapp ?? ''} placeholder="https://wa.me/…" class="field" />
+						<input id="whatsapp" name="whatsapp" defaultValue={v.whatsapp ?? ''} placeholder="https://wa.me/…" class="field" />
 						{#if errors.whatsapp}<p class="err">{errors.whatsapp}</p>{/if}
 					</div>
 					<div>
 						<label for="facebook" class="mb-1 block text-sm font-medium text-gray-300">פייסבוק</label>
-						<input id="facebook" name="facebook" value={v.facebook ?? ''} placeholder="https://" class="field" />
+						<input id="facebook" name="facebook" defaultValue={v.facebook ?? ''} placeholder="https://" class="field" />
 						{#if errors.facebook}<p class="err">{errors.facebook}</p>{/if}
 					</div>
 					<div>
 						<label for="instagram" class="mb-1 block text-sm font-medium text-gray-300">אינסטגרם</label>
-						<input id="instagram" name="instagram" value={v.instagram ?? ''} placeholder="https://" class="field" />
+						<input id="instagram" name="instagram" defaultValue={v.instagram ?? ''} placeholder="https://" class="field" />
 						{#if errors.instagram}<p class="err">{errors.instagram}</p>{/if}
 					</div>
 				</div>
@@ -252,7 +282,7 @@
 					<label for="youtube" class="mb-1 block text-sm font-medium text-gray-300"
 						>סרטון יוטיוב</label
 					>
-					<input id="youtube" name="youtube" value={v.youtube ?? ''} placeholder="https://youtube.com/…" class="field" />
+					<input id="youtube" name="youtube" defaultValue={v.youtube ?? ''} placeholder="https://youtube.com/…" class="field" />
 					{#if errors.youtube}<p class="err">{errors.youtube}</p>{/if}
 				</div>
 				<div>
