@@ -155,15 +155,20 @@
 	let userPhone = $state('');
 
 	// ---- Free editing day + ad-period expiration ----
+	// The ad runs for the chosen plan's period - single month or half a year (6 months).
 	let confirmedPeriod = $state(false);
 	let today = new Date();
-	/** @param {Date} d */
-	function addOneMonthSameDate(d) {
+	/**
+	 * @param {Date} d
+	 * @param {number} months
+	 */
+	function addMonthsSameDate(d, months) {
 		const r = new Date(d);
-		r.setMonth(r.getMonth() + 1);
+		r.setMonth(r.getMonth() + months);
 		return r;
 	}
-	let expirationDate = $derived(addOneMonthSameDate(today));
+	let monthExpiration = $derived(addMonthsSameDate(today, 1));
+	let halfExpiration = $derived(addMonthsSameDate(today, 6));
 	/** @param {Date} d */
 	function fmtDate(d) {
 		return d.toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -300,6 +305,16 @@
 	let halfItems = $derived(selectedItems.filter((r) => r.plan === 'half'));
 	let singleItems = $derived(selectedItems.filter((r) => r.plan === 'single'));
 	let hasSelection = $derived(planMap.size > 0);
+
+	// תאריכי התפוגה נגזרים מהמסלולים שנבחרו בפועל - חודש בודד ו/או חצי שנה
+	let expirationInfos = $derived([
+		...(singleItems.length > 0
+			? [{ date: monthExpiration, period: 'חודש מלא', label: 'חודש בודד' }]
+			: []),
+		...(halfItems.length > 0
+			? [{ date: halfExpiration, period: 'חצי שנה מלאה (6 חודשים)', label: 'חצי שנה' }]
+			: [])
+	]);
 
 	// ---- Discount code (הנחת רכז / בעלים / פטור / קוד מבצע ההשקה) ----
 	const discountCodes = [...DEFAULT_DISCOUNT_CODES, ...(FREE_PROMO ? [FREE_PROMO_DISCOUNT] : [])];
@@ -1087,10 +1102,12 @@
 						היום, <strong class="text-amber-200">{fmtDate(today)}</strong>, הוא יום העריכה החינמית -
 						לא נספר בתקופת הפרסום.
 					</li>
-					<li>
-						הפרסומת תרוץ <strong class="text-amber-200">חודש מלא</strong> - עד
-						<strong class="text-amber-200">{fmtDate(expirationDate)} כולל</strong>.
-					</li>
+					{#each expirationInfos as info (info.date.getTime())}
+						<li>
+							הפרסומת תרוץ <strong class="text-amber-200">{info.period}</strong> - עד
+							<strong class="text-amber-200">{fmtDate(info.date)} כולל</strong>.
+						</li>
+					{/each}
 					<li>
 						תקופת העריכה החינמית נגמרת היום ב<strong class="text-amber-200">23:59</strong>. כדאי
 						לסיים את העריכה לפני זה!
@@ -1100,7 +1117,7 @@
 
 			<!-- Two-month calendar with markers -->
 			<div class="mb-5 grid grid-cols-1 gap-4 md:grid-cols-2">
-				{#each [today, expirationDate] as anchor (anchor.getTime())}
+				{#each [today, ...expirationInfos.map((i) => i.date)] as anchor (anchor.getTime())}
 					{@const cells = buildCalendar(anchor)}
 					<div class="rounded-xl border border-white/10 bg-black/30 p-3">
 						<p class="mb-2 text-center text-sm font-black text-amber-300">{fmtMonthName(anchor)}</p>
@@ -1115,7 +1132,7 @@
 							{#each cells as cell (cell.getTime())}
 								{@const inMonth = cell.getMonth() === anchor.getMonth()}
 								{@const isToday = sameDay(cell, today)}
-								{@const isExpiry = sameDay(cell, expirationDate)}
+								{@const isExpiry = expirationInfos.some((i) => sameDay(cell, i.date))}
 								<div
 									class="flex aspect-square items-center justify-center rounded text-xs font-bold
 									{!inMonth ? 'text-gray-700' : 'text-gray-300'}
@@ -1155,7 +1172,9 @@
 					</p>
 					<p class="text-xs leading-relaxed text-gray-400 md:text-sm">
 						היום ({fmtDate(today)}) - יום עריכה חינם. הפרסומת שלי תפעל עד
-						<span class="font-bold text-amber-300">{fmtDate(expirationDate)} כולל</span>.
+						{#each expirationInfos as info, i (info.date.getTime())}{#if i > 0} · {/if}<span
+								class="font-bold text-amber-300">{fmtDate(info.date)} כולל</span
+							>{#if expirationInfos.length > 1}&nbsp;({info.label}){/if}{/each}.
 					</p>
 				</div>
 			</label>
