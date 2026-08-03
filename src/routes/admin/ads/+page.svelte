@@ -5,6 +5,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import { onMount, onDestroy } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
+	import { adImgFit, parseAdImageFit } from '$lib/adImageFit';
 
 	/** @type {{ data: any, form: any }} */
 	let { data, form } = $props();
@@ -367,11 +368,17 @@
 						{/if}
 
 						{#if ad.mainImage}
-							<img
-								src={ad.mainImage}
-								alt={ad.title}
-								class="h-32 w-full flex-shrink-0 rounded-xl border border-white/10 object-cover md:h-40 md:w-40"
-							/>
+							<!-- אותו מיקום/זום שהמפרסם קבע — המנהל מאשר את מה שבאמת יוצג -->
+							<div
+								class="relative h-32 w-full flex-shrink-0 overflow-hidden rounded-xl border border-white/10 md:h-40 md:w-40"
+							>
+								<img
+									src={ad.mainImage}
+									alt={ad.title}
+									class="h-full w-full object-cover"
+									use:adImgFit={parseAdImageFit(ad.mainImageFit)}
+								/>
+							</div>
 						{/if}
 
 						<div class="min-w-0 flex-1">

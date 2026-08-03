@@ -7,13 +7,15 @@
 // באותו אוסף ניתנות לאישור גם מכאן.
 // הושמט ביחס למקור: מנגנון התזכורות (נשען על מערכת ההודעות של הקהילה
 // שלא קיימת ב-index).
-// לאוסף עמודות מוקלדות בלבד — אי אפשר להוסיף שדות חדשים, ולכן שני
+// לאוסף עמודות מוקלדות בלבד — אי אפשר להוסיף שדות חדשים, ולכן
 // ערכי ההגשה החדשים ארוזים בתוך ה-JSON של landing:
 //   landing._payment               'code' (קוד תנועה — כמו שולם) | 'pending'
 //   landing._requestedDurationDays 30 | 180 (התקופה שהמפרסם ביקש)
+//   landing._mainImageFit          {x,y,z} מיקום+זום התמונה הראשית מהבילדר
 // ============================================================
 
 import { env } from '$env/dynamic/private';
+import { parseAdImageFit } from '$lib/adImageFit';
 
 const STRAPI_URL = (env.STRAPI_URL || 'https://api.gofreeil.com').replace(/\/$/, '');
 const TOKEN = env.STRAPI_TOKEN || '';
@@ -47,6 +49,7 @@ const TTL_ADS = 120_000;
  * @property {string} gradient
  * @property {string} logo
  * @property {string} mainImage
+ * @property {{x:number,y:number,z:number}} mainImageFit מיקום+זום התמונה הראשית במשבצת (מהבילדר)
  * @property {any} landing
  * @property {string} payment "code" = הוזן קוד התנועה בשליחה (כמו שולם); "pending" = תשלום לתיאום
  * @property {number} requestedDurationDays התקופה שהמפרסם ביקש בשליחה (30/180) — ברירת המחדל באישור
@@ -108,6 +111,7 @@ function fromStrapi(s) {
 		mainImage: s.main_image ?? '',
 		landing: s.landing ?? emptyLanding(),
 		// ערכי ההגשה הארוזים ב-landing (ראו כותרת הקובץ)
+		mainImageFit: parseAdImageFit(s.landing?._mainImageFit),
 		payment: s.landing?._payment === 'code' ? 'code' : 'pending',
 		requestedDurationDays: Number(s.landing?._requestedDurationDays) === 180 ? 180 : 30
 	};
@@ -196,6 +200,7 @@ export async function getAd(id) {
  *   gradient?: string,
  *   logo?: string,
  *   mainImage?: string,
+ *   mainImageFit?: unknown,
  *   landing?: any,
  *   submittedBy?: { id?: string, email?: string, name?: string },
  *   payment?: string,
@@ -207,7 +212,9 @@ export async function submitAd(payload) {
 	const landing = {
 		...(payload.landing ?? emptyLanding()),
 		_payment: payload.payment === 'code' ? 'code' : 'pending',
-		_requestedDurationDays: Number(payload.requestedDurationDays) === 180 ? 180 : 30
+		_requestedDurationDays: Number(payload.requestedDurationDays) === 180 ? 180 : 30,
+		// parseAdImageFit מנקה קלט לא-בטוח מהדפדפן לערכים חוקיים בלבד
+		_mainImageFit: parseAdImageFit(payload.mainImageFit)
 	};
 	const res = await api(ENDPOINT, {
 		method: 'POST',

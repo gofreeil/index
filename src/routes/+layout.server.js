@@ -15,7 +15,9 @@ export async function load({ locals }) {
 			cta: a.cta,
 			hover: a.hoverText,
 			gradient: a.gradient,
-			mainImage: a.mainImage
+			mainImage: a.mainImage,
+			// מיקום+זום שנבחרו בבילדר — מוחלים בתצוגת הסרגל (adImgFit)
+			mainImageFit: a.mainImageFit
 		}));
 	return { user: locals.user, approvedAds };
 }

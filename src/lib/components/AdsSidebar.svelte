@@ -1,6 +1,7 @@
 <script>
 	import { ads } from '$lib/adsData.js';
 	import { lang, translations } from '$lib/i18n';
+	import { adImgFit, parseAdImageFit } from '$lib/adImageFit';
 
 	/**
 	 * מודעה שאושרה ונשלחה מהשרת (מודעות משתמשים).
@@ -13,6 +14,7 @@
 	 * @property {string} [hover]
 	 * @property {string} gradient
 	 * @property {string} mainImage
+	 * @property {{x:number,y:number,z:number}} [mainImageFit] מיקום+זום מהבילדר
 	 */
 
 	/**
@@ -25,6 +27,7 @@
 	 * @property {string} href
 	 * @property {'_self'|'_blank'} target
 	 * @property {string} image
+	 * @property {{x:number,y:number,z:number}|undefined} imageFit
 	 * @property {string} color
 	 * @property {string|undefined} imageHeight
 	 */
@@ -48,6 +51,7 @@
 			href: `/ads/${a.id}`,
 			target: /** @type {'_self'} */ ('_self'),
 			image: a.mainImage,
+			imageFit: a.mainImageFit,
 			color: a.gradient,
 			imageHeight: /** @type {string|undefined} */ (undefined)
 		})),
@@ -60,6 +64,8 @@
 			href: a.href,
 			target: /** @type {'_blank'} */ ('_blank'),
 			image: a.image,
+			// למודעות השותפים הסטטיות אין fit — ברירת המחדל שקולה ל-object-cover
+			imageFit: /** @type {{x:number,y:number,z:number}|undefined} */ (undefined),
 			color: a.color,
 			imageHeight: a.imageHeight
 		}))
@@ -87,12 +93,14 @@
 				<div class="relative overflow-hidden" style="height: {ad.imageHeight ?? '160px'}">
 					{#if ad.image}
 						<div class="absolute inset-0 overflow-hidden">
+							<!-- המיקום/זום שנבחרו בבילדר מוחלים גם כאן — הדמו הוא מה שרואים -->
 							<img
 								src={ad.image}
 								alt={ad.title}
 								loading="lazy"
 								decoding="async"
 								class="h-full w-full object-cover transition-opacity duration-[1500ms] group-hover:opacity-0"
+								use:adImgFit={parseAdImageFit(ad.imageFit)}
 							/>
 						</div>
 						<div
