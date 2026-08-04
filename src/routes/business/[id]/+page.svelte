@@ -5,6 +5,7 @@
 	import { authUser } from '$lib/auth';
 	import JsonLd from '$lib/components/JsonLd.svelte';
 	import Seo from '$lib/components/Seo.svelte';
+	import SmartShare from '$lib/components/SmartShare.svelte';
 	import { SITE_NAME, DEFAULT_OG_IMAGE, professionalSchema, breadcrumbSchema } from '$lib/seo';
 
 	/** @type {{ data: any }} */
@@ -151,9 +152,8 @@
 	}
 	const bizArea = $derived(placeOrEmpty(business.city) || placeOrEmpty(business.sales_area));
 	const pageTitle = $derived(
-		[business.name, business.category, bizArea ? `ב${bizArea}` : '']
-			.filter(Boolean)
-			.join(' — ') + ` | ${SITE_NAME}`
+		[business.name, business.category, bizArea ? `ב${bizArea}` : ''].filter(Boolean).join(' — ') +
+			` | ${SITE_NAME}`
 	);
 	const metaDescription = $derived(
 		(
@@ -163,7 +163,7 @@
 		)
 			.replace(/\s+/g, ' ')
 			.slice(0, 300) +
-		(business.discount ? ` · הטבה לחברי הקהילה: ${business.discount}`.slice(0, 100) : '')
+			(business.discount ? ` · הטבה לחברי הקהילה: ${business.discount}`.slice(0, 100) : '')
 	);
 	const bizImage = $derived(business.logo || business.banner || DEFAULT_OG_IMAGE);
 
@@ -223,9 +223,8 @@
 						<div class="flex gap-0.5" dir="ltr" aria-hidden="true">
 							{#each Array(5) as _, i}
 								<span
-									class="text-xl {i < Math.round(avgRating)
-										? 'text-yellow-400'
-										: 'text-gray-600'}">★</span
+									class="text-xl {i < Math.round(avgRating) ? 'text-yellow-400' : 'text-gray-600'}"
+									>★</span
 								>
 							{/each}
 						</div>
@@ -294,6 +293,12 @@
 			{/if}
 		</div>
 	</div>
+
+	<!-- שיתוף חכם — רוחב מלא לפני שתי העמודות, כדי שבנייד בעל העסק יראה
+	     אותו מיד ולא אחרי כל חוות הדעת. השרת הוא שמכריע מי רשאי לראות. -->
+	{#if data.canSmartShare}
+		<SmartShare {business} />
+	{/if}
 
 	<div class="grid grid-cols-1 gap-12 lg:grid-cols-3">
 		<div class="lg:col-span-2">
@@ -422,12 +427,16 @@
 								</div>
 								<div class="mb-3 flex gap-0.5" dir="ltr">
 									{#each Array(5) as _, i}
-										<span class="text-xl {i < Math.round(review.rating) ? 'text-yellow-400' : 'text-gray-600'}"
-											>★</span
+										<span
+											class="text-xl {i < Math.round(review.rating)
+												? 'text-yellow-400'
+												: 'text-gray-600'}">★</span
 										>
 									{/each}
 								</div>
-								{#if review.title}<p class="mb-1 font-semibold text-gray-200">{review.title}</p>{/if}
+								{#if review.title}<p class="mb-1 font-semibold text-gray-200">
+										{review.title}
+									</p>{/if}
 								<p class="text-gray-300">{review.body}</p>
 							</div>
 						{/each}
@@ -439,7 +448,10 @@
 			{#if ytEmbed}
 				<section class="mt-12">
 					<h2 class="mb-4 text-2xl font-bold text-gray-100">{t.businessVideo}</h2>
-					<div class="relative w-full overflow-hidden rounded-3xl shadow-2xl" style="padding-top: 56.25%;">
+					<div
+						class="relative w-full overflow-hidden rounded-3xl shadow-2xl"
+						style="padding-top: 56.25%;"
+					>
 						<iframe
 							src={ytEmbed}
 							title={business.name}
