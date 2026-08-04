@@ -425,7 +425,11 @@
     let adWeightBytes = $derived.by(() => bodyBytes(buildPayloadSnapshot()));
     let overweight = $derived(adWeightBytes > AD_EFFECTIVE_LIMIT);
     let heaviestLabel = $derived.by(() => heaviestImageLabel(buildPayloadSnapshot()));
-    let canSubmit = $derived(fieldsOk && !overweight);
+    // חובה להיות מחובר כדי לשלוח: מודעה שנשלחת בלי חשבון נשמרת בלי בעלים,
+    // והמפרסם לא יוכל לעולם לראות את הביצועים שלה, לערוך או לחדש. הטיוטה
+    // ממילא נשמרת ל-localStorage בכל הקלדה — אז ההתחברות לא מאבדת כלום.
+    let loggedIn = $derived(Boolean(data?.layoutUser));
+    let canSubmit = $derived(fieldsOk && !overweight && loggedIn);
     let submitting = $state(false);
     let submitted = $state(false);
     let submitError = $state("");
@@ -489,6 +493,34 @@
 
     function goBack() {
         goto("/advertise/builder");
+    }
+
+    // ===== לא מחובר: שומרים טיוטה ומעבירים להתחברות =====
+    // הטיוטה נשמרת ממילא ב-$effect בכל הקלדה, אבל לפני יציאה מהעמוד כותבים
+    // אותה שוב במפורש — ורק אם הכתיבה הצליחה עוזבים לדף ההתחברות, כדי
+    // שהמפרסם לא יגלה אחרי ההתחברות שהתוכן נעלם. הניווט הוא טעינה מלאה
+    // כי דף ההתחברות מחזיר לעמוד הקודם לפי document.referrer.
+    let draftSaveError = $state("");
+    let leavingToLogin = $state(false);
+
+    function goLoginToSubmit() {
+        draftSaveError = "";
+        leavingToLogin = true;
+        try {
+            const raw = localStorage.getItem(LS_KEY);
+            const cur = raw ? JSON.parse(raw) : {};
+            localStorage.setItem(LS_KEY, JSON.stringify({
+                ...cur,
+                landingHeadline, landingPitch, landingExtended, landingImage, landingAdvantages,
+                phone, whatsapp, website, email,
+                products, uniqueness, address, hours,
+            }));
+        } catch {
+            leavingToLogin = false;
+            draftSaveError = "לא הצלחנו לשמור את הטיוטה בדפדפן הזה — פנו מקום (היסטוריה/אחסון) או נסו דפדפן אחר";
+            return;
+        }
+        window.location.href = "/auth/login";
     }
 </script>
 
@@ -855,7 +887,26 @@
                     {/if}
                 </div>
 
-                {#if !canSubmit}
+                {#if !loggedIn}
+                    <div class="login-gate">
+                        <p class="login-gate-title">🔐 שלב אחרון לפני השליחה — התחברות</p>
+                        <p class="login-gate-text">
+                            הפרסומת נשמרת על החשבון שלכם, וכך תוכלו לעקוב אחריה, לערוך אותה בכל רגע
+                            ולחדש בסוף התקופה. בלי חשבון אין דרך להחזיר אתכם אליה.
+                        </p>
+                        <button type="button" class="login-gate-btn" onclick={goLoginToSubmit} disabled={leavingToLogin}>
+                            {leavingToLogin ? "שומר טיוטה..." : "שמירת הטיוטה והתחברות →"}
+                        </button>
+                        <p class="login-gate-note">
+                            מה שמילאתם נשמר כטיוטה במכשיר הזה ויחכה לכם כאן מיד אחרי ההתחברות.
+                        </p>
+                        {#if draftSaveError}
+                            <p class="submit-error">{draftSaveError}</p>
+                        {/if}
+                    </div>
+                {/if}
+
+                {#if !fieldsOk || overweight}
                     <p class="submit-note">
                         {#if !fieldsOk}
                             כדי לשלוח: תמונה, כותרת, סלוגן, טקסט ריחוף, דרך קשר וכותרת/פתיח לדף הנחיתה. חסר משהו? חזרו <button type="button" class="inline-link" onclick={goBack}>לעריכת הכרטיס</button>.
@@ -1657,6 +1708,47 @@
         font-size: 0.85rem;
         margin: 0.75rem 0 0;
         font-weight: 700;
+    }
+    /* שער ההתחברות — מוצג במקום כפתור שליחה פעיל כשהמפרסם לא מחובר */
+    .login-gate {
+        margin-top: 1.1rem;
+        padding: 1rem 1.1rem;
+        border-radius: 1rem;
+        background: rgba(59, 130, 246, 0.12);
+        border: 1px solid rgba(96, 165, 250, 0.45);
+        text-align: center;
+    }
+    .login-gate-title {
+        margin: 0;
+        font-weight: 900;
+        font-size: 1.05rem;
+        color: #dbeafe;
+    }
+    .login-gate-text {
+        margin: 0.45rem 0 0;
+        font-size: 0.9rem;
+        line-height: 1.6;
+        color: #cbd5e1;
+    }
+    .login-gate-btn {
+        margin-top: 0.85rem;
+        padding: 0.7rem 1.4rem;
+        border-radius: 0.85rem;
+        border: none;
+        background: linear-gradient(to right, #2563eb, #7c3aed);
+        color: #fff;
+        font-weight: 800;
+        font-size: 0.95rem;
+        font-family: inherit;
+        cursor: pointer;
+        transition: opacity 0.2s;
+    }
+    .login-gate-btn:hover { opacity: 0.9; }
+    .login-gate-btn:disabled { opacity: 0.6; cursor: default; }
+    .login-gate-note {
+        margin: 0.6rem 0 0;
+        font-size: 0.8rem;
+        color: #94a3b8;
     }
     /* דחיית העלאה בשלב עצמו — כשאין מקום לתמונה בתקציב המודעה */
     .upload-issue {

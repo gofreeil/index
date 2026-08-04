@@ -3,10 +3,19 @@ import { submitAd } from '$lib/server/adsStore.js';
 import { isOwnerCode, notifyOwnerCodeUse } from '$lib/server/adsCode.js';
 
 // קליטת פרסומת חדשה מהבילדר המקומי (/advertise/builder) — נשמרת באוסף
-// submitted-ads המשותף במצב "ממתינה לאישור". אין דרישת התחברות —
-// הסינון האמיתי הוא האישור הידני ב-/admin/ads.
+// submitted-ads המשותף במצב "ממתינה לאישור". האישור עצמו ידני ב-/admin/ads.
+// חובה להיות מחובר: מודעה בלי submitted_by היא מודעה בלי בעלים — המפרסם
+// לא יוכל לעולם לראות את הביצועים שלה, לערוך אותה או לחדש.
 /** @type {import('./$types').RequestHandler} */
 export async function POST({ request, locals }) {
+	const user = locals.user;
+	if (!user) {
+		throw error(
+			401,
+			'צריך להתחבר לפני השליחה — כך הפרסומת נשמרת על החשבון שלכם ותוכלו לעקוב אחריה ולערוך אותה'
+		);
+	}
+
 	/** @type {any} */
 	let payload;
 	try {
@@ -24,19 +33,16 @@ export async function POST({ request, locals }) {
 		throw error(400, 'חסר אובייקט landing');
 	}
 
-	const user = locals.user;
 	// הקוד מאומת כאן, בשרת — לא סומכים על דגל payment מהדפדפן
 	const usedOwnerCode = isOwnerCode(payload.ownerCode);
 	const requestedDurationDays = Number(payload.requestedDurationDays) === 180 ? 180 : 30;
 	try {
 		const ad = await submitAd({
-			submittedBy: user
-				? {
-						id: String(user.id ?? ''),
-						email: user.email ?? '',
-						name: user.name ?? ''
-					}
-				: undefined,
+			submittedBy: {
+				id: String(user.id ?? ''),
+				email: user.email ?? '',
+				name: user.name ?? ''
+			},
 			title: payload.title,
 			subtitle: payload.subtitle,
 			payment: usedOwnerCode ? 'code' : 'pending',
@@ -72,7 +78,7 @@ export async function POST({ request, locals }) {
 			await notifyOwnerCodeUse({
 				adTitle: payload.title,
 				durationDays: requestedDurationDays,
-				submitter: user ? { name: user.name ?? '', email: user.email ?? '' } : null
+				submitter: { name: user.name ?? '', email: user.email ?? '' }
 			});
 		}
 		return json({ ok: true, id: ad.id, status: ad.status });
