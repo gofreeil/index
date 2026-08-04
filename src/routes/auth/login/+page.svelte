@@ -109,6 +109,10 @@
 			<h2 class="text-center text-3xl font-extrabold text-gray-900 dark:text-gray-100">
 				{t.login}
 			</h2>
+			<!-- הודעה ברורה למשתמש חדש: בפעם הראשונה יש להירשם תחילה -->
+			<p class="mt-3 text-center text-[13px] font-bold leading-relaxed text-amber-700 sm:text-sm dark:text-amber-300">
+				{t.firstTimeRegister}
+			</p>
 		</div>
 		<form
 			class="mt-8 space-y-6"
