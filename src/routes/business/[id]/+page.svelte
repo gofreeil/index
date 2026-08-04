@@ -128,7 +128,28 @@
 	   לכן הכותרת נושאת גם את התחום וגם את העיר, והתיאור נבנה מהתוכן האמיתי
 	   של העסק — כדי שלא ייווצרו תיאורים כפולים בין דפי עסקים. */
 	const bizPath = $derived(`/business/${business.documentId}`);
-	const bizArea = $derived(business.city || business.sales_area || '');
+
+	/**
+	 * שם המקום לכותרת. רק 3 מ-89 העסקים מילאו "עיר", ולכן יש נפילה ל"אזור מכירה" —
+	 * אבל השדה הזה הוא טקסט חופשי שברוב הרשומות אינו מקום: "אזור ספציפי, אפרט
+	 * בהערות", "אנטרנטי", "פייסבוק", "נגיש", "אימון בזום מכל מקום בארץ". בלי סינון
+	 * נוצרו כותרות כמו "... — אחר — בארצי/אונליין".
+	 * ולכן: מקבלים רק ערך שנראה כמו שם יישוב — קצר, בלי פיסוק, ובלי מילות-לא-מקום.
+	 * @param {string} raw
+	 */
+	function placeOrEmpty(raw) {
+		const v = (raw || '').replace(/\s+/g, ' ').trim();
+		if (!v || v.length > 20) return '';
+		if (/[.,/\\|;:()0-9]/.test(v)) return '';
+		if (
+			/אזור|ארצי|כל הארץ|עולם|אונליין|און ליין|אינטרנט|אנטרנט|זום|טלפון|פייסבוק|נגיש|קליניקה|חנות|משלוח|שירות|מקבל|בהערות|פרטי/.test(
+				v
+			)
+		)
+			return '';
+		return v;
+	}
+	const bizArea = $derived(placeOrEmpty(business.city) || placeOrEmpty(business.sales_area));
 	const pageTitle = $derived(
 		[business.name, business.category, bizArea ? `ב${bizArea}` : '']
 			.filter(Boolean)
@@ -156,7 +177,9 @@
 			website: business.website || undefined,
 			image: business.logo || business.banner || undefined,
 			address: business.address || undefined,
-			city: business.city || undefined,
+			// addressLocality מוצהר רק כשיש עיר אמיתית; areaServed סופג גם ניסוח
+			// חופשי ("כל הארץ", "אזור הנגב") — זה שדה תיאורי ולגיטימי שם.
+			city: placeOrEmpty(business.city) || undefined,
 			areaServed: business.sales_area || business.city || undefined,
 			lat: business.lat,
 			lng: business.lng,
@@ -178,7 +201,7 @@
 	path={bizPath}
 	image={bizImage}
 	type="business.business"
-	keywords={[business.category, business.city, business.name, 'בעל מקצוע מומלץ', 'דירוג וחוות דעת']
+	keywords={[business.category, bizArea, business.name, 'בעל מקצוע מומלץ', 'דירוג וחוות דעת']
 		.filter(Boolean)
 		.join(', ')}
 />
