@@ -57,6 +57,9 @@ export function toBusiness(b) {
 		rating: Number(b.rating_avg || 0),
 		rating_count: Number(b.rating_count || 0),
 		view_count: Number(b.view_count || 0),
+		// כמה פעמים נלחץ "הצג מספר טלפון" — המדד הישיר ביותר לפניות,
+		// מוצג לבעל הכרטיסייה באזור האישי ולאדמין ב-/admin/stats
+		phone_reveal_count: Number(b.phone_reveal_count || 0),
 		created_at: b.createdAt || ''
 	};
 }

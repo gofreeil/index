@@ -8,11 +8,38 @@
 	import Footer from '$lib/components/Footer.svelte';
 	import WelcomeScreen from '$lib/components/WelcomeScreen.svelte';
 	import { authUser, hydrateAuth } from '$lib/auth';
+	import { onMount } from 'svelte';
 
 	let { children, data } = $props();
 
 	// מקור-האמת לזהות המשתמש הוא ה-session בשרת (data.user מ-+layout.server.js).
 	$effect(() => hydrateAuth(data.user));
+
+	// פריטים שממתינים לטיפול אדמין (עסקים + ביקורות + דיווחים + פרסומות).
+	// 0 לכל מי שאינו אדמין. מסמן את האווטאר בבועה אדומה עד שמישהו מהאדמינים
+	// מטפל — אותו מספר בדיוק מוצג באזור האישי ועל אריחי הפאנל.
+	const pendingTotal = $derived(data.pending?.total ?? 0);
+
+	// הטענת Google Analytics (gtag) בצד-הלקוח — רק אם הוגדר מזהה מדידה.
+	// עלות שרת אפסית: הסקריפט נטען מגוגל, לא מאיתנו.
+	onMount(() => {
+		const gaId = data.gaId;
+		if (!gaId || typeof document === 'undefined') return;
+		if (document.getElementById('ga-gtag')) return;
+		const s = document.createElement('script');
+		s.id = 'ga-gtag';
+		s.async = true;
+		s.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`;
+		document.head.appendChild(s);
+		const w = /** @type {any} */ (window);
+		w.dataLayer = w.dataLayer || [];
+		w.gtag = function () {
+			// eslint-disable-next-line prefer-rest-params
+			w.dataLayer.push(arguments);
+		};
+		w.gtag('js', new Date());
+		w.gtag('config', gaId);
+	});
 
 	// Support for Svelte 5 state-like behavior from store
 	let currentLang = $state('he');
@@ -163,16 +190,31 @@
 						{/if}
 					</div>
 
-					<!-- User Auth Section — אווטאר בלבד; ההתנתקות ופרטי המשתמש בעמוד /profile -->
+					<!-- User Auth Section — אווטאר בלבד; ההתנתקות ופרטי המשתמש בעמוד /profile.
+					     כשיש פריטים שממתינים לטיפול (אדמין) — בועה אדומה ממוספרת בפינת
+					     האווטאר, והקישור מוביל ישר לפאנל שבאזור האישי. -->
 					{#if user}
-						<a
-							href="/profile"
-							class="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-sm font-bold text-white shadow-sm transition-all hover:scale-105 hover:shadow-md sm:h-10 sm:w-10"
-							title={t.myArea}
-							aria-label="{t.myArea} – {user.name}"
-						>
-							{(user.name || '?').trim().charAt(0).toUpperCase()}
-						</a>
+						<div class="relative flex-shrink-0">
+							<a
+								href={pendingTotal > 0 ? '/profile#admin' : '/profile'}
+								class="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-sm font-bold text-white shadow-sm transition-all hover:scale-105 hover:shadow-md sm:h-10 sm:w-10"
+								title={pendingTotal > 0 ? `${pendingTotal} פריטים ממתינים לטיפול` : t.myArea}
+								aria-label={pendingTotal > 0
+									? `${t.myArea} – ${user.name} – ${pendingTotal} פריטים ממתינים לטיפול`
+									: `${t.myArea} – ${user.name}`}
+							>
+								{(user.name || '?').trim().charAt(0).toUpperCase()}
+							</a>
+							{#if pendingTotal > 0}
+								<span
+									class="pointer-events-none absolute -top-1 -left-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[11px] leading-none font-black text-white shadow-lg ring-2 ring-gray-900"
+								>
+									<span class="sr-only">פריטים ממתינים לטיפול:</span>{pendingTotal > 99
+										? '99+'
+										: pendingTotal}
+								</span>
+							{/if}
+						</div>
 					{:else}
 						<a
 							href="/auth/login"

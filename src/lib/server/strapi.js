@@ -194,6 +194,22 @@ export async function searchUsers(q) {
 	return (Array.isArray(arr) ? arr : []).map(toSlimUser);
 }
 
+/**
+ * הטלפון בפרופיל המשתמש — משמש באזור האישי לזיהוי כרטיסיות ותיקות שנוצרו
+ * לפני שהיה שיוך-משתמש. לא נחשף ללקוח (רק תוצאת ההתאמה).
+ * @param {string|number} userId @returns {Promise<string>}
+ */
+export async function getUserPhone(userId) {
+	try {
+		const res = await api(`/api/users/${encodeURIComponent(String(userId))}?fields[0]=phone`);
+		if (!res.ok) return '';
+		const u = await res.json().catch(() => null);
+		return String(u?.phone ?? '');
+	} catch {
+		return '';
+	}
+}
+
 /** משתמש בודד (רזה) לבדיקות הגנה לפני שינוי תפקיד. @param {string|number} userId */
 export async function getUserSlim(userId) {
 	const res = await api(`/api/users/${encodeURIComponent(String(userId))}`);
@@ -230,6 +246,68 @@ export async function getBusiness(documentId) {
 	const data = await res.json().catch(() => null);
 	const b = data?.data;
 	return b && b.status === 'approved' ? b : null;
+}
+
+/**
+ * וריאנטים של מספר טלפון להשוואה מול idx-business, שבו הטלפון נשמר כפי
+ * שהוקלד (0501234567 או 050-1234567). Strapi לא מנרמל בצד השרת, ולכן
+ * מייצרים את הצורות הנפוצות ומשווים איתן ב-$in.
+ * @param {string} phone
+ * @returns {string[]}
+ */
+function phoneVariants(phone) {
+	const digits = String(phone || '').replace(/\D/g, '');
+	if (digits.length < 9) return [];
+	const local = digits.startsWith('972') ? '0' + digits.slice(3) : digits;
+	return [
+		...new Set([
+			local,
+			`${local.slice(0, 3)}-${local.slice(3)}`, // נייד: 050-1234567
+			`${local.slice(0, 2)}-${local.slice(2)}`, // קווי: 08-9982342
+			String(phone).trim()
+		])
+	].filter(Boolean);
+}
+
+/**
+ * העסקים של משתמש מסוים, בכל סטטוס — לאזור האישי. השיוך נשמר בהגשה בשני
+ * מפתחות (relation user + user_id), ולכן מחפשים בשניהם וממזגים. כרטיסיות
+ * שהוזרמו בייבוא נוצרו בלי שיוך-משתמש, ולכן מזהים אותן לפי טלפון בעל
+ * הכרטיסייה — הקישור היחיד שנשאר (לאוסף אין שדה email).
+ * כל שאילתה נכשלת בנפרד ולא מפילה את השאר.
+ * @param {{id?: string|number, phone?: string}} owner
+ * @returns {Promise<any[]>}
+ */
+export async function listBusinessesByOwner({ id, phone }) {
+	const tail = `&${BIZ_POPULATE}&sort=createdAt:desc&pagination[pageSize]=100`;
+	/** @type {string[]} */
+	const queries = [];
+	if (id) {
+		const enc = encodeURIComponent(String(id));
+		queries.push(`filters[user][id][$eq]=${enc}${tail}`, `filters[user_id][$eq]=${enc}${tail}`);
+	}
+	const variants = phoneVariants(phone ?? '');
+	if (variants.length) {
+		const inQs = variants
+			.map((v, i) => `filters[phone][$in][${i}]=${encodeURIComponent(v)}`)
+			.join('&');
+		queries.push(`${inQs}${tail}`);
+	}
+	if (!queries.length) return [];
+
+	const results = await Promise.all(
+		queries.map((qs) => apiJson(`/api/idx-businesses?${qs}`).catch(() => null))
+	);
+	/** @type {Map<string, any>} */
+	const byDoc = new Map();
+	for (const r of results) {
+		for (const b of Array.isArray(r?.data) ? r.data : []) {
+			if (b?.documentId) byDoc.set(b.documentId, b);
+		}
+	}
+	return [...byDoc.values()].sort((a, b) =>
+		String(b.createdAt ?? '').localeCompare(String(a.createdAt ?? ''))
+	);
 }
 
 /** יצירת עסק (status=pending נכפה ב-controller). @param {Record<string,any>} data */
@@ -319,6 +397,34 @@ export async function listOpenReports() {
 	return Array.isArray(data?.data) ? data.data : [];
 }
 
+/**
+ * ספירה בלבד — שולף שורה אחת וקורא את meta.pagination.total. משמש את בועת
+ * ההתראה שרצה בכל טעינת עמוד אצל אדמין; שליפת הרשימות המלאות שם הייתה בזבוז.
+ * @param {string} collection @param {string} filters @returns {Promise<number>}
+ */
+async function countBy(collection, filters) {
+	try {
+		const data = await apiJson(`/api/${collection}?${filters}&pagination[pageSize]=1`);
+		return Number(data?.meta?.pagination?.total) || 0;
+	} catch {
+		return 0;
+	}
+}
+
+/** כמה עסקים ממתינים לאישור. @returns {Promise<number>} */
+export const countPendingBusinesses = () =>
+	countBy('idx-businesses', 'filters[status][$eq]=pending');
+
+/** כמה ביקורות ממתינות לאישור. @returns {Promise<number>} */
+export const countPendingReviews = () => countBy('idx-reviews', 'filters[status][$eq]=pending');
+
+/** כמה דיווחים פתוחים (pending/reviewing). @returns {Promise<number>} */
+export const countOpenReports = () =>
+	countBy('idx-reports', 'filters[status][$in][0]=pending&filters[status][$in][1]=reviewing');
+
+/** כמה כרטיסיות יש במאגר בסך הכל. @returns {Promise<number>} */
+export const countAllBusinesses = () => countBy('idx-businesses', '');
+
 const COLLECTION = /** @type {const} */ ({
 	business: 'idx-businesses',
 	review: 'idx-reviews',
@@ -358,6 +464,43 @@ export async function deleteItem(kind, documentId) {
 export async function listAllBusinesses() {
 	const qs = `${BIZ_POPULATE}&sort=createdAt:desc&pagination[pageSize]=1000`;
 	const data = await apiJson(`/api/idx-businesses?${qs}`);
+	return Array.isArray(data?.data) ? data.data : [];
+}
+
+/**
+ * כל הכרטיסיות עם השדות הדרושים לסטטיסטיקה בלבד (בלי לוגו/באנרים/תיאורים) —
+ * מסך /admin/stats שולף 92 רשומות, ואין סיבה לגרור איתן מדיה.
+ * @returns {Promise<any[]>}
+ */
+export async function listBusinessesForStats() {
+	const fields = [
+		'name',
+		'category',
+		'subcategory',
+		'city',
+		'status',
+		'discount',
+		'view_count',
+		'phone_reveal_count',
+		'rating_avg',
+		'rating_count',
+		'createdAt'
+	]
+		.map((f, i) => `fields[${i}]=${f}`)
+		.join('&');
+	const data = await apiJson(`/api/idx-businesses?${fields}&pagination[pageSize]=1000`);
+	return Array.isArray(data?.data) ? data.data : [];
+}
+
+/**
+ * הביקורות עם השדות הדרושים לסטטיסטיקה (דירוג, סטטוס, תאריך).
+ * @returns {Promise<any[]>}
+ */
+export async function listReviewsForStats() {
+	const qs =
+		'fields[0]=rating&fields[1]=status&fields[2]=submitted_at' +
+		'&populate[business][fields][0]=name&sort=createdAt:desc&pagination[pageSize]=500';
+	const data = await apiJson(`/api/idx-reviews?${qs}`);
 	return Array.isArray(data?.data) ? data.data : [];
 }
 

@@ -182,6 +182,30 @@ export async function listApproved() {
 	return ads;
 }
 
+/**
+ * הפרסומות של מפרסם מסוים, בכל סטטוס — לאזור האישי. הסינון בשרת לפי המזהה
+ * והאימייל שנשמרו בשליחה (submitted_by_*).
+ * @param {{id?: string, email?: string}} owner
+ * @returns {Promise<SubmittedAd[]>}
+ */
+export async function listAdsByOwner({ id, email }) {
+	/** @type {string[]} */
+	const or = [];
+	if (id) or.push(`filters[$or][${or.length}][submitted_by_id][$eq]=${encodeURIComponent(id)}`);
+	if (email)
+		or.push(`filters[$or][${or.length}][submitted_by_email][$eqi]=${encodeURIComponent(email)}`);
+	if (!or.length) return [];
+	try {
+		const qs = `${or.join('&')}&sort=submitted_at:desc&pagination[pageSize]=100`;
+		const res = await api(`${ENDPOINT}?${qs}`);
+		if (!res.ok) return [];
+		const data = await res.json().catch(() => null);
+		return (Array.isArray(data?.data) ? data.data : []).map(fromStrapi);
+	} catch {
+		return [];
+	}
+}
+
 /** @param {string} id @returns {Promise<SubmittedAd|null>} */
 export async function getAd(id) {
 	const s = await findByDocumentId(id);

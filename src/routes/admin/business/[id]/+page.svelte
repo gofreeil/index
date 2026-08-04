@@ -29,7 +29,7 @@
 	<meta name="robots" content="noindex" />
 </svelte:head>
 
-<main class="mx-auto max-w-3xl px-4 py-8 sm:px-6" dir="rtl">
+<main class="mx-auto max-w-3xl pb-10" dir="rtl">
 	<div class="mb-6 flex items-center justify-between">
 		<div>
 			<h1 class="text-2xl font-extrabold text-gray-100">עריכת כרטיסייה</h1>

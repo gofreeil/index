@@ -6,8 +6,10 @@
 	/** @type {{ data: any, form: any }} */
 	let { data, form } = $props();
 
-	// ?tab=cards מאפשר לחזור לפאנל ישירות ללשונית מסוימת (למשל אחרי מחיקת כרטיסייה)
-	let tab = $state(page.url.searchParams.get('tab') || 'pending');
+	// הלשונית הפעילה נגזרת מה-URL (?tab=cards) ולא ממצב מקומי — סרגל הניווט
+	// שב-admin/+layout.svelte מחליף לשוניות בעזרת הקישורים האלה, ו"חזור"
+	// בדפדפן עובד כמצופה.
+	const tab = $derived(page.url.searchParams.get('tab') || 'pending');
 	let busy = $state('');
 
 	const REASON_HE = {
@@ -61,20 +63,8 @@
 		})
 	);
 
-	// "פרסומות" הוא עמוד נפרד (/admin/ads, פורט מהקהילה) — href במקום tab
-	const tabs = $derived([
-		{ id: 'pending', label: 'ממתינים לאישור', count: pending.length, badge: 'bg-blue-600' },
-		{ id: 'cards', label: 'כרטיסיות', count: allBusinesses.length, badge: 'bg-gray-600' },
-		{
-			id: 'ads',
-			label: '📢 פרסומות',
-			count: data.adsPending ?? 0,
-			badge: 'bg-purple-600',
-			href: '/admin/ads'
-		},
-		{ id: 'reviews', label: 'ביקורות', count: reviews.length, badge: 'bg-amber-600' },
-		{ id: 'reports', label: 'דיווחים', count: reports.length, badge: 'bg-red-600' }
-	]);
+	// הלשוניות עצמן חיות בסרגל הניווט של admin/+layout.svelte (adminNav.js),
+	// כולל המונים והבועות — כאן נשאר רק תוכן הלשונית הפעילה.
 
 	// class מלא ומילולי — Tailwind לא תופס מחרוזות מורכבות דינמית
 	const BTN = {
@@ -183,7 +173,7 @@
 	<meta name="robots" content="noindex" />
 </svelte:head>
 
-<main class="mx-auto max-w-5xl px-4 py-8 sm:px-6" dir="rtl">
+<main class="pb-10">
 	{#if !data.authorized}
 		<div
 			class="mx-auto mt-10 max-w-md rounded-3xl border border-gray-800 bg-gray-900/50 p-10 text-center"
@@ -206,39 +196,6 @@
 			{/if}
 		</div>
 	{:else}
-		<div class="mb-6 flex items-center justify-between">
-			<div>
-				<h1 class="flex items-center gap-3 text-3xl font-extrabold text-gray-100">
-					פאנל ניהול
-					{#if data.superAdmin}
-						<span
-							class="rounded-full border border-amber-500/40 bg-amber-900/30 px-3 py-1 text-xs font-bold text-amber-300"
-						>
-							👑 סופר-אדמין
-						</span>
-					{:else}
-						<span
-							class="rounded-full border border-blue-500/40 bg-blue-900/30 px-3 py-1 text-xs font-bold text-blue-300"
-						>
-							🛡️ אדמין
-						</span>
-					{/if}
-				</h1>
-				<p class="mt-1 text-sm text-gray-500">מחובר: {data.user.name} · {data.user.email}</p>
-			</div>
-			<div class="flex flex-shrink-0 items-center gap-3">
-				{#if data.superAdmin}
-					<a
-						href="/admin/admins"
-						class="rounded-full border border-amber-500/40 bg-amber-900/20 px-4 py-2 text-sm font-bold text-amber-300 transition hover:bg-amber-900/40"
-					>
-						👥 ניהול אדמינים
-					</a>
-				{/if}
-				<a href="/" class="text-sm text-gray-400 hover:text-blue-400">← לאתר</a>
-			</div>
-		</div>
-
 		{#if form?.error}
 			<div
 				class="mb-4 rounded-xl border border-red-500/30 bg-red-900/20 p-3 text-center text-red-300"
@@ -246,40 +203,6 @@
 				{form.error}
 			</div>
 		{/if}
-
-		<!-- Tabs -->
-		<div class="mb-6 flex flex-wrap gap-1 border-b border-gray-800 sm:gap-2">
-			{#each tabs as t (t.id)}
-				{#if t.href}
-					<a
-						href={t.href}
-						class="relative -mb-px border-b-2 border-transparent px-3 py-3 text-sm font-bold text-gray-400 transition hover:text-gray-200 sm:px-4"
-					>
-						{t.label}
-						{#if t.count > 0}
-							<span class="mr-1 rounded-full {t.badge} px-2 py-0.5 text-xs text-white"
-								>{t.count}</span
-							>
-						{/if}
-					</a>
-				{:else}
-					<button
-						onclick={() => (tab = t.id)}
-						class="relative -mb-px border-b-2 px-3 py-3 text-sm font-bold transition sm:px-4 {tab ===
-						t.id
-							? 'border-blue-500 text-blue-400'
-							: 'border-transparent text-gray-400 hover:text-gray-200'}"
-					>
-						{t.label}
-						{#if t.count > 0}
-							<span class="mr-1 rounded-full {t.badge} px-2 py-0.5 text-xs text-white"
-								>{t.count}</span
-							>
-						{/if}
-					</button>
-				{/if}
-			{/each}
-		</div>
 
 		<!-- ממתינים לאישור (עסקים חדשים) -->
 		{#if tab === 'pending'}

@@ -61,7 +61,7 @@
 	<meta name="robots" content="noindex" />
 </svelte:head>
 
-<main class="mx-auto max-w-4xl px-4 py-8 sm:px-6" dir="rtl">
+<main class="mx-auto max-w-4xl pb-10" dir="rtl">
 	<div class="mb-6 flex items-center justify-between">
 		<div>
 			<h1 class="text-2xl font-extrabold text-gray-100">👥 ניהול אדמינים</h1>

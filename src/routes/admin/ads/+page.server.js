@@ -16,6 +16,7 @@ import {
 	listSchedules,
 	listAdvertisers
 } from '$lib/server/adsStore.js';
+import { invalidatePendingCounts } from '$lib/server/pendingCounts.js';
 
 /** @param {any} locals */
 function requireAdmin(locals) {
@@ -91,6 +92,9 @@ async function runAdAction(fn) {
 	try {
 		const result = await fn();
 		if (!result) return { failResp: fail(404, { error: 'הפרסומת לא נמצאה' }) };
+		// כל פעולת מודרציה משנה את מספר הממתינות — מאפסים את המטמון של הבועה
+		// האדומה (האדר, אזור אישי, סרגל הניווט) כדי שהמספר יתעדכן מיד.
+		invalidatePendingCounts();
 		return { result };
 	} catch (e) {
 		return {

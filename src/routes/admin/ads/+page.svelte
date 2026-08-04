@@ -116,7 +116,8 @@
 	<meta name="robots" content="noindex" />
 </svelte:head>
 
-<div class="mx-auto max-w-6xl px-3 py-4 md:px-4 md:py-10" dir="rtl">
+<!-- הכותרת, הזהות וסרגל הניווט יושבים ב-admin/+layout.svelte — כאן רק התוכן -->
+<div class="pb-10" dir="rtl">
 	<!-- כותרת + ניווט -->
 	<header class="mb-5 flex flex-wrap items-start justify-between gap-3 md:mb-6">
 		<div class="min-w-0">

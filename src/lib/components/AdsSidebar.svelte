@@ -2,6 +2,8 @@
 	import { ads } from '$lib/adsData.js';
 	import { lang, translations } from '$lib/i18n';
 	import { adImgFit, parseAdImageFit } from '$lib/adImageFit';
+	import { adSeen } from '$lib/adSeen.js';
+	import { trackAdClick } from '$lib/adTrack.js';
 
 	/**
 	 * מודעה שאושרה ונשלחה מהשרת (מודעות משתמשים).
@@ -25,6 +27,7 @@
 	 * @property {string} cta
 	 * @property {string|undefined} hover
 	 * @property {string} href
+	 * @property {string|undefined} trackId מזהה המודעה למדידה; undefined = מודעת שותף סטטית
 	 * @property {'_self'|'_blank'} target
 	 * @property {string} image
 	 * @property {{x:number,y:number,z:number}|undefined} imageFit
@@ -49,6 +52,8 @@
 			cta: a.cta || a.title,
 			hover: a.hover || undefined,
 			href: `/ads/${a.id}`,
+			// רק מודעות של מפרסמים נמדדות — למודעות השותפים הסטטיות אין רשומה
+			trackId: /** @type {string|undefined} */ (a.id),
 			target: /** @type {'_self'} */ ('_self'),
 			image: a.mainImage,
 			imageFit: a.mainImageFit,
@@ -62,6 +67,7 @@
 			cta: a.cta,
 			hover: a.hover,
 			href: a.href,
+			trackId: /** @type {string|undefined} */ (undefined),
 			target: /** @type {'_blank'} */ ('_blank'),
 			image: a.image,
 			// למודעות השותפים הסטטיות אין fit — ברירת המחדל שקולה ל-object-cover
@@ -89,6 +95,8 @@
 					? t.opensNewWindowSuffix
 					: ''}"
 				class="group relative block overflow-hidden rounded-lg shadow-lg transition-transform hover:scale-105"
+				use:adSeen={ad.trackId}
+				onclick={() => trackAdClick(ad.trackId)}
 			>
 				<div class="relative overflow-hidden" style="height: {ad.imageHeight ?? '160px'}">
 					{#if ad.image}

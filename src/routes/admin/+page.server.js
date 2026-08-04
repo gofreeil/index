@@ -10,19 +10,20 @@ import {
 	deleteItem,
 	recomputeBusinessRating
 } from '$lib/server/strapi.js';
-import { countPending as countPendingAds } from '$lib/server/adsStore.js';
+import { invalidatePendingCounts } from '$lib/server/pendingCounts.js';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ locals }) {
 	const user = locals.user;
 	if (!isPrivileged(user)) return { authorized: false, user: user ?? null };
 
-	const [businesses, allBusinesses, reviews, reports, adsPending] = await Promise.all([
+	// מוני ההמתנה (הבועות בסרגל הניווט ובהאדר) מגיעים מ-+layout.server —
+	// כאן נשלפות רק הרשימות עצמן.
+	const [businesses, allBusinesses, reviews, reports] = await Promise.all([
 		listPendingBusinesses().catch(() => []),
 		listAllBusinesses().catch(() => []),
 		listPendingReviews().catch(() => []),
-		listOpenReports().catch(() => []),
-		countPendingAds()
+		listOpenReports().catch(() => [])
 	]);
 	return {
 		authorized: true,
@@ -31,8 +32,7 @@ export async function load({ locals }) {
 		businesses,
 		allBusinesses,
 		reviews,
-		reports,
-		adsPending
+		reports
 	};
 }
 
@@ -65,6 +65,8 @@ export const actions = {
 		if (kind === 'review') {
 			await recomputeBusinessRating(String(fd.get('businessDocId') || ''));
 		}
+		// הבועה האדומה נגזרת ממטמון של דקה — מאפסים אותו כדי שהמספר ירד מיד
+		invalidatePendingCounts();
 		return { ok: true, kind, documentId, status };
 	},
 
@@ -84,6 +86,7 @@ export const actions = {
 				error: 'המחיקה נכשלה: ' + (e instanceof Error ? e.message.slice(0, 140) : '')
 			});
 		}
+		invalidatePendingCounts();
 		return { ok: true, deleted: true, kind, documentId };
 	}
 };
