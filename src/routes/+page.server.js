@@ -1,11 +1,17 @@
 import { listApprovedBusinesses } from '$lib/server/strapi.js';
 import { toBusiness } from '$lib/businessShape.js';
+import { resolveCategory } from '$lib/categories.js';
 
 // ============================================================
 // טעינת האינדקס בצד-השרת (SSR).
 // עד כאן הרשימה נשלפה ב-onMount מ-/api/businesses — כלומר גוגל ומנועי ה-AI
 // קיבלו דף ריק בלי אף עסק. הטעינה בשרת מגישה את כל האינדקס בתוך ה-HTML,
 // וכך כל עסק נסרק, נאינדקס ומקבל קישור פנימי מדף הבית.
+//
+// התחום נקבע כאן ולא בדפדפן (resolveCategory): 80 מתוך 92 הכרטיסיות הגיעו
+// בלי קטגוריה או עם "אחר", והסיווג האוטומטי מחזיר אותן לתחום האמיתי שלהן
+// כבר ב-HTML הראשון — כך שגם הסינון, גם מסילת התחומים וגם הסורק רואים
+// את אותה טקסונומיה.
 // ============================================================
 
 export async function load() {
@@ -17,7 +23,7 @@ export async function load() {
 			slug: b.slug,
 			name: b.name || 'ללא שם',
 			phone: b.phone || '',
-			category: b.category || '',
+			category: resolveCategory(b),
 			banners: b.banners || [],
 			banner: b.banner || '',
 			description: b.description || '',

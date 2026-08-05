@@ -1,11 +1,12 @@
 <script>
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import LazyMap from '$lib/components/LazyMap.svelte';
 	import { lang, translations } from '$lib/i18n';
 	import BusinessCard from '$lib/components/BusinessCard.svelte';
+	import CategoryRail from '$lib/components/CategoryRail.svelte';
 	import JsonLd from '$lib/components/JsonLd.svelte';
 	import Seo from '$lib/components/Seo.svelte';
-	import { CATEGORIES } from '$lib/categories.js';
+	import { categoryIcon, OTHER } from '$lib/categories.js';
 	import { favorites } from '$lib/favorites.js';
 	import {
 		SITE_NAME,
@@ -44,12 +45,49 @@
 		}
 	});
 
-	// קטגוריות מהדאטה האמיתית (בסדר הקנוני, ואז נוספות) — לא טקסונומיה קשיחה מנותקת.
-	const dataCategories = $derived([...new Set(businesses.map((b) => b.category).filter(Boolean))]);
-	const categories = $derived([
-		...CATEGORIES.filter((c) => dataCategories.includes(c)),
-		...dataCategories.filter((c) => !CATEGORIES.includes(c))
-	]);
+	/* ═══════════ מסילת התחומים ═══════════
+	   התחום של כל כרטיסייה כבר נקבע בשרת (resolveCategory), ולכן כאן רק
+	   סופרים. הסדר הוא לפי מספר העסקים בפועל ולא לפי הרשימה הקנונית —
+	   מה שיש ממנו הכי הרבה באתר צריך להיות מה שרואים ראשון — ו"אחר" תמיד
+	   אחרון. תחומים ריקים אינם מוצגים כלל: אריח שמוביל ל-0 תוצאות הוא
+	   הבטחה שבורה (הם עדיין קיימים בטופס ההגשה). */
+	const railCategories = $derived.by(() => {
+		/** @type {Record<string, number>} */
+		const counts = {};
+		for (const b of businesses) {
+			const key = b.category || OTHER;
+			counts[key] = (counts[key] ?? 0) + 1;
+		}
+		return Object.entries(counts)
+			.map(([label, count]) => ({ key: label, label, icon: categoryIcon(label), count }))
+			.sort(
+				(a, b) =>
+					(a.key === OTHER ? 1 : 0) - (b.key === OTHER ? 1 : 0) ||
+					b.count - a.count ||
+					a.label.localeCompare(b.label, 'he')
+			);
+	});
+
+	/** @type {HTMLElement | null} */
+	let resultsEl = $state(null);
+
+	/** בחירת תחום מהמסילה — מסננת וגוללת אל התוצאות, שאחרת נשארות מתחת לקפל
+	 *  @param {string} key */
+	async function pickCategory(key) {
+		selectedCategory = key || 'all';
+		visibleCount = 9;
+		await tick();
+		const header = document.querySelector('header');
+		const top =
+			(resultsEl?.getBoundingClientRect().top ?? 0) +
+			window.scrollY -
+			((header?.offsetHeight ?? 0) + 12);
+		window.scrollTo({
+			top: Math.max(0, top),
+			behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+		});
+	}
+
 	// ערים מהדאטה
 	const cities = $derived(
 		[...new Set(businesses.map((b) => b.city).filter(Boolean))].sort((a, b) =>
@@ -105,18 +143,45 @@
 	   בעלי המקצוע, FAQ), וכן אינדקס טקסטואלי מלא בתחתית הדף שמקשר לכל עסק. */
 	const pageTitle = `בעלי מקצוע מומלצים ומדורגים בכל הארץ | ${SITE_NAME}`;
 
-	/** כל בעלי המקצוע לפי קטגוריה — לאינדקס הטקסטואלי שבתחתית הדף */
-	const businessesByCategory = $derived.by(() => {
-		/** @type {Map<string, any[]>} */
-		const map = new Map();
-		for (const b of businesses) {
-			const key = b.category || 'אחר';
-			const list = map.get(key);
-			if (list) list.push(b);
-			else map.set(key, [b]);
+	/* ═══════════ טבלת כל בעלי המקצוע ═══════════
+	   עד כאן ישבה כאן רשימה פתוחה של כל 92 בעלי המקצוע לפי תחום, והיא תפסה
+	   מסך שלם בתחתית דף הבית. עכשיו אותו תוכן בדיוק יושב בטבלה שנפתחת
+	   בכפתור. הטבלה מרונדרת תמיד ב-HTML ורק מוסתרת ב-CSS (ולא ב-{#if}) —
+	   זו הסיבה שהרשימה נולדה מלכתחילה: היא הקישור הפנימי היחיד לכל עסק ועסק,
+	   והכרטיסים למעלה מוצגים 9 בכל פעם. הסרה מה-DOM הייתה מנתקת 80 עסקים
+	   מהסריקה של גוגל ומנועי ה-AI. */
+	let showTable = $state(false);
+	/** @type {'name' | 'category' | 'city'} */
+	let sortBy = $state('category');
+	let sortDir = $state(1);
+
+	/** @type {Array<{ key: 'name' | 'category' | 'city', label: string }>} */
+	const TABLE_COLS = [
+		{ key: 'name', label: 'שם העסק' },
+		{ key: 'category', label: 'תחום' },
+		{ key: 'city', label: 'עיר' }
+	];
+
+	/** @param {'name' | 'category' | 'city'} col */
+	function sortTable(col) {
+		if (sortBy === col) sortDir = -sortDir;
+		else {
+			sortBy = col;
+			sortDir = 1;
 		}
-		return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0], 'he'));
-	});
+	}
+
+	const tableRows = $derived(
+		[...businesses].sort((a, b) => {
+			const key = /** @param {any} x */ (x) => String(x[sortBy] ?? '');
+			// שובר-שוויון קבוע לפי שם: בלעדיו סדר הכרטיסיות בתוך תחום מתהפך
+			// בכל מיון חוזר, והטבלה נראית כאילו היא "מתערבבת" מעצמה
+			return (
+				sortDir * key(a).localeCompare(key(b), 'he') ||
+				String(a.name).localeCompare(String(b.name), 'he')
+			);
+		})
+	);
 
 	// ה-FAQPage אינו כאן יותר: ההסבר והשאלות הנפוצות עברו ללשונית "אודות"
 	// שבדף המידע (/policy), והסכימה נדדה לשם — גוגל דורש שהסכימה תשקף טקסט
@@ -191,17 +256,6 @@
 			</div>
 
 			<div class="flex flex-wrap items-center gap-3">
-				<select
-					bind:value={selectedCategory}
-					aria-label="קטגוריה"
-					class="rounded-xl border border-gray-700 bg-blue-600 px-4 py-2.5 text-sm font-bold text-white outline-none"
-				>
-					<option value="all">כל הקטגוריות</option>
-					{#each categories as cat}
-						<option value={cat}>{cat}</option>
-					{/each}
-				</select>
-
 				{#if cities.length > 0}
 					<select
 						bind:value={selectedLocation}
@@ -225,6 +279,16 @@
 				{/if}
 			</div>
 		</div>
+
+		<!-- מסילת התחומים — המסנן הראשי לפי תחום, במקום תפריט נפתח שהסתיר
+		     את התחומים עד שנוגעים בו. כל אריח נושא את מספר העסקים שבו. -->
+		{#if railCategories.length > 1}
+			<CategoryRail
+				categories={railCategories}
+				selected={selectedCategory === 'all' ? '' : selectedCategory}
+				onselect={pickCategory}
+			/>
+		{/if}
 
 		<!-- Favorites -->
 		{#if favoriteBusinesses.length > 0}
@@ -271,8 +335,8 @@
 			<LazyMap businesses={filteredBusinesses} />
 		</div>
 
-		<!-- All businesses -->
-		<div class="mt-16">
+		<!-- All businesses — גם היעד שאליו נגללים אחרי בחירת תחום במסילה -->
+		<div class="mt-16" bind:this={resultsEl}>
 			<div class="mb-8 text-center">
 				<h2
 					class="bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 bg-clip-text text-2xl font-extrabold text-transparent sm:text-4xl"
@@ -302,35 +366,93 @@
 			{/if}
 		</div>
 
-		<!-- ═══ אינדקס טקסטואלי מלא לפי תחום ═══
+		<!-- ═══ טבלת כל בעלי המקצוע ═══
 		     הכרטיסים למעלה מוצגים 9 בכל פעם ("טען עוד"), ולכן רובם אינם מקושרים
-		     ב-HTML הראשון. הרשימה הזו מקשרת לכל עסק ועסק בעוגן טקסטואלי, וכך גוגל
-		     מגלה ומאנדקס את כולם — וגם גולש יכול לסרוק את התחום שלו במבט אחד. -->
-		{#if businessesByCategory.length > 0}
-			<nav class="mt-20 border-t border-gray-800 pt-10" aria-labelledby="full-index-title">
+		     ב-HTML הראשון. הטבלה הזו מקשרת לכל עסק ועסק, וכך גוגל מגלה ומאנדקס
+		     את כולם — אבל היא סגורה עד שלוחצים, כדי שלא תתפוס מסך שלם בתחתית
+		     דף הבית. hidden ב-CSS ולא {#if}: התוכן חייב להישאר ב-HTML הראשון. -->
+		{#if businesses.length > 0}
+			<section class="mt-20 border-t border-gray-800 pt-10" aria-labelledby="full-index-title">
 				<h2 id="full-index-title" class="mb-2 text-xl font-extrabold text-gray-100">
 					כל בעלי המקצוע לפי תחום
 				</h2>
-				<p class="mb-6 text-sm text-gray-400">
-					אינדקס מלא של {businesses.length} בעלי המקצוע באתר, מסודר לפי תחום עיסוק.
+				<p class="mb-5 text-sm text-gray-400">
+					אינדקס מלא של {businesses.length} בעלי המקצוע באתר — בטבלה אחת, לפי תחום עיסוק, שם ועיר.
 				</p>
-				<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-					{#each businessesByCategory as [category, list] (category)}
-						<div>
-							<h3 class="mb-2 text-sm font-bold text-blue-400">{category} ({list.length})</h3>
-							<ul class="space-y-1 text-sm text-gray-400">
-								{#each list as b (b.id)}
-									<li>
-										<a href="/business/{b.id}" class="hover:text-gray-100 hover:underline">
-											{b.name}{b.city ? ` — ${b.city}` : ''}
-										</a>
-									</li>
+
+				<button
+					type="button"
+					onclick={() => (showTable = !showTable)}
+					aria-expanded={showTable}
+					aria-controls="all-businesses-table"
+					class="inline-flex items-center gap-2 rounded-full border border-blue-500/40 bg-gradient-to-r from-blue-900/50 to-indigo-900/50 px-6 py-3 text-sm font-black text-blue-200 shadow-lg transition-all hover:border-blue-400/70 hover:from-blue-900/70 hover:to-indigo-900/70 active:scale-95"
+				>
+					<span aria-hidden="true">📋</span>
+					{showTable ? 'סגירת הטבלה' : `פתיחת טבלת כל ${businesses.length} בעלי המקצוע`}
+					<span class="text-xs" aria-hidden="true">{showTable ? '▲' : '▼'}</span>
+				</button>
+
+				<div id="all-businesses-table" class="mt-6" class:hidden={!showTable}>
+					<!-- overflow-x על העטיפה: בנייד הטבלה רחבה מהמסך, וגלילה אופקית
+					     בתוך המכל עדיפה על דחיסת עמודות עד לאי-קריאוּת -->
+					<div class="overflow-x-auto rounded-2xl border border-gray-800">
+						<table class="w-full min-w-[34rem] border-collapse text-right text-sm">
+							<caption class="sr-only">
+								כל בעלי המקצוע באינדקס — לחיצה על כותרת עמודה ממיינת לפיה
+							</caption>
+							<thead class="bg-gray-900/80 text-xs text-gray-300">
+								<tr>
+									<th scope="col" class="w-10 px-3 py-3 font-bold">#</th>
+									{#each TABLE_COLS as col (col.key)}
+										<th
+											scope="col"
+											class="px-3 py-3 font-bold"
+											aria-sort={sortBy === col.key
+												? sortDir === 1
+													? 'ascending'
+													: 'descending'
+												: 'none'}
+										>
+											<button
+												type="button"
+												onclick={() => sortTable(col.key)}
+												class="inline-flex items-center gap-1 hover:text-blue-300"
+											>
+												{col.label}
+												<span class="text-[0.65rem] opacity-70" aria-hidden="true">
+													{sortBy === col.key ? (sortDir === 1 ? '▲' : '▼') : '↕'}
+												</span>
+											</button>
+										</th>
+									{/each}
+									<th scope="col" class="px-3 py-3 font-bold">ההטבה לחברי הקהילה</th>
+								</tr>
+							</thead>
+							<tbody>
+								{#each tableRows as b, i (b.id)}
+									<tr class="border-t border-gray-800/80 even:bg-gray-900/30 hover:bg-gray-800/50">
+										<td class="px-3 py-2 text-xs text-gray-600 tabular-nums">{i + 1}</td>
+										<td class="px-3 py-2">
+											<a
+												href="/business/{b.id}"
+												class="font-medium text-gray-200 hover:text-blue-400 hover:underline"
+											>
+												{b.name}
+											</a>
+										</td>
+										<td class="px-3 py-2 whitespace-nowrap text-gray-400">
+											<span aria-hidden="true">{categoryIcon(b.category)}</span>
+											{b.category}
+										</td>
+										<td class="px-3 py-2 text-gray-400">{b.city || '—'}</td>
+										<td class="px-3 py-2 text-gray-400">{b.discount || '—'}</td>
+									</tr>
 								{/each}
-							</ul>
-						</div>
-					{/each}
+							</tbody>
+						</table>
+					</div>
 				</div>
-			</nav>
+			</section>
 		{/if}
 	{/if}
 

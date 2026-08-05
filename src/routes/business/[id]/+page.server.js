@@ -2,6 +2,7 @@ import { error } from '@sveltejs/kit';
 import { getBusiness, getUserPhone, isPrivileged } from '$lib/server/strapi.js';
 import { toBusiness } from '$lib/businessShape.js';
 import { canonicalPhoneKey } from '$lib/phoneIL.js';
+import { resolveCategory } from '$lib/categories.js';
 
 /**
  * האם המשתמש המחובר הוא בעל הכרטיסייה.
@@ -34,8 +35,11 @@ export async function load({ params, locals }) {
 	if (!b) throw error(404, 'העסק לא נמצא או ממתין לאישור');
 
 	const admin = isPrivileged(locals.user);
+	const business = toBusiness(b);
 	return {
-		business: toBusiness(b),
+		// אותו סיווג בדיוק כמו בדף הבית — כרטיסייה שהאינדקס מציג תחת "רפואה
+		// משלימה" לא תציג על עצמה "אחר" (או כלום) כשנכנסים אליה
+		business: { ...business, category: resolveCategory(business) },
 		// "שיתוף חכם" הוא כלי של בעל העסק בלבד. ההכרעה כאן ולא בדפדפן:
 		// toBusiness לא מחזיר ללקוח את מפתחות הבעלות, ולכן אין מה לזייף.
 		// אדמין מקבל גישה גם הוא — הוא כבר עורך ומאשר את הכרטיסיות.
