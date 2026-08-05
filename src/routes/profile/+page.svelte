@@ -1,7 +1,9 @@
 <script>
+	import { onMount } from 'svelte';
 	import { lang, translations } from '$lib/i18n';
 	import { logout } from '$lib/auth';
 	import { adminTiles } from '$lib/adminNav.js';
+	import { shareLog, forgetShares } from '$lib/shareLog.js';
 	import VisitorStatsCard from '$lib/components/VisitorStatsCard.svelte';
 
 	let { data } = $props();
@@ -75,6 +77,31 @@
 	const statusLabel = (st) => t[STATUS_KEY[st] || 'bizStatusPending'] || st;
 	/** @param {string} st */
 	const statusCls = (st) => STATUS_CLS[st] || STATUS_CLS.pending;
+
+	// למי שלחתי — יומן השליחות של פאנל השיתוף החכם. יושב ב-localStorage
+	// ולא בשרת, ולכן נקרא רק אחרי ההרכבה: לפני כן הצד השרתי והצד הלקוח
+	// היו מרנדרים תוכן שונה.
+	let mounted = $state(false);
+	onMount(() => (mounted = true));
+	const sent = $derived(mounted ? $shareLog : []);
+	let confirmClear = $state(false);
+	function clearSent() {
+		forgetShares();
+		confirmClear = false;
+	}
+
+	/** @param {number} ts */
+	const fmtWhen = (ts) => {
+		try {
+			return new Date(ts).toLocaleDateString(LOCALE[currentLang] || 'he-IL', {
+				day: '2-digit',
+				month: '2-digit',
+				year: '2-digit'
+			});
+		} catch {
+			return '';
+		}
+	};
 
 	// סיבות דיווח — בתקציר המודרציה (עברית בלבד, כמו פאנל הניהול)
 	const REASON_HE = /** @type {Record<string,string>} */ ({
@@ -548,4 +575,89 @@
 			</ul>
 		{/if}
 	</section>
+
+	<!-- למי שלחתי — כל מי שקיבל ממני כרטיס עסק דרך השיתוף החכם, כדי
+	     שאפשר יהיה לחזור אליו בהמשך. מוצג רק כשיש מה להציג. -->
+	{#if sent.length}
+		<section
+			class="w-full rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800"
+		>
+			<div class="mb-1 flex flex-wrap items-center justify-between gap-2">
+				<h2 class="text-lg font-extrabold text-gray-900 dark:text-gray-100">
+					{t.sentList}
+					<span class="text-sm font-bold text-gray-400">({sent.length})</span>
+				</h2>
+				{#if confirmClear}
+					<span class="flex items-center gap-3 text-sm">
+						<span class="text-gray-500 dark:text-gray-400">{t.sentClearConfirm}</span>
+						<button
+							type="button"
+							onclick={clearSent}
+							class="font-bold text-red-600 hover:underline dark:text-red-400"
+						>
+							{t.smartShareForget}
+						</button>
+						<button
+							type="button"
+							onclick={() => (confirmClear = false)}
+							class="font-bold text-gray-400 hover:underline"
+						>
+							{t.cancel}
+						</button>
+					</span>
+				{:else}
+					<button
+						type="button"
+						onclick={() => (confirmClear = true)}
+						class="text-sm font-bold text-gray-400 transition hover:text-red-600 dark:hover:text-red-400"
+					>
+						{t.smartShareForget}
+					</button>
+				{/if}
+			</div>
+			<p class="mb-4 text-xs text-gray-500 dark:text-gray-400">{t.sentListHint}</p>
+
+			<div class="overflow-x-auto">
+				<table class="w-full text-sm">
+					<thead>
+						<tr
+							class="border-b border-gray-100 text-xs text-gray-500 dark:border-gray-700 dark:text-gray-400"
+						>
+							<th class="py-2 text-start font-medium">{t.sentColName}</th>
+							<th class="py-2 text-start font-medium">{t.sentColPhone}</th>
+							<th class="py-2 text-start font-medium">{t.sentColDate}</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each sent as e (e.key)}
+							<tr class="border-b border-gray-50 last:border-0 dark:border-gray-700/50">
+								<td class="py-2 pe-3">
+									<span class="font-bold text-gray-900 dark:text-gray-100">{e.name || '—'}</span>
+									{#if e.bizName}
+										<span class="block text-[11px] text-gray-400">{e.bizName}</span>
+									{/if}
+								</td>
+								<td class="py-2 pe-3">
+									<!-- הקישור פותח שיחה ריקה בוואטסאפ — "לחזור אליו", לא "לשלוח שוב" -->
+									<a
+										href="https://wa.me/{e.wa}"
+										target="_blank"
+										rel="noopener noreferrer"
+										title={t.sentOpenChat}
+										dir="ltr"
+										class="font-medium text-green-600 hover:underline dark:text-green-400"
+									>
+										{e.pretty}
+									</a>
+								</td>
+								<td class="py-2 whitespace-nowrap text-gray-500 tabular-nums dark:text-gray-400">
+									{fmtWhen(e.at)}
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		</section>
+	{/if}
 </div>

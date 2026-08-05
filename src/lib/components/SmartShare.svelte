@@ -9,12 +9,17 @@
 	// אין באתר ספק SMS, ולכן השליחה עצמה נעשית דרך קישור עמוק: wa.me עם
 	// ההודעה מוכנה, או sms: כגיבוי. בעל העסק מקליד מספר ולוחץ פעם אחת —
 	// אפליקציית הוואטסאפ נפתחת עם השיחה והטקסט מוכנים.
+	//
+	// המסלול המהיר הוא מספר → שליחה, ותו לא: נוסח ההודעה מוסתר מאחורי
+	// כפתור עריכה, ושם הנמען נשאל רק אחרי השליחה — כשהוא כבר לא עומד
+	// בדרך. הרשומה נשמרת ליומן (shareLog.js) שמוצג באזור האישי.
 	// ─────────────────────────────────────────────────────────────
-	import { onMount } from 'svelte';
+	import { tick } from 'svelte';
 	import { slide } from 'svelte/transition';
 	import { lang, translations } from '$lib/i18n';
 	import { canonical } from '$lib/seo';
 	import { parsePhoneIL } from '$lib/phoneIL.js';
+	import { shareLog, logShare, nameShare, knownName, forgetShares } from '$lib/shareLog.js';
 
 	/** @type {{ business: any }} */
 	let { business } = $props();
@@ -34,10 +39,12 @@
 	// ── מצב הפאנל ────────────────────────────────────────────────
 	let open = $state(false);
 	let phoneRaw = $state('');
-	let recipient = $state('');
 	/** @type {'personal'|'benefit'|'plain'} */
 	let tone = $state('personal');
 	let copied = $state(false);
+	let editing = $state(false);
+	/** נוסח שנערך ידנית. null = ההודעה האוטומטית, שמתעדכנת לפי הסגנון. */
+	let draft = $state(/** @type {string|null} */ (null));
 
 	const parsed = $derived(parsePhoneIL(phoneRaw));
 	const touched = $derived(phoneRaw.trim().length > 0);
@@ -52,41 +59,13 @@
 	);
 
 	// ── זיכרון הנמענים ───────────────────────────────────────────
-	// מי שמפיץ את הכרטיס עושה זאת בסבב של כמה אנשים ברצף. הרשימה
-	// חוסכת הקלדה חוזרת ומראה למי כבר נשלח. מקומית בלבד (localStorage) —
-	// מספרי טלפון של צד שלישי לא נשמרים בשרת.
+	// מי שמפיץ את הכרטיס עושה זאת בסבב של כמה אנשים ברצף. הרשימה חוסכת
+	// הקלדה חוזרת ומראה למי כבר נשלח. כאן רק הנמענים של הכרטיסייה הזו —
+	// הטבלה המלאה יושבת באזור האישי.
 	const MAX_RECENT = 8;
-	const storageKey = $derived(`idx-smart-share:${business.documentId}`);
-	/** @type {{wa:string,e164:string,pretty:string,name:string,at:number}[]} */
-	let recent = $state([]);
-
-	onMount(() => {
-		try {
-			const arr = JSON.parse(localStorage.getItem(storageKey) || '[]');
-			if (Array.isArray(arr)) recent = arr.filter((r) => r?.wa).slice(0, MAX_RECENT);
-		} catch {
-			/* אחסון חסום או תוכן פגום — הרשימה פשוט מתחילה ריקה */
-		}
-	});
-
-	function persist() {
-		try {
-			localStorage.setItem(storageKey, JSON.stringify(recent));
-		} catch {
-			/* גלישה פרטית / אחסון מלא — השליחה כבר קרתה, אין על מה להתריע */
-		}
-	}
-
-	/** @param {{wa:string,e164:string,pretty:string,name:string,at:number}} entry */
-	function remember(entry) {
-		recent = [entry, ...recent.filter((r) => r.wa !== entry.wa)].slice(0, MAX_RECENT);
-		persist();
-	}
-
-	function forgetAll() {
-		recent = [];
-		persist();
-	}
+	const recent = $derived(
+		$shareLog.filter((e) => e.bizId === business.documentId).slice(0, MAX_RECENT)
+	);
 
 	// ── ההודעה ───────────────────────────────────────────────────
 	const bizArea = $derived(business.address || business.city || business.sales_area || '');
@@ -101,7 +80,7 @@
 	/**
 	 * ההודעה המלאה, לפי הסגנון שנבחר. הכוכביות סביב שם העסק הן הדגשה
 	 * של וואטסאפ — הוא מרנדר *טקסט* כמודגש.
-	 * @param {string} who שם הנמען, אם הוקלד
+	 * @param {string} who שם הנמען, אם הוא כבר ידוע (שליחה חוזרת)
 	 */
 	function buildMessage(who) {
 		const vars = {
@@ -137,7 +116,18 @@
 		return lines.join('\n');
 	}
 
-	const message = $derived(buildMessage(recipient.trim()));
+	const autoMessage = $derived(buildMessage(''));
+	const message = $derived(draft ?? autoMessage);
+
+	/**
+	 * בחירת סגנון מבטלת עריכה ידנית — אחרת הכפתורים היו נראים שבורים,
+	 * כי הטקסט שעל המסך לא היה משתנה. זו גם הדרך לחזור לנוסח האוטומטי.
+	 * @param {'personal'|'benefit'|'plain'} key
+	 */
+	function pickTone(key) {
+		tone = key;
+		draft = null;
+	}
 
 	/** @param {string} wa @param {string} text */
 	const waLink = (wa, text) => `https://wa.me/${wa}?text=${encodeURIComponent(text)}`;
@@ -153,6 +143,16 @@
 		else window.open(href, '_blank', 'noopener,noreferrer');
 	}
 
+	// ── "למי שלחת?" ──────────────────────────────────────────────
+	// השאלה עולה רק אחרי שהקישור נפתח. השורה כבר רשומה ביומן בלי שם,
+	// ולכן דילוג על השאלה לא מאבד את השליחה — רק את התווית.
+	/** @type {{key:string, pretty:string}|null} */
+	let pending = $state(null);
+	let pendingName = $state('');
+	let savedFlash = $state(false);
+	/** @type {HTMLInputElement|undefined} */
+	let whoInput = $state();
+
 	/** @param {'wa'|'sms'} channel */
 	function send(channel) {
 		if (!parsed.ok) return;
@@ -160,23 +160,45 @@
 			channel === 'wa'
 				? waLink(parsed.wa, message)
 				: `sms:${parsed.e164}?&body=${encodeURIComponent(message)}`;
-		remember({
+		const key = logShare({
+			bizId: business.documentId,
+			bizName: business.name || '',
 			wa: parsed.wa,
 			e164: parsed.e164,
 			pretty: parsed.pretty,
-			name: recipient.trim(),
+			name: knownName(parsed.wa),
 			at: Date.now()
 		});
 		openLink(href, channel);
-		// מתפנים לנמען הבא — המספר שנשלח כבר מופיע ברשימת "נשלח לאחרונה"
+
+		pending = { key, pretty: parsed.pretty };
+		pendingName = knownName(parsed.wa);
+		savedFlash = false;
+		// מתפנים לנמען הבא — הנוסח חוזר לברירת המחדל, המספר מתנקה
 		phoneRaw = '';
-		recipient = '';
+		editing = false;
+		draft = null;
+		tick().then(() => whoInput?.focus());
 	}
 
-	/** @param {{wa:string,e164:string,pretty:string,name:string,at:number}} entry */
+	function saveWho() {
+		if (!pending) return;
+		nameShare(pending.key, pendingName);
+		pending = null;
+		pendingName = '';
+		savedFlash = true;
+		setTimeout(() => (savedFlash = false), 4000);
+	}
+
+	function skipWho() {
+		pending = null;
+		pendingName = '';
+	}
+
+	/** @param {{wa:string,e164:string,pretty:string,name:string,bizName:string}} entry */
 	function resend(entry) {
 		openLink(waLink(entry.wa, buildMessage(entry.name || '')), 'wa');
-		remember({ ...entry, at: Date.now() });
+		logShare({ ...entry, bizId: business.documentId, at: Date.now() });
 	}
 
 	async function copyMessage() {
@@ -185,7 +207,8 @@
 			copied = true;
 			setTimeout(() => (copied = false), 1800);
 		} catch {
-			/* בלי הרשאת clipboard — התצוגה המקדימה עדיין ניתנת לסימון והעתקה ידנית */
+			/* בלי הרשאת clipboard — פותחים את העורך, שם אפשר לסמן ולהעתיק ידנית */
+			editing = true;
 		}
 	}
 
@@ -255,24 +278,12 @@
 				</div>
 
 				<div>
-					<label for="ss-who" class="block text-xs text-gray-500">{t.smartShareWhoLabel}</label>
-					<input
-						id="ss-who"
-						type="text"
-						autocomplete="off"
-						bind:value={recipient}
-						placeholder={t.smartShareWhoPlaceholder}
-						class="mt-1 w-full rounded-lg border border-white/10 bg-transparent px-3 py-2 text-gray-100 transition outline-none placeholder:text-gray-600 focus:border-white/30"
-					/>
-				</div>
-
-				<div>
 					<span class="block text-xs text-gray-500">{t.smartShareToneLabel}</span>
 					<div class="mt-1.5 inline-flex rounded-lg border border-white/10 p-0.5">
 						{#each TONES as [key, label] (key)}
 							<button
 								type="button"
-								onclick={() => (tone = key)}
+								onclick={() => pickTone(key)}
 								aria-pressed={tone === key}
 								class="rounded-md px-3 py-1 text-xs font-medium transition {tone === key
 									? 'bg-white/10 text-gray-100'
@@ -282,24 +293,6 @@
 							</button>
 						{/each}
 					</div>
-				</div>
-
-				<!-- תצוגה מקדימה — הסיבה היחידה שהיא כאן היא שכפתורי הסגנון
-				     חסרי משמעות בלי לראות מה משתנה. לכן: שקטה וקומפקטית. -->
-				<div>
-					<div class="flex items-baseline justify-between gap-3">
-						<span class="text-xs text-gray-500">{t.smartSharePreviewLabel}</span>
-						<button
-							type="button"
-							onclick={copyMessage}
-							class="text-xs text-gray-500 transition hover:text-gray-300"
-						>
-							{copied ? t.smartShareCopied : t.smartShareCopy}
-						</button>
-					</div>
-					<pre
-						class="mt-1.5 max-h-40 overflow-y-auto rounded-lg bg-white/[0.03] p-3 text-xs leading-6 break-words whitespace-pre-wrap text-gray-400"
-						dir="auto">{message}</pre>
 				</div>
 			</div>
 
@@ -322,6 +315,102 @@
 				</button>
 			</div>
 
+			<!-- הנוסח מוכן ולרוב אין מה לעשות איתו, ולכן הוא לא תופס מקום על
+			     המסך: מי שרוצה לשנות משהו פותח את העורך, וכל השאר פשוט שולחים. -->
+			<div class="mt-3 flex flex-wrap items-center gap-4">
+				<button
+					type="button"
+					onclick={() => (editing = !editing)}
+					aria-expanded={editing}
+					aria-controls="ss-editor"
+					class="text-xs text-gray-500 transition hover:text-gray-300"
+				>
+					{editing ? t.smartShareEditClose : t.smartShareEditBtn}
+				</button>
+				<button
+					type="button"
+					onclick={copyMessage}
+					class="text-xs text-gray-500 transition hover:text-gray-300"
+				>
+					{copied ? t.smartShareCopied : t.smartShareCopy}
+				</button>
+			</div>
+
+			{#if editing}
+				<div id="ss-editor" transition:slide={{ duration: 160 }} class="mt-2">
+					<label for="ss-text" class="block text-xs text-gray-500">
+						{t.smartSharePreviewLabel}
+					</label>
+					<textarea
+						id="ss-text"
+						rows="9"
+						dir="auto"
+						value={message}
+						oninput={(e) => (draft = e.currentTarget.value)}
+						class="mt-1.5 w-full rounded-lg border border-white/10 bg-white/[0.03] p-3 text-xs leading-6 text-gray-300 transition outline-none focus:border-white/30"
+					></textarea>
+					{#if draft !== null}
+						<button
+							type="button"
+							onclick={() => (draft = null)}
+							class="mt-1 text-xs text-gray-600 transition hover:text-gray-400"
+						>
+							{t.smartShareResetText}
+						</button>
+					{/if}
+				</div>
+			{/if}
+
+			<!-- שאלת השם — אחרי השליחה בלבד, כדי שהיא לא תעמוד בדרך למי
+			     שרק רוצה לשלוח ולהמשיך הלאה. -->
+			{#if pending}
+				<div
+					transition:slide={{ duration: 160 }}
+					class="mt-5 rounded-lg border border-white/10 bg-white/[0.03] p-3"
+				>
+					<label for="ss-who" class="block text-sm font-medium text-gray-300">
+						{t.smartShareAskWho}
+					</label>
+					<p class="mt-0.5 text-xs text-gray-500">
+						{fmt(t.smartShareAskWhoHint, { phone: pending.pretty })}
+					</p>
+					<div class="mt-2 flex flex-wrap items-center gap-2">
+						<input
+							id="ss-who"
+							type="text"
+							autocomplete="off"
+							bind:this={whoInput}
+							bind:value={pendingName}
+							onkeydown={(e) => e.key === 'Enter' && saveWho()}
+							placeholder={t.smartShareWhoPlaceholder}
+							class="min-w-0 flex-1 rounded-lg border border-white/10 bg-transparent px-3 py-2 text-sm text-gray-100 transition outline-none placeholder:text-gray-600 focus:border-white/30"
+						/>
+						<button
+							type="button"
+							onclick={saveWho}
+							disabled={!pendingName.trim()}
+							class="rounded-lg border border-white/15 px-4 py-2 text-sm font-medium text-gray-200 transition hover:border-white/30 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+						>
+							{t.smartShareSaveWho}
+						</button>
+						<button
+							type="button"
+							onclick={skipWho}
+							class="text-xs text-gray-500 transition hover:text-gray-300"
+						>
+							{t.smartShareSkipWho}
+						</button>
+					</div>
+				</div>
+			{:else if savedFlash}
+				<p transition:slide={{ duration: 160 }} class="mt-5 text-xs text-emerald-400">
+					{t.smartShareSavedWho}
+					<a href="/profile" class="text-gray-500 underline-offset-4 hover:underline">
+						{t.smartShareSavedLink}
+					</a>
+				</p>
+			{/if}
+
 			{#if recent.length > 0}
 				<div class="mt-6">
 					<div class="flex items-baseline justify-between gap-3">
@@ -330,14 +419,14 @@
 						</span>
 						<button
 							type="button"
-							onclick={forgetAll}
+							onclick={() => forgetShares(business.documentId)}
 							class="text-xs text-gray-600 transition hover:text-gray-400"
 						>
 							{t.smartShareForget}
 						</button>
 					</div>
 					<div class="mt-2 flex flex-wrap gap-1.5">
-						{#each recent as entry (entry.wa)}
+						{#each recent as entry (entry.key)}
 							<button
 								type="button"
 								onclick={() => resend(entry)}
