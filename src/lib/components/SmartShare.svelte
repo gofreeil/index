@@ -12,14 +12,15 @@
 	//
 	// המסלול המהיר הוא מספר → שליחה, ותו לא: נוסח ההודעה מוסתר מאחורי
 	// כפתור עריכה, ושם הנמען נשאל רק אחרי השליחה — כשהוא כבר לא עומד
-	// בדרך. הרשומה נשמרת ליומן (shareLog.js) שמוצג באזור האישי.
+	// בדרך. הפאנל רק כותב ליומן (shareLog.js) ולא מציג אותו: רשימת מי
+	// שקיבל את הכרטיס יושבת במקום אחד בלבד — האזור האישי.
 	// ─────────────────────────────────────────────────────────────
 	import { tick } from 'svelte';
 	import { slide } from 'svelte/transition';
 	import { lang, translations } from '$lib/i18n';
 	import { canonical } from '$lib/seo';
 	import { parsePhoneIL } from '$lib/phoneIL.js';
-	import { shareLog, logShare, nameShare, knownName, forgetShares } from '$lib/shareLog.js';
+	import { logShare, nameShare } from '$lib/shareLog.js';
 
 	/** @type {{ business: any }} */
 	let { business } = $props();
@@ -29,7 +30,7 @@
 	const t = $derived(/** @type {any} */ (translations)[currentLang] || translations.he);
 
 	/**
-	 * הצבת ערכים בתבנית תרגום ({who}, {biz}…). ערך ריק מוצב כריק —
+	 * הצבת ערכים בתבנית תרגום ({biz}, {phone}…). ערך ריק מוצב כריק —
 	 * רק מפתח שלא הועבר כלל נשאר גלוי, כדי שתבנית שבורה תיראה מיד.
 	 * @param {string} tpl @param {Record<string,string>} vars
 	 */
@@ -58,15 +59,6 @@
 					: t.smartShareErrInvalid
 	);
 
-	// ── זיכרון הנמענים ───────────────────────────────────────────
-	// מי שמפיץ את הכרטיס עושה זאת בסבב של כמה אנשים ברצף. הרשימה חוסכת
-	// הקלדה חוזרת ומראה למי כבר נשלח. כאן רק הנמענים של הכרטיסייה הזו —
-	// הטבלה המלאה יושבת באזור האישי.
-	const MAX_RECENT = 8;
-	const recent = $derived(
-		$shareLog.filter((e) => e.bizId === business.documentId).slice(0, MAX_RECENT)
-	);
-
 	// ── ההודעה ───────────────────────────────────────────────────
 	const bizArea = $derived(business.address || business.city || business.sales_area || '');
 	const shortDesc = $derived(
@@ -79,12 +71,11 @@
 
 	/**
 	 * ההודעה המלאה, לפי הסגנון שנבחר. הכוכביות סביב שם העסק הן הדגשה
-	 * של וואטסאפ — הוא מרנדר *טקסט* כמודגש.
-	 * @param {string} who שם הנמען, אם הוא כבר ידוע (שליחה חוזרת)
+	 * של וואטסאפ — הוא מרנדר *טקסט* כמודגש. אין פנייה בשם: שם הנמען לא
+	 * ידוע בזמן הכתיבה, כי הוא נשאל רק אחרי השליחה.
 	 */
-	function buildMessage(who) {
+	function buildMessage() {
 		const vars = {
-			who,
 			biz: business.name || '',
 			category: business.category || '',
 			discount: business.discount || '',
@@ -96,7 +87,6 @@
 
 		/** @type {string[]} */
 		const lines = [];
-		if (who) lines.push(line('shareMsgGreeting'));
 
 		// בלי קטגוריה התבניות נופלות ל"— ." ריק, ולכן נשארים עם השם בלבד.
 		let headline = `*${vars.biz}*`;
@@ -116,7 +106,7 @@
 		return lines.join('\n');
 	}
 
-	const autoMessage = $derived(buildMessage(''));
+	const autoMessage = $derived(buildMessage());
 	const message = $derived(draft ?? autoMessage);
 
 	/**
@@ -166,13 +156,12 @@
 			wa: parsed.wa,
 			e164: parsed.e164,
 			pretty: parsed.pretty,
-			name: knownName(parsed.wa),
 			at: Date.now()
 		});
 		openLink(href, channel);
 
 		pending = { key, pretty: parsed.pretty };
-		pendingName = knownName(parsed.wa);
+		pendingName = '';
 		savedFlash = false;
 		// מתפנים לנמען הבא — הנוסח חוזר לברירת המחדל, המספר מתנקה
 		phoneRaw = '';
@@ -193,12 +182,6 @@
 	function skipWho() {
 		pending = null;
 		pendingName = '';
-	}
-
-	/** @param {{wa:string,e164:string,pretty:string,name:string,bizName:string}} entry */
-	function resend(entry) {
-		openLink(waLink(entry.wa, buildMessage(entry.name || '')), 'wa');
-		logShare({ ...entry, bizId: business.documentId, at: Date.now() });
 	}
 
 	async function copyMessage() {
@@ -409,37 +392,6 @@
 						{t.smartShareSavedLink}
 					</a>
 				</p>
-			{/if}
-
-			{#if recent.length > 0}
-				<div class="mt-6">
-					<div class="flex items-baseline justify-between gap-3">
-						<span class="text-xs text-gray-500">
-							{t.smartShareRecent} ({recent.length})
-						</span>
-						<button
-							type="button"
-							onclick={() => forgetShares(business.documentId)}
-							class="text-xs text-gray-600 transition hover:text-gray-400"
-						>
-							{t.smartShareForget}
-						</button>
-					</div>
-					<div class="mt-2 flex flex-wrap gap-1.5">
-						{#each recent as entry (entry.key)}
-							<button
-								type="button"
-								onclick={() => resend(entry)}
-								title={t.smartShareResend}
-								class="rounded-md border border-white/10 px-2.5 py-1 text-xs text-gray-400 transition hover:border-white/25 hover:text-gray-200"
-							>
-								<span aria-hidden="true">↻</span>
-								<span>{entry.name || entry.pretty}</span>
-								{#if entry.name}<span class="text-gray-600" dir="ltr">{entry.pretty}</span>{/if}
-							</button>
-						{/each}
-					</div>
-				</div>
 			{/if}
 		</div>
 	{/if}

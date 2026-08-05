@@ -3,7 +3,7 @@
 	import { lang, translations } from '$lib/i18n';
 	import { logout } from '$lib/auth';
 	import { adminTiles } from '$lib/adminNav.js';
-	import { shareLog, forgetShares } from '$lib/shareLog.js';
+	import { shareLog, clearShareLog } from '$lib/shareLog.js';
 	import VisitorStatsCard from '$lib/components/VisitorStatsCard.svelte';
 
 	let { data } = $props();
@@ -86,7 +86,7 @@
 	const sent = $derived(mounted ? $shareLog : []);
 	let confirmClear = $state(false);
 	function clearSent() {
-		forgetShares();
+		clearShareLog();
 		confirmClear = false;
 	}
 
@@ -595,7 +595,7 @@
 							onclick={clearSent}
 							class="font-bold text-red-600 hover:underline dark:text-red-400"
 						>
-							{t.smartShareForget}
+							{t.sentClear}
 						</button>
 						<button
 							type="button"
@@ -611,7 +611,7 @@
 						onclick={() => (confirmClear = true)}
 						class="text-sm font-bold text-gray-400 transition hover:text-red-600 dark:hover:text-red-400"
 					>
-						{t.smartShareForget}
+						{t.sentClear}
 					</button>
 				{/if}
 			</div>

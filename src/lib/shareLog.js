@@ -5,10 +5,10 @@
 // שלישי ואין סיבה שיגיע לשרת. המחיר הוא שהרשימה לא עוברת בין מכשירים
 // ונעלמת עם ניקוי הדפדפן — זו רשימת עזר, לא מאגר לקוחות.
 //
-// יומן אחד לכל הכרטיסיות ולא אחד לכל כרטיסייה, כי האזור האישי מציג את
-// כולן בטבלה אחת. פאנל השיתוף מסנן ממנו את הכרטיסייה שהוא יושב בה.
+// יומן אחד לכל הכרטיסיות ולא אחד לכל כרטיסייה: הרשימה מוצגת במקום אחד
+// בלבד — האזור האישי. פאנל השיתוף רק כותב לכאן, ולא מציג דבר.
 // ─────────────────────────────────────────────────────────────
-import { writable, get } from 'svelte/store';
+import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
 
 const KEY = 'idx-share-log';
@@ -146,19 +146,7 @@ export function nameShare(key, name) {
 	shareLog.update((list) => list.map((e) => (e.key === key ? { ...e, name: clean } : e)));
 }
 
-/**
- * שם שכבר נשמר לאותו מספר — גם אם נשמר בכרטיסייה אחרת. חוסך הקלדה
- * חוזרת של אותו מכר.
- * @param {string} wa
- */
-export function knownName(wa) {
-	return get(shareLog).find((e) => e.wa === wa && e.name)?.name || '';
-}
-
-/**
- * ניקוי — של כרטיסייה אחת, או של כל היומן כשלא הועבר מזהה.
- * @param {string} [bizId]
- */
-export function forgetShares(bizId) {
-	shareLog.update((list) => (bizId ? list.filter((e) => e.bizId !== bizId) : []));
+/** ניקוי היומן כולו — מהאזור האישי, המקום היחיד שמציג אותו. */
+export function clearShareLog() {
+	shareLog.set([]);
 }
