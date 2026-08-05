@@ -114,19 +114,25 @@
 				<!-- Title & Logo Section -->
 				<a
 					href="/"
-					class="flex min-w-0 flex-1 items-center gap-1 transition-opacity hover:opacity-80 sm:gap-3"
+					class="group flex min-w-0 flex-1 items-center gap-1 sm:gap-3"
+					title={t.homeTooltip}
+					aria-label={t.homeTooltip}
 				>
+					<!-- הלוגו גדל מעט בריחוף מעל הקישור כולו (group-hover), כדי שגם מי
+					     שהעכבר שלו מתקרב מכיוון הכותרת יקבל את הרמז שזה קישור לדף הבית. -->
 					<img
 						src="/logo-professionals.png?v=2"
 						alt="לוגו בעלי מקצוע כשירים — סדר בכל עניין"
-						class="h-8 w-auto rounded-lg object-contain shadow-sm sm:h-14"
+						class="h-8 w-auto rounded-lg object-contain shadow-sm transition-transform duration-300 ease-out group-hover:scale-110 sm:h-14"
 					/>
-					<div class="flex flex-col text-right">
+					<div class="flex flex-col text-right transition-opacity group-hover:opacity-80">
 						<!-- שם המותג בכותרת הוא <p> ולא <h1>: ה-h1 שייך לכותרת הייחודית של כל דף
 						     (שם העסק בדף עסק, כותרת האינדקס בדף הבית). h1 גלובלי זהה בכל הדפים
 						     היה מטשטש לגוגל במה כל דף עוסק. -->
+						<!-- הגרדיאנט בגוונים בהירים (400/300) ולא 600: הכותרת יושבת על רקע
+						     gray-900 כהה, וכחול-סגול כהה כמעט נבלע בו. -->
 						<p
-							class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-right text-xs leading-tight font-black text-transparent sm:text-4xl"
+							class="bg-gradient-to-r from-sky-400 via-blue-300 to-fuchsia-400 bg-clip-text text-right text-xs leading-tight font-black text-transparent sm:text-4xl"
 						>
 							מדריך בעלי מקצוע כשירים
 						</p>
