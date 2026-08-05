@@ -445,6 +445,13 @@
 											class="rounded-full border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-[11px] font-black whitespace-nowrap text-emerald-300"
 											>💳 קוד תנועה — כמו שולם</span
 										>
+									{:else if ad.codeRequested}
+										<!-- הקוד הוא בקשה בלבד. הניסוח חייב לומר במפורש שלא שולם,
+										     אחרת מאשרים פרסומת בהנחה שנכנס כסף. -->
+										<span
+											class="rounded-full border border-sky-500/40 bg-sky-500/15 px-2 py-0.5 text-[11px] font-black whitespace-nowrap text-sky-300"
+											>🎟️ ביקש חינם עם קוד — לא שולם</span
+										>
 									{:else}
 										<span
 											class="rounded-full border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 text-[11px] font-black whitespace-nowrap text-amber-300"

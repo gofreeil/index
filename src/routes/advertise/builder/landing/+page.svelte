@@ -866,7 +866,8 @@
                         <button type="button" class="pay-duration-btn" class:active={payDuration === 180} onclick={() => setPayDuration(180)}>חצי שנה</button>
                     </div>
                     {#if payCodeOk}
-                        <p class="pay-ok">✅ הקוד התקבל — המודעה תישלח לאישור כמי ששולם ({payDurationLabel}).</p>
+                        <!-- הקוד הוא בקשה, לא זכות: אסור להבטיח כאן "כמו ששולם" -->
+                        <p class="pay-ok">✅ הקוד התקבל — בקשה לפרסום חינם ל{payDurationLabel} תישלח לאישור המנהל.</p>
                     {:else}
                         <p class="pay-sub">
                             המודעה תעלה לאוויר אחרי אישור מנהל, בהתאם לתשלום.

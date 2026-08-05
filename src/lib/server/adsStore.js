@@ -63,7 +63,8 @@ const TTL_ADS = 120_000;
  * @property {string} mainImage
  * @property {{x:number,y:number,z:number}} mainImageFit מיקום+זום התמונה הראשית במשבצת (מהבילדר)
  * @property {any} landing
- * @property {string} payment "code" = הוזן קוד התנועה בשליחה (כמו שולם); "pending" = תשלום לתיאום
+ * @property {string} payment "code" = סומן כשולם; "pending" = תשלום לתיאום. הגשה תמיד נכנסת כ-pending.
+ * @property {boolean} codeRequested המפרסם הקליד את קוד הבעלים — בקשה לפרסום חינם שממתינה לאישור ידני
  * @property {number} requestedDurationDays התקופה שהמפרסם ביקש בשליחה (30/180) — ברירת המחדל באישור
  */
 
@@ -125,6 +126,8 @@ function fromStrapi(s) {
 		// ערכי ההגשה הארוזים ב-landing (ראו כותרת הקובץ)
 		mainImageFit: parseAdImageFit(s.landing?._mainImageFit),
 		payment: s.landing?._payment === 'code' ? 'code' : 'pending',
+		// המפרסם הקליד את קוד הבעלים — בקשה לפרסום חינם, לא אישור שלה
+		codeRequested: s.landing?._codeRequested === true,
 		requestedDurationDays: Number(s.landing?._requestedDurationDays) === 180 ? 180 : 30
 	};
 }
@@ -251,7 +254,10 @@ export async function getAd(id) {
 export async function submitAd(payload) {
 	const landing = {
 		...(payload.landing ?? emptyLanding()),
-		_payment: payload.payment === 'code' ? 'code' : 'pending',
+		// הגשה לעולם לא נכנסת כ"שולם". קוד הבעלים הוא *בקשה* לפרסום חינם,
+		// והזכות עצמה ניתנת רק באישור הידני של האדמין.
+		_payment: 'pending',
+		_codeRequested: payload.payment === 'code',
 		_requestedDurationDays: Number(payload.requestedDurationDays) === 180 ? 180 : 30,
 		// parseAdImageFit מנקה קלט לא-בטוח מהדפדפן לערכים חוקיים בלבד
 		_mainImageFit: parseAdImageFit(payload.mainImageFit),
