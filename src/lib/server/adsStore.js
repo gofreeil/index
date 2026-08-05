@@ -21,6 +21,18 @@ const STRAPI_URL = (env.STRAPI_URL || 'https://api.gofreeil.com').replace(/\/$/,
 const TOKEN = env.STRAPI_TOKEN || '';
 const ENDPOINT = '/api/submitted-ads';
 
+// האוסף submitted-ads ב-Strapi משותף עם "קהילה בשכונה" ואין בו עמודת אתר,
+// ולכן בלי הסימון הזה כל פרסומת שאושרה שם הופיעה גם כאן. הסימון נשמר
+// ב-landing._site (עמודת json שכבר נושאת מפתחות פנימיים כמו _payment),
+// כך שאין צורך בשינוי סכמה. פרסומת בלי _site היא פרסומת ישנה של
+// "קהילה בשכונה" — היא לא שייכת לאתר הזה ולא מוצגת בו.
+const SITE_ID = 'index';
+
+/** האם הפרסומת הוגשה לאתר הזה. @param {any} s */
+function belongsToThisSite(s) {
+	return s?.landing?._site === SITE_ID;
+}
+
 const DEFAULT_DURATION_DAYS = 30;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -131,7 +143,9 @@ async function listByStatus(status) {
 		if (!res.ok) throw new Error(`strapi submitted-ads → ${res.status}`);
 		const data = await res.json().catch(() => null);
 		const items = Array.isArray(data?.data) ? data.data : [];
-		out.push(...items.map(fromStrapi));
+		// סינון לפי אתר: האוסף משותף, ובלי זה פרסומות של "קהילה בשכונה"
+		// היו נכנסות לכאן. הסינון בקוד ולא ב-Strapi כי אין עמודה ייעודית.
+		out.push(...items.filter(belongsToThisSite).map(fromStrapi));
 		const pageCount = data?.meta?.pagination?.pageCount ?? 1;
 		if (page >= pageCount) return out;
 		page++;
@@ -143,7 +157,9 @@ async function findByDocumentId(id) {
 	const res = await api(`${ENDPOINT}/${encodeURIComponent(id)}`);
 	if (!res.ok) return null;
 	const data = await res.json().catch(() => null);
-	return data?.data ?? null;
+	const item = data?.data ?? null;
+	// גם בגישה ישירה לפי מזהה: פרסומת של אתר אחר באוסף המשותף אינה קיימת כאן
+	return item && belongsToThisSite(item) ? item : null;
 }
 
 // ── cache לפרסומות המאושרות ──
@@ -238,7 +254,9 @@ export async function submitAd(payload) {
 		_payment: payload.payment === 'code' ? 'code' : 'pending',
 		_requestedDurationDays: Number(payload.requestedDurationDays) === 180 ? 180 : 30,
 		// parseAdImageFit מנקה קלט לא-בטוח מהדפדפן לערכים חוקיים בלבד
-		_mainImageFit: parseAdImageFit(payload.mainImageFit)
+		_mainImageFit: parseAdImageFit(payload.mainImageFit),
+		// שיוך לאתר — בלעדיו הפרסומת תיבלע באוסף המשותף ותופיע גם באתרים אחרים
+		_site: SITE_ID
 	};
 	const res = await api(ENDPOINT, {
 		method: 'POST',
