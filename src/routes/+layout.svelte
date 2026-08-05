@@ -7,6 +7,8 @@
 	import AdsSidebar from '$lib/components/AdsSidebar.svelte';
 	import Footer from '$lib/components/Footer.svelte';
 	import WelcomeScreen from '$lib/components/WelcomeScreen.svelte';
+	import Flag from '$lib/components/Flag.svelte';
+	import PolicyModal from '$lib/components/PolicyModal.svelte';
 	import { authUser, hydrateAuth } from '$lib/auth';
 	import { onMount } from 'svelte';
 
@@ -65,11 +67,17 @@
 	let user = $state(null);
 	authUser.subscribe((v) => (user = v));
 
-	const flags = {
-		he: '🇮🇱',
-		en: '🇬🇧',
-		ru: '🇷🇺'
+	// קודי הדגלים ב-flagcdn (ISO 3166-1 alpha-2) — אותו מקור דגלים כמו בשאר
+	// אתרי הרשת, במקום אימוג'י שלא נתמך ב-Windows.
+	/** @type {Record<string, string>} */
+	const flagCodes = {
+		he: 'il',
+		en: 'gb',
+		ru: 'ru'
 	};
+
+	// חלון המידע של מדיניות הקהילה, שנפתח מכפתור המידע שבכותרת.
+	let isPolicyOpen = $state(false);
 </script>
 
 <svelte:head>
@@ -94,6 +102,9 @@
 <WelcomeScreen userName={user?.name || ''} />
 
 <MobileAdsDrawer />
+
+<!-- חלון המידע של מדיניות הקהילה — גלובלי, נפתח מכפתור המידע שבכותרת -->
+<PolicyModal bind:open={isPolicyOpen} />
 
 <div class="relative min-h-screen bg-gray-950 text-gray-100" dir={t.dir}>
 	<!-- Header -->
@@ -125,7 +136,8 @@
 					</div>
 				</a>
 
-				<!-- Action Buttons -->
+				<!-- Action Buttons — סדר ה-DOM הוא מימין לשמאל (העמוד ב-RTL):
+				     שפה, מדיניות הקהילה, הוסף עסק, ואזור אישי בקצה השמאלי. -->
 				<div class="flex flex-shrink-0 items-center gap-1 sm:gap-3">
 					<!-- Language Selector -->
 					<div class="relative flex items-center">
@@ -134,9 +146,14 @@
 							class="dark:hover:bg-gray-750 flex items-center gap-1 rounded-full border border-gray-200 bg-white px-2 py-1 text-lg shadow-sm transition-all hover:bg-gray-50 hover:shadow-md sm:gap-2 sm:px-4 sm:py-2 sm:text-xl dark:border-gray-700 dark:bg-gray-800"
 							title="Change Language"
 						>
-							<span class="flex items-center justify-center leading-none">
-								{/** @type {any} */ (flags)[currentLang]}
-							</span>
+							<Flag
+								code={flagCodes[currentLang]}
+								label={currentLang === 'he'
+									? t.israel
+									: currentLang === 'en'
+										? t.english
+										: t.russia}
+							/>
 							<span class="hidden text-sm font-bold text-gray-700 sm:inline dark:text-gray-200">
 								{currentLang === 'he' ? t.israel : currentLang === 'en' ? t.english : t.russia}
 							</span>
@@ -169,66 +186,42 @@
 									onclick={() => changeLang('he')}
 									class="flex items-center gap-3 px-3 py-2.5 text-right text-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
 								>
-									<span class="text-lg">🇮🇱</span>
+									<Flag code="il" label={t.israel} />
 									<span class="font-medium text-gray-700 dark:text-gray-200">{t.israel}</span>
 								</button>
 								<button
 									onclick={() => changeLang('en')}
 									class="flex items-center gap-3 px-3 py-2.5 text-right text-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
 								>
-									<span class="text-lg">🇬🇧</span>
+									<Flag code="gb" label={t.english} />
 									<span class="font-medium text-gray-700 dark:text-gray-200">{t.english}</span>
 								</button>
 								<button
 									onclick={() => changeLang('ru')}
 									class="flex items-center gap-3 px-3 py-2.5 text-right text-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
 								>
-									<span class="text-lg">🇷🇺</span>
+									<Flag code="ru" label={t.russia} />
 									<span class="font-medium text-gray-700 dark:text-gray-200">{t.russia}</span>
 								</button>
 							</div>
 						{/if}
 					</div>
 
-					<!-- User Auth Section — אווטאר בלבד; ההתנתקות ופרטי המשתמש בעמוד /profile.
-					     כשיש פריטים שממתינים לטיפול (אדמין) — בועה אדומה ממוספרת בפינת
-					     האווטאר, והקישור מוביל ישר לפאנל שבאזור האישי. -->
-					{#if user}
-						<div class="relative flex-shrink-0">
-							<a
-								href={pendingTotal > 0 ? '/profile#admin' : '/profile'}
-								class="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-sm font-bold text-white shadow-sm transition-all hover:scale-105 hover:shadow-md sm:h-10 sm:w-10"
-								title={pendingTotal > 0 ? `${pendingTotal} פריטים ממתינים לטיפול` : t.myArea}
-								aria-label={pendingTotal > 0
-									? `${t.myArea} – ${user.name} – ${pendingTotal} פריטים ממתינים לטיפול`
-									: `${t.myArea} – ${user.name}`}
-							>
-								{(user.name || '?').trim().charAt(0).toUpperCase()}
-							</a>
-							{#if pendingTotal > 0}
-								<span
-									class="pointer-events-none absolute -top-1 -left-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[11px] leading-none font-black text-white shadow-lg ring-2 ring-gray-900"
-								>
-									<span class="sr-only">פריטים ממתינים לטיפול:</span>{pendingTotal > 99
-										? '99+'
-										: pendingTotal}
-								</span>
-							{/if}
-						</div>
-					{:else}
-						<a
-							href="/auth/login"
-							class="rounded-full border border-gray-200 bg-white px-2 py-1 text-xs font-bold text-blue-600 shadow-sm transition-all hover:bg-gray-50 hover:shadow-md sm:px-4 sm:py-2 sm:text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-blue-400"
-						>
-							{t.login}
-						</a>
-					{/if}
-
-					<!-- Community Policy Button -->
+					<!-- כפתור המידע — מדיניות הקהילה.
+					     קליק רגיל פותח את המדיניות בחלון מידע על גבי הדף הנוכחי, אבל
+					     האלמנט נשאר <a> אמיתי אל /policy: כך פתיחה בלשונית חדשה
+					     (ctrl+קליק), שמירת הקישור וסריקה של גוגל ממשיכות לעבוד. -->
 					<a
 						href="/policy"
-						class="hidden items-center gap-2 rounded-full bg-gradient-to-r from-yellow-200 to-yellow-400 px-3 py-2 text-sm font-bold text-yellow-900 shadow-sm transition-all hover:scale-105 hover:shadow-md active:scale-95 sm:px-4 sm:py-2.5 lg:flex"
+						onclick={(e) => {
+							// דילוג על פתיחת החלון כשהגולש ביקש במפורש לשונית/חלון אחר
+							if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+							e.preventDefault();
+							isPolicyOpen = true;
+						}}
+						class="flex items-center gap-2 rounded-full bg-gradient-to-r from-yellow-200 to-yellow-400 px-2 py-1.5 text-sm font-bold text-yellow-900 shadow-sm transition-all hover:scale-105 hover:shadow-md active:scale-95 sm:px-4 sm:py-2.5"
 						title={t.policy}
+						aria-haspopup="dialog"
 					>
 						<svg
 							class="h-5 w-5"
@@ -244,7 +237,7 @@
 								d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
 							/>
 						</svg>
-						<span class="hidden sm:inline">{t.policy}</span>
+						<span class="hidden lg:inline">{t.policy}</span>
 					</a>
 
 					<!-- Add Store Button -->
@@ -268,6 +261,47 @@
 						</svg>
 						<span class="hidden sm:inline">{t.addStore}</span>
 					</a>
+
+					<!-- User Auth Section — תצוגת האזור האישי מפורטת מהגמ"ח הארצי:
+					     גלולה כהה ובתוכה עיגול אווטאר בגרדיאנט ענבר–ורוד ושם המשתמש.
+					     הגרדיאנט הזה, ולא הכחול-סגול של "הוסף עסק", כדי ששני הכפתורים
+					     הסמוכים לא ייראו כאותו כפתור. ההתנתקות ופרטי המשתמש בעמוד /profile.
+					     כשיש פריטים שממתינים לטיפול (אדמין) — בועה אדומה ממוספרת בפינה,
+					     והקישור מוביל ישר לפאנל שבאזור האישי. -->
+					{#if user}
+						<a
+							href={pendingTotal > 0 ? '/profile#admin' : '/profile'}
+							class="relative flex flex-shrink-0 items-center gap-2 rounded-full bg-[#1c2f5a] px-1.5 py-1.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#2a4379] sm:px-3 sm:py-2"
+							title={pendingTotal > 0 ? `${pendingTotal} פריטים ממתינים לטיפול` : t.myArea}
+							aria-label={pendingTotal > 0
+								? `${t.myArea} – ${user.name} – ${pendingTotal} פריטים ממתינים לטיפול`
+								: `${t.myArea} – ${user.name}`}
+						>
+							<span
+								class="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-500 to-pink-600 text-xs"
+								aria-hidden="true">👤</span
+							>
+							<span class="hidden max-w-[120px] truncate sm:inline">{user.name || user.email}</span>
+							{#if pendingTotal > 0}
+								<span
+									class="pointer-events-none absolute -top-1.5 -left-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[11px] leading-none font-black text-white shadow-lg ring-2 ring-gray-900"
+								>
+									<span class="sr-only">פריטים ממתינים לטיפול:</span>{pendingTotal > 99
+										? '99+'
+										: pendingTotal}
+								</span>
+							{/if}
+						</a>
+					{:else}
+						<a
+							href="/auth/login"
+							class="flex flex-shrink-0 items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500 to-pink-600 px-2 py-1.5 text-sm font-bold text-white shadow-sm transition-all hover:from-amber-400 hover:to-pink-500 sm:px-4 sm:py-2"
+							title={t.login}
+						>
+							<span aria-hidden="true">👤</span>
+							<span class="hidden sm:inline">{t.login}</span>
+						</a>
+					{/if}
 				</div>
 			</div>
 			<p class="mt-2 text-right text-xs font-bold text-blue-600 sm:hidden dark:text-blue-300">
