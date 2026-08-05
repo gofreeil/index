@@ -27,6 +27,10 @@
 	);
 	const advInHero = $derived(Boolean(heroImage) && advList.length > 0 && pitchLength <= 300);
 
+	// כל דרך קשר מופיעה פעם אחת בלבד: ההדר מציג טלפון + וואטסאפ (או אתר
+	// כשאין וואטסאפ), ולכן האתר נשאר לפרטי הקשר רק כשהוואטסאפ תפס את מקומו.
+	const websiteInContact = $derived(Boolean(lp.website) && Boolean(lp.whatsapp));
+
 	// כתובות שהמפרסם הדביק בתוך הטקסט הופכות לגלולת קישור קצרה (שם האתר)
 	// במקום שורות ארוכות של URL שמנפחות את הדף.
 	/** @param {string} raw */
@@ -214,54 +218,42 @@
 			</section>
 		{/if}
 
-		<!-- פרטי קשר — שורת גלולות, לא רשימה מתמשכת -->
-		<section class="text-center">
-			<div class="flex flex-wrap justify-center gap-2">
-				{#if lp.phone}
-					<a
-						href={`tel:${lp.phone}`}
-						onclick={lead}
-						class="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm font-bold hover:border-amber-300/45 hover:text-amber-200"
-						>📞 {lp.phone}</a
-					>
+		<!-- פרטי קשר — רק מה שלא כבר מופיע ככפתור בהדר, כדי לא לחזור פעמיים.
+		     הטלפון והוואטסאפ תמיד למעלה; האתר יורד לכאן רק כשהוואטסאפ תפס
+		     את מקומו בהדר. -->
+		{#if lp.email || websiteInContact || lp.address || lp.hours}
+			<section class="text-center">
+				{#if lp.email || websiteInContact}
+					<div class="flex flex-wrap justify-center gap-2">
+						{#if lp.email}
+							<a
+								href={`mailto:${lp.email}`}
+								onclick={lead}
+								class="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm font-bold hover:border-amber-300/45 hover:text-amber-200"
+								>✉️ {lp.email}</a
+							>
+						{/if}
+						{#if websiteInContact}
+							<a
+								href={lp.website}
+								onclick={lead}
+								target="_blank"
+								rel="noopener"
+								class="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm font-bold hover:border-amber-300/45 hover:text-amber-200"
+								>🌐 {linkLabel(lp.website)}</a
+							>
+						{/if}
+					</div>
 				{/if}
-				{#if lp.whatsapp}
-					<a
-						href={`https://wa.me/${lp.whatsapp.replace(/[^0-9]/g, '')}`}
-						onclick={lead}
-						target="_blank"
-						rel="noopener"
-						class="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm font-bold hover:border-amber-300/45 hover:text-amber-200"
-						>💬 {lp.whatsapp}</a
-					>
+				{#if lp.address || lp.hours}
+					<p class="mt-3 text-xs text-gray-400">
+						{#if lp.address}📍 {lp.address}{/if}{#if lp.address && lp.hours}
+							·
+						{/if}{#if lp.hours}🕒 {lp.hours}{/if}
+					</p>
 				{/if}
-				{#if lp.email}
-					<a
-						href={`mailto:${lp.email}`}
-						onclick={lead}
-						class="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm font-bold hover:border-amber-300/45 hover:text-amber-200"
-						>✉️ {lp.email}</a
-					>
-				{/if}
-				{#if lp.website}
-					<a
-						href={lp.website}
-						onclick={lead}
-						target="_blank"
-						rel="noopener"
-						class="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm font-bold hover:border-amber-300/45 hover:text-amber-200"
-						>🌐 {linkLabel(lp.website)}</a
-					>
-				{/if}
-			</div>
-			{#if lp.address || lp.hours}
-				<p class="mt-3 text-xs text-gray-400">
-					{#if lp.address}📍 {lp.address}{/if}{#if lp.address && lp.hours}
-						·
-					{/if}{#if lp.hours}🕒 {lp.hours}{/if}
-				</p>
-			{/if}
-		</section>
+			</section>
+		{/if}
 
 		<p class="text-center">
 			<a href="/" class="text-sm text-gray-400 hover:text-blue-400">← חזרה למדריך</a>
