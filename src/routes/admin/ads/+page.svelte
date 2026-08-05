@@ -13,8 +13,11 @@
 	/** @type {'pending'|'approved'|'rejected'} */
 	let activeTab = $state('pending');
 	let searchQuery = $state('');
-	/** @type {'newest'|'oldest'} */
-	let sortOrder = $state('newest');
+	// 'display' = הסדר שבו הפרסומות מוצגות באתר. רק בו אפשר להחליף מקום,
+	// אחרת החצים היו מזיזים ביחס לתצוגה אחרת ממה שהגולש רואה.
+	/** @type {'display'|'newest'|'oldest'} */
+	let sortOrder = $state('display');
+	const canReorder = $derived(sortOrder === 'display' && !searchQuery.trim());
 
 	// בחירה רב-פריטית (SvelteSet — ריאקטיבי לשינויים במקום)
 	const selected = new SvelteSet();
@@ -75,6 +78,8 @@
 					)
 				)
 			: list;
+		// הסדר מהשרת = סדר התצוגה באתר (מיקום ידני, ואחריו החדשות ביותר)
+		if (sortOrder === 'display') return [...filtered];
 		return [...filtered].sort((x, y) => {
 			const xt = new Date(x.submittedAt).getTime();
 			const yt = new Date(y.submittedAt).getTime();
@@ -266,6 +271,7 @@
 			bind:value={sortOrder}
 			class="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-white focus:border-amber-400/50 focus:outline-none"
 		>
+			<option value="display" style="background:#fff;color:#111">סדר התצוגה באתר</option>
 			<option value="newest" style="background:#fff;color:#111">חדש לישן</option>
 			<option value="oldest" style="background:#fff;color:#111">ישן לחדש</option>
 		</select>
@@ -354,8 +360,49 @@
 		</div>
 	{:else}
 		<div class="grid gap-3 md:gap-4">
-			{#each visibleList as ad (ad.id)}
+			{#each visibleList as ad, adIndex (ad.id)}
 				<article class="rounded-2xl border border-white/10 bg-white/5 p-3 md:p-5">
+					{#if activeTab === 'approved'}
+						<!-- מיקום הפרסומת בטור הפרסומות באתר + החלפת מקום -->
+						<div class="mb-3 flex flex-wrap items-center gap-2 border-b border-white/10 pb-3">
+							<span
+								class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-emerald-500/40 bg-emerald-500/20 text-sm font-black text-emerald-200"
+							>
+								{adIndex + 1}
+							</span>
+							<span class="text-[11px] font-bold text-gray-400 md:text-xs">
+								מקום {adIndex + 1} מתוך {visibleList.length} בטור הפרסומות
+							</span>
+							{#if canReorder}
+								<div class="mr-auto flex items-center gap-1.5">
+									<form method="POST" action="?/move" use:enhance>
+										<input type="hidden" name="id" value={ad.id} />
+										<input type="hidden" name="dir" value="up" />
+										<button
+											type="submit"
+											disabled={adIndex === 0}
+											class="rounded-lg border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-black text-gray-200 hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-30"
+											title="העלה מקום אחד למעלה">▲ למעלה</button
+										>
+									</form>
+									<form method="POST" action="?/move" use:enhance>
+										<input type="hidden" name="id" value={ad.id} />
+										<input type="hidden" name="dir" value="down" />
+										<button
+											type="submit"
+											disabled={adIndex === visibleList.length - 1}
+											class="rounded-lg border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-black text-gray-200 hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-30"
+											title="הורד מקום אחד למטה">▼ למטה</button
+										>
+									</form>
+								</div>
+							{:else}
+								<span class="mr-auto text-[10px] text-gray-500">
+									כדי להחליף מקום - בחר מיון "סדר התצוגה באתר" ונקה את החיפוש
+								</span>
+							{/if}
+						</div>
+					{/if}
 					<div class="flex flex-col gap-3 md:flex-row md:gap-4">
 						{#if activeTab === 'pending'}
 							<label class="inline-flex flex-shrink-0 cursor-pointer items-start pt-1">

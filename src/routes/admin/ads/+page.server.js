@@ -14,7 +14,8 @@ import {
 	updateAdFields,
 	getAdsStats,
 	listSchedules,
-	listAdvertisers
+	listAdvertisers,
+	moveApprovedAd
 } from '$lib/server/adsStore.js';
 import { invalidatePendingCounts } from '$lib/server/pendingCounts.js';
 
@@ -155,6 +156,24 @@ export const actions = {
 			if (r) ok++;
 		}
 		return { success: true, message: `נדחו ${ok} פרסומות` };
+	},
+
+	// החלפת מקום בסדר התצוגה באתר — כל אדמין, לא רק סופר-אדמין
+	move: async ({ request, locals }) => {
+		requireAdmin(locals);
+		const formData = await request.formData();
+		const id = String(formData.get('id') || '');
+		const dir = formData.get('dir') === 'down' ? 'down' : 'up';
+		if (!id) return fail(400, { error: 'חסר מזהה' });
+		try {
+			const r = await moveApprovedAd(id, dir);
+			if (!r) return fail(400, { error: 'הפרסומת כבר בקצה הרשימה' });
+			return { success: true, message: `${r.title} — מקום ${r.position} מתוך ${r.total}` };
+		} catch (e) {
+			return fail(502, {
+				error: 'החלפת המקום נכשלה: ' + (e instanceof Error ? e.message.slice(0, 160) : '')
+			});
+		}
 	},
 
 	// "הורד מהאתר" (מ-פורסמה) וגם "החזר לממתינות" (מ-נדחתה)

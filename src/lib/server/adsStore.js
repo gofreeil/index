@@ -66,6 +66,7 @@ const TTL_ADS = 120_000;
  * @property {string} payment "code" = סומן כשולם; "pending" = תשלום לתיאום. הגשה תמיד נכנסת כ-pending.
  * @property {boolean} codeRequested המפרסם הקליד את קוד הבעלים — בקשה לפרסום חינם שממתינה לאישור ידני
  * @property {number} requestedDurationDays התקופה שהמפרסם ביקש בשליחה (30/180) — ברירת המחדל באישור
+ * @property {number|undefined} [order] מיקום ידני בטור הפרסומות (0 = ראשונה); ריק = לפי תאריך
  */
 
 /** @param {string} path @param {any} [init] */
@@ -128,12 +129,14 @@ function fromStrapi(s) {
 		payment: s.landing?._payment === 'code' ? 'code' : 'pending',
 		// המפרסם הקליד את קוד הבעלים — בקשה לפרסום חינם, לא אישור שלה
 		codeRequested: s.landing?._codeRequested === true,
-		requestedDurationDays: Number(s.landing?._requestedDurationDays) === 180 ? 180 : 30
+		requestedDurationDays: Number(s.landing?._requestedDurationDays) === 180 ? 180 : 30,
+		// מיקום ידני בטור הפרסומות, נקבע במסך הניהול
+		order: typeof s.landing?._order === 'number' ? s.landing._order : undefined
 	};
 }
 
 /** @param {AdStatus} status @returns {Promise<SubmittedAd[]>} */
-async function listByStatus(status) {
+async function fetchByStatus(status) {
 	/** @type {SubmittedAd[]} */
 	const out = [];
 	let page = 1;
@@ -165,11 +168,50 @@ async function findByDocumentId(id) {
 	return item && belongsToThisSite(item) ? item : null;
 }
 
-// ── cache לפרסומות המאושרות ──
-/** @type {{ at: number, ads: SubmittedAd[] }} */
-let approvedCache = { at: 0, ads: [] };
+// ── cache לרשימות, לפי סטטוס ──
+// חובה, לא אופטימיזציה: התמונות שמורות כ-base64 בתוך הרשומה (~700KB לפרסומת),
+// וטעינה אחת של מסך הניהול קוראת לאותן רשימות חמש פעמים (רשימות, סטטיסטיקות,
+// תזמון, מפרסמים). בלי ה-dedup הזה אותו מטען כבד נמשך שוב ושוב במקביל,
+// הבקשות נכשלות ב-timeout והמסך נפתח ריק — בלי הפרסומת הממתינה ובלי
+// כפתורי אשר/דחה.
+const TTL_REVIEW = 15_000;
+/** @type {Map<string, { at: number, ads: SubmittedAd[] }>} */
+const listCache = new Map();
+/** @type {Map<string, Promise<SubmittedAd[]>>} */
+const listInflight = new Map();
+
 function invalidateAds() {
-	approvedCache.at = 0;
+	listCache.clear();
+}
+
+/** @param {AdStatus} status @returns {Promise<SubmittedAd[]>} */
+function listByStatus(status) {
+	const ttl = status === 'approved' ? TTL_ADS : TTL_REVIEW;
+	const hit = listCache.get(status);
+	if (hit && Date.now() - hit.at < ttl) return Promise.resolve(hit.ads);
+	const running = listInflight.get(status);
+	if (running) return running;
+	const p = fetchByStatus(status)
+		.then((ads) => {
+			listCache.set(status, { at: Date.now(), ads });
+			listInflight.delete(status);
+			return ads;
+		})
+		.catch((e) => {
+			listInflight.delete(status);
+			throw e;
+		});
+	listInflight.set(status, p);
+	return p;
+}
+
+/** סדר התצוגה: קודם מי שקיבל מיקום ידני, אחריו החדשות ביותר.
+ *  @param {SubmittedAd} a @param {SubmittedAd} b */
+function byDisplayOrder(a, b) {
+	const ao = a.order ?? Number.MAX_SAFE_INTEGER;
+	const bo = b.order ?? Number.MAX_SAFE_INTEGER;
+	if (ao !== bo) return ao - bo;
+	return new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime();
 }
 
 // ============================================================
@@ -190,15 +232,14 @@ export async function listPending() {
 
 /** @returns {Promise<SubmittedAd[]>} */
 export async function listApproved() {
-	if (Date.now() - approvedCache.at < TTL_ADS) return approvedCache.ads;
 	let ads = /** @type {SubmittedAd[]} */ ([]);
 	try {
 		ads = await listByStatus('approved');
 	} catch {
 		/* שגיאה זמנית — סרגל הצד יציג רק את מודעות הרשת הסטטיות */
 	}
-	approvedCache = { at: Date.now(), ads };
-	return ads;
+	// עותק לפני מיון — המערך עצמו יושב ב-cache ומשותף לכל הקוראים
+	return [...ads].sort(byDisplayOrder);
 }
 
 /**
@@ -366,6 +407,50 @@ export async function backToPending(id) {
 	invalidateAds();
 	const data = await res.json();
 	return fromStrapi(data.data);
+}
+
+// ----- מיקום התצוגה בטור הפרסומות -----
+
+/**
+ * כותב מיקום תצוגה לפרסומת. הסדר נשמר ב-landing._order — אותה עמודת json
+ * שכבר נושאת מפתחות פנימיים (_site, _payment), כדי לא לשנות סכמה ב-Strapi.
+ * שולחים את כל אובייקט ה-landing כי Strapi מחליף עמודת json במלואה.
+ * @param {SubmittedAd} ad @param {number} order
+ */
+async function writeOrder(ad, order) {
+	const res = await api(`${ENDPOINT}/${encodeURIComponent(ad.id)}`, {
+		method: 'PUT',
+		body: JSON.stringify({ data: { landing: { ...(ad.landing ?? {}), _order: order } } })
+	});
+	if (!res.ok) throw new Error(`strapi writeOrder → ${res.status}`);
+}
+
+/**
+ * מזיזה פרסומת מאושרת מקום אחד למעלה/למטה בסדר התצוגה באתר.
+ * מחזירה null אם הפרסומת לא נמצאה או שהיא כבר בקצה הרשימה.
+ * @param {string} id @param {'up'|'down'} direction
+ * @returns {Promise<{title:string,position:number,total:number}|null>}
+ */
+export async function moveApprovedAd(id, direction) {
+	const list = await listApproved();
+	const from = list.findIndex((a) => a.id === id);
+	if (from === -1) return null;
+	const to = direction === 'up' ? from - 1 : from + 1;
+	if (to < 0 || to >= list.length) return null;
+
+	const reordered = [...list];
+	[reordered[from], reordered[to]] = [reordered[to], reordered[from]];
+
+	// כותבים רק את מי שהמיקום שלו באמת השתנה: בפעם הראשונה זו כל הרשימה
+	// (לאף פרסומת אין עדיין _order), ומכאן והלאה שתי הפרסומות שהוחלפו בלבד.
+	await Promise.all(
+		reordered
+			.map((ad, i) => ({ ad, i }))
+			.filter(({ ad, i }) => ad.order !== i)
+			.map(({ ad, i }) => writeOrder(ad, i))
+	);
+	invalidateAds();
+	return { title: reordered[to].title, position: to + 1, total: reordered.length };
 }
 
 /** מחיקה לצמיתות. @param {string} id @returns {Promise<boolean>} */
