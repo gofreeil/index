@@ -15,6 +15,15 @@
 /** @type {Ad[]} */
 export const ads = [
 	{
+		id: 1,
+		title: 'בתי הפיוס',
+		description: 'מתנדבים לתת לך עזרה מלאה בדין / פיוס בכל סיכסוך',
+		cta: 'יש לך סיכסוך? לחץ לפתרון',
+		href: 'https://chachmim.gofreeil.com/',
+		image: '/images/bati-hapius.webp',
+		color: 'from-orange-600 to-red-600'
+	},
+	{
 		id: 12,
 		title: 'קהילה בשכונה',
 		description: 'כל יתרונות השכונה תחת קורת גג אחת',
@@ -24,15 +33,6 @@ export const ads = [
 		image: '/images/community-neighborhood.webp',
 		color: 'from-blue-500 to-purple-600',
 		imageHeight: '110px'
-	},
-	{
-		id: 1,
-		title: 'בתי הפיוס',
-		description: 'מתנדבים לתת לך עזרה מלאה בדין / פיוס בכל סיכסוך',
-		cta: 'יש לך סיכסוך? לחץ לפתרון',
-		href: 'https://chachmim.gofreeil.com/',
-		image: '/images/bati-hapius.webp',
-		color: 'from-orange-600 to-red-600'
 	},
 	{
 		id: 9,
