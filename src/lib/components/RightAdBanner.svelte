@@ -1,6 +1,33 @@
 <script>
 	import { onMount } from 'svelte';
 	import { lang, translations } from '$lib/i18n';
+	import { adImgFit, parseAdImageFit } from '$lib/adImageFit';
+	import { adSeen } from '$lib/adSeen.js';
+	import { trackAdClick } from '$lib/adTrack.js';
+
+	/**
+	 * מודעה של מפרסם שאושרה. הטור הימני הוא המקום היחיד שלה באתר —
+	 * הטור השמאלי שמור לאתרי רשת "יוצאים לחירות" בלבד.
+	 * @typedef {Object} ApprovedAd
+	 * @property {string} id
+	 * @property {string} title
+	 * @property {string} subtitle
+	 * @property {string} [cta]
+	 * @property {string} [hover]
+	 * @property {string} gradient
+	 * @property {string} mainImage
+	 * @property {{x:number,y:number,z:number}} [mainImageFit] מיקום+זום מהבילדר
+	 */
+
+	/** @type {{ approvedAds?: ApprovedAd[] }} */
+	let { approvedAds = [] } = $props();
+
+	// פרסומות משלמות קבועות בראש הטור ולא משתתפות בסבב המשבצות הפנויות
+	const paidAds = $derived((approvedAds ?? []).filter((a) => a.mainImage));
+
+	// עד xl הטור מוסתר. כשיש פרסומת אמיתית זה היה מעלים מפרסם משלם ממסכי lg,
+	// ולכן במקרה כזה הטור נפתח כבר מ-lg (כמו טור אתרי הרשת שממול).
+	const visibilityClass = $derived(paidAds.length > 0 ? 'hidden lg:block' : 'hidden xl:block');
 
 	let currentLang = $state('he');
 	lang.subscribe((v) => (currentLang = v));
@@ -168,11 +195,60 @@
 <!-- RightAdBanner.svelte -->
 <aside
 	aria-label={t.ads}
-	class="sticky top-4 hidden h-fit w-36 flex-shrink-0 pb-8 text-center xl:block"
+	class="sticky top-4 {visibilityClass} h-fit w-36 flex-shrink-0 pb-8 text-center"
 >
 	<h4 class="mb-2 px-2 text-xs font-bold tracking-widest text-amber-400 uppercase">
 		{t.marketingContent}
 	</h4>
+
+	<!-- פרסומות מאושרות: קבועות, מעל סבב המשבצות הפנויות.
+	     aspect-[144/450] = היחס שהבילדר מציג בתצוגה החיה, כדי שהחיתוך
+	     שהמפרסם כיוון לא יישבר. -->
+	{#if paidAds.length > 0}
+		<div class="mb-3 space-y-3">
+			{#each paidAds as ad (ad.id)}
+				<a
+					href="/ads/{ad.id}"
+					aria-label="{ad.title} – {ad.subtitle}"
+					class="group relative block overflow-hidden rounded-lg shadow-lg transition-transform hover:scale-105"
+					use:adSeen={ad.id}
+					onclick={() => trackAdClick(ad.id)}
+				>
+					<div class="relative w-full overflow-hidden aspect-[144/450]">
+						<div class="absolute inset-0 overflow-hidden">
+							<img
+								src={ad.mainImage}
+								alt={ad.title}
+								loading="lazy"
+								decoding="async"
+								class="h-full w-full object-cover transition-opacity duration-[1500ms] group-hover:opacity-0"
+								use:adImgFit={parseAdImageFit(ad.mainImageFit)}
+							/>
+						</div>
+						<div
+							class="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 backdrop-blur-sm transition-opacity duration-[1500ms] group-hover:opacity-100"
+						>
+							<div class="relative z-10 px-3 text-center">
+								<h3 class="mb-1 text-sm font-bold text-white">{ad.title}</h3>
+								<p class="text-xs text-gray-200">{ad.subtitle}</p>
+							</div>
+						</div>
+					</div>
+					<div class="group/cta relative bg-gradient-to-r {ad.gradient} p-2.5 text-center">
+						<p class="text-xs leading-tight font-bold text-white">{ad.cta || ad.title}</p>
+						{#if ad.hover}
+							<span
+								class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 hidden -translate-x-1/2 rounded-lg border border-white/10 bg-gray-900 px-3 py-1.5 text-xs font-bold whitespace-nowrap text-white shadow-xl group-hover/cta:block"
+							>
+								{ad.hover}
+							</span>
+						{/if}
+					</div>
+				</a>
+			{/each}
+		</div>
+	{/if}
+
 	<div class="space-y-3 ads-track" class:fading>
 		{#each displayedAds as ad, index}
 			<div

@@ -121,7 +121,7 @@ export const translations = {
 		loginWithGoogle: 'התחבר באמצעות Google',
 		visitorCount: 'מספר כניסות לאתר: ',
 		// Ads rails, Footer & Register (ported from community)
-		adsPartnersAria: 'פרסומות ושותפים',
+		adsPartnersAria: 'אתרי יוצאים לחירות',
 		adsSidebarHeader: 'מתקדמים לחברה מתוקנת ועצמאית',
 		opensNewWindowSuffix: ' (נפתח בחלון חדש)',
 		marketingContent: 'תוכן שיווקי',
@@ -306,7 +306,7 @@ export const translations = {
 		loginWithGoogle: 'Sign in with Google',
 		visitorCount: 'Website visitor count: ',
 		// Ads rails, Footer & Register (ported from community)
-		adsPartnersAria: 'Ads & partners',
+		adsPartnersAria: 'Yotzim LaHerut network sites',
 		adsSidebarHeader: 'Advancing toward a better, independent society',
 		opensNewWindowSuffix: ' (opens in a new window)',
 		marketingContent: 'Sponsored content',
@@ -495,7 +495,7 @@ export const translations = {
 		loginWithGoogle: 'Войти через Google',
 		visitorCount: 'Количество посещений сайта: ',
 		// Ads rails, Footer & Register (ported from community)
-		adsPartnersAria: 'Реклама и партнёры',
+		adsPartnersAria: 'Сайты сети «Йоцим ла-Херут»',
 		adsSidebarHeader: 'Движемся к обновлённому и независимому обществу',
 		opensNewWindowSuffix: ' (открывается в новом окне)',
 		marketingContent: 'Рекламный контент',

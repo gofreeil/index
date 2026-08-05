@@ -6,20 +6,6 @@
 	import { trackAdClick } from '$lib/adTrack.js';
 
 	/**
-	 * מודעה שאושרה ונשלחה מהשרת (מודעות משתמשים).
-	 * כרגע אין ב-index צינור מודעות מאושרות — הפרופ נשאר לחיווט עתידי.
-	 * @typedef {Object} ApprovedAd
-	 * @property {string} id
-	 * @property {string} title
-	 * @property {string} subtitle
-	 * @property {string} [cta]
-	 * @property {string} [hover]
-	 * @property {string} gradient
-	 * @property {string} mainImage
-	 * @property {{x:number,y:number,z:number}} [mainImageFit] מיקום+זום מהבילדר
-	 */
-
-	/**
 	 * @typedef {Object} SidebarAd
 	 * @property {string} id
 	 * @property {string} title
@@ -35,31 +21,18 @@
 	 * @property {string|undefined} imageHeight
 	 */
 
-	/** @type {{ approvedAds?: ApprovedAd[] }} */
-	let { approvedAds = [] } = $props();
+	// נעילה מכוונת: הטור השמאלי מחזיק אך ורק אתרי רשת "יוצאים לחירות".
+	// פרסומות בתשלום שייכות ל-RightAdBanner בלבד; ניסיון להעביר לכאן
+	// approvedAds ייכשל בבדיקת הטיפוסים במקום להיבלע בשקט.
+	/** @type {{ approvedAds?: never }} */
+	let {} = $props();
 
 	let currentLang = $state('he');
 	lang.subscribe((v) => (currentLang = v));
 	const t = $derived(/** @type {any} */ (translations)[currentLang] || translations.he);
 
-	// רשימה ממוזגת: מודעות מאושרות (משתמשים) קודם, אחר כך מודעות השותפים הסטטיות.
 	/** @type {SidebarAd[]} */
 	const merged = $derived([
-		...(approvedAds ?? []).map((a) => ({
-			id: a.id,
-			title: a.title,
-			description: a.subtitle,
-			cta: a.cta || a.title,
-			hover: a.hover || undefined,
-			href: `/ads/${a.id}`,
-			// רק מודעות של מפרסמים נמדדות — למודעות השותפים הסטטיות אין רשומה
-			trackId: /** @type {string|undefined} */ (a.id),
-			target: /** @type {'_self'} */ ('_self'),
-			image: a.mainImage,
-			imageFit: a.mainImageFit,
-			color: a.gradient,
-			imageHeight: /** @type {string|undefined} */ (undefined)
-		})),
 		...ads.map((a) => ({
 			id: String(a.id),
 			title: a.title,

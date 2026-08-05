@@ -1,6 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import { submitAd } from '$lib/server/adsStore.js';
-import { isOwnerCode, notifyOwnerCodeUse } from '$lib/server/adsCode.js';
+import { isOwnerCode, notifyOwnerCodeUse, notifyAdminsNewAd } from '$lib/server/adsCode.js';
 
 // קליטת פרסומת חדשה מהבילדר המקומי (/advertise/builder) — נשמרת באוסף
 // submitted-ads המשותף במצב "ממתינה לאישור". האישור עצמו ידני ב-/admin/ads.
@@ -73,7 +73,15 @@ export async function POST({ request, locals }) {
 				products: Array.isArray(payload.landing.products) ? payload.landing.products : []
 			}
 		});
-		// התראה לבעלים על שימוש בקוד — לא חוסמת ולא מפילה את ההגשה
+		// התראה על *כל* בקשת פרסום — קודם היא נשלחה רק על שימוש בקוד בעלים,
+		// כך שמפרסם רגיל הגיש פרסומת ואיש לא ידע עליה. לא חוסמת ולא מפילה.
+		await notifyAdminsNewAd({
+			adTitle: payload.title,
+			durationDays: requestedDurationDays,
+			usedOwnerCode,
+			submitter: { name: user.name ?? '', email: user.email ?? '' }
+		});
+		// התראה נפרדת על שימוש בקוד — נשמרת כדי לא לאבד את ההתראה הייעודית
 		if (usedOwnerCode) {
 			await notifyOwnerCodeUse({
 				adTitle: payload.title,
