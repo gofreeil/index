@@ -15,8 +15,16 @@ import {
 	getAdsStats,
 	listSchedules,
 	listAdvertisers,
-	moveApprovedAd
+	moveApprovedAd,
+	setAdDuration,
+	normalizeDurationDays,
+	pauseAd,
+	resumeAd
 } from '$lib/server/adsStore.js';
+
+/** @param {string} iso */
+const fmtDay = (iso) =>
+	new Date(iso).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' });
 import { invalidatePendingCounts } from '$lib/server/pendingCounts.js';
 
 /** @param {any} locals */
@@ -156,6 +164,59 @@ export const actions = {
 			if (r) ok++;
 		}
 		return { success: true, message: `נדחו ${ok} פרסומות` };
+	},
+
+	// קציבת תקופת פרסום — נספרת מיום הפרסום
+	setDuration: async ({ request, locals }) => {
+		requireAdmin(locals);
+		const formData = await request.formData();
+		const id = String(formData.get('id') || '');
+		if (!id) return fail(400, { error: 'חסר מזהה' });
+		const days = normalizeDurationDays(formData.get('days'));
+		try {
+			const r = await setAdDuration(id, days);
+			if (!r) return fail(404, { error: 'הפרסומת לא נמצאה' });
+			const suffix = r.daysLeft < 0 ? ' — התקופה כבר חלפה, הפרסומת ירדה מהאתר' : '';
+			return { success: true, message: `${r.title}: ${days} ימים, עד ${fmtDay(r.expiresAt)}${suffix}` };
+		} catch (e) {
+			return fail(502, {
+				error: 'קציבת התקופה נכשלה: ' + (e instanceof Error ? e.message.slice(0, 160) : '')
+			});
+		}
+	},
+
+	// השהיה — יורדת מהאתר ושומרת את הימים שנותרו
+	pause: async ({ request, locals }) => {
+		requireAdmin(locals);
+		const formData = await request.formData();
+		const id = String(formData.get('id') || '');
+		if (!id) return fail(400, { error: 'חסר מזהה' });
+		try {
+			const r = await pauseAd(id);
+			if (!r) return fail(404, { error: 'הפרסומת לא נמצאה' });
+			return { success: true, message: `${r.title} הושהתה — ${r.daysLeft} ימים שמורים לה` };
+		} catch (e) {
+			return fail(502, {
+				error: 'ההשהיה נכשלה: ' + (e instanceof Error ? e.message.slice(0, 160) : '')
+			});
+		}
+	},
+
+	// המשך אחרי השהיה — הימים השמורים נספרים מהיום
+	resume: async ({ request, locals }) => {
+		requireAdmin(locals);
+		const formData = await request.formData();
+		const id = String(formData.get('id') || '');
+		if (!id) return fail(400, { error: 'חסר מזהה' });
+		try {
+			const r = await resumeAd(id);
+			if (!r) return fail(404, { error: 'הפרסומת לא נמצאה' });
+			return { success: true, message: `${r.title} חזרה לאוויר — ${r.daysLeft} ימים, עד ${fmtDay(r.expiresAt)}` };
+		} catch (e) {
+			return fail(502, {
+				error: 'ההפעלה מחדש נכשלה: ' + (e instanceof Error ? e.message.slice(0, 160) : '')
+			});
+		}
 	},
 
 	// החלפת מקום בסדר התצוגה באתר — כל אדמין, לא רק סופר-אדמין

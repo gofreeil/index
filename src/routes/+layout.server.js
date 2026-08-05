@@ -1,5 +1,5 @@
 import { env } from '$env/dynamic/private';
-import { listApproved, computeSchedule } from '$lib/server/adsStore.js';
+import { listApprovedLive } from '$lib/server/adsStore.js';
 import { isPrivileged, isSuperAdmin } from '$lib/server/strapi.js';
 import { getPendingCounts, noPendingCounts } from '$lib/server/pendingCounts.js';
 
@@ -16,13 +16,12 @@ export async function load({ locals }) {
 	const isAdmin = isPrivileged(user);
 
 	const [ads, pending] = await Promise.all([
-		listApproved(),
+		// פרסומת שפג תוקפה או שהושהתה יורדת מהאתר מעצמה (הרשומה נשארת לפאנל הניהול)
+		listApprovedLive(),
 		isAdmin ? getPendingCounts().catch(() => noPendingCounts()) : Promise.resolve(noPendingCounts())
 	]);
 
 	const approvedAds = ads
-		// פרסומת שפג תוקפה יורדת מהאתר מעצמה (הרשומה נשארת לפאנל הניהול)
-		.filter((a) => computeSchedule(a)?.state !== 'expired')
 		.map((a) => ({
 			id: a.id,
 			title: a.title,

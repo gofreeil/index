@@ -67,6 +67,8 @@ const TTL_ADS = 120_000;
  * @property {boolean} codeRequested המפרסם הקליד את קוד הבעלים — בקשה לפרסום חינם שממתינה לאישור ידני
  * @property {number} requestedDurationDays התקופה שהמפרסם ביקש בשליחה (30/180) — ברירת המחדל באישור
  * @property {number|undefined} [order] מיקום ידני בטור הפרסומות (0 = ראשונה); ריק = לפי תאריך
+ * @property {boolean} [paused] מושהית — יורדת מהאתר ושומרת את הימים שנותרו
+ * @property {number|undefined} [pausedDaysLeft] הימים ששמורים לה מרגע ההשהיה
  */
 
 /** @param {string} path @param {any} [init] */
@@ -131,7 +133,10 @@ function fromStrapi(s) {
 		codeRequested: s.landing?._codeRequested === true,
 		requestedDurationDays: Number(s.landing?._requestedDurationDays) === 180 ? 180 : 30,
 		// מיקום ידני בטור הפרסומות, נקבע במסך הניהול
-		order: typeof s.landing?._order === 'number' ? s.landing._order : undefined
+		order: typeof s.landing?._order === 'number' ? s.landing._order : undefined,
+		paused: s.landing?._paused === true,
+		pausedDaysLeft:
+			typeof s.landing?._pausedDaysLeft === 'number' ? s.landing._pausedDaysLeft : undefined
 	};
 }
 
@@ -240,6 +245,24 @@ export async function listApproved() {
 	}
 	// עותק לפני מיון — המערך עצמו יושב ב-cache ומשותף לכל הקוראים
 	return [...ads].sort(byDisplayOrder);
+}
+
+/** האם הפרסומת אמורה להיות מוצגת לגולש עכשיו @param {SubmittedAd} ad @param {number} now */
+function isLiveNow(ad, now) {
+	if (ad.paused) return false;
+	if (!ad.expiresAt) return true;
+	const t = new Date(ad.expiresAt).getTime();
+	return !Number.isFinite(t) || t > now;
+}
+
+/**
+ * מה שהאתר עצמו מציג: מאושרות שאינן מושהות ושתוקפן לא פג. בלי הסינון
+ * הזה תאריך הפקיעה היה מספר בלבד — פרסומת "פגה" המשיכה להופיע בטור.
+ * @returns {Promise<SubmittedAd[]>}
+ */
+export async function listApprovedLive() {
+	const now = Date.now();
+	return (await listApproved()).filter((a) => isLiveNow(a, now));
 }
 
 /**
@@ -453,6 +476,91 @@ export async function moveApprovedAd(id, direction) {
 	return { title: reordered[to].title, position: to + 1, total: reordered.length };
 }
 
+// ----- ניהול תקופת הפרסום: קציבה, השהיה, המשך -----
+
+const MIN_DURATION_DAYS = 1;
+const MAX_DURATION_DAYS = 730;
+
+/** מנרמל קלט ימים מהטופס לטווח שפוי. @param {unknown} raw @returns {number} */
+export function normalizeDurationDays(raw) {
+	const n = Math.round(Number(raw));
+	if (!Number.isFinite(n)) return DEFAULT_DURATION_DAYS;
+	return Math.min(MAX_DURATION_DAYS, Math.max(MIN_DURATION_DAYS, n));
+}
+
+/**
+ * קוצב לפרסומת תקופה חדשה. התקופה נספרת מיום הפרסום, ולכן קציבה קצרה
+ * מהזמן שכבר רץ מורידה את הפרסומת מהאתר מיד — וזו המשמעות של "לקצוב".
+ * @param {string} id @param {number} days
+ * @returns {Promise<{title:string,expiresAt:string,daysLeft:number}|null>}
+ */
+export async function setAdDuration(id, days) {
+	const existing = await findByDocumentId(id);
+	if (!existing) return null;
+	const from = existing.decided_at ?? existing.submitted_at ?? existing.createdAt ?? new Date().toISOString();
+	const expires = new Date(new Date(from).getTime() + days * DAY_MS);
+	const res = await api(`${ENDPOINT}/${encodeURIComponent(id)}`, {
+		method: 'PUT',
+		body: JSON.stringify({
+			data: { duration_days: days, expires_at: expires.toISOString() }
+		})
+	});
+	if (!res.ok) throw new Error(`strapi setAdDuration → ${res.status}`);
+	invalidateAds();
+	const out = await res.json();
+	return {
+		title: fromStrapi(out.data).title,
+		expiresAt: expires.toISOString(),
+		daysLeft: Math.ceil((expires.getTime() - Date.now()) / DAY_MS)
+	};
+}
+
+/**
+ * השהיה: הפרסומת יורדת מהאתר אבל שומרת את הימים שנותרו לה. בשונה
+ * מ"החזר לממתינות" — המפרסם לא מפסיד ימים ששילם עליהם.
+ * @param {string} id @returns {Promise<{title:string,daysLeft:number}|null>}
+ */
+export async function pauseAd(id) {
+	const existing = await findByDocumentId(id);
+	if (!existing) return null;
+	const ad = fromStrapi(existing);
+	if (ad.paused) return { title: ad.title, daysLeft: ad.pausedDaysLeft ?? 0 };
+	const daysLeft = ad.expiresAt
+		? Math.max(0, Math.ceil((new Date(ad.expiresAt).getTime() - Date.now()) / DAY_MS))
+		: (ad.durationDays ?? DEFAULT_DURATION_DAYS);
+	const res = await api(`${ENDPOINT}/${encodeURIComponent(id)}`, {
+		method: 'PUT',
+		body: JSON.stringify({
+			data: { landing: { ...(ad.landing ?? {}), _paused: true, _pausedDaysLeft: daysLeft } }
+		})
+	});
+	if (!res.ok) throw new Error(`strapi pauseAd → ${res.status}`);
+	invalidateAds();
+	return { title: ad.title, daysLeft };
+}
+
+/**
+ * המשך אחרי השהיה: הימים שנשמרו נספרים מחדש מהיום.
+ * @param {string} id @returns {Promise<{title:string,expiresAt:string,daysLeft:number}|null>}
+ */
+export async function resumeAd(id) {
+	const existing = await findByDocumentId(id);
+	if (!existing) return null;
+	const ad = fromStrapi(existing);
+	const daysLeft = ad.pausedDaysLeft ?? ad.durationDays ?? DEFAULT_DURATION_DAYS;
+	const expires = new Date(Date.now() + daysLeft * DAY_MS);
+	const landing = { ...(ad.landing ?? {}) };
+	delete landing._paused;
+	delete landing._pausedDaysLeft;
+	const res = await api(`${ENDPOINT}/${encodeURIComponent(id)}`, {
+		method: 'PUT',
+		body: JSON.stringify({ data: { landing, expires_at: expires.toISOString() } })
+	});
+	if (!res.ok) throw new Error(`strapi resumeAd → ${res.status}`);
+	invalidateAds();
+	return { title: ad.title, expiresAt: expires.toISOString(), daysLeft };
+}
+
 /** מחיקה לצמיתות. @param {string} id @returns {Promise<boolean>} */
 export async function removeAd(id) {
 	const existing = await findByDocumentId(id);
@@ -542,7 +650,7 @@ export async function countPending() {
  * @property {string} expiresAt
  * @property {number} durationDays
  * @property {number} daysLeft
- * @property {'expired'|'ending'|'active'} state ending = ≤7 ימים
+ * @property {'expired'|'ending'|'active'|'paused'} state ending = ≤7 ימים
  * @property {number} paymentAmount
  */
 
@@ -553,9 +661,18 @@ export function computeSchedule(ad) {
 	const publishedAt = ad.decidedAt;
 	const expiresAt =
 		ad.expiresAt ?? new Date(new Date(publishedAt).getTime() + days * DAY_MS).toISOString();
-	const daysLeft = Math.ceil((new Date(expiresAt).getTime() - Date.now()) / DAY_MS);
+	// מושהית: הזמן לא רץ. הימים שנותרו הם אלה שנשמרו ברגע ההשהיה.
+	const daysLeft = ad.paused
+		? (ad.pausedDaysLeft ?? days)
+		: Math.ceil((new Date(expiresAt).getTime() - Date.now()) / DAY_MS);
 	/** @type {AdSchedule['state']} */
-	const state = daysLeft < 0 ? 'expired' : daysLeft <= 7 ? 'ending' : 'active';
+	const state = ad.paused
+		? 'paused'
+		: daysLeft < 0
+			? 'expired'
+			: daysLeft <= 7
+				? 'ending'
+				: 'active';
 	return {
 		id: ad.id,
 		title: ad.title,
