@@ -1,8 +1,11 @@
 <script>
 	import { lang, translations } from '$lib/i18n';
 	import Seo from '$lib/components/Seo.svelte';
-	// אותו גוף מדיניות שמוצג בחלון המידע שבכותרת — מקור אחד לשניהם.
-	import PolicyContent from '$lib/components/PolicyContent.svelte';
+	import JsonLd from '$lib/components/JsonLd.svelte';
+	import { faqSchema } from '$lib/seo';
+	import { FAQS } from '$lib/faqs';
+	// אותן שתי לשוניות שמוצגות בחלון המידע שבכותרת — מקור אחד לשניהם.
+	import InfoTabs from '$lib/components/InfoTabs.svelte';
 
 	let currentLang = $state('he');
 	lang.subscribe((v) => (currentLang = v));
@@ -11,10 +14,13 @@
 </script>
 
 <Seo
-	title="תנאי שימוש ומדיניות האתר | בעלי מקצוע כשירים"
-	description="תנאי השימוש באינדקס בעלי המקצוע הכשירים: כללי הרישום לבעלי מקצוע, אמנת הקהילה, כתיבת חוות דעת ודירוגים, והאחריות על ההתקשרות בין הלקוח לבעל המקצוע."
+	title="מידע: אודות האינדקס ותנאי הקהילה | בעלי מקצוע כשירים"
+	description="איך עובד אינדקס בעלי המקצוע הכשירים, שאלות נפוצות, ותנאי הקהילה: כללי הרישום לבעלי מקצוע, אמנת הקהילה, כתיבת חוות דעת ודירוגים, והאחריות על ההתקשרות בין הלקוח לבעל המקצוע."
 	path="/policy"
 />
+<!-- ה-FAQPage יושב כאן ולא בדף הבית: השאלות והתשובות עברו ללשונית "אודות",
+     וגוגל דורש שהסכימה תשקף טקסט שגלוי בפועל באותו עמוד. -->
+<JsonLd data={[faqSchema(FAQS)]} />
 
 <div class="px-4 py-12 sm:px-6 lg:px-8" dir={t.dir}>
 	<div class="mx-auto max-w-4xl rounded-3xl border border-gray-100 bg-white p-8 shadow-2xl sm:p-16">
@@ -41,17 +47,6 @@
 			{t.policyBack}
 		</a>
 
-		<header class="mb-12 border-b border-gray-100 pb-8">
-			<h1
-				class="bg-gradient-to-r from-blue-700 to-purple-700 bg-clip-text text-3xl leading-tight font-black text-transparent sm:text-5xl"
-			>
-				{t.communityPolicyTitle}
-			</h1>
-			<p class="mt-6 text-xl leading-relaxed text-gray-600">
-				{t.policyIntro}
-			</p>
-		</header>
-
-		<PolicyContent />
+		<InfoTabs variant="page" />
 	</div>
 </div>

@@ -1,13 +1,17 @@
 <script>
-	// חלון המידע של מדיניות הקהילה — נפתח מכפתור המידע שבכותרת ומציג את
-	// מדיניות הקהילה במלואה בלי לעזוב את הדף הנוכחי.
-	// התוכן נטען רק כשהחלון פתוח: כך אין שכפול של כל טקסט המדיניות בכל דף
+	// חלון המידע — נפתח מכפתור "מידע" שבכותרת ומציג בשתי לשוניות את האודות
+	// ואת תנאי הקהילה במלואם, בלי לעזוב את הדף הנוכחי.
+	// התוכן נטען רק כשהחלון פתוח: כך אין שכפול של כל טקסט המידע בכל דף
 	// באתר (משקל מיותר לדפדפן, ותוכן כפול בעיני גוגל).
 	import { lang, translations } from '$lib/i18n';
-	import PolicyContent from './PolicyContent.svelte';
+	import InfoTabs from './InfoTabs.svelte';
 
 	/** @type {{ open?: boolean }} */
 	let { open = $bindable(false) } = $props();
+
+	// הלשונית הפעילה, כדי שכפתור "פתיחה בעמוד נפרד" ינחת על אותה לשונית.
+	/** @type {'about' | 'terms'} */
+	let activeTab = $state('about');
 
 	let currentLang = $state('he');
 	lang.subscribe((v) => (currentLang = v));
@@ -61,11 +65,8 @@
 						id="policy-modal-title"
 						class="bg-gradient-to-r from-blue-700 to-purple-700 bg-clip-text text-xl leading-tight font-black text-transparent sm:text-3xl"
 					>
-						{t.communityPolicyTitle}
+						{t.info}
 					</h2>
-					<p class="mt-2 text-sm leading-relaxed text-gray-600 sm:text-base">
-						{t.policyIntro}
-					</p>
 				</div>
 				<button
 					type="button"
@@ -91,11 +92,11 @@
 			</header>
 
 			<div class="px-6 py-8 sm:px-10">
-				<PolicyContent headingTag="h3" />
+				<InfoTabs variant="modal" bind:active={activeTab} />
 
 				<div class="mt-8 flex flex-wrap items-center gap-3 border-t border-gray-100 pt-6">
 					<a
-						href="/policy"
+						href="/policy#{activeTab}"
 						class="rounded-full bg-gradient-to-r from-blue-600 to-purple-600 px-5 py-2.5 text-sm font-bold text-white shadow-md transition-all hover:scale-105 hover:shadow-lg"
 					>
 						{currentLang === 'he' ? 'פתיחה בעמוד נפרד' : 'Open as a full page'}

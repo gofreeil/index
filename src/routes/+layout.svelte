@@ -143,7 +143,7 @@
 				</a>
 
 				<!-- Action Buttons — סדר ה-DOM הוא מימין לשמאל (העמוד ב-RTL):
-				     שפה, מדיניות הקהילה, הוסף עסק, ואזור אישי בקצה השמאלי. -->
+				     שפה, מידע, הוסף עסק, ואזור אישי בקצה השמאלי. -->
 				<div class="flex flex-shrink-0 items-center gap-1 sm:gap-3">
 					<!-- Language Selector -->
 					<div class="relative flex items-center">
@@ -213,7 +213,7 @@
 						{/if}
 					</div>
 
-					<!-- כפתור המידע — מדיניות הקהילה.
+					<!-- כפתור "מידע" — מדיניות הקהילה ותנאיה.
 					     קליק רגיל פותח את המדיניות בחלון מידע על גבי הדף הנוכחי, אבל
 					     האלמנט נשאר <a> אמיתי אל /policy: כך פתיחה בלשונית חדשה
 					     (ctrl+קליק), שמירת הקישור וסריקה של גוגל ממשיכות לעבוד. -->
@@ -226,9 +226,11 @@
 							isPolicyOpen = true;
 						}}
 						class="flex items-center gap-2 rounded-full bg-gradient-to-r from-yellow-200 to-yellow-400 px-2 py-1.5 text-sm font-bold text-yellow-900 shadow-sm transition-all hover:scale-105 hover:shadow-md active:scale-95 sm:px-4 sm:py-2.5"
-						title={t.policy}
+						title={t.communityPolicyTitle}
 						aria-haspopup="dialog"
 					>
+						<!-- אייקון "מידע" (i בעיגול) ולא אייקון מסמך: הכפתור נקרא "מידע",
+						     והצמד אייקון+כיתוב צריך לספר את אותו סיפור. -->
 						<svg
 							class="h-5 w-5"
 							fill="none"
@@ -240,10 +242,12 @@
 								stroke-linecap="round"
 								stroke-linejoin="round"
 								stroke-width="2"
-								d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+								d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
 							/>
 						</svg>
-						<span class="hidden lg:inline">{t.policy}</span>
+						<!-- "מידע" מילה קצרה, ולכן הכיתוב נגלה כבר ב-sm ולא רק ב-lg כמו
+						     הכיתוב הארוך שהיה כאן קודם. -->
+						<span class="hidden sm:inline">{t.info}</span>
 					</a>
 
 					<!-- Add Store Button -->

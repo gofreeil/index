@@ -10,7 +10,13 @@ export const translations = {
 		// טולטיפ הלוגו שבכותרת — הלוגו הוא הקישור לדף הבית, וזה מה שמסביר אותו
 		homeTooltip: 'לדף הבית — מדריך בעלי מקצוע כשירים',
 		addStore: 'הוסף עסק',
-		policy: 'מדיניות הקהילה',
+		// כפתור המידע שבכותרת. הכיתוב קצר בכוונה ("מידע" ולא "מדיניות הקהילה"):
+		// הכותרת צפופה במובייל, וכותרת המסמך עצמו (communityPolicyTitle) ממילא
+		// מסבירה במה מדובר ברגע שהוא נפתח.
+		info: 'מידע',
+		// שתי הלשוניות שבדף המידע
+		aboutTab: 'אודות',
+		termsTab: 'תנאי הקהילה',
 		search: 'חיפוש עסקים...',
 		totalBusinesses: 'סה"כ {count} עסקים באינדקס',
 		foundResults: 'נמצאו {count} תוצאות',
@@ -248,7 +254,9 @@ export const translations = {
 		subtitle: 'Special discounts and benefits for "Yotzim L\'cherut" members',
 		homeTooltip: 'Home — Kosher Professionals Guide',
 		addStore: 'Add Store',
-		policy: 'Community Policy',
+		info: 'Info',
+		aboutTab: 'About',
+		termsTab: 'Community Terms',
 		search: 'Search businesses...',
 		totalBusinesses: 'Total {count} businesses in index',
 		foundResults: '{count} results found',
@@ -452,7 +460,9 @@ export const translations = {
 		subtitle: 'Специальные скидки и льготы для членов "Йоцим Лехерут"',
 		homeTooltip: 'На главную — Справочник кошерных специалистов',
 		addStore: 'Добавить магазин',
-		policy: 'Политика сообщества',
+		info: 'Информация',
+		aboutTab: 'О сайте',
+		termsTab: 'Условия сообщества',
 		search: 'Поиск бизнеса...',
 		totalBusinesses: 'Всего {count} бизнеса в индексе',
 		foundResults: 'Найдено {count} результатов',
