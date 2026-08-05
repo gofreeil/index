@@ -33,11 +33,15 @@ export async function load({ params, locals }) {
 	]);
 	if (!b) throw error(404, 'העסק לא נמצא או ממתין לאישור');
 
+	const admin = isPrivileged(locals.user);
 	return {
 		business: toBusiness(b),
 		// "שיתוף חכם" הוא כלי של בעל העסק בלבד. ההכרעה כאן ולא בדפדפן:
 		// toBusiness לא מחזיר ללקוח את מפתחות הבעלות, ולכן אין מה לזייף.
 		// אדמין מקבל גישה גם הוא — הוא כבר עורך ומאשר את הכרטיסיות.
-		canSmartShare: isPrivileged(locals.user) || isOwner(b, locals.user, userPhone)
+		canSmartShare: admin || isOwner(b, locals.user, userPhone),
+		// רמזים על שדות ריקים (למשל סרטון תדמית שלא מולא) מוצגים רק למי
+		// שיכול למלא אותם, ורק לאדמין מוצג קישור ישיר למסך העריכה.
+		isAdmin: admin
 	};
 }

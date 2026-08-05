@@ -1,6 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
-	import { fade, fly } from 'svelte/transition';
+	import { fade, slide } from 'svelte/transition';
 	import { lang, translations } from '$lib/i18n';
 	import { authUser } from '$lib/auth';
 	import JsonLd from '$lib/components/JsonLd.svelte';
@@ -19,17 +19,21 @@
 	const PLACEHOLDER_IMG =
 		'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGNsYXNzPSJoLTYgdy02IiBmaWxsPSJub25lIiBzdHJva2U9IiM5Q0EzQUYiIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2Utd2lkdGg9IjIiIGQ9Ik0xOSAyMVY1YTIgMiAwIDAwLTItMkg3YTIgMiAwIDAwLTIgMnYxNm0xNCAwaDJtLTIgMGgtNW0tOSAweDNtMiAwaDVNOSA3aDFtLTEgNGgxbTQtNGgxbS0xIDRoMW0tNSAxMHYtNWExIDEgMCAwMTEtMWgyYTEgMSAwIDAxMSAxdjVtLTQgMGg0IiAvPjwvc3ZnPg==';
 
-	// המרת קישור יוטיוב ל-embed. בלי fallback קבוע — עסק בלי סרטון פשוט לא מציג וידאו.
+	/* ═══════════ סרטון תדמית ═══════════
+	   הקישור נשמר כמו שבעל העסק הדביק אותו, ולכן צריך לזהות את כל הצורות
+	   שיוטיוב מפיץ בהן היום — watch, youtu.be, shorts, live, embed — כולל
+	   הזנבות (?si=, &list=, &t=). בלי fallback קבוע: עסק בלי סרטון לא מציג וידאו. */
+	const YT_PATTERNS = [
+		/youtube\.com\/watch\?[^\s]*v=([\w-]{6,})/i,
+		/youtu\.be\/([\w-]{6,})/i,
+		/youtube\.com\/(?:embed|shorts|live|v)\/([\w-]{6,})/i
+	];
 	/** @param {string} url */
 	function youtubeEmbed(url) {
-		if (!url) return '';
-		const patterns = [
-			/(?:youtube\.com\/watch\?v=)([^&]+)/,
-			/(?:youtu\.be\/)([^?]+)/,
-			/(?:youtube\.com\/embed\/)([^?]+)/
-		];
-		for (const p of patterns) {
-			const m = url.match(p);
+		const v = String(url || '').trim();
+		if (!v) return '';
+		for (const p of YT_PATTERNS) {
+			const m = v.match(p);
 			if (m) return `https://www.youtube.com/embed/${m[1]}`;
 		}
 		return '';
@@ -151,6 +155,59 @@
 		return v;
 	}
 	const bizArea = $derived(placeOrEmpty(business.city) || placeOrEmpty(business.sales_area));
+
+	/* ═══════════ מפה ═══════════
+	   המפה הייתה תלויה ב-address בלבד — שדה שרק 21 מ-92 העסקים מילאו, וגם אז
+	   בטקסט חופשי שאינו כתובת ("אינטרנטי כל הארץ", "רמת גן /מכשור לשימוש ביתי").
+	   התוצאה: אצל רוב העסקים לא הופיעה מפה כלל, ואצל חלק נפתחה מפת עולם אקראית.
+	   כאן נבחר מקור המיקום הטוב ביותר שקיים, ואם אף אחד לא נראה כמו מקום —
+	   מוצג אזור השירות כטקסט בלבד, בלי מפה שבורה. */
+	const GENERIC_PLACE = /^(בית|משרד|קליניקה|חנות|חנות פיזית|מחסן|מפעל|נגיש|אחר|פרטי)$/;
+	const NON_PLACE =
+		/אונליין|און ליין|אינטרנט|אנטרנט|בזום|זום|טלפון|פייסבוק|וואטסאפ|משלוח|ארצי|כל הארץ|כל העולם|בעולם|מרחוק|בהערות|שירות|טכנאי|ספציפי/;
+
+	/**
+	 * ניקוי מחרוזת מיקום לשאילתת מפה, או '' אם היא לא נראית כמו מקום.
+	 * @param {string} raw
+	 */
+	function placeQuery(raw) {
+		let v = String(raw || '')
+			.split('/')[0] // "רמת גן /מכשור לשימוש ביתי" → "רמת גן"
+			.replace(/\s+/g, ' ')
+			.trim()
+			.replace(/\s*(והסביבה|וסביבתה|והאזור|והסביבות|וכל הסביבה|והסביבת)$/, '')
+			.trim();
+		if (!v || v.length > 40) return '';
+		if (GENERIC_PLACE.test(v) || NON_PLACE.test(v)) return '';
+		// שם יישוב הוא מילה-שתיים ("פתח תקווה", "גוש עציון"); בלי מספר בית,
+		// מחרוזת ארוכה יותר היא כמעט תמיד תיאור ולא מקום.
+		if (!/\d/.test(v) && v.split(' ').length > 3) return '';
+		return v;
+	}
+
+	const mapQuery = $derived.by(() => {
+		if (typeof business.lat === 'number' && typeof business.lng === 'number')
+			return `${business.lat},${business.lng}`;
+		// כתובת עם מספר בית היא הכי מדויקת; בלי מספר עדיפה העיר על פני
+		// צירוף יישובים ("אשקלון אשדוד והסביבה") שגוגל לא יודע למקם.
+		const addr = placeQuery(business.address);
+		const city = placeQuery(business.city);
+		const ordered = /\d/.test(addr)
+			? // "התאנה 18" בלי יישוב הוא רחוב אנונימי — מצרפים את העיר כשיש.
+				[city && !addr.includes(city) ? `${addr}, ${city}` : addr, city, business.sales_area]
+			: [city, addr, business.sales_area];
+		for (const c of ordered) {
+			const v = placeQuery(c);
+			if (v) return /ישראל|israel/i.test(v) ? v : `${v}, ישראל`;
+		}
+		return '';
+	});
+	const mapSrc = $derived(
+		mapQuery
+			? `https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=&z=13&ie=UTF8&iwloc=&output=embed`
+			: ''
+	);
+
 	const pageTitle = $derived(
 		[business.name, business.category, bizArea ? `ב${bizArea}` : ''].filter(Boolean).join(' — ') +
 			` | ${SITE_NAME}`
@@ -193,6 +250,11 @@
 			{ name: business.name, path: bizPath }
 		])
 	]);
+
+	// שורת מטא אחת מתחת לשם: תחום · תת-תחום · מקום. בלי כפילויות ובלי ריקים.
+	const metaLine = $derived(
+		[...new Set([business.category, business.subcategory, bizArea].filter(Boolean))].join(' · ')
+	);
 </script>
 
 <Seo
@@ -207,312 +269,297 @@
 />
 <JsonLd data={schemas} />
 
-<main class="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-	<a href="/" class="mb-6 inline-flex items-center gap-1 text-sm text-blue-400 hover:underline"
-		>→ {t.backToDirectory}</a
-	>
+<main class="mx-auto max-w-3xl px-4 py-10 sm:px-6">
+	<a href="/" class="text-xs text-gray-500 transition hover:text-gray-300">→ {t.backToDirectory}</a>
 
-	<!-- Top: Logo & Basic Info -->
-	<div class="mb-12 flex flex-col items-center gap-8 md:flex-row md:items-start md:justify-between">
-		<div class="flex-1 text-right">
-			<h1 class="mb-2 text-4xl font-extrabold text-gray-100 md:text-5xl">{business.name}</h1>
-			<div class="mb-4 flex items-center justify-end gap-2">
-				{#if ratingCount > 0}
-					<div class="flex items-center gap-2" role="img" aria-label="{avgRating} מתוך 5">
-						<span class="text-xl font-bold text-yellow-500">{avgRating}</span>
-						<div class="flex gap-0.5" dir="ltr" aria-hidden="true">
-							{#each Array(5) as _, i}
-								<span
-									class="text-xl {i < Math.round(avgRating) ? 'text-yellow-400' : 'text-gray-600'}"
-									>★</span
-								>
-							{/each}
-						</div>
-						<span class="text-sm text-gray-400">({ratingCount} {t.reviews})</span>
-					</div>
-				{:else}
-					<span class="text-sm text-gray-400">{t.noReviews}</span>
-				{/if}
-			</div>
-
-			<div class="mt-6 flex flex-wrap justify-end gap-4">
-				{#if business.phone}
-					{#if isPhoneRevealed}
-						<a
-							href="tel:{business.phone}"
-							class="flex items-center gap-2 rounded-full bg-blue-600 px-6 py-2 font-bold text-white transition hover:bg-blue-700"
-						>
-							<span dir="ltr">{business.phone}</span>
-						</a>
-					{:else}
-						<button
-							onclick={revealPhoneAndLog}
-							class="flex items-center gap-2 rounded-full border border-blue-500 px-6 py-2 font-bold text-blue-400 transition hover:bg-blue-600 hover:text-white"
-						>
-							<span>{t.revealPhone}</span>
-						</button>
-					{/if}
-				{/if}
-				{#if business.website}
-					<a
-						href={business.website}
-						target="_blank"
-						rel="noopener"
-						class="flex items-center gap-2 rounded-full bg-blue-700 px-6 py-2 font-bold text-white shadow-lg transition hover:bg-blue-800"
-					>
-						<span>{t.businessSite}</span>
-					</a>
-				{/if}
-			</div>
-		</div>
-
+	<!-- ── כותרת ───────────────────────────────────────────── -->
+	<header class="mt-6 flex items-start gap-4">
 		<div
-			class="order-first h-40 w-40 overflow-hidden rounded-2xl border border-gray-700 bg-gray-800 p-4 shadow-xl md:order-last md:h-56 md:w-56"
+			class="h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl bg-white/5 sm:h-16 sm:w-16"
+			aria-hidden={!business.logo}
 		>
 			{#if business.logo}
 				<img
 					src={business.logo}
 					alt="לוגו {business.name}"
-					class="h-full w-full object-contain"
+					class="h-full w-full object-contain p-1.5"
 					onerror={(e) => {
 						const img = /** @type {HTMLImageElement} */ (e.target);
 						img.src = PLACEHOLDER_IMG;
 					}}
 				/>
 			{:else}
-				<div class="flex h-full w-full items-center justify-center text-gray-500">
-					<svg class="h-20 w-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<div class="flex h-full w-full items-center justify-center text-gray-600">
+					<svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path
 							stroke-linecap="round"
 							stroke-linejoin="round"
-							stroke-width="2"
+							stroke-width="1.5"
 							d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
 						/>
 					</svg>
 				</div>
 			{/if}
 		</div>
+
+		<div class="min-w-0 flex-1">
+			<h1 class="text-2xl leading-tight font-semibold text-gray-50 sm:text-3xl">{business.name}</h1>
+			{#if metaLine}
+				<p class="mt-1 text-sm text-gray-400">{metaLine}</p>
+			{/if}
+			<p class="mt-1.5 text-xs">
+				{#if ratingCount > 0}
+					<span class="text-gray-400" role="img" aria-label="{avgRating} מתוך 5">
+						<span class="text-yellow-400" aria-hidden="true">★</span>
+						<span class="font-medium text-gray-200">{avgRating}</span>
+						<span class="text-gray-500">· {ratingCount} {t.reviews}</span>
+					</span>
+				{:else}
+					<span class="text-gray-500">{t.noReviews}</span>
+				{/if}
+			</p>
+		</div>
+	</header>
+
+	<!-- ── פעולות ──────────────────────────────────────────── -->
+	<div class="mt-6 flex flex-wrap items-center gap-2">
+		{#if business.phone}
+			{#if isPhoneRevealed}
+				<a
+					href="tel:{business.phone}"
+					class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500"
+				>
+					<span dir="ltr">{business.phone}</span>
+				</a>
+			{:else}
+				<button
+					onclick={revealPhoneAndLog}
+					class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500"
+				>
+					{t.revealPhone}
+				</button>
+			{/if}
+		{/if}
+		{#if business.website}
+			<a
+				href={business.website}
+				target="_blank"
+				rel="noopener"
+				class="rounded-lg border border-white/15 px-4 py-2 text-sm font-medium text-gray-300 transition hover:border-white/30 hover:text-white"
+			>
+				{t.businessSite}
+			</a>
+		{/if}
 	</div>
 
-	<!-- שיתוף חכם — רוחב מלא לפני שתי העמודות, כדי שבנייד בעל העסק יראה
-	     אותו מיד ולא אחרי כל חוות הדעת. השרת הוא שמכריע מי רשאי לראות. -->
+	{#if business.discount}
+		<p class="mt-4 text-sm text-emerald-400">
+			<span class="text-gray-500">{t.exclusiveBenefit}:</span>
+			{business.discount}
+		</p>
+	{/if}
+
+	<!-- ── תמונות ──────────────────────────────────────────── -->
+	{#if business.banners.length > 0}
+		<div class="relative mt-8 aspect-[16/9] overflow-hidden rounded-xl bg-white/5">
+			{#each business.banners as banner, i}
+				{#if i === currentImageIndex}
+					<img
+						in:fade={{ duration: 400 }}
+						out:fade={{ duration: 400 }}
+						src={banner}
+						alt="{business.name} {i + 1}"
+						class="absolute inset-0 h-full w-full object-cover"
+					/>
+				{/if}
+			{/each}
+			{#if business.banners.length > 1}
+				<div class="absolute inset-x-0 bottom-3 flex justify-center gap-1.5">
+					{#each business.banners as _, i}
+						<button
+							onclick={() => (currentImageIndex = i)}
+							aria-label="תמונה {i + 1}"
+							class="h-1 rounded-full transition-all {i === currentImageIndex
+								? 'w-5 bg-white'
+								: 'w-2 bg-white/40'}"
+						></button>
+					{/each}
+				</div>
+			{/if}
+		</div>
+	{/if}
+
+	<!-- ── על העסק ─────────────────────────────────────────── -->
+	<section class="mt-10 border-t border-white/[0.08] pt-8">
+		<h2 class="text-sm font-semibold text-gray-400">{t.aboutBusiness}</h2>
+		<p class="mt-3 leading-7 whitespace-pre-line text-gray-300">
+			{business.description || t.noDescription}
+		</p>
+	</section>
+
+	<!-- ── פרטי קשר ומיקום ─────────────────────────────────── -->
+	{#if business.address || business.sales_area || mapSrc}
+		<section class="mt-10 border-t border-white/[0.08] pt-8">
+			<h2 class="text-sm font-semibold text-gray-400">{t.contactInfo}</h2>
+
+			<dl class="mt-3 grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
+				{#if business.address}
+					<div>
+						<dt class="text-xs text-gray-500">{t.addressLabel}</dt>
+						<dd class="mt-0.5 text-gray-300">{business.address}</dd>
+					</div>
+				{/if}
+				{#if business.sales_area}
+					<div>
+						<dt class="text-xs text-gray-500">{t.serviceBorders}</dt>
+						<dd class="mt-0.5 text-gray-300">{business.sales_area}</dd>
+					</div>
+				{/if}
+			</dl>
+
+			{#if mapSrc}
+				<div class="mt-5 overflow-hidden rounded-xl border border-white/10">
+					<iframe
+						title="{t.serviceZones} — {business.name}"
+						class="block h-56 w-full sm:h-72"
+						style="border:0"
+						loading="lazy"
+						allowfullscreen
+						referrerpolicy="no-referrer-when-downgrade"
+						src={mapSrc}
+					></iframe>
+				</div>
+			{/if}
+		</section>
+	{/if}
+
+	<!-- ── סרטון תדמית ─────────────────────────────────────── -->
+	{#if ytEmbed || data.canSmartShare}
+		<section class="mt-10 border-t border-white/[0.08] pt-8">
+			<h2 class="text-sm font-semibold text-gray-400">{t.businessVideo}</h2>
+			{#if ytEmbed}
+				<div class="mt-3 aspect-video overflow-hidden rounded-xl bg-white/5">
+					<iframe
+						src={ytEmbed}
+						title={business.name}
+						class="h-full w-full border-0"
+						loading="lazy"
+						allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+						allowfullscreen
+					></iframe>
+				</div>
+			{:else}
+				<!-- ריק רק לבעל הכרטיסייה/אדמין: מבקר רגיל לא רואה מדור ריק. -->
+				<p class="mt-3 text-sm text-gray-500">
+					{t.businessVideoEmpty}
+					{#if data.isAdmin}
+						<a
+							href="/admin/business/{business.documentId}"
+							class="text-blue-400 transition hover:text-blue-300">{t.businessVideoEdit} →</a
+						>
+					{/if}
+				</p>
+			{/if}
+		</section>
+	{/if}
+
+	<!-- ── חוות דעת ────────────────────────────────────────── -->
+	<section class="mt-10 border-t border-white/[0.08] pt-8">
+		<div class="flex items-center justify-between gap-4">
+			<h2 class="text-sm font-semibold text-gray-400">{t.reviews}</h2>
+			<button
+				onclick={() => (showReviewForm = !showReviewForm)}
+				class="text-xs font-medium text-blue-400 transition hover:text-blue-300"
+			>
+				{showReviewForm ? t.cancel : t.addReview}
+			</button>
+		</div>
+
+		{#if reviewSubmitted}
+			<p class="mt-4 text-sm text-emerald-400">תודה! חוות הדעת נשלחה ותפורסם לאחר אישור.</p>
+		{/if}
+
+		{#if showReviewForm}
+			<div transition:slide={{ duration: 200 }} class="mt-4 rounded-xl bg-white/[0.03] p-4">
+				{#if !user}
+					<p class="text-sm text-gray-400">{t.loginToReview}</p>
+					<div class="mt-3 flex gap-2">
+						<a
+							href="/auth/login"
+							class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500"
+							>{t.login}</a
+						>
+						<a
+							href="/auth/register"
+							class="rounded-lg border border-white/15 px-4 py-2 text-sm font-medium text-gray-300 transition hover:border-white/30 hover:text-white"
+							>{t.register}</a
+						>
+					</div>
+				{:else}
+					<p class="text-sm text-gray-400">
+						{t.whatDoYouThink}
+						<span class="text-gray-500">· {user.name}</span>
+					</p>
+					<div class="mt-3 space-y-3">
+						<select
+							bind:value={newReview.rating}
+							aria-label={t.reviews}
+							class="w-full rounded-lg border border-white/10 bg-transparent px-3 py-2 text-sm text-gray-100 outline-none focus:border-white/30"
+						>
+							<option value={5}>5 ★</option>
+							<option value={4}>4 ★</option>
+							<option value={3}>3 ★</option>
+							<option value={2}>2 ★</option>
+							<option value={1}>1 ★</option>
+						</select>
+						<textarea
+							bind:value={newReview.comment}
+							placeholder={t.reviewPlaceholder}
+							class="h-24 w-full resize-none rounded-lg border border-white/10 bg-transparent px-3 py-2 text-sm text-gray-100 outline-none placeholder:text-gray-600 focus:border-white/30"
+						></textarea>
+						{#if reviewError}<p class="text-xs text-red-400">{reviewError}</p>{/if}
+						<button
+							onclick={submitReview}
+							class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500"
+							>{t.submitReview}</button
+						>
+					</div>
+				{/if}
+			</div>
+		{/if}
+
+		{#if reviews.length === 0}
+			<p class="mt-4 text-sm text-gray-500">{t.noReviews}</p>
+		{:else}
+			<ul class="mt-2 divide-y divide-white/[0.08]">
+				{#each reviews as review}
+					<li class="py-4">
+						<div class="flex items-baseline justify-between gap-3">
+							<span class="text-sm font-medium text-gray-200">{review.author_name}</span>
+							<span class="text-xs text-gray-600">{review.date}</span>
+						</div>
+						<div class="mt-1 flex gap-0.5 text-xs" dir="ltr" aria-label="{review.rating} מתוך 5">
+							{#each Array(5) as _, i}
+								<span
+									aria-hidden="true"
+									class={i < Math.round(review.rating) ? 'text-yellow-400' : 'text-gray-700'}
+									>★</span
+								>
+							{/each}
+						</div>
+						{#if review.title}<p class="mt-2 text-sm font-medium text-gray-200">
+								{review.title}
+							</p>{/if}
+						<p class="mt-1 text-sm leading-6 text-gray-400">{review.body}</p>
+					</li>
+				{/each}
+			</ul>
+		{/if}
+	</section>
+
+	<!-- ── שיתוף חכם — בסוף הדף, אחרי כל תוכן הכרטיסייה.
+	     כלי של בעל העסק, לא חלק ממה שמבקר בא לקרוא. השרת מכריע מי רואה. -->
 	{#if data.canSmartShare}
 		<SmartShare {business} />
 	{/if}
-
-	<div class="grid grid-cols-1 gap-12 lg:grid-cols-3">
-		<div class="lg:col-span-2">
-			<!-- Gallery -->
-			{#if business.banners.length > 0}
-				<div class="relative mb-12 h-64 overflow-hidden rounded-3xl shadow-2xl md:h-[400px]">
-					{#each business.banners as banner, i}
-						{#if i === currentImageIndex}
-							<img
-								in:fade={{ duration: 500 }}
-								out:fade={{ duration: 500 }}
-								src={banner}
-								alt="{business.name} {i + 1}"
-								class="absolute inset-0 h-full w-full object-cover"
-							/>
-						{/if}
-					{/each}
-					{#if business.banners.length > 1}
-						<div class="absolute right-0 bottom-4 left-0 flex justify-center gap-2">
-							{#each business.banners as _, i}
-								<button
-									onclick={() => (currentImageIndex = i)}
-									aria-label="תמונה {i + 1}"
-									class="h-2 rounded-full transition-all {i === currentImageIndex
-										? 'w-6 bg-white'
-										: 'w-2 bg-white/50'}"
-								></button>
-							{/each}
-						</div>
-					{/if}
-				</div>
-			{/if}
-
-			<!-- Description -->
-			<section class="mb-12">
-				<h2 class="mb-4 text-2xl font-bold text-gray-100">{t.aboutBusiness}</h2>
-				<div
-					class="rounded-2xl border border-blue-900/20 bg-blue-900/10 p-8 text-lg leading-relaxed text-gray-300"
-				>
-					{business.description || t.noDescription}
-				</div>
-			</section>
-
-			<!-- Reviews -->
-			<section>
-				<div class="mb-6 flex items-center justify-between">
-					<h2 class="text-2xl font-bold text-gray-100">{t.reviews}</h2>
-					<button
-						onclick={() => (showReviewForm = !showReviewForm)}
-						class="text-sm font-bold text-blue-400 hover:underline"
-					>
-						{showReviewForm ? t.cancel : t.addReview}
-					</button>
-				</div>
-
-				{#if reviewSubmitted}
-					<div
-						class="mb-8 rounded-2xl border border-green-500/30 bg-green-900/20 p-6 text-center text-green-300"
-					>
-						תודה! חוות הדעת נשלחה ותפורסם לאחר אישור.
-					</div>
-				{/if}
-
-				{#if showReviewForm}
-					<div in:fly={{ y: 20 }} class="mb-8 rounded-2xl border border-gray-700 bg-gray-800 p-6">
-						{#if !user}
-							<div class="text-center">
-								<p class="mb-4 text-gray-400">{t.loginToReview}</p>
-								<div class="flex justify-center gap-4">
-									<a
-										href="/auth/login"
-										class="rounded-full bg-blue-600 px-6 py-2 font-bold text-white hover:bg-blue-700"
-										>{t.login}</a
-									>
-									<a
-										href="/auth/register"
-										class="rounded-full border border-blue-500 px-6 py-2 font-bold text-blue-400 hover:bg-blue-600 hover:text-white"
-										>{t.register}</a
-									>
-								</div>
-							</div>
-						{:else}
-							<h3 class="mb-4 font-bold text-gray-100">{t.whatDoYouThink}</h3>
-							<div class="space-y-4">
-								<div class="flex items-center gap-2">
-									<span class="text-sm text-gray-400">{t.fullName}:</span>
-									<span class="font-bold text-gray-100">{user.name}</span>
-								</div>
-								<select
-									bind:value={newReview.rating}
-									class="w-full rounded-lg border border-gray-600 bg-gray-700 p-2 text-white"
-								>
-									<option value={5}>5 ★</option>
-									<option value={4}>4 ★</option>
-									<option value={3}>3 ★</option>
-									<option value={2}>2 ★</option>
-									<option value={1}>1 ★</option>
-								</select>
-								<textarea
-									bind:value={newReview.comment}
-									placeholder={t.reviewPlaceholder}
-									class="h-32 w-full rounded-lg border border-gray-600 bg-gray-700 p-2 text-white"
-								></textarea>
-								{#if reviewError}<p class="text-sm text-red-400">{reviewError}</p>{/if}
-								<button
-									onclick={submitReview}
-									class="rounded-full bg-blue-700 px-6 py-2 font-bold text-white hover:bg-blue-800"
-									>{t.submitReview}</button
-								>
-							</div>
-						{/if}
-					</div>
-				{/if}
-
-				<div class="space-y-6">
-					{#if reviews.length === 0}
-						<div class="rounded-2xl border border-dashed border-gray-700 p-12 text-center">
-							<p class="text-lg font-medium text-gray-400">{t.noReviews}</p>
-						</div>
-					{:else}
-						{#each reviews as review}
-							<div class="rounded-2xl border border-gray-700 bg-gray-800 p-6">
-								<div class="mb-2 flex items-center justify-between">
-									<span class="font-bold text-gray-100">{review.author_name}</span>
-									<span class="text-sm text-gray-500">{review.date}</span>
-								</div>
-								<div class="mb-3 flex gap-0.5" dir="ltr">
-									{#each Array(5) as _, i}
-										<span
-											class="text-xl {i < Math.round(review.rating)
-												? 'text-yellow-400'
-												: 'text-gray-600'}">★</span
-										>
-									{/each}
-								</div>
-								{#if review.title}<p class="mb-1 font-semibold text-gray-200">
-										{review.title}
-									</p>{/if}
-								<p class="text-gray-300">{review.body}</p>
-							</div>
-						{/each}
-					{/if}
-				</div>
-			</section>
-
-			<!-- Video (רק אם קיים) -->
-			{#if ytEmbed}
-				<section class="mt-12">
-					<h2 class="mb-4 text-2xl font-bold text-gray-100">{t.businessVideo}</h2>
-					<div
-						class="relative w-full overflow-hidden rounded-3xl shadow-2xl"
-						style="padding-top: 56.25%;"
-					>
-						<iframe
-							src={ytEmbed}
-							title={business.name}
-							class="absolute inset-0 h-full w-full border-0"
-							allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-							allowfullscreen
-						></iframe>
-					</div>
-				</section>
-			{/if}
-		</div>
-
-		<!-- Right: Info & Map -->
-		<div class="space-y-8">
-			<div class="rounded-3xl border border-gray-700 bg-gray-800 p-8 shadow-xl">
-				<h3 class="mb-6 text-xl font-bold text-gray-100">{t.contactInfo}</h3>
-				<div class="space-y-6">
-					{#if business.address}
-						<div>
-							<p class="font-bold text-gray-200">כתובת</p>
-							<p class="text-gray-400">{business.address}</p>
-						</div>
-					{/if}
-					{#if business.discount}
-						<div>
-							<p class="font-bold text-green-400">{t.exclusiveBenefit}</p>
-							<p class="text-green-300">{business.discount}</p>
-						</div>
-					{/if}
-					{#if business.sales_area}
-						<div>
-							<p class="font-bold text-gray-200">{t.serviceBorders}</p>
-							<p class="text-gray-400">{business.sales_area}</p>
-						</div>
-					{/if}
-				</div>
-			</div>
-
-			{#if business.address}
-				<div class="overflow-hidden rounded-3xl border border-gray-700 bg-gray-800 shadow-xl">
-					<div class="bg-gray-900/50 p-6">
-						<h3 class="text-xl font-bold text-gray-100">{t.serviceZones}</h3>
-					</div>
-					<div class="p-4">
-						<div class="h-64 w-full overflow-hidden rounded-2xl border border-gray-700 md:h-80">
-							<iframe
-								title="מפה של {business.name}"
-								width="100%"
-								height="100%"
-								style="border:0"
-								loading="lazy"
-								allowfullscreen
-								referrerpolicy="no-referrer-when-downgrade"
-								src="https://maps.google.com/maps?q={encodeURIComponent(
-									business.address
-								)}&t=&z=14&ie=UTF8&iwloc=&output=embed"
-							></iframe>
-						</div>
-					</div>
-				</div>
-			{/if}
-		</div>
-	</div>
 </main>

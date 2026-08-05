@@ -196,188 +196,157 @@
 	]);
 </script>
 
-<section
-	dir={t.dir}
-	class="mb-10 overflow-hidden rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-emerald-900/25 via-gray-900 to-gray-900 shadow-xl"
->
-	<div class="flex flex-wrap items-center justify-between gap-4 p-6">
-		<div class="min-w-0">
-			<div class="mb-1 flex items-center gap-2">
-				<span class="text-2xl" aria-hidden="true">🚀</span>
-				<h2 class="text-xl font-bold text-emerald-300">{t.smartShare}</h2>
-				<span
-					class="rounded-full border border-emerald-500/30 bg-emerald-900/40 px-2 py-0.5 text-[11px] font-bold text-emerald-200"
-				>
-					{t.smartShareBadge}
-				</span>
-			</div>
-			<p class="max-w-xl text-sm leading-relaxed text-gray-400">{t.smartShareLead}</p>
-		</div>
-
+<!-- כלי של בעל העסק בסוף דף הכרטיסייה: במצב סגור הוא שורה אחת שקטה, כדי
+     שלא יתחרה בתוכן שהמבקר בא בשבילו. כל המשקל הוויזואלי נשמר לכפתור אחד. -->
+<section dir={t.dir} class="mt-10 border-t border-white/[0.08] pt-8">
+	<div class="flex flex-wrap items-center justify-between gap-3">
+		<h2 class="text-sm font-semibold text-gray-400">
+			{t.smartShare}
+			<span class="mr-2 text-xs font-normal text-gray-600">{t.smartShareBadge}</span>
+		</h2>
 		<button
 			type="button"
 			onclick={() => (open = !open)}
 			aria-expanded={open}
 			aria-controls="smart-share-panel"
-			class="flex items-center gap-2 rounded-full bg-emerald-600 px-6 py-2.5 font-bold text-white shadow-lg transition hover:bg-emerald-500 active:scale-95"
+			class="rounded-lg border border-white/15 px-3.5 py-1.5 text-sm font-medium text-gray-300 transition hover:border-white/30 hover:text-white"
 		>
-			<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-				<path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					stroke-width="2"
-					d="M3 10h11M9 21V3m10 6l3 3-3 3"
-				/>
-			</svg>
-			<span>{open ? t.smartShareCloseBtn : t.smartShareOpenBtn}</span>
+			{open ? t.smartShareCloseBtn : t.smartShareOpenBtn}
 		</button>
 	</div>
 
 	{#if open}
-		<div
-			id="smart-share-panel"
-			transition:slide={{ duration: 200 }}
-			class="border-t border-emerald-500/20 p-6"
-		>
-			<div class="grid gap-6 lg:grid-cols-2">
-				<!-- ימין: מי מקבל ואיך זה נשמע -->
-				<div class="space-y-4">
-					<div>
-						<label for="ss-phone" class="mb-1 block text-sm font-medium text-gray-300">
-							{t.smartSharePhoneLabel}
-						</label>
-						<input
-							id="ss-phone"
-							type="tel"
-							inputmode="tel"
-							autocomplete="off"
-							dir="ltr"
-							bind:value={phoneRaw}
-							placeholder="050-123-4567"
-							aria-invalid={!!errorLabel}
-							aria-describedby="ss-phone-status"
-							class="w-full rounded-xl border bg-gray-800 px-4 py-3 text-lg tracking-wide text-gray-100 transition outline-none {errorLabel
-								? 'border-red-500/60 focus:border-red-500'
-								: parsed.ok
-									? 'border-emerald-500/60 focus:border-emerald-400'
-									: 'border-gray-600 focus:border-emerald-500'}"
-						/>
-						<p id="ss-phone-status" class="mt-1.5 min-h-[1.25rem] text-xs">
-							{#if errorLabel}
-								<span class="font-medium text-red-400">{errorLabel}</span>
-							{:else if parsed.ok}
-								<span class="font-medium text-emerald-400">
-									{t.smartShareTarget}
-									<span dir="ltr">{parsed.pretty}</span>
-								</span>
-							{:else}
-								<span class="text-gray-500">{t.smartSharePhoneHint}</span>
-							{/if}
-						</p>
-					</div>
+		<div id="smart-share-panel" transition:slide={{ duration: 200 }} class="mt-5 max-w-xl">
+			<p class="text-sm leading-6 text-gray-500">{t.smartShareLead}</p>
 
-					<div>
-						<label for="ss-who" class="mb-1 block text-sm font-medium text-gray-300">
-							{t.smartShareWhoLabel}
-						</label>
-						<input
-							id="ss-who"
-							type="text"
-							autocomplete="off"
-							bind:value={recipient}
-							placeholder={t.smartShareWhoPlaceholder}
-							class="w-full rounded-xl border border-gray-600 bg-gray-800 px-4 py-2.5 text-gray-100 transition outline-none focus:border-emerald-500"
-						/>
-					</div>
+			<div class="mt-5 space-y-4">
+				<div>
+					<label for="ss-phone" class="block text-xs text-gray-500">
+						{t.smartSharePhoneLabel}
+					</label>
+					<input
+						id="ss-phone"
+						type="tel"
+						inputmode="tel"
+						autocomplete="off"
+						dir="ltr"
+						bind:value={phoneRaw}
+						placeholder="050-123-4567"
+						aria-invalid={!!errorLabel}
+						aria-describedby="ss-phone-status"
+						class="mt-1 w-full rounded-lg border bg-transparent px-3 py-2 tracking-wide text-gray-100 transition outline-none placeholder:text-gray-600 {errorLabel
+							? 'border-red-500/50 focus:border-red-500'
+							: parsed.ok
+								? 'border-emerald-500/50 focus:border-emerald-400'
+								: 'border-white/10 focus:border-white/30'}"
+					/>
+					<p id="ss-phone-status" class="mt-1 min-h-[1rem] text-xs">
+						{#if errorLabel}
+							<span class="text-red-400">{errorLabel}</span>
+						{:else if parsed.ok}
+							<span class="text-emerald-400">
+								{t.smartShareTarget}
+								<span dir="ltr">{parsed.pretty}</span>
+							</span>
+						{:else}
+							<span class="text-gray-600">{t.smartSharePhoneHint}</span>
+						{/if}
+					</p>
+				</div>
 
-					<div>
-						<span class="mb-2 block text-sm font-medium text-gray-300">{t.smartShareToneLabel}</span
-						>
-						<div class="flex flex-wrap gap-2">
-							{#each TONES as [key, label] (key)}
-								<button
-									type="button"
-									onclick={() => (tone = key)}
-									aria-pressed={tone === key}
-									class="rounded-full border px-4 py-1.5 text-sm font-medium transition {tone ===
-									key
-										? 'border-emerald-400 bg-emerald-600/20 text-emerald-200'
-										: 'border-gray-600 text-gray-400 hover:border-gray-500 hover:text-gray-200'}"
-								>
-									{t[label]}
-								</button>
-							{/each}
-						</div>
+				<div>
+					<label for="ss-who" class="block text-xs text-gray-500">{t.smartShareWhoLabel}</label>
+					<input
+						id="ss-who"
+						type="text"
+						autocomplete="off"
+						bind:value={recipient}
+						placeholder={t.smartShareWhoPlaceholder}
+						class="mt-1 w-full rounded-lg border border-white/10 bg-transparent px-3 py-2 text-gray-100 transition outline-none placeholder:text-gray-600 focus:border-white/30"
+					/>
+				</div>
+
+				<div>
+					<span class="block text-xs text-gray-500">{t.smartShareToneLabel}</span>
+					<div class="mt-1.5 inline-flex rounded-lg border border-white/10 p-0.5">
+						{#each TONES as [key, label] (key)}
+							<button
+								type="button"
+								onclick={() => (tone = key)}
+								aria-pressed={tone === key}
+								class="rounded-md px-3 py-1 text-xs font-medium transition {tone === key
+									? 'bg-white/10 text-gray-100'
+									: 'text-gray-500 hover:text-gray-300'}"
+							>
+								{t[label]}
+							</button>
+						{/each}
 					</div>
 				</div>
 
-				<!-- שמאל: איך ההודעה תיראה אצל המכר -->
-				<div class="flex flex-col">
-					<div class="mb-2 flex items-center justify-between">
-						<span class="text-sm font-medium text-gray-300">{t.smartSharePreviewLabel}</span>
+				<!-- תצוגה מקדימה — הסיבה היחידה שהיא כאן היא שכפתורי הסגנון
+				     חסרי משמעות בלי לראות מה משתנה. לכן: שקטה וקומפקטית. -->
+				<div>
+					<div class="flex items-baseline justify-between gap-3">
+						<span class="text-xs text-gray-500">{t.smartSharePreviewLabel}</span>
 						<button
 							type="button"
 							onclick={copyMessage}
-							class="text-xs font-bold text-emerald-400 transition hover:text-emerald-300"
+							class="text-xs text-gray-500 transition hover:text-gray-300"
 						>
 							{copied ? t.smartShareCopied : t.smartShareCopy}
 						</button>
 					</div>
-					<div class="flex-1 rounded-2xl bg-gray-800/60 p-3">
-						<pre
-							class="max-h-64 overflow-y-auto rounded-xl bg-emerald-950/60 p-4 text-right text-sm leading-relaxed break-words whitespace-pre-wrap text-gray-200"
-							dir="auto">{message}</pre>
-					</div>
+					<pre
+						class="mt-1.5 max-h-40 overflow-y-auto rounded-lg bg-white/[0.03] p-3 text-xs leading-6 break-words whitespace-pre-wrap text-gray-400"
+						dir="auto">{message}</pre>
 				</div>
 			</div>
 
-			<!-- שליחה -->
-			<div class="mt-6 flex flex-wrap gap-3">
+			<div class="mt-5 flex flex-wrap items-center gap-4">
 				<button
 					type="button"
 					onclick={() => send('wa')}
 					disabled={!parsed.ok}
-					class="flex items-center gap-2 rounded-full bg-green-600 px-8 py-3 font-bold text-white shadow-lg transition hover:bg-green-500 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-green-600"
+					class="rounded-lg bg-emerald-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-emerald-600"
 				>
-					<span aria-hidden="true">💬</span>
-					<span>{t.smartShareSendWa}</span>
+					{t.smartShareSendWa}
 				</button>
 				<button
 					type="button"
 					onclick={() => send('sms')}
 					disabled={!parsed.ok}
-					class="flex items-center gap-2 rounded-full border border-gray-600 px-6 py-3 font-bold text-gray-300 transition hover:border-gray-400 hover:text-white active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+					class="text-sm text-gray-400 underline-offset-4 transition hover:text-gray-200 hover:underline disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:no-underline"
 				>
-					<span aria-hidden="true">✉️</span>
-					<span>{t.smartShareSendSms}</span>
+					{t.smartShareSendSms}
 				</button>
 			</div>
 
 			{#if recent.length > 0}
-				<div class="mt-6 border-t border-gray-700/60 pt-4">
-					<div class="mb-2 flex items-center justify-between">
-						<span class="text-sm font-medium text-gray-400">
+				<div class="mt-6">
+					<div class="flex items-baseline justify-between gap-3">
+						<span class="text-xs text-gray-500">
 							{t.smartShareRecent} ({recent.length})
 						</span>
 						<button
 							type="button"
 							onclick={forgetAll}
-							class="text-xs text-gray-500 transition hover:text-gray-300"
+							class="text-xs text-gray-600 transition hover:text-gray-400"
 						>
 							{t.smartShareForget}
 						</button>
 					</div>
-					<div class="flex flex-wrap gap-2">
+					<div class="mt-2 flex flex-wrap gap-1.5">
 						{#each recent as entry (entry.wa)}
 							<button
 								type="button"
 								onclick={() => resend(entry)}
 								title={t.smartShareResend}
-								class="flex items-center gap-2 rounded-full border border-gray-600 bg-gray-800/70 px-3 py-1.5 text-xs text-gray-300 transition hover:border-green-500/60 hover:text-white"
+								class="rounded-md border border-white/10 px-2.5 py-1 text-xs text-gray-400 transition hover:border-white/25 hover:text-gray-200"
 							>
 								<span aria-hidden="true">↻</span>
 								<span>{entry.name || entry.pretty}</span>
-								{#if entry.name}<span class="text-gray-500" dir="ltr">{entry.pretty}</span>{/if}
+								{#if entry.name}<span class="text-gray-600" dir="ltr">{entry.pretty}</span>{/if}
 							</button>
 						{/each}
 					</div>
