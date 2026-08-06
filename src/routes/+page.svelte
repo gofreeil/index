@@ -433,7 +433,8 @@
 
 			<!-- קומה 2: בעלי מקצוע שנתווספו לאחרונה -->
 			{#if recentBusinesses.length > 0}
-				<div class="mb-16">
+				<!-- mt-6 כמו בקומה 1: כשאין דירוגים זו הקומה הראשונה, והיא נצמדה למסילה -->
+				<div class="mt-6 mb-16">
 					<div class="mb-8 text-center">
 						<h2
 							class="bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-2xl font-extrabold text-transparent sm:text-4xl"
