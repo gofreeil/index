@@ -243,64 +243,79 @@
 			<p class="text-red-400">{t.error}: {error}</p>
 		</div>
 	{:else}
-		<!-- Filters -->
-		<div class="mb-8 space-y-4">
-			<div class="relative">
-				<input
-					type="text"
-					bind:value={searchTerm}
-					placeholder={t.search}
-					aria-label={t.search}
-					class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 pr-12 text-gray-100 transition outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-900/30"
-				/>
-				<svg
-					class="absolute top-3.5 right-4 h-5 w-5 text-gray-400"
-					fill="none"
-					stroke="currentColor"
-					viewBox="0 0 24 24"
-					aria-hidden="true"
-				>
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+		<!-- ═══ שורת הפתיחה: חיפוש ומפה זה לצד זה ═══
+		     המפה עלתה לכאן מלמטה (עד כאן ישבה מתחת למסילת התחומים) ותופסת חצי
+		     רוחב בלבד — כך גם החיפוש אינו נמתח לכל רוחב המסך, ושניהם נראים יחד
+		     בלי גלילה. בנייד הם נערמים: חיפוש למעלה, מפה מתחתיו. -->
+		<div class="mb-8 grid items-start gap-4 md:grid-cols-2 md:gap-6">
+			<!-- Filters -->
+			<div class="space-y-4">
+				<div class="relative">
+					<input
+						type="text"
+						bind:value={searchTerm}
+						placeholder={t.search}
+						aria-label={t.search}
+						class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 pr-12 text-gray-100 transition outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-900/30"
 					/>
-				</svg>
+					<svg
+						class="absolute top-3.5 right-4 h-5 w-5 text-gray-400"
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+						aria-hidden="true"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+						/>
+					</svg>
+				</div>
+
+				<div class="flex flex-wrap items-center gap-2 px-1 text-sm text-gray-400">
+					<span>{t.totalBusinesses.replace('{count}', businesses.length.toString())}</span>
+					{#if searchTerm || selectedCategory !== 'all' || selectedLocation !== 'all'}
+						<span class="text-gray-700">|</span>
+						<span class="font-medium text-blue-400"
+							>{t.foundResults.replace('{count}', filteredBusinesses.length.toString())}</span
+						>
+					{/if}
+				</div>
+
+				<div class="flex flex-wrap items-center gap-3">
+					{#if cities.length > 0}
+						<select
+							bind:value={selectedLocation}
+							aria-label="עיר"
+							class="rounded-xl border border-gray-700 bg-purple-600 px-4 py-2.5 text-sm font-bold text-white outline-none"
+						>
+							<option value="all">כל הארץ</option>
+							{#each cities as city}
+								<option value={city}>{city}</option>
+							{/each}
+						</select>
+					{/if}
+
+					{#if searchTerm || selectedCategory !== 'all' || selectedLocation !== 'all'}
+						<button
+							onclick={clearFilters}
+							class="text-sm font-medium text-gray-400 hover:text-blue-400"
+						>
+							ביטול כל המסננים
+						</button>
+					{/if}
+				</div>
 			</div>
 
-			<div class="flex flex-wrap items-center gap-2 px-1 text-sm text-gray-400">
-				<span>{t.totalBusinesses.replace('{count}', businesses.length.toString())}</span>
-				{#if searchTerm || selectedCategory !== 'all' || selectedLocation !== 'all'}
-					<span class="text-gray-700">|</span>
-					<span class="font-medium text-blue-400"
-						>{t.foundResults.replace('{count}', filteredBusinesses.length.toString())}</span
-					>
-				{/if}
-			</div>
-
-			<div class="flex flex-wrap items-center gap-3">
-				{#if cities.length > 0}
-					<select
-						bind:value={selectedLocation}
-						aria-label="עיר"
-						class="rounded-xl border border-gray-700 bg-purple-600 px-4 py-2.5 text-sm font-bold text-white outline-none"
-					>
-						<option value="all">כל הארץ</option>
-						{#each cities as city}
-							<option value={city}>{city}</option>
-						{/each}
-					</select>
-				{/if}
-
-				{#if searchTerm || selectedCategory !== 'all' || selectedLocation !== 'all'}
-					<button
-						onclick={clearFilters}
-						class="text-sm font-medium text-gray-400 hover:text-blue-400"
-					>
-						ביטול כל המסננים
-					</button>
-				{/if}
+			<!-- מפה — מציגה תמיד את התוצאות המסוננות, ולכן חיפוש או בחירת תחום
+			     מצטיירים גם עליה. -->
+			<div>
+				<h2 class="mb-2 text-center text-sm font-bold text-gray-300 sm:text-base">
+					{t.mapTitle}
+				</h2>
+				<LazyMap businesses={filteredBusinesses} />
 			</div>
 		</div>
 
@@ -313,15 +328,6 @@
 				onselect={pickCategory}
 			/>
 		{/if}
-
-		<!-- מפה — מיד מתחת למסילת התחומים, בגודל קומפקטי. היא מציגה תמיד את
-		     התוצאות המסוננות, ולכן בחירת תחום מצטיירת גם עליה. -->
-		<div class="mt-4 mb-10">
-			<h2 class="mb-3 text-center text-base font-bold text-gray-300 sm:text-lg">
-				{t.mapTitle}
-			</h2>
-			<LazyMap businesses={filteredBusinesses} />
-		</div>
 
 		<!-- גוף רשימת התוצאות — מוגדר פעם אחת ומרונדר במקום אחד בכל רגע:
 		     מיד מתחת למסילה כשיש סינון פעיל, ובתחתית הדף כשאין.
