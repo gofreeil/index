@@ -314,9 +314,21 @@
 			/>
 		{/if}
 
+		<!-- מפה — מיד מתחת למסילת התחומים, בגודל קומפקטי. היא מציגה תמיד את
+		     התוצאות המסוננות, ולכן בחירת תחום מצטיירת גם עליה. -->
+		<div class="mt-4 mb-10">
+			<h2 class="mb-3 text-center text-base font-bold text-gray-300 sm:text-lg">
+				{t.mapTitle}
+			</h2>
+			<LazyMap businesses={filteredBusinesses} />
+		</div>
+
 		<!-- גוף רשימת התוצאות — מוגדר פעם אחת ומרונדר במקום אחד בכל רגע:
-		     מיד מתחת למסילה כשיש סינון פעיל, ובתחתית הדף כשאין. -->
-		{#snippet resultsBody()}
+		     מיד מתחת למסילה כשיש סינון פעיל, ובתחתית הדף כשאין.
+		     withLoadMore: ברשימה התחתונה הכרטיסים הם מדגם, והדרך לראות את כולם
+		     היא הטבלה שמתחתיה — ולכן "טען עוד" מופיע רק במצב סינון, שם רשימה
+		     קטועה בלי המשך היא תוצאה חסרה. -->
+		{#snippet resultsBody(withLoadMore = false)}
 			<div class="flex flex-wrap justify-center gap-3 md:grid md:grid-cols-3 md:gap-6">
 				{#each displayedBusinesses as business (business.id)}
 					<BusinessCard {business} />
@@ -327,7 +339,7 @@
 				<p class="mt-8 text-center text-gray-500">לא נמצאו עסקים התואמים לחיפוש.</p>
 			{/if}
 
-			{#if visibleCount < filteredBusinesses.length}
+			{#if withLoadMore && visibleCount < filteredBusinesses.length}
 				<div class="mt-12 flex justify-center">
 					<button
 						onclick={loadMore}
@@ -354,7 +366,7 @@
 					</p>
 				</div>
 
-				{@render resultsBody()}
+				{@render resultsBody(true)}
 
 				<div class="mt-10 flex justify-center">
 					<button
@@ -436,18 +448,6 @@
 			{/if}
 		{/if}
 
-		<!-- Map -->
-		<div class="mt-12">
-			<div class="mb-8 text-center">
-				<h2
-					class="bg-gradient-to-r from-blue-500 via-indigo-500 to-cyan-500 bg-clip-text text-2xl font-extrabold text-transparent sm:text-4xl"
-				>
-					{t.mapTitle}
-				</h2>
-			</div>
-			<LazyMap businesses={filteredBusinesses} />
-		</div>
-
 		<!-- All businesses — יעד הכפתור "לכלל בעלי המקצוע והעסקים" -->
 		{#if !isFiltering}
 			<div id="results" class="mt-16">
@@ -469,12 +469,15 @@
 		     את כולם — אבל היא סגורה עד שלוחצים, כדי שלא תתפוס מסך שלם בתחתית
 		     דף הבית. hidden ב-CSS ולא {#if}: התוכן חייב להישאר ב-HTML הראשון. -->
 		{#if businesses.length > 0}
-			<section class="mt-20 border-t border-gray-800 pt-10" aria-labelledby="full-index-title">
+			<section
+				class="mt-20 border-t border-gray-800 pt-10 text-center"
+				aria-labelledby="full-index-title"
+			>
 				<h2 id="full-index-title" class="mb-2 text-xl font-extrabold text-gray-100">
 					כל בעלי המקצוע לפי תחום
 				</h2>
 				<p class="mb-5 text-sm text-gray-400">
-					אינדקס מלא של {businesses.length} בעלי המקצוע באתר — בטבלה אחת, לפי תחום עיסוק, שם ועיר.
+					{businesses.length} בעלי מקצוע בטבלה אחת.
 				</p>
 
 				<button
@@ -485,7 +488,7 @@
 					class="inline-flex items-center gap-2 rounded-full border border-blue-500/40 bg-gradient-to-r from-blue-900/50 to-indigo-900/50 px-6 py-3 text-sm font-black text-blue-200 shadow-lg transition-all hover:border-blue-400/70 hover:from-blue-900/70 hover:to-indigo-900/70 active:scale-95"
 				>
 					<span aria-hidden="true">📋</span>
-					{showTable ? 'סגירת הטבלה' : `פתיחת טבלת כל ${businesses.length} בעלי המקצוע`}
+					{showTable ? 'סגירת הטבלה' : 'פתיחת הטבלה'}
 					<span class="text-xs" aria-hidden="true">{showTable ? '▲' : '▼'}</span>
 				</button>
 

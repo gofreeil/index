@@ -23,12 +23,15 @@
 	});
 </script>
 
-<div bind:this={container} class="mx-auto max-w-4xl">
-	<div class="rounded-3xl border border-gray-800 bg-gray-900/40 p-3 shadow-2xl sm:p-4">
+<!-- מפה קומפקטית: היא יושבת מיד מתחת למסילת התחומים, בראש הדף, ולכן
+     היא נותנת הצצה לפריסה הארצית בלי לדחוף את התוכן מתחתיה אל מחוץ למסך.
+     גובה השלד חייב להתאים לגובה המפה ב-BusinessesMap, אחרת יש קפיצה. -->
+<div bind:this={container} class="mx-auto max-w-2xl">
+	<div class="rounded-2xl border border-gray-800 bg-gray-900/40 p-2 shadow-lg">
 		{#if show}
 			<BusinessesMap {businesses} />
 		{:else}
-			<div class="h-[350px] w-full animate-pulse rounded-2xl bg-gray-800 sm:h-[450px]"></div>
+			<div class="h-[190px] w-full animate-pulse rounded-xl bg-gray-800 sm:h-[240px]"></div>
 		{/if}
 	</div>
 </div>

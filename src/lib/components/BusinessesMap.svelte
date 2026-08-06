@@ -90,10 +90,11 @@
 
 <!-- isolate: כולא את ה-z-index הגבוהים של Leaflet (400–1000) בתוך stacking context משלו, שלא יצוירו מעל ההדר (z-50) -->
 <div class="relative isolate">
-	<div bind:this={mapEl} class="h-[350px] w-full rounded-2xl sm:h-[450px]"></div>
+	<!-- הגובה חייב להתאים לשלד ב-LazyMap, אחרת הדף קופץ כשהמפה נטענת -->
+	<div bind:this={mapEl} class="h-[190px] w-full rounded-xl sm:h-[240px]"></div>
 	{#if mapped.length === 0}
 		<div
-			class="pointer-events-none absolute inset-0 flex items-center justify-center rounded-2xl bg-gray-900/60 text-center text-sm text-gray-300"
+			class="pointer-events-none absolute inset-0 flex items-center justify-center rounded-xl bg-gray-900/60 text-center text-xs text-gray-300"
 		>
 			<span class="max-w-xs px-4"
 				>רוב העסקים ארציים / אונליין ואינם ממוקמים על המפה. חפשו אותם ברשימה למעלה.</span
