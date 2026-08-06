@@ -68,24 +68,38 @@
 			);
 	});
 
-	/** @type {HTMLElement | null} */
-	let resultsEl = $state(null);
+	/* גלילה אל בלוק התוצאות. איתור לפי id ולא ב-bind:this: הבלוק חי בשני
+	   מקומות שונים בדף (מיד מתחת למסילה כשמסננים, ובתחתית כשלא), ורק אחד מהם
+	   קיים בכל רגע — הפניה חיה עלולה להתאפס בדיוק ברגע המעבר. */
+	function scrollToResults() {
+		const el = document.getElementById('results');
+		if (!el) return;
+		const header = document.querySelector('header');
+		const top =
+			el.getBoundingClientRect().top + window.scrollY - ((header?.offsetHeight ?? 0) + 12);
+		window.scrollTo({
+			top: Math.max(0, top),
+			behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+		});
+	}
 
-	/** בחירת תחום מהמסילה — מסננת וגוללת אל התוצאות, שאחרת נשארות מתחת לקפל
+	/** מעבר אל כלל בעלי המקצוע — מנקה סינון פעיל כדי שהרשימה תהיה באמת "הכל" */
+	async function goToAllBusinesses() {
+		clearFilters();
+		visibleCount = 9;
+		await tick();
+		scrollToResults();
+	}
+
+	/** בחירת תחום מהמסילה — מסננת, והתוצאות נפתחות מיד מתחת למסילה
 	 *  @param {string} key */
 	async function pickCategory(key) {
 		selectedCategory = key || 'all';
 		visibleCount = 9;
 		await tick();
-		const header = document.querySelector('header');
-		const top =
-			(resultsEl?.getBoundingClientRect().top ?? 0) +
-			window.scrollY -
-			((header?.offsetHeight ?? 0) + 12);
-		window.scrollTo({
-			top: Math.max(0, top),
-			behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
-		});
+		// לחיצה חוזרת על תחום נבחר מבטלת את הסינון; אז בלוק התוצאות חוזר
+		// לתחתית הדף, וגלילה אליו הייתה זורקת את המשתמש הרחק מהמסילה
+		if (key) scrollToResults();
 	}
 
 	// ערים מהדאטה
@@ -123,11 +137,21 @@
 
 	const displayedBusinesses = $derived(filteredBusinesses.slice(0, visibleCount));
 
+	/* סינון פעיל (מסילת התחומים / חיפוש / עיר) הופך את הדף למצב "תוצאות":
+	   הקומות הקבועות מתחלפות ברשימת העסקים הרלוונטיים, מיד מתחת למסילה. */
+	const isFiltering = $derived(
+		Boolean(searchTerm) || selectedCategory !== 'all' || selectedLocation !== 'all'
+	);
+
 	// המדורגים ביותר — רק אם קיימים דירוגים אמיתיים (אחרת אין "מדורגים", זה חירטוט)
 	const ratedBusinesses = $derived(
 		[...filteredBusinesses].filter((b) => b.rating > 0).sort((a, b) => b.rating - a.rating)
 	);
-	const topRated = $derived(ratedBusinesses.slice(0, 3));
+	let showAllRated = $state(false);
+	const topRated = $derived(showAllRated ? ratedBusinesses : ratedBusinesses.slice(0, 3));
+
+	// שנתווספו לאחרונה — ה-API מחזיר createdAt:desc, ולכן ראש הרשימה הוא החדש
+	const recentBusinesses = $derived(filteredBusinesses.slice(0, 3));
 
 	const favoriteBusinesses = $derived(businesses.filter((b) => $favorites.includes(b.id)));
 
@@ -290,60 +314,9 @@
 			/>
 		{/if}
 
-		<!-- Favorites -->
-		{#if favoriteBusinesses.length > 0}
-			<div class="mb-16">
-				<div class="mb-8 flex items-center gap-3">
-					<div class="h-8 w-1.5 rounded-full bg-red-500"></div>
-					<h2 class="text-2xl font-bold text-gray-100">{t.favorites}</h2>
-				</div>
-				<div class="flex flex-wrap justify-center gap-3 md:grid md:grid-cols-3 md:gap-6">
-					{#each favoriteBusinesses as business (business.id)}
-						<BusinessCard {business} />
-					{/each}
-				</div>
-			</div>
-		{/if}
-
-		<!-- Top rated (only when real ratings exist) -->
-		{#if topRated.length > 0}
-			<div class="mb-16">
-				<div class="mb-8 text-center">
-					<h2
-						class="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 bg-clip-text text-2xl font-extrabold text-transparent sm:text-4xl"
-					>
-						{t.topRated}
-					</h2>
-				</div>
-				<div class="flex flex-wrap justify-center gap-3 md:grid md:grid-cols-3 md:gap-6">
-					{#each topRated as business (business.id)}
-						<BusinessCard {business} />
-					{/each}
-				</div>
-			</div>
-		{/if}
-
-		<!-- Map -->
-		<div class="mt-12">
-			<div class="mb-8 text-center">
-				<h2
-					class="bg-gradient-to-r from-blue-500 via-indigo-500 to-cyan-500 bg-clip-text text-2xl font-extrabold text-transparent sm:text-4xl"
-				>
-					{t.mapTitle}
-				</h2>
-			</div>
-			<LazyMap businesses={filteredBusinesses} />
-		</div>
-
-		<!-- All businesses — גם היעד שאליו נגללים אחרי בחירת תחום במסילה -->
-		<div class="mt-16" bind:this={resultsEl}>
-			<div class="mb-8 text-center">
-				<h2
-					class="bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 bg-clip-text text-2xl font-extrabold text-transparent sm:text-4xl"
-				>
-					{t.allBusinesses}
-				</h2>
-			</div>
+		<!-- גוף רשימת התוצאות — מוגדר פעם אחת ומרונדר במקום אחד בכל רגע:
+		     מיד מתחת למסילה כשיש סינון פעיל, ובתחתית הדף כשאין. -->
+		{#snippet resultsBody()}
 			<div class="flex flex-wrap justify-center gap-3 md:grid md:grid-cols-3 md:gap-6">
 				{#each displayedBusinesses as business (business.id)}
 					<BusinessCard {business} />
@@ -364,7 +337,131 @@
 					</button>
 				</div>
 			{/if}
+		{/snippet}
+
+		{#if isFiltering}
+			<!-- מצב תוצאות: מי שבחר תחום במסילה (או חיפש/בחר עיר) מקבל את
+			     העסקים הרלוונטיים כאן ועכשיו, ולא מתחת לקומות ולמפה. -->
+			<div id="results" class="mt-6 mb-16">
+				<div class="mb-8 text-center">
+					<h2
+						class="bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 bg-clip-text text-2xl font-extrabold text-transparent sm:text-4xl"
+					>
+						{selectedCategory === 'all' ? t.filterResultsTitle : selectedCategory}
+					</h2>
+					<p class="mt-2 text-sm text-gray-400">
+						{t.foundResults.replace('{count}', filteredBusinesses.length.toString())}
+					</p>
+				</div>
+
+				{@render resultsBody()}
+
+				<div class="mt-10 flex justify-center">
+					<button
+						onclick={goToAllBusinesses}
+						class="rounded-full border border-gray-700 px-6 py-2.5 text-sm font-semibold text-blue-400 transition hover:border-blue-500 hover:text-blue-300"
+					>
+						{t.allProfessionals}
+					</button>
+				</div>
+			</div>
+		{:else}
+			<!-- קומה 1: המדורגים ביותר (רק כשיש דירוגים אמיתיים) -->
+			{#if topRated.length > 0}
+				<div class="mt-6 mb-16">
+					<div class="mb-8 text-center">
+						<h2
+							class="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 bg-clip-text text-2xl font-extrabold text-transparent sm:text-4xl"
+						>
+							{t.topRated}
+						</h2>
+					</div>
+					<div class="flex flex-wrap justify-center gap-3 md:grid md:grid-cols-3 md:gap-6">
+						{#each topRated as business (business.id)}
+							<BusinessCard {business} />
+						{/each}
+					</div>
+					{#if ratedBusinesses.length > 3}
+						<div class="mt-8 flex justify-center">
+							<button
+								onclick={() => (showAllRated = !showAllRated)}
+								class="rounded-full border border-gray-700 px-6 py-2.5 text-sm font-semibold text-blue-400 transition hover:border-blue-500 hover:text-blue-300"
+							>
+								{showAllRated ? t.showLess : t.moreTopRated}
+							</button>
+						</div>
+					{/if}
+				</div>
+			{/if}
+
+			<!-- קומה 2: בעלי מקצוע שנתווספו לאחרונה -->
+			{#if recentBusinesses.length > 0}
+				<div class="mb-16">
+					<div class="mb-8 text-center">
+						<h2
+							class="bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-2xl font-extrabold text-transparent sm:text-4xl"
+						>
+							{t.newBusinesses}
+						</h2>
+					</div>
+					<div class="flex flex-wrap justify-center gap-3 md:grid md:grid-cols-3 md:gap-6">
+						{#each recentBusinesses as business (business.id)}
+							<BusinessCard {business} />
+						{/each}
+					</div>
+					<div class="mt-8 flex justify-center">
+						<button
+							onclick={scrollToResults}
+							class="rounded-full border border-gray-700 px-6 py-2.5 text-sm font-semibold text-blue-400 transition hover:border-blue-500 hover:text-blue-300"
+						>
+							{t.allProfessionals}
+						</button>
+					</div>
+				</div>
+			{/if}
+
+			<!-- Favorites -->
+			{#if favoriteBusinesses.length > 0}
+				<div class="mb-16">
+					<div class="mb-8 flex items-center gap-3">
+						<div class="h-8 w-1.5 rounded-full bg-red-500"></div>
+						<h2 class="text-2xl font-bold text-gray-100">{t.favorites}</h2>
+					</div>
+					<div class="flex flex-wrap justify-center gap-3 md:grid md:grid-cols-3 md:gap-6">
+						{#each favoriteBusinesses as business (business.id)}
+							<BusinessCard {business} />
+						{/each}
+					</div>
+				</div>
+			{/if}
+		{/if}
+
+		<!-- Map -->
+		<div class="mt-12">
+			<div class="mb-8 text-center">
+				<h2
+					class="bg-gradient-to-r from-blue-500 via-indigo-500 to-cyan-500 bg-clip-text text-2xl font-extrabold text-transparent sm:text-4xl"
+				>
+					{t.mapTitle}
+				</h2>
+			</div>
+			<LazyMap businesses={filteredBusinesses} />
 		</div>
+
+		<!-- All businesses — יעד הכפתור "לכלל בעלי המקצוע והעסקים" -->
+		{#if !isFiltering}
+			<div id="results" class="mt-16">
+				<div class="mb-8 text-center">
+					<h2
+						class="bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 bg-clip-text text-2xl font-extrabold text-transparent sm:text-4xl"
+					>
+						{t.allBusinesses}
+					</h2>
+				</div>
+
+				{@render resultsBody()}
+			</div>
+		{/if}
 
 		<!-- ═══ טבלת כל בעלי המקצוע ═══
 		     הכרטיסים למעלה מוצגים 9 בכל פעם ("טען עוד"), ולכן רובם אינם מקושרים

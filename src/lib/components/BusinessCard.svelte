@@ -20,16 +20,16 @@
 </script>
 
 <div
-	class="group relative flex w-[calc(50%-8px)] flex-col overflow-hidden rounded-lg border border-gray-700 bg-gray-800 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md sm:w-auto sm:rounded-xl sm:shadow-md sm:hover:shadow-xl"
+	class="group relative flex w-[calc(50%-8px)] flex-col overflow-hidden rounded-xl border border-gray-700/60 bg-gray-800/50 transition-colors duration-200 hover:border-gray-500 sm:w-auto"
 >
 	<button
 		onclick={toggleFavorite}
-		class="absolute top-2 left-2 z-30 rounded-full bg-gray-800/80 p-1.5 shadow-sm transition hover:bg-gray-800"
+		class="absolute top-2 left-2 z-30 rounded-full bg-gray-900/30 p-1.5 backdrop-blur-sm transition hover:bg-gray-900/60"
 		aria-label={isFavorite ? t.removeFromFavorites : t.saveToFavorites}
 	>
 		<svg
 			xmlns="http://www.w3.org/2000/svg"
-			class="h-4 w-4 {isFavorite ? 'fill-red-500 stroke-red-500' : 'stroke-gray-400'}"
+			class="h-4 w-4 {isFavorite ? 'fill-red-500 stroke-red-500' : 'stroke-gray-300'}"
 			viewBox="0 0 24 24"
 			fill="none"
 			stroke="currentColor"
@@ -45,73 +45,70 @@
 	</button>
 
 	<a href="/business/{business.id}" class="flex flex-1 flex-col">
-		<div class="relative h-28 w-full overflow-hidden bg-gray-700 sm:h-48">
-			{#if business.logo && !failedImage}
-				<img
-					src={business.logo}
-					alt={business.name}
-					class="absolute inset-0 z-10 h-full w-full object-contain p-2 transition duration-500 group-hover:scale-105"
-					loading="lazy"
-					onerror={() => (failedImage = true)}
-				/>
-			{/if}
+		<!-- אזור המדיה: משטח שטוח בלי גרדיאנט צבעוני. כשאין לוגו — מונוגרם
+		     שקט במקום ריבוע ריק. -->
+		<div class="relative h-24 w-full overflow-hidden bg-gray-900/40 sm:h-40">
 			{#if business.banner}
 				<img
 					src={business.banner}
 					alt=""
 					aria-hidden="true"
-					class="h-full w-full object-cover opacity-30 transition duration-500 group-hover:scale-105"
+					class="absolute inset-0 h-full w-full object-cover opacity-25"
 					loading="lazy"
 				/>
+			{/if}
+			{#if business.logo && !failedImage}
+				<img
+					src={business.logo}
+					alt={business.name}
+					class="absolute inset-0 z-10 h-full w-full object-contain p-3 sm:p-4"
+					loading="lazy"
+					onerror={() => (failedImage = true)}
+				/>
 			{:else}
-				<div class="h-full w-full bg-gradient-to-r from-blue-500 to-purple-500 opacity-20"></div>
+				<span
+					class="absolute inset-0 z-10 flex items-center justify-center text-2xl font-bold text-gray-600 sm:text-4xl"
+					aria-hidden="true"
+				>
+					{(business.name || '').trim().charAt(0)}
+				</span>
 			{/if}
 		</div>
 
-		<div class="flex flex-1 flex-col p-3 sm:p-6">
-			<div class="mb-2 sm:mb-4">
-				<h3
-					class="line-clamp-1 text-xs font-bold text-gray-100 transition group-hover:text-blue-400 sm:text-xl"
-				>
-					{business.name}
-				</h3>
-				<span
-					class="mt-1 inline-block rounded-full bg-blue-900/30 px-2 py-0.5 text-xs font-medium text-blue-400 sm:px-3 sm:py-1"
-				>
-					{business.category}
-				</span>
-			</div>
+		<div class="flex flex-1 flex-col p-3 sm:p-4">
+			<h3
+				class="line-clamp-1 text-xs font-semibold text-gray-100 transition-colors group-hover:text-white sm:text-base"
+			>
+				{business.name}
+			</h3>
+			<p class="mt-0.5 line-clamp-1 text-[10px] text-gray-500 sm:text-xs">
+				{business.category}
+			</p>
 
 			{#if business.discount}
-				<div
-					class="mb-2 rounded border border-green-800/30 bg-green-900/20 p-1.5 sm:mb-4 sm:rounded-lg sm:p-3"
-				>
-					<p class="line-clamp-2 text-xs leading-tight text-green-400 sm:text-sm">
-						{business.discount}
-					</p>
-				</div>
+				<p class="mt-2 line-clamp-2 text-[10px] leading-tight text-emerald-400 sm:text-xs">
+					{business.discount}
+				</p>
 			{/if}
 
 			<div
-				class="mt-auto border-t border-gray-700 pt-2 text-[10px] text-gray-400 sm:space-y-2 sm:pt-4 sm:text-sm"
+				class="mt-auto flex items-center gap-1.5 pt-2 text-[10px] text-gray-500 sm:pt-3 sm:text-xs"
 			>
-				<div class="flex items-center gap-1.5">
-					<svg
-						class="h-3 w-3 flex-shrink-0 text-gray-400 sm:h-4 sm:w-4"
-						fill="none"
-						stroke="currentColor"
-						viewBox="0 0 24 24"
-						aria-hidden="true"
-					>
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-						/>
-					</svg>
-					<span class="line-clamp-1">{business.address || business.salesArea}</span>
-				</div>
+				<svg
+					class="h-3 w-3 flex-shrink-0 sm:h-3.5 sm:w-3.5"
+					fill="none"
+					stroke="currentColor"
+					viewBox="0 0 24 24"
+					aria-hidden="true"
+				>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+					/>
+				</svg>
+				<span class="line-clamp-1">{business.address || business.salesArea}</span>
 			</div>
 		</div>
 	</a>
