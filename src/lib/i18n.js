@@ -184,6 +184,13 @@ export const translations = {
 		claimBodyMatched:
 			'הפרטים בחשבון שלכם תואמים לכרטיסייה הזו. דרשו אותה, ואחרי אישור שלנו היא תהיה שלכם לעריכה.',
 		claimBtn: 'זה העסק שלי',
+		// כרטיסייה שכבר משויכת למישהו אחר — בקשת העברת בעלות
+		claimTitleTransfer: 'הכרטיסייה הזו רשומה על שם מישהו אחר',
+		claimBodyTransfer:
+			'הפרטים בחשבון שלכם תואמים לכרטיסייה הזו, אבל היא משויכת כרגע למשתמש אחר. אפשר לבקש שנעביר אליכם את הבעלות — נבדוק ונחזור אליכם.',
+		claimBtnTransfer: 'בקשו להעביר אליי את הבעלות',
+		claimNotePlaceholderTransfer: 'למשל: זה העסק שלי, הכרטיסייה שויכה בטעות',
+		claimPendingTransfer: 'בקשת העברת הבעלות נשלחה וממתינה לבדיקה שלנו.',
 		claimSend: 'שליחת הבקשה',
 		claimNoteLabel: 'משהו שיעזור לנו לאמת? (לא חובה)',
 		claimNotePlaceholder: 'למשל: הטלפון שבכרטיסייה הוא המספר העסקי שלי',
@@ -421,6 +428,14 @@ export const translations = {
 		claimBodyMatched:
 			"Your account details match this listing. Claim it, and once we approve it's yours to edit.",
 		claimBtn: 'This is my business',
+		// A listing that already belongs to someone else — ownership transfer request
+		claimTitleTransfer: 'This listing is registered to someone else',
+		claimBodyTransfer:
+			'Your account details match this listing, but it is currently assigned to another user. You can ask us to transfer ownership to you — we will review and get back to you.',
+		claimBtnTransfer: 'Ask to transfer ownership to me',
+		claimNotePlaceholderTransfer:
+			'For example: this is my business, the listing was assigned by mistake',
+		claimPendingTransfer: 'Your transfer request was sent and is awaiting our review.',
 		claimSend: 'Send request',
 		claimNoteLabel: 'Anything that helps us verify? (optional)',
 		claimNotePlaceholder: 'For example: the phone on the listing is my business number',
@@ -662,6 +677,13 @@ export const translations = {
 		claimBodyMatched:
 			'Данные вашего аккаунта совпадают с этой карточкой. Заявите права, и после одобрения она станет вашей.',
 		claimBtn: 'Это мой бизнес',
+		// Карточка уже принадлежит другому — запрос на передачу прав
+		claimTitleTransfer: 'Эта карточка зарегистрирована на другого пользователя',
+		claimBodyTransfer:
+			'Данные вашего аккаунта совпадают с этой карточкой, но сейчас она закреплена за другим пользователем. Вы можете попросить передать права вам — мы проверим и ответим.',
+		claimBtnTransfer: 'Попросить передать права мне',
+		claimNotePlaceholderTransfer: 'Например: это мой бизнес, карточка закреплена по ошибке',
+		claimPendingTransfer: 'Запрос на передачу прав отправлен и ожидает проверки.',
 		claimSend: 'Отправить запрос',
 		claimNoteLabel: 'Что-то, что поможет нам проверить? (необязательно)',
 		claimNotePlaceholder: 'Например: телефон в карточке — мой рабочий номер',

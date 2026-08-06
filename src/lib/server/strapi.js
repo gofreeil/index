@@ -366,6 +366,20 @@ export async function assignBusinessOwner(documentId, owner) {
 	});
 }
 
+/**
+ * ניתוק בעלות מכרטיסייה — היא חוזרת להיות "בלי בעלים", אפשר לדרוש אותה
+ * מחדש, והבעלים הקודם מאבד את זכות העריכה. שני מפתחות הבעלות מתאפסים.
+ *
+ * owner_email *לא* נמחק: אותה עמודה משמשת גם כאימייל הקשר של העסק (טופס
+ * ההגשה והעריכה כותבים אליה), ומחיקתה הייתה מוחקת נתון של הכרטיסייה.
+ * התוצאה גם רצויה — הכרטיסייה חוזרת להיות "מועמדת להתאמה" כמו כל כרטיסייה
+ * שהוזרמה בייבוא.
+ * @param {string} documentId
+ */
+export async function releaseBusinessOwner(documentId) {
+	return updateBusiness(documentId, { user: null, user_id: null });
+}
+
 /** יצירת עסק (status=pending נכפה ב-controller). @param {Record<string,any>} data */
 export async function createBusiness(data) {
 	return apiJson('/api/idx-businesses', { method: 'POST', body: JSON.stringify({ data }) });

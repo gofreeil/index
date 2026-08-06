@@ -13,6 +13,26 @@
 	// בקשת בעלות (/admin/claims). בלעדיו אף אחד מלבד אדמין לא יכול לערוך.
 	const ownerId = $derived(String(biz.user_id ?? '') || String(biz.user?.id ?? ''));
 	const ownerEmail = $derived(biz.extra_fields?.owner_email ?? '');
+
+	// שיוך/העברה ידניים: אותו מנגנון של מסך הבקשות, בלי לחכות שמישהו יבקש.
+	// הבורר נפתח בלחיצה כדי שהשורה תישאר שורה ולא טופס.
+	const users = $derived(data.users ?? []);
+	let ownerFormOpen = $state(false);
+	let pickedUser = $state('');
+	let ownershipBusy = $state(false);
+	const pickedLabel = $derived(
+		users.find((/** @type {any} */ u) => u.id === pickedUser)?.email ?? 'המשתמש שנבחר'
+	);
+
+	const ownershipSubmit = () => {
+		ownershipBusy = true;
+		return async (/** @type {any} */ { update }) => {
+			await update({ reset: false });
+			ownershipBusy = false;
+			ownerFormOpen = false;
+			pickedUser = '';
+		};
+	};
 </script>
 
 <svelte:head>
@@ -34,22 +54,111 @@
 		<a href="/admin?tab=cards" class="text-sm text-gray-400 hover:text-blue-400">← לפאנל</a>
 	</div>
 
-	<!-- שורת הבעלות — מי רשאי לערוך את הכרטיסייה מלבד האדמינים -->
-	<div
-		class="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-gray-800 bg-gray-900/40 px-4 py-2.5 text-sm"
-	>
-		<span class="text-gray-400">בעלות:</span>
-		{#if ownerId}
-			<span class="font-bold text-green-400">משויכת למשתמש #{ownerId}</span>
-			{#if ownerEmail}<span class="text-gray-500" dir="ltr">{ownerEmail}</span>{/if}
-			<span class="text-xs text-gray-500">· הבעלים רשאי לערוך את הדף שלו</span>
-		{:else}
-			<span class="font-bold text-amber-400">אין בעלים</span>
-			<a href="/admin/claims" class="text-xs text-blue-400 hover:underline">
-				לבדוק התאמות ובקשות בעלות ←
-			</a>
+	<!-- שורת הבעלות — מי רשאי לערוך את הכרטיסייה מלבד האדמינים, ומכאן
+	     אפשר גם לשייך, להעביר או לנתק בעלות בלי לעבור דרך מסך הבקשות. -->
+	<div class="mb-4 rounded-xl border border-gray-800 bg-gray-900/40 px-4 py-2.5 text-sm">
+		<div class="flex flex-wrap items-center gap-2">
+			<span class="text-gray-400">בעלות:</span>
+			{#if ownerId}
+				<span class="font-bold text-green-400">משויכת למשתמש #{ownerId}</span>
+				{#if ownerEmail}<span class="text-gray-500" dir="ltr">{ownerEmail}</span>{/if}
+				<span class="text-xs text-gray-500">· הבעלים רשאי לערוך את הדף שלו</span>
+			{:else}
+				<span class="font-bold text-amber-400">אין בעלים</span>
+				<a href="/admin/claims" class="text-xs text-blue-400 hover:underline">
+					לבדוק התאמות ובקשות בעלות ←
+				</a>
+			{/if}
+
+			<div class="ms-auto flex flex-wrap items-center gap-2">
+				{#if users.length}
+					<button
+						type="button"
+						onclick={() => (ownerFormOpen = !ownerFormOpen)}
+						class="rounded-lg border border-gray-600 px-3 py-1 text-xs font-bold text-gray-200 transition hover:bg-gray-800"
+					>
+						{ownerId ? '⇄ העבר בעלות' : '＋ שייך בעלים'}
+					</button>
+				{/if}
+				{#if ownerId}
+					<form
+						method="POST"
+						action="?/releaseOwner"
+						use:enhance={({ cancel }) => {
+							if (!confirm(`לנתק את הבעלות של משתמש #${ownerId} מ"${biz.name}"?`)) {
+								cancel();
+								return;
+							}
+							return ownershipSubmit();
+						}}
+					>
+						<button
+							disabled={ownershipBusy}
+							class="rounded-lg border border-red-500/40 px-3 py-1 text-xs font-bold text-red-300 transition hover:bg-red-950/40 disabled:opacity-40"
+						>
+							נתק בעלות
+						</button>
+					</form>
+				{/if}
+			</div>
+		</div>
+
+		{#if ownerFormOpen}
+			<form
+				method="POST"
+				action="?/assignOwner"
+				class="mt-3 flex flex-wrap items-center gap-2 border-t border-gray-800 pt-3"
+				use:enhance={({ cancel }) => {
+					if (!pickedUser) {
+						cancel();
+						return;
+					}
+					const q = ownerId
+						? `להעביר את "${biz.name}" ממשתמש #${ownerId} אל ${pickedLabel}?`
+						: `לשייך את "${biz.name}" אל ${pickedLabel}?`;
+					if (!confirm(q)) {
+						cancel();
+						return;
+					}
+					return ownershipSubmit();
+				}}
+			>
+				<label for="owner-user" class="text-xs text-gray-400">בחרו משתמש:</label>
+				<select
+					id="owner-user"
+					name="userId"
+					bind:value={pickedUser}
+					class="min-w-64 rounded-lg border border-gray-700 bg-gray-900 px-3 py-1.5 text-sm text-gray-100"
+				>
+					<option value="">— ללא —</option>
+					{#each users as u (u.id)}
+						<option value={u.id}
+							>{u.name || u.email} · {u.email}{u.phone ? ' · ' + u.phone : ''}</option
+						>
+					{/each}
+				</select>
+				<button
+					disabled={ownershipBusy || !pickedUser}
+					class="rounded-lg bg-blue-600 px-4 py-1.5 text-xs font-bold text-white transition hover:bg-blue-700 disabled:opacity-40"
+				>
+					{ownershipBusy ? '…' : ownerId ? 'העבר בעלות' : 'שייך'}
+				</button>
+				<span class="text-xs text-gray-500">
+					{ownerId
+						? 'הבעלים הנוכחי יאבד את זכות העריכה על הכרטיסייה.'
+						: 'המשתמש יקבל זכות עריכה על הכרטיסייה.'}
+				</span>
+			</form>
 		{/if}
 	</div>
+
+	{#if form?.ownership}
+		<div
+			class="mb-4 rounded-xl border border-green-500/30 bg-green-900/20 p-3 text-center text-green-300"
+		>
+			✓ {form.ownership}
+		</div>
+	{/if}
 
 	{#if form?.saved}
 		<div

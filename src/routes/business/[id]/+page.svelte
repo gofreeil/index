@@ -385,8 +385,10 @@
 
 	<!-- ── דרישת בעלות ──────────────────────────────────────────
 	     כרטיסייה שהוזרמה בייבוא היא כרטיסייה בלי בעלים: בעל העסק לא יכול
-	     לערוך אותה עד שידרוש אותה ואדמין יאשר. לאדמין המדור מוצג רק כשיש
-	     התאמה אליו עצמו — אחרת הוא היה מלווה אותו ב-92 הדפים. -->
+	     לערוך אותה עד שידרוש אותה ואדמין יאשר. כרטיסייה שכבר שויכה נפתחת
+	     רק למי שהמערכת מזהה כבעליה — ואז זו בקשת *העברת* בעלות. לאדמין
+	     המדור מוצג רק כשיש התאמה אליו עצמו — אחרת הוא היה מלווה אותו
+	     ב-92 הדפים. -->
 	{#if claim.open && (!data.isAdmin || claim.matchedBy)}
 		<section
 			class="mt-6 rounded-xl border p-4 {claim.matchedBy && !claimSent
@@ -394,7 +396,9 @@
 				: 'border-white/10 bg-white/[0.03]'}"
 		>
 			{#if claimSent}
-				<p class="text-sm text-emerald-400">✓ {t.claimPending}</p>
+				<p class="text-sm text-emerald-400">
+					✓ {claim.transfer ? t.claimPendingTransfer : t.claimPending}
+				</p>
 			{:else if !claim.loggedIn}
 				<p class="text-sm text-gray-400">
 					{t.claimLogin}
@@ -404,10 +408,18 @@
 				<p class="text-sm text-gray-400">{t.claimRejected}</p>
 			{:else}
 				<h2 class="text-sm font-semibold text-gray-200">
-					{claim.matchedBy ? t.claimTitleMatched : t.claimTitle}
+					{claim.transfer
+						? t.claimTitleTransfer
+						: claim.matchedBy
+							? t.claimTitleMatched
+							: t.claimTitle}
 				</h2>
 				<p class="mt-1 text-sm leading-6 text-gray-400">
-					{claim.matchedBy ? t.claimBodyMatched : t.claimBody}
+					{claim.transfer
+						? t.claimBodyTransfer
+						: claim.matchedBy
+							? t.claimBodyMatched
+							: t.claimBody}
 				</p>
 
 				{#if form?.claimError}
@@ -435,7 +447,7 @@
 							rows="2"
 							maxlength="500"
 							class="mt-1 w-full resize-none rounded-lg border border-white/10 bg-transparent px-3 py-2 text-sm text-gray-100 outline-none placeholder:text-gray-600 focus:border-white/30"
-							placeholder={t.claimNotePlaceholder}
+							placeholder={claim.transfer ? t.claimNotePlaceholderTransfer : t.claimNotePlaceholder}
 						></textarea>
 						<button
 							disabled={claimSending}
@@ -449,7 +461,7 @@
 						onclick={() => (claimOpen = true)}
 						class="mt-3 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500"
 					>
-						{t.claimBtn}
+						{claim.transfer ? t.claimBtnTransfer : t.claimBtn}
 					</button>
 				{/if}
 			{/if}

@@ -54,7 +54,9 @@
 	<div class="mb-6">
 		<h1 class="text-2xl font-extrabold text-gray-100">בעלות על כרטיסיות</h1>
 		<p class="mt-1 text-sm text-gray-500">
-			אישור כאן משייך את הכרטיסייה למשתמש — ומאותו רגע הוא רשאי לערוך את הדף שלו.
+			אישור כאן משייך את הכרטיסייה למשתמש — ומאותו רגע הוא רשאי לערוך את הדף שלו. בקשה על כרטיסייה
+			שכבר יש לה בעלים היא בקשת <span class="text-amber-400">העברת בעלות</span>, ומאושרת בכפתור
+			נפרד.
 		</p>
 	</div>
 
@@ -109,6 +111,22 @@
 								{#if c.note}
 									<p class="mt-2 rounded-lg bg-gray-800/60 p-2.5 text-sm text-gray-300">{c.note}</p>
 								{/if}
+
+								<!-- בקשה על כרטיסייה משויכת = בקשת העברה. האזהרה כאן כדי
+								     שההכרעה תילקח מול העובדה הזו, ולא בהיסח הדעת. -->
+								{#if c.currentOwnerId}
+									<p
+										class="mt-2 rounded-lg border border-amber-500/30 bg-amber-900/20 p-2.5 text-xs text-amber-200"
+									>
+										⇄ הכרטיסייה משויכת כרגע למשתמש #{c.currentOwnerId}{c.currentOwnerEmail
+											? ' · ' + c.currentOwnerEmail
+											: ''} — אישור כאן מעביר את הבעלות, והבעלים הנוכחי מאבד את זכות העריכה.
+									</p>
+								{:else if c.alreadyOwner}
+									<p class="mt-2 text-xs text-gray-500">
+										הכרטיסייה כבר משויכת לדורש — אפשר פשוט לסגור את הבקשה.
+									</p>
+								{/if}
 							</div>
 							<span
 								class="rounded-full border px-2.5 py-0.5 text-[11px] font-bold {c.matchedBy ===
@@ -121,13 +139,36 @@
 						</div>
 
 						<div class="mt-4 flex flex-wrap items-center gap-2">
-							<form method="POST" action="?/approve" use:enhance={submitFn(c.id + 'ok')}>
+							<form
+								method="POST"
+								action="?/approve"
+								use:enhance={c.currentOwnerId
+									? ({ cancel }) => {
+											if (
+												!confirm(
+													`להעביר את "${c.bizName || 'הכרטיסייה'}" ממשתמש #${c.currentOwnerId} אל ${c.userEmail}?`
+												)
+											) {
+												cancel();
+												return;
+											}
+											return submitFn(c.id + 'ok')();
+										}
+									: submitFn(c.id + 'ok')}
+							>
 								<input type="hidden" name="claimId" value={c.id} />
+								{#if c.currentOwnerId}<input type="hidden" name="transfer" value="1" />{/if}
 								<button
 									disabled={busy === c.id + 'ok'}
-									class="rounded-lg bg-green-600 px-4 py-1.5 text-sm font-bold text-white transition hover:bg-green-700 disabled:opacity-40"
+									class="rounded-lg px-4 py-1.5 text-sm font-bold text-white transition disabled:opacity-40 {c.currentOwnerId
+										? 'bg-amber-600 hover:bg-amber-700'
+										: 'bg-green-600 hover:bg-green-700'}"
 								>
-									{busy === c.id + 'ok' ? '…' : '✓ אשר ושייך'}
+									{busy === c.id + 'ok'
+										? '…'
+										: c.currentOwnerId
+											? '⇄ אשר והעבר בעלות'
+											: '✓ אשר ושייך'}
 								</button>
 							</form>
 							<form method="POST" action="?/reject" use:enhance={submitFn(c.id + 'no')}>

@@ -32,7 +32,12 @@ export async function load({ params, locals }) {
 	// בעלות = שיוך שנכתב על הרשומה, לא התאמת פרטים. רוב הכרטיסיות הוזרמו
 	// בייבוא ואין להן בעלים — אותן אפשר "לדרוש", והאדמין מכריע.
 	const owned = !!businessOwnerId(b);
+	const isOwner = isBusinessOwner(b, user);
 	const claim = user ? await findClaim(business.documentId, user.id).catch(() => null) : null;
+	// ההתאמה נבדקת גם על כרטיסייה שיש לה בעלים: אם הטלפון שבכרטיסייה הוא
+	// של הגולש, ייתכן שהיא שויכה בטעות למישהו אחר — ואז הוא רשאי לבקש
+	// *העברת* בעלות. הבעלים עצמו כמובן לא צריך לבקש כלום.
+	const matchedBy = user && !isOwner ? matchKind(b, { email: user.email, phone: userPhone }) : '';
 
 	return {
 		// אותו סיווג בדיוק כמו בדף הבית — כרטיסייה שהאינדקס מציג תחת "רפואה
@@ -49,12 +54,15 @@ export async function load({ params, locals }) {
 		isAdmin: admin,
 		// "זה העסק שלי" — מצב בקשת הבעלות מבחינת הגולש הנוכחי
 		claim: {
-			// כרטיסייה בלי בעלים אפשר לדרוש; אחרי בקשה מוצג הסטטוס במקום הכפתור
-			open: !owned,
+			// כרטיסייה בלי בעלים פתוחה לכל אחד לדרוש. כרטיסייה משויכת פתוחה
+			// רק למי שהמערכת מזהה כבעליה האמיתי — בקשת העברה, לא הזמנה כללית.
+			open: !isOwner && (!owned || !!matchedBy),
+			// הבקשה היא העברת בעלות מבעלים קיים — הניסוח למשתמש שונה
+			transfer: owned,
 			loggedIn: !!user,
 			status: claim?.status ?? '',
 			// התאמה אוטומטית — "זיהינו שהעסק הזה שלך" ולא סתם הזמנה כללית
-			matchedBy: user && !owned ? matchKind(b, { email: user.email, phone: userPhone }) : ''
+			matchedBy
 		}
 	};
 }
@@ -64,6 +72,10 @@ export const actions = {
 	/**
 	 * בקשת בעלות על הכרטיסייה. הבקשה נכנסת כ-pending ומחכה לאישור אדמין —
 	 * אין כאן שום שינוי הרשאה מיידי, גם כשהטלפון מתאים בול.
+	 *
+	 * כרטיסייה שכבר משויכת אינה סגורה לחלוטין: מי שהמערכת מזהה כבעליה
+	 * (טלפון/אימייל זהים) רשאי לבקש *העברת* בעלות, והאדמין מכריע. בלי
+	 * התאמה כזו אין דרך לבקש כרטיסייה של מישהו אחר.
 	 */
 	claim: async ({ request, params, locals }) => {
 		const user = locals.user;
@@ -71,11 +83,15 @@ export const actions = {
 
 		const b = await getBusiness(params.id);
 		if (!b) return fail(404, { claimError: 'העסק לא נמצא' });
-		if (businessOwnerId(b)) return fail(400, { claimError: 'לכרטיסייה הזו כבר יש בעלים רשום' });
+		if (isBusinessOwner(b, user)) return fail(400, { claimError: 'הכרטיסייה כבר משויכת אליך' });
 
 		const fd = await request.formData();
 		const note = String(fd.get('note') ?? '').trim();
 		const userPhone = await getUserPhone(user.id);
+		const matchedBy = matchKind(b, { email: user.email, phone: userPhone });
+		if (businessOwnerId(b) && !matchedBy) {
+			return fail(400, { claimError: 'לכרטיסייה הזו כבר יש בעלים רשום' });
+		}
 
 		const res = await createClaim({
 			bizDocId: b.documentId,
@@ -84,8 +100,11 @@ export const actions = {
 			userName: user.name,
 			userEmail: user.email,
 			userPhone,
-			matchedBy: matchKind(b, { email: user.email, phone: userPhone }) || 'manual',
-			note
+			matchedBy: matchedBy || 'manual',
+			note,
+			// כבר ווידאנו שהכרטיסייה אינה שלו — בקשה ישנה שאושרה ואז נותקה
+			// לא צריכה לחסום אותו מלבקש שוב
+			reclaim: true
 		});
 		if (!res.ok) return fail(400, { claimError: res.error });
 

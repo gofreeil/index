@@ -216,7 +216,10 @@ export const actions = {
 			userName: user.name,
 			userEmail: user.email,
 			userPhone: phone,
-			matchedBy: canonicalPhoneKey(phone) === canonicalPhoneKey(biz.phone) ? 'phone' : 'email'
+			matchedBy: canonicalPhoneKey(phone) === canonicalPhoneKey(biz.phone) ? 'phone' : 'email',
+			// כבר ווידאנו שאין לכרטיסייה בעלים — בקשה ישנה שאושרה ואז נותקה
+			// לא צריכה לחסום בקשה חדשה
+			reclaim: true
 		});
 		if (!res.ok) return fail(400, { claimError: res.error });
 

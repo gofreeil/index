@@ -8,7 +8,12 @@ import {
 	listClaims,
 	listPendingClaims
 } from '$lib/server/claimsStore.js';
-import { businessOwnerId, invalidateMatches, listAutoMatches } from '$lib/server/ownerMatch.js';
+import {
+	businessOwnerId,
+	invalidateMatches,
+	listAutoMatches,
+	ownershipByDoc
+} from '$lib/server/ownerMatch.js';
 import { invalidatePendingCounts } from '$lib/server/pendingCounts.js';
 
 // כמה הכרעות אחרונות מוצגות בהיסטוריה
@@ -29,8 +34,22 @@ export async function load({ locals }) {
 		listClaims().catch(() => [])
 	]);
 
+	// בקשה על כרטיסייה שכבר יש לה בעלים אינה שיוך אלא *העברה* — האדמין
+	// צריך לראות את זה לפני שהוא לוחץ, ולאשר בכפתור נפרד.
+	const owners = await ownershipByDoc(claims.map((c) => c.bizDocId));
+
 	return {
-		claims,
+		claims: claims.map((c) => {
+			const owner = owners.get(c.bizDocId);
+			const ownerId = owner?.ownerId ?? '';
+			return {
+				...c,
+				// ריק כשאין בעלים, או כשהבעלים הוא הדורש עצמו (בקשה שהתייתרה)
+				currentOwnerId: ownerId && ownerId !== c.userId ? ownerId : '',
+				currentOwnerEmail: ownerId && ownerId !== c.userId ? (owner?.ownerEmail ?? '') : '',
+				alreadyOwner: !!ownerId && ownerId === c.userId
+			};
+		}),
 		// התאמות שאיש עוד לא דרש — הבקשות עצמן כבר מופיעות ברשימה למעלה
 		matches: matches.filter((m) => m.claim === 'none'),
 		history: all
@@ -42,16 +61,21 @@ export async function load({ locals }) {
 
 /**
  * כותב את השיוך על הכרטיסייה. מאמת מחדש שאין לה כבר בעלים — שני אדמינים
- * שמאשרים במקביל לא יכולים לדרוס זה את זה בלי לשים לב.
+ * שמאשרים במקביל לא יכולים לדרוס זה את זה בלי לשים לב. העברה מבעלים קיים
+ * אפשרית, אבל רק בכוונה מפורשת (transfer) — כלומר בלחיצה על "העבר בעלות".
  * @param {string} bizDocId @param {string} userId @param {string} userEmail
- * @returns {Promise<{ok: true, name: string} | {ok: false, error: string}>}
+ * @param {boolean} [transfer]
+ * @returns {Promise<{ok: true, name: string, from: string} | {ok: false, error: string}>}
  */
-async function writeOwner(bizDocId, userId, userEmail) {
+async function writeOwner(bizDocId, userId, userEmail, transfer = false) {
 	const biz = await getBusinessAdmin(bizDocId);
 	if (!biz) return { ok: false, error: 'הכרטיסייה לא נמצאה' };
 	const current = businessOwnerId(biz);
-	if (current && current !== String(userId)) {
-		return { ok: false, error: `לכרטיסייה כבר יש בעלים (משתמש #${current})` };
+	if (current && current !== String(userId) && !transfer) {
+		return {
+			ok: false,
+			error: `לכרטיסייה כבר יש בעלים (משתמש #${current}). להעברה יש להשתמש בכפתור "אשר והעבר בעלות".`
+		};
 	}
 	try {
 		await assignBusinessOwner(bizDocId, { id: userId, email: userEmail });
@@ -61,7 +85,11 @@ async function writeOwner(bizDocId, userId, userEmail) {
 			error: 'השיוך נכשל: ' + (e instanceof Error ? e.message.slice(0, 140) : '')
 		};
 	}
-	return { ok: true, name: biz.name || '' };
+	return {
+		ok: true,
+		name: biz.name || '',
+		from: current && current !== String(userId) ? current : ''
+	};
 }
 
 /** מאפס את כל המטמונים שנוגעים לבעלות — הבועה והרשימות מתעדכנות מיד. */
@@ -73,15 +101,20 @@ function refreshCaches() {
 
 /** @type {import('./$types').Actions} */
 export const actions = {
-	/** אישור בקשה: כותב את השיוך ואז מסמן את הבקשה כמאושרת. */
+	/**
+	 * אישור בקשה: כותב את השיוך ואז מסמן את הבקשה כמאושרת. כשהכרטיסייה
+	 * כבר משויכת למישהו אחר, האישור הוא העברת בעלות — והוא נדרש להגיע
+	 * מהכפתור שמצהיר על כך (transfer=1).
+	 */
 	approve: async ({ request, locals }) => {
 		if (!isPrivileged(locals.user)) return fail(403, { error: 'אין הרשאה' });
 		const fd = await request.formData();
 		const claimId = String(fd.get('claimId') ?? '');
+		const transfer = fd.get('transfer') === '1';
 		const claim = (await listPendingClaims()).find((c) => c.id === claimId);
 		if (!claim) return fail(404, { error: 'הבקשה לא נמצאה' });
 
-		const written = await writeOwner(claim.bizDocId, claim.userId, claim.userEmail);
+		const written = await writeOwner(claim.bizDocId, claim.userId, claim.userEmail, transfer);
 		if (!written.ok) return fail(502, { error: written.error });
 
 		try {
@@ -93,7 +126,12 @@ export const actions = {
 			});
 		}
 		refreshCaches();
-		return { ok: true, message: `${claim.bizName || 'הכרטיסייה'} שויכה ל-${claim.userEmail}` };
+		return {
+			ok: true,
+			message: written.from
+				? `${claim.bizName || 'הכרטיסייה'} הועברה ממשתמש #${written.from} ל-${claim.userEmail}`
+				: `${claim.bizName || 'הכרטיסייה'} שויכה ל-${claim.userEmail}`
+		};
 	},
 
 	/** דחיית בקשה — הכרטיסייה נשארת בלי בעלים. */

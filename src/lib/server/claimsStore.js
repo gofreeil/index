@@ -212,7 +212,8 @@ export async function countPendingClaims() {
  * @param {{
  *   bizDocId: string, bizName: string,
  *   userId: string|number, userName?: string, userEmail?: string, userPhone?: string,
- *   matchedBy?: 'phone'|'email'|'manual', note?: string, source?: 'user'|'auto'
+ *   matchedBy?: 'phone'|'email'|'manual', note?: string, source?: 'user'|'auto',
+ *   reclaim?: boolean
  * }} input
  * @returns {Promise<{ok: true, claim: Claim} | {ok: false, error: string}>}
  */
@@ -223,7 +224,11 @@ export async function createClaim(input) {
 	const list = [...(await loadClaims(true))];
 	const existing = list.find((c) => c.bizDocId === input.bizDocId && c.userId === uid);
 	if (existing?.status === 'pending') return { ok: true, claim: existing };
-	if (existing?.status === 'approved') return { ok: false, error: 'הכרטיסייה כבר שויכה אליך' };
+	// בקשה שאושרה בעבר חוסמת בקשה חדשה — אלא אם הקורא כבר בדק שהכרטיסייה
+	// אינה שלו (הבעלות נותקה או הועברה ממנו), ואז מותר לו לבקש אותה שוב
+	if (existing?.status === 'approved' && !input.reclaim) {
+		return { ok: false, error: 'הכרטיסייה כבר שויכה אליך' };
+	}
 
 	// המגבלה חלה על בקשות של משתמשים; שיוך יזום של אדמין אינו "בקשה"
 	const open = list.filter((c) => c.userId === uid && c.status === 'pending').length;

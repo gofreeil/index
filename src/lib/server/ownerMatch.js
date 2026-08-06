@@ -77,6 +77,8 @@ export function matchKind(b, u) {
 let bizCache = null;
 /** @type {{at: number, rows: any[]} | null} */
 let usersCache = null;
+/** @type {{at: number, rows: any[]} | null} */
+let allBizCache = null;
 /** @type {Map<string, {at: number, n: number}>} */
 const userCountCache = new Map();
 
@@ -86,17 +88,52 @@ const userCountCache = new Map();
  */
 export function invalidateMatches() {
 	bizCache = null;
+	allBizCache = null;
 	usersCache = null;
 	userCountCache.clear();
+}
+
+/** כל הכרטיסיות בשדות ההתאמה בלבד, ממוטמנות. @returns {Promise<any[]>} */
+async function allBusinesses() {
+	if (allBizCache && Date.now() - allBizCache.at < TTL_MS) return allBizCache.rows;
+	const rows = await listBusinessesForMatch();
+	allBizCache = { at: Date.now(), rows };
+	return rows;
 }
 
 /** כרטיסיות פנויות לשיוך: בלי בעלים, ולא כאלה שנדחו. @returns {Promise<any[]>} */
 async function unownedBusinesses() {
 	if (bizCache && Date.now() - bizCache.at < TTL_MS) return bizCache.rows;
-	const all = await listBusinessesForMatch();
+	const all = await allBusinesses();
 	const rows = all.filter((b) => !businessOwnerId(b) && b.status !== 'rejected');
 	bizCache = { at: Date.now(), rows };
 	return rows;
+}
+
+/**
+ * מצב הבעלות של כרטיסיות מסוימות — מסך הבקשות צריך לדעת אם הבקשה שלפניו
+ * היא שיוך ראשון או *העברה* מבעלים קיים. נשען על אותה רשימה ממוטמנת של
+ * מנוע ההתאמה, ולכן לא עולה קריאת רשת לכל בקשה. נכשל בשקט (מפה ריקה).
+ * @param {string[]} docIds
+ * @returns {Promise<Map<string, {ownerId: string, ownerEmail: string}>>}
+ */
+export async function ownershipByDoc(docIds) {
+	/** @type {Map<string, {ownerId: string, ownerEmail: string}>} */
+	const out = new Map();
+	const want = new Set(docIds.filter(Boolean));
+	if (!want.size) return out;
+	try {
+		for (const b of await allBusinesses()) {
+			if (!want.has(b.documentId)) continue;
+			out.set(b.documentId, {
+				ownerId: businessOwnerId(b),
+				ownerEmail: businessOwnerEmail(b)
+			});
+		}
+	} catch (e) {
+		console.error('[match] ownership lookup failed:', e instanceof Error ? e.message : e);
+	}
+	return out;
 }
 
 /** @returns {Promise<{id:string,email:string,phone:string,name:string}[]>} */
