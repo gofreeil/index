@@ -195,8 +195,8 @@ export async function searchUsers(q) {
 }
 
 /**
- * הטלפון בפרופיל המשתמש — משמש באזור האישי לזיהוי כרטיסיות ותיקות שנוצרו
- * לפני שהיה שיוך-משתמש. לא נחשף ללקוח (רק תוצאת ההתאמה).
+ * הטלפון בפרופיל המשתמש — המפתח שבו המערכת מזהה כרטיסייה ותיקה כשייכת
+ * למשתמש (ראו ownerMatch.js). לא נחשף ללקוח (רק תוצאת ההתאמה).
  * @param {string|number} userId @returns {Promise<string>}
  */
 export async function getUserPhone(userId) {
@@ -208,6 +208,47 @@ export async function getUserPhone(userId) {
 	} catch {
 		return '';
 	}
+}
+
+/**
+ * עדכון הטלפון בפרופיל המשתמש. נקרא רק מהאזור האישי ורק על המשתמש
+ * המחובר עצמו — הטלפון הוא נתון מוצהר (אין אימות SMS), ולכן הוא משמש
+ * להצעת התאמה בלבד; הבעלות עצמה ניתנת רק באישור אדמין.
+ * @param {string|number} userId @param {string} phone
+ */
+export async function setUserPhone(userId, phone) {
+	return apiJson(`/api/users/${encodeURIComponent(String(userId))}`, {
+		method: 'PUT',
+		body: JSON.stringify({ phone })
+	});
+}
+
+/**
+ * כל המשתמשים הרשומים, בצורה רזה — למנוע ההתאמה בלבד. הרשימה משותפת
+ * לכל אתרי הרשת והיא קטנה (מאות בודדות), ולכן נשלפת בשלמותה ומותאמת
+ * בזיכרון; כך אין קריאת רשת לכל כרטיסייה בנפרד.
+ * @returns {Promise<{id:string,email:string,phone:string,name:string}[]>}
+ */
+export async function listUsersSlim() {
+	/** @type {{id:string,email:string,phone:string,name:string}[]} */
+	const out = [];
+	for (let page = 1; page <= 10; page++) {
+		const qs =
+			'fields[0]=email&fields[1]=phone&fields[2]=username&fields[3]=nickname' +
+			`&pagination[pageSize]=100&pagination[page]=${page}&sort=id:asc`;
+		const arr = await apiJson(`/api/users?${qs}`);
+		const rows = Array.isArray(arr) ? arr : [];
+		out.push(
+			...rows.map((u) => ({
+				id: String(u.id),
+				email: String(u.email ?? ''),
+				phone: String(u.phone ?? ''),
+				name: displayName(u)
+			}))
+		);
+		if (rows.length < 100) break;
+	}
+	return out;
 }
 
 /** משתמש בודד (רזה) לבדיקות הגנה לפני שינוי תפקיד. @param {string|number} userId */
@@ -238,9 +279,14 @@ export async function listApprovedBusinesses() {
 	return Array.isArray(data?.data) ? data.data : [];
 }
 
-/** עסק בודד לפי documentId (רק אם approved). @param {string} documentId */
+/**
+ * עסק בודד לפי documentId (רק אם approved). ה-relation user נשלף (id בלבד)
+ * כדי שדף העסק יידע מי הבעלים — מי רשאי לערוך ומי יכול לדרוש בעלות.
+ * הוא אינו נחשף ללקוח: toBusiness לא ממפה אותו.
+ * @param {string} documentId
+ */
 export async function getBusiness(documentId) {
-	const qs = BIZ_POPULATE;
+	const qs = `${BIZ_POPULATE}&populate[user][fields][0]=id`;
 	const res = await api(`/api/idx-businesses/${encodeURIComponent(documentId)}?${qs}`);
 	if (!res.ok) return null;
 	const data = await res.json().catch(() => null);
@@ -249,51 +295,21 @@ export async function getBusiness(documentId) {
 }
 
 /**
- * וריאנטים של מספר טלפון להשוואה מול idx-business, שבו הטלפון נשמר כפי
- * שהוקלד (0501234567 או 050-1234567). Strapi לא מנרמל בצד השרת, ולכן
- * מייצרים את הצורות הנפוצות ומשווים איתן ב-$in.
- * @param {string} phone
- * @returns {string[]}
- */
-function phoneVariants(phone) {
-	const digits = String(phone || '').replace(/\D/g, '');
-	if (digits.length < 9) return [];
-	const local = digits.startsWith('972') ? '0' + digits.slice(3) : digits;
-	return [
-		...new Set([
-			local,
-			`${local.slice(0, 3)}-${local.slice(3)}`, // נייד: 050-1234567
-			`${local.slice(0, 2)}-${local.slice(2)}`, // קווי: 08-9982342
-			String(phone).trim()
-		])
-	].filter(Boolean);
-}
-
-/**
- * העסקים של משתמש מסוים, בכל סטטוס — לאזור האישי. השיוך נשמר בהגשה בשני
- * מפתחות (relation user + user_id), ולכן מחפשים בשניהם וממזגים. כרטיסיות
- * שהוזרמו בייבוא נוצרו בלי שיוך-משתמש, ולכן מזהים אותן לפי טלפון בעל
- * הכרטיסייה — הקישור היחיד שנשאר (לאוסף אין שדה email).
+ * העסקים ששויכו למשתמש מסוים, בכל סטטוס — לאזור האישי. השיוך נשמר בשני
+ * מפתחות (relation user + user_id), ולכן מחפשים בשניהם וממזגים.
+ *
+ * כאן *רק* בעלות אמיתית: כרטיסייה שרק מתאימה לטלפון של המשתמש אינה שלו
+ * עדיין (הטלפון בפרופיל הוא נתון מוצהר שהמשתמש עצמו עורך). התאמות כאלה
+ * מוצעות לו כ"בקשת בעלות" — ראו ownerMatch.js ו-claimsStore.js.
  * כל שאילתה נכשלת בנפרד ולא מפילה את השאר.
- * @param {{id?: string|number, phone?: string}} owner
+ * @param {{id?: string|number}} owner
  * @returns {Promise<any[]>}
  */
-export async function listBusinessesByOwner({ id, phone }) {
+export async function listBusinessesByOwner({ id }) {
+	if (!id) return [];
 	const tail = `&${BIZ_POPULATE}&sort=createdAt:desc&pagination[pageSize]=100`;
-	/** @type {string[]} */
-	const queries = [];
-	if (id) {
-		const enc = encodeURIComponent(String(id));
-		queries.push(`filters[user][id][$eq]=${enc}${tail}`, `filters[user_id][$eq]=${enc}${tail}`);
-	}
-	const variants = phoneVariants(phone ?? '');
-	if (variants.length) {
-		const inQs = variants
-			.map((v, i) => `filters[phone][$in][${i}]=${encodeURIComponent(v)}`)
-			.join('&');
-		queries.push(`${inQs}${tail}`);
-	}
-	if (!queries.length) return [];
+	const enc = encodeURIComponent(String(id));
+	const queries = [`filters[user][id][$eq]=${enc}${tail}`, `filters[user_id][$eq]=${enc}${tail}`];
 
 	const results = await Promise.all(
 		queries.map((qs) => apiJson(`/api/idx-businesses?${qs}`).catch(() => null))
@@ -308,6 +324,46 @@ export async function listBusinessesByOwner({ id, phone }) {
 	return [...byDoc.values()].sort((a, b) =>
 		String(b.createdAt ?? '').localeCompare(String(a.createdAt ?? ''))
 	);
+}
+
+/**
+ * כל הכרטיסיות עם השדות הדרושים למנוע ההתאמה בלבד (טלפון, אימייל הבעלים
+ * שב-extra_fields, ומי הבעלים אם יש). בלי מדיה ובלי תיאורים.
+ * @returns {Promise<any[]>}
+ */
+export async function listBusinessesForMatch() {
+	const fields = ['name', 'phone', 'city', 'category', 'status', 'extra_fields', 'user_id']
+		.map((f, i) => `fields[${i}]=${f}`)
+		.join('&');
+	const data = await apiJson(
+		`/api/idx-businesses?${fields}&populate[user][fields][0]=id&pagination[pageSize]=1000`
+	);
+	return Array.isArray(data?.data) ? data.data : [];
+}
+
+/**
+ * שיוך כרטיסייה לבעלים (אחרי אישור בקשת בעלות). נכתב בשני המפתחות —
+ * relation user וגם user_id — כי שניהם משמשים לזיהוי הבעלים, וגם
+ * האימייל נשמר ב-extra_fields כדי שהזיהוי יעבוד גם בלי הטלפון.
+ * ה-extra_fields ממוזג ולא נדרס: Strapi מחליף עמודת json במלואה.
+ * @param {string} documentId @param {{id: string|number, email?: string}} owner
+ */
+export async function assignBusinessOwner(documentId, owner) {
+	const current = await getBusinessAdmin(documentId);
+	const extra =
+		current?.extra_fields && typeof current.extra_fields === 'object'
+			? { ...current.extra_fields }
+			: {};
+	const email = String(owner.email ?? '')
+		.trim()
+		.toLowerCase();
+	if (email) extra.owner_email = email;
+	const numericId = Number(owner.id);
+	return updateBusiness(documentId, {
+		user: Number.isFinite(numericId) ? numericId : owner.id,
+		user_id: String(owner.id),
+		extra_fields: extra
+	});
 }
 
 /** יצירת עסק (status=pending נכפה ב-controller). @param {Record<string,any>} data */

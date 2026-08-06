@@ -17,10 +17,23 @@
 	// מקור-האמת לזהות המשתמש הוא ה-session בשרת (data.user מ-+layout.server.js).
 	$effect(() => hydrateAuth(data.user));
 
-	// פריטים שממתינים לטיפול אדמין (עסקים + ביקורות + דיווחים + פרסומות).
-	// 0 לכל מי שאינו אדמין. מסמן את האווטאר בבועה אדומה עד שמישהו מהאדמינים
-	// מטפל — אותו מספר בדיוק מוצג באזור האישי ועל אריחי הפאנל.
+	// פריטים שממתינים לטיפול אדמין (עסקים + ביקורות + דיווחים + פרסומות +
+	// בעלות). 0 לכל מי שאינו אדמין. מסמן את האווטאר בבועה אדומה עד שמישהו
+	// מהאדמינים מטפל — אותו מספר בדיוק מוצג באזור האישי ועל אריחי הפאנל.
 	const pendingTotal = $derived(data.pending?.total ?? 0);
+
+	// אותה בועה, מהצד של בעל העסק: כרטיסיות שהמערכת זיהתה כשלו והוא עוד
+	// לא דרש אותן. הקישור מוביל אל המדור שבאזור האישי שבו דורשים אותן.
+	const myMatches = $derived(data.myMatches ?? 0);
+	const alertTotal = $derived(pendingTotal + myMatches);
+	const alertHref = $derived(
+		pendingTotal > 0 ? '/profile#admin' : myMatches > 0 ? '/profile#claims' : '/profile'
+	);
+	const alertTitle = $derived(
+		pendingTotal > 0
+			? `${pendingTotal} פריטים ממתינים לטיפול`
+			: `${myMatches} כרטיסיות מחכות לך באתר`
+	);
 
 	// הטענת Google Analytics (gtag) בצד-הלקוח — רק אם הוגדר מזהה מדידה.
 	// עלות שרת אפסית: הסקריפט נטען מגוגל, לא מאיתנו.
@@ -280,11 +293,11 @@
 					     והקישור מוביל ישר לפאנל שבאזור האישי. -->
 					{#if user}
 						<a
-							href={pendingTotal > 0 ? '/profile#admin' : '/profile'}
+							href={alertHref}
 							class="relative flex flex-shrink-0 items-center gap-2 rounded-full bg-[#1c2f5a] px-1.5 py-1.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#2a4379] sm:px-3 sm:py-2"
-							title={pendingTotal > 0 ? `${pendingTotal} פריטים ממתינים לטיפול` : t.myArea}
-							aria-label={pendingTotal > 0
-								? `${t.myArea} – ${user.name} – ${pendingTotal} פריטים ממתינים לטיפול`
+							title={alertTotal > 0 ? alertTitle : t.myArea}
+							aria-label={alertTotal > 0
+								? `${t.myArea} – ${user.name} – ${alertTitle}`
 								: `${t.myArea} – ${user.name}`}
 						>
 							<span
@@ -292,13 +305,13 @@
 								aria-hidden="true">👤</span
 							>
 							<span class="hidden max-w-[120px] truncate sm:inline">{user.name || user.email}</span>
-							{#if pendingTotal > 0}
+							{#if alertTotal > 0}
 								<span
 									class="pointer-events-none absolute -top-1.5 -left-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[11px] leading-none font-black text-white shadow-lg ring-2 ring-gray-900"
 								>
-									<span class="sr-only">פריטים ממתינים לטיפול:</span>{pendingTotal > 99
+									<span class="sr-only">פריטים ממתינים לטיפול:</span>{alertTotal > 99
 										? '99+'
-										: pendingTotal}
+										: alertTotal}
 								</span>
 							{/if}
 						</a>

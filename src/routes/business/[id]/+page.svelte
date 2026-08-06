@@ -1,6 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import { fade, slide } from 'svelte/transition';
+	import { enhance } from '$app/forms';
 	import { lang, translations } from '$lib/i18n';
 	import { authUser } from '$lib/auth';
 	import JsonLd from '$lib/components/JsonLd.svelte';
@@ -8,9 +9,18 @@
 	import SmartShare from '$lib/components/SmartShare.svelte';
 	import { SITE_NAME, DEFAULT_OG_IMAGE, professionalSchema, breadcrumbSchema } from '$lib/seo';
 
-	/** @type {{ data: any }} */
-	let { data } = $props();
+	/** @type {{ data: any, form: any }} */
+	let { data, form } = $props();
 	const business = $derived(data.business);
+
+	/* ═══════════ בעלות על הכרטיסייה ═══════════
+	   השרת מכריע (data.claim): כרטיסייה בלי בעלים אפשר לדרוש, בקשה שנשלחה
+	   מחכה לאישור אדמין, וכשהמערכת זיהתה התאמה (טלפון/אימייל) ההזמנה נוסחת
+	   כפנייה אישית ולא כהצעה כללית. */
+	const claim = $derived(data.claim ?? {});
+	let claimOpen = $state(false);
+	let claimSending = $state(false);
+	const claimSent = $derived(form?.claimed === true || claim.status === 'pending');
 
 	let currentLang = $state('he');
 	lang.subscribe((v) => (currentLang = v));
@@ -270,7 +280,21 @@
 <JsonLd data={schemas} />
 
 <main class="mx-auto max-w-3xl px-4 py-10 sm:px-6">
-	<a href="/" class="text-xs text-gray-500 transition hover:text-gray-300">→ {t.backToDirectory}</a>
+	<div class="flex items-center justify-between gap-3">
+		<a href="/" class="text-xs text-gray-500 transition hover:text-gray-300"
+			>→ {t.backToDirectory}</a
+		>
+		<!-- כפתור "ערוך" — לאדמין על כל כרטיסייה, ולבעל הכרטיסייה על שלו בלבד.
+		     ההכרעה בשרת (data.canEdit), ומסך העריכה בודק את ההרשאה שוב. -->
+		{#if data.canEdit}
+			<a
+				href="/business/{business.documentId}/edit"
+				class="rounded-lg border border-white/15 px-3 py-1 text-xs font-medium text-gray-300 transition hover:border-white/30 hover:text-white"
+			>
+				✏️ {t.editCard}
+			</a>
+		{/if}
+	</div>
 
 	<!-- ── כותרת ───────────────────────────────────────────── -->
 	<header class="mt-6 flex items-start gap-4">
@@ -357,6 +381,79 @@
 			<span class="text-gray-500">{t.exclusiveBenefit}:</span>
 			{business.discount}
 		</p>
+	{/if}
+
+	<!-- ── דרישת בעלות ──────────────────────────────────────────
+	     כרטיסייה שהוזרמה בייבוא היא כרטיסייה בלי בעלים: בעל העסק לא יכול
+	     לערוך אותה עד שידרוש אותה ואדמין יאשר. לאדמין המדור מוצג רק כשיש
+	     התאמה אליו עצמו — אחרת הוא היה מלווה אותו ב-92 הדפים. -->
+	{#if claim.open && (!data.isAdmin || claim.matchedBy)}
+		<section
+			class="mt-6 rounded-xl border p-4 {claim.matchedBy && !claimSent
+				? 'border-amber-400/30 bg-amber-400/[0.06]'
+				: 'border-white/10 bg-white/[0.03]'}"
+		>
+			{#if claimSent}
+				<p class="text-sm text-emerald-400">✓ {t.claimPending}</p>
+			{:else if !claim.loggedIn}
+				<p class="text-sm text-gray-400">
+					{t.claimLogin}
+					<a href="/auth/login" class="font-medium text-blue-400 hover:text-blue-300">{t.login}</a>
+				</p>
+			{:else if claim.status === 'rejected'}
+				<p class="text-sm text-gray-400">{t.claimRejected}</p>
+			{:else}
+				<h2 class="text-sm font-semibold text-gray-200">
+					{claim.matchedBy ? t.claimTitleMatched : t.claimTitle}
+				</h2>
+				<p class="mt-1 text-sm leading-6 text-gray-400">
+					{claim.matchedBy ? t.claimBodyMatched : t.claimBody}
+				</p>
+
+				{#if form?.claimError}
+					<p class="mt-2 text-xs text-red-400">{form.claimError}</p>
+				{/if}
+
+				{#if claimOpen}
+					<form
+						method="POST"
+						action="?/claim"
+						transition:slide={{ duration: 200 }}
+						use:enhance={() => {
+							claimSending = true;
+							return async ({ update }) => {
+								await update({ reset: false });
+								claimSending = false;
+							};
+						}}
+						class="mt-3"
+					>
+						<label for="claim-note" class="block text-xs text-gray-500">{t.claimNoteLabel}</label>
+						<textarea
+							id="claim-note"
+							name="note"
+							rows="2"
+							maxlength="500"
+							class="mt-1 w-full resize-none rounded-lg border border-white/10 bg-transparent px-3 py-2 text-sm text-gray-100 outline-none placeholder:text-gray-600 focus:border-white/30"
+							placeholder={t.claimNotePlaceholder}
+						></textarea>
+						<button
+							disabled={claimSending}
+							class="mt-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:opacity-40"
+						>
+							{claimSending ? '…' : t.claimSend}
+						</button>
+					</form>
+				{:else}
+					<button
+						onclick={() => (claimOpen = true)}
+						class="mt-3 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500"
+					>
+						{t.claimBtn}
+					</button>
+				{/if}
+			{/if}
+		</section>
 	{/if}
 
 	<!-- ── תמונות ──────────────────────────────────────────── -->
@@ -452,9 +549,9 @@
 				<!-- ריק רק לבעל הכרטיסייה/אדמין: מבקר רגיל לא רואה מדור ריק. -->
 				<p class="mt-3 text-sm text-gray-500">
 					{t.businessVideoEmpty}
-					{#if data.isAdmin}
+					{#if data.canEdit}
 						<a
-							href="/admin/business/{business.documentId}"
+							href="/business/{business.documentId}/edit"
 							class="text-blue-400 transition hover:text-blue-300">{t.businessVideoEdit} →</a
 						>
 					{/if}

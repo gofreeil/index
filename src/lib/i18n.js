@@ -175,6 +175,33 @@ export const translations = {
 		passwordsDontMatch: 'הסיסמאות אינן תואמות',
 		registerFailed: 'ההרשמה נכשלה. נסה שוב.',
 		googleSignInFailed: 'ההתחברות עם Google נכשלה',
+		// עריכת כרטיסייה ובעלות עליה — הכפתור בדף העסק ומדור "זה העסק שלי"
+		editCard: 'ערוך',
+		claimTitle: 'זה העסק שלך?',
+		claimTitleMatched: 'זיהינו שהעסק הזה שלך',
+		claimBody:
+			'לכרטיסייה הזו אין עדיין בעלים רשום. דרשו אותה, ואחרי אישור שלנו תוכלו לערוך את הפרטים בעצמכם.',
+		claimBodyMatched:
+			'הפרטים בחשבון שלכם תואמים לכרטיסייה הזו. דרשו אותה, ואחרי אישור שלנו היא תהיה שלכם לעריכה.',
+		claimBtn: 'זה העסק שלי',
+		claimSend: 'שליחת הבקשה',
+		claimNoteLabel: 'משהו שיעזור לנו לאמת? (לא חובה)',
+		claimNotePlaceholder: 'למשל: הטלפון שבכרטיסייה הוא המספר העסקי שלי',
+		claimPending: 'הבקשה נשלחה וממתינה לאישור. ברגע שנאשר, הכרטיסייה תהיה שלכם לעריכה.',
+		claimRejected: 'הבקשה שלכם על הכרטיסייה הזו נבדקה ולא אושרה.',
+		claimLogin: 'זה העסק שלך? התחברו כדי לדרוש אותו.',
+		// האזור האישי — זיהוי הבעלים והתאמות
+		myPhone: 'הטלפון שלי',
+		myPhoneHint: 'לפי המספר הזה (או האימייל) אנחנו מזהים כרטיסיות שכבר קיימות באתר ושייכות לכם.',
+		myPhoneSave: 'שמירה',
+		myPhoneSaved: 'המספר נשמר',
+		myPhonePlaceholder: '050-0000000',
+		matchesTitle: 'כרטיסיות שנראות שלכם',
+		matchesHint: 'מצאנו באתר כרטיסיות שהפרטים שלהן תואמים לכם. דרשו אותן כדי לערוך אותן.',
+		matchesClaim: 'דרוש בעלות',
+		matchesPending: 'הבקשה ממתינה לאישור',
+		matchesOpenPage: 'לכרטיסייה',
+		editMyCard: 'עריכת הפרטים',
 		// האזור האישי — הכרטיסיות והמודעות של המשתמש
 		myBusinesses: 'העסקים שלי',
 		myBusinessesEmpty: 'עדיין לא רשמת עסק במדריך.',
@@ -385,6 +412,35 @@ export const translations = {
 		passwordsDontMatch: 'Passwords do not match',
 		registerFailed: 'Registration failed. Please try again.',
 		googleSignInFailed: 'Google Sign-In failed',
+		// Editing a listing and claiming ownership of it
+		editCard: 'Edit',
+		claimTitle: 'Is this your business?',
+		claimTitleMatched: 'We think this business is yours',
+		claimBody:
+			"This listing has no registered owner yet. Claim it, and once we approve you'll be able to edit the details yourself.",
+		claimBodyMatched:
+			"Your account details match this listing. Claim it, and once we approve it's yours to edit.",
+		claimBtn: 'This is my business',
+		claimSend: 'Send request',
+		claimNoteLabel: 'Anything that helps us verify? (optional)',
+		claimNotePlaceholder: 'For example: the phone on the listing is my business number',
+		claimPending:
+			'Request sent and awaiting approval. Once approved, the listing is yours to edit.',
+		claimRejected: 'Your request for this listing was reviewed and not approved.',
+		claimLogin: 'Is this your business? Sign in to claim it.',
+		// My account — owner identification and matches
+		myPhone: 'My phone',
+		myPhoneHint:
+			'We use this number (or your email) to find listings already on the site that belong to you.',
+		myPhoneSave: 'Save',
+		myPhoneSaved: 'Number saved',
+		myPhonePlaceholder: '050-0000000',
+		matchesTitle: 'Listings that look like yours',
+		matchesHint: 'We found listings whose details match yours. Claim them to edit them.',
+		matchesClaim: 'Claim ownership',
+		matchesPending: 'Request awaiting approval',
+		matchesOpenPage: 'View listing',
+		editMyCard: 'Edit details',
 		// My account — the user's own listings and ads
 		myBusinesses: 'My Businesses',
 		myBusinessesEmpty: "You haven't listed a business yet.",
@@ -597,6 +653,35 @@ export const translations = {
 		passwordsDontMatch: 'Пароли не совпадают',
 		registerFailed: 'Регистрация не удалась. Попробуйте ещё раз.',
 		googleSignInFailed: 'Не удалось войти через Google',
+		// Редактирование карточки и права владельца
+		editCard: 'Редактировать',
+		claimTitle: 'Это ваш бизнес?',
+		claimTitleMatched: 'Похоже, этот бизнес — ваш',
+		claimBody:
+			'У этой карточки пока нет зарегистрированного владельца. Заявите права, и после нашего одобрения вы сможете сами редактировать данные.',
+		claimBodyMatched:
+			'Данные вашего аккаунта совпадают с этой карточкой. Заявите права, и после одобрения она станет вашей.',
+		claimBtn: 'Это мой бизнес',
+		claimSend: 'Отправить запрос',
+		claimNoteLabel: 'Что-то, что поможет нам проверить? (необязательно)',
+		claimNotePlaceholder: 'Например: телефон в карточке — мой рабочий номер',
+		claimPending:
+			'Запрос отправлен и ожидает одобрения. После одобрения карточку можно будет редактировать.',
+		claimRejected: 'Ваш запрос по этой карточке рассмотрен и не одобрен.',
+		claimLogin: 'Это ваш бизнес? Войдите, чтобы заявить права.',
+		// Личный кабинет — определение владельца и совпадения
+		myPhone: 'Мой телефон',
+		myPhoneHint:
+			'По этому номеру (или по email) мы находим карточки на сайте, которые принадлежат вам.',
+		myPhoneSave: 'Сохранить',
+		myPhoneSaved: 'Номер сохранён',
+		myPhonePlaceholder: '050-0000000',
+		matchesTitle: 'Карточки, похожие на ваши',
+		matchesHint: 'Мы нашли карточки, данные которых совпадают с вашими. Заявите права на них.',
+		matchesClaim: 'Заявить права',
+		matchesPending: 'Запрос ожидает одобрения',
+		matchesOpenPage: 'К карточке',
+		editMyCard: 'Редактировать данные',
 		// Личный кабинет — бизнесы и объявления пользователя
 		myBusinesses: 'Мои бизнесы',
 		myBusinessesEmpty: 'Вы ещё не добавили бизнес в справочник.',

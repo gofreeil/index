@@ -79,8 +79,7 @@ export const actions = {
 		if (!values.contact_name) errors.contact_name = 'שם איש קשר חובה';
 		if (!PHONE_RE.test(values.phone)) errors.phone = 'מספר טלפון לא תקין';
 		if (!EMAIL_RE.test(values.email)) errors.email = 'אימייל לא תקין (משמש לעריכה עתידית של העסק)';
-		if (!values.address)
-			errors.address = 'כתובת מלאה חובה — דרושה להצגת העסק על המפה';
+		if (!values.address) errors.address = 'כתובת מלאה חובה — דרושה להצגת העסק על המפה';
 		if (!values.discount) errors.discount = 'ההטבה הבלעדית לחברי הקהילה חובה';
 		if (!accepted_terms) errors.accepted_terms = 'יש לאשר את תנאי הקהילה';
 		for (const k of ['website', 'whatsapp', 'facebook', 'instagram', 'youtube']) {
@@ -131,9 +130,14 @@ export const actions = {
 		}
 
 		// ── כתיבה ל-Strapi (status=pending נכפה ב-controller) ──
+		// לאוסף idx-business אין עמודת email, ו-Strapi מתעלם בשקט ממפתח לא
+		// מוכר — ולכן אימייל בעל העסק נשמר ב-extra_fields (עמודת json).
+		// זה גם המפתח שבו המערכת מזהה אותו כשהוא נרשם לאתר (ownerMatch.js).
+		const { email, ...fields } = values;
 		try {
 			await createBusiness({
-				...values,
+				...fields,
+				extra_fields: { owner_email: email.toLowerCase() },
 				accepted_terms: true,
 				logo: logoId ?? undefined,
 				banners: bannerIds.length ? bannerIds : undefined,

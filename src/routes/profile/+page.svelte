@@ -1,16 +1,23 @@
 <script>
 	import { onMount } from 'svelte';
+	import { enhance } from '$app/forms';
 	import { lang, translations } from '$lib/i18n';
 	import { logout } from '$lib/auth';
 	import { adminTiles } from '$lib/adminNav.js';
 	import { shareLog, clearShareLog } from '$lib/shareLog.js';
 	import VisitorStatsCard from '$lib/components/VisitorStatsCard.svelte';
 
-	let { data } = $props();
+	/** @type {{ data: any, form: any }} */
+	let { data, form } = $props();
 	const user = $derived(data.user);
 	const businesses = $derived(data.myBusinesses ?? []);
 	const ads = $derived(data.myAds ?? []);
 	const mod = $derived(data.moderation);
+
+	// כרטיסיות שהמערכת זיהתה כשייכות למשתמש (טלפון/אימייל) ועדיין אין להן
+	// בעלים רשום. השרת מכריע — כאן רק תצוגה וכפתור "דרוש בעלות".
+	const matches = $derived(data.myMatches ?? []);
+	let busyClaim = $state('');
 
 	const fmtNum = new Intl.NumberFormat('he-IL');
 
@@ -20,6 +27,11 @@
 		data.pendingCounts ?? { businesses: 0, reviews: 0, reports: 0, ads: 0, total: 0 }
 	);
 	const pendingTotal = $derived(pendingCounts.total ?? 0);
+	// כרטיסיות שמחכות שהמשתמש ידרוש אותן — נספרות באותה בועה, כי גם הן
+	// "פריט שממתין לך". בקשה שכבר נשלחה מחכה לנו, לא לו.
+	const openMatches = $derived(matches.filter((/** @type {any} */ m) => !m.claimStatus).length);
+	const alertTotal = $derived(pendingTotal + openMatches);
+	const alertAnchor = $derived(pendingTotal > 0 ? '#admin' : '#claims');
 
 	// אריחי פאנל הניהול — אותה רשימה בדיוק שמוצגת כסרגל ניווט ב-/admin
 	const tiles = $derived(adminTiles(Boolean(data.isAdmin), Boolean(data.superAdmin)));
@@ -131,13 +143,13 @@
 				>
 					{initial}
 				</div>
-				{#if pendingTotal > 0}
+				{#if alertTotal > 0}
 					<a
-						href="#admin"
+						href={alertAnchor}
 						class="absolute -top-1 -left-1 flex h-7 min-w-7 items-center justify-center rounded-full bg-red-600 px-1.5 text-xs leading-none font-black text-white shadow-lg ring-4 ring-white transition hover:bg-red-500 dark:ring-gray-800"
-						title="{pendingTotal} פריטים ממתינים לטיפול"
+						title="{alertTotal} פריטים ממתינים לטיפול"
 					>
-						<span class="sr-only">פריטים ממתינים לטיפול: </span>{pendingTotal}
+						<span class="sr-only">פריטים ממתינים לטיפול: </span>{alertTotal}
 					</a>
 				{/if}
 			</div>
@@ -156,6 +168,47 @@
 				<dd class="text-sm font-bold text-gray-900 dark:text-gray-100" dir="ltr">{user?.email}</dd>
 			</div>
 		</dl>
+
+		<!-- הטלפון שלי — שני מפתחות הזיהוי של בעל כרטיסייה הם האימייל והטלפון.
+		     האימייל מגיע מההרשמה; את הטלפון המשתמש מוסיף כאן, וברגע שהוא נשמר
+		     המערכת מחפשת כרטיסיות תואמות. אין אימות SMS, ולכן המספר רק *מציע*
+		     התאמה — הבעלות עצמה ניתנת באישור אדמין. -->
+		<form
+			method="POST"
+			action="?/savePhone"
+			use:enhance
+			class="mt-3 rounded-lg bg-gray-50 px-4 py-3 dark:bg-gray-700/40"
+		>
+			<label
+				for="my-phone"
+				class="mb-1.5 block text-sm font-medium text-gray-500 dark:text-gray-400"
+			>
+				{t.myPhone}
+			</label>
+			<div class="flex items-center gap-2">
+				<input
+					id="my-phone"
+					name="phone"
+					type="tel"
+					dir="ltr"
+					value={data.myPhone ?? ''}
+					placeholder={t.myPhonePlaceholder}
+					class="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-bold text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+				/>
+				<button
+					class="flex-shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-blue-700"
+				>
+					{t.myPhoneSave}
+				</button>
+			</div>
+			<p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">{t.myPhoneHint}</p>
+			{#if form?.phoneSaved}
+				<p class="mt-1 text-xs font-bold text-green-600 dark:text-green-400">✓ {t.myPhoneSaved}</p>
+			{/if}
+			{#if form?.phoneError}
+				<p class="mt-1 text-xs font-bold text-red-600 dark:text-red-400">{form.phoneError}</p>
+			{/if}
+		</form>
 
 		<!-- קיצורים -->
 		<div class="mt-6 grid grid-cols-2 gap-3">
@@ -182,6 +235,86 @@
 			{t.logout}
 		</button>
 	</div>
+
+	<!-- כרטיסיות שנראות שלך — הכרטיסיות שהוזרמו בייבוא נוצרו בלי בעלים,
+	     והמערכת מזהה אותן לפי הטלפון או האימייל של המשתמש. זו הצעה בלבד:
+	     הבעלות (וזכות העריכה) ניתנת רק אחרי אישור אדמין.
+	     id="claims" הוא העוגן שאליו מוביל הקישור מהבועה שעל האווטאר. -->
+	{#if matches.length}
+		<section
+			id="claims"
+			class="w-full scroll-mt-24 rounded-2xl border border-indigo-200 bg-indigo-50/60 p-5 dark:border-indigo-500/30 dark:bg-indigo-950/20"
+		>
+			<h2 class="flex items-center gap-2 text-lg font-extrabold text-gray-900 dark:text-gray-100">
+				🪪 {t.matchesTitle}
+				<span class="text-sm font-bold text-gray-400">({matches.length})</span>
+			</h2>
+			<p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{t.matchesHint}</p>
+
+			{#if form?.claimError}
+				<p class="mt-2 text-sm font-bold text-red-600 dark:text-red-400">{form.claimError}</p>
+			{/if}
+
+			<ul class="mt-4 space-y-2">
+				{#each matches as m (m.documentId)}
+					<li
+						class="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-gray-100 bg-white p-3 dark:border-gray-700 dark:bg-gray-800/60"
+					>
+						<div class="min-w-0 flex-1">
+							<div class="flex flex-wrap items-center gap-2">
+								<h3 class="truncate font-bold text-gray-900 dark:text-gray-100">{m.name}</h3>
+								<span
+									class="rounded-full border px-2 py-0.5 text-[11px] font-bold {statusCls(
+										m.status
+									)}"
+								>
+									{statusLabel(m.status)}
+								</span>
+							</div>
+							<p class="mt-0.5 truncate text-xs text-gray-500 dark:text-gray-400">
+								{m.category || '—'}{m.city ? ' · ' + m.city : ''}
+							</p>
+						</div>
+
+						<a
+							href="/business/{m.documentId}"
+							class="text-xs font-bold text-blue-600 hover:underline dark:text-blue-400"
+						>
+							{t.matchesOpenPage}
+						</a>
+
+						{#if m.claimStatus === 'pending'}
+							<span
+								class="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 dark:border-blue-500/30 dark:bg-blue-900/30 dark:text-blue-300"
+							>
+								⏳ {t.matchesPending}
+							</span>
+						{:else}
+							<form
+								method="POST"
+								action="?/claim"
+								use:enhance={() => {
+									busyClaim = m.documentId;
+									return async ({ update }) => {
+										await update({ reset: false });
+										busyClaim = '';
+									};
+								}}
+							>
+								<input type="hidden" name="documentId" value={m.documentId} />
+								<button
+									disabled={busyClaim === m.documentId}
+									class="rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-1.5 text-xs font-bold text-white transition hover:scale-[1.02] disabled:opacity-40"
+								>
+									{busyClaim === m.documentId ? '…' : t.matchesClaim}
+								</button>
+							</form>
+						{/if}
+					</li>
+				{/each}
+			</ul>
+		</section>
+	{/if}
 
 	<!-- פאנל הניהול — פרוס כאן, בלי להיכנס ל-/admin. id="admin" הוא העוגן
 	     שאליו מוביל הקישור מהבועה שעל האווטאר (/profile#admin). -->
@@ -475,14 +608,24 @@
 							</p>
 						</div>
 
-						{#if b.status === 'approved'}
+						<!-- בעל הכרטיסייה עורך את הפרטים בעצמו — בכל סטטוס, גם כשהיא
+						     עדיין ממתינה לאישור -->
+						<div class="flex flex-shrink-0 flex-col gap-1.5 self-center">
 							<a
-								href="/business/{b.documentId}"
-								class="flex-shrink-0 self-center rounded-full border border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+								href="/business/{b.documentId}/edit"
+								class="rounded-full bg-blue-600 px-3 py-1.5 text-center text-xs font-bold text-white transition hover:bg-blue-700"
 							>
-								{t.viewPage}
+								✏️ {t.editMyCard}
 							</a>
-						{/if}
+							{#if b.status === 'approved'}
+								<a
+									href="/business/{b.documentId}"
+									class="rounded-full border border-gray-200 px-3 py-1.5 text-center text-xs font-bold text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+								>
+									{t.viewPage}
+								</a>
+							{/if}
+						</div>
 					</li>
 				{/each}
 			</ul>

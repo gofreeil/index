@@ -20,6 +20,8 @@ import {
 	countAllBusinesses
 } from './strapi.js';
 import { countPending as countPendingAds } from './adsStore.js';
+import { countPendingClaims } from './claimsStore.js';
+import { countOpenMatches } from './ownerMatch.js';
 
 const TTL_MS = 60_000;
 
@@ -29,13 +31,14 @@ const TTL_MS = 60_000;
  * @property {number} reviews    ביקורות שממתינות לאישור
  * @property {number} reports    דיווחים פתוחים
  * @property {number} ads        פרסומות שממתינות לאישור
+ * @property {number} claims     בקשות בעלות + התאמות שהמערכת מצאה
  * @property {number} total      סך הכל — המספר שבבועה
  */
 
 /** @type {{ at: number, data: PendingCounts } | null} */
 let cache = null;
 
-const EMPTY = { businesses: 0, reviews: 0, reports: 0, ads: 0, total: 0 };
+const EMPTY = { businesses: 0, reviews: 0, reports: 0, ads: 0, claims: 0, total: 0 };
 
 /** מאפס את המטמון — נקרא אחרי פעולת מודרציה כדי שהבועה תתעדכן מיד. */
 export function invalidatePendingCounts() {
@@ -49,19 +52,25 @@ export function invalidatePendingCounts() {
 export async function getPendingCounts() {
 	if (cache && Date.now() - cache.at < TTL_MS) return cache.data;
 
-	const [businesses, reviews, reports, ads] = await Promise.all([
+	// בעלות: גם בקשות שמשתמשים שלחו, וגם התאמות שהמערכת מצאה ואיש עוד לא
+	// דרש — שתיהן פריטים שמחכים להכרעת אדמין באותו מסך (/admin/claims).
+	const [businesses, reviews, reports, ads, claimRequests, openMatches] = await Promise.all([
 		countPendingBusinesses().catch(() => 0),
 		countPendingReviews().catch(() => 0),
 		countOpenReports().catch(() => 0),
-		countPendingAds().catch(() => 0)
+		countPendingAds().catch(() => 0),
+		countPendingClaims().catch(() => 0),
+		countOpenMatches().catch(() => 0)
 	]);
 
+	const claims = claimRequests + openMatches;
 	const data = {
 		businesses,
 		reviews,
 		reports,
 		ads,
-		total: businesses + reviews + reports + ads
+		claims,
+		total: businesses + reviews + reports + ads + claims
 	};
 	cache = { at: Date.now(), data };
 	return data;

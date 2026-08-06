@@ -20,7 +20,7 @@
  * @property {string} label    תווית קצרה — לסרגל הניווט
  * @property {string} title    כותרת מלאה — לאריח בפאנל הפרוס
  * @property {string} desc     משפט הסבר — לאריח בפאנל הפרוס
- * @property {'businesses'|'reviews'|'reports'|'ads'} [alert] איזה מונה-המתנה שייך למסך
+ * @property {'businesses'|'reviews'|'reports'|'ads'|'claims'} [alert] איזה מונה-המתנה שייך למסך
  * @property {'all'} [count]   מונה "כמה נתונים יש" (לא התראה)
  * @property {boolean} [navOnly] מוצג רק בסרגל הניווט — לא כאריח באזור האישי
  */
@@ -44,6 +44,15 @@ export function adminNav(isAdmin, superAdmin = false) {
 			title: 'ממתינים לאישור',
 			desc: 'עסקים חדשים שנשלחו וממתינים לאישור',
 			alert: 'businesses'
+		},
+		{
+			href: '/admin/claims',
+			path: '/admin/claims',
+			icon: '🪪',
+			label: 'בעלות',
+			title: 'בעלות על כרטיסיות',
+			desc: 'בקשות "זה העסק שלי" והתאמות שהמערכת מצאה',
+			alert: 'claims'
 		},
 		{
 			href: '/admin?tab=cards',
