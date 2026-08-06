@@ -167,45 +167,62 @@
 	   בעלי המקצוע, FAQ), וכן אינדקס טקסטואלי מלא בתחתית הדף שמקשר לכל עסק. */
 	const pageTitle = `בעלי מקצוע מומלצים ומדורגים בכל הארץ | ${SITE_NAME}`;
 
-	/* ═══════════ טבלת כל בעלי המקצוע ═══════════
-	   עד כאן ישבה כאן רשימה פתוחה של כל 92 בעלי המקצוע לפי תחום, והיא תפסה
-	   מסך שלם בתחתית דף הבית. עכשיו אותו תוכן בדיוק יושב בטבלה שנפתחת
-	   בכפתור. הטבלה מרונדרת תמיד ב-HTML ורק מוסתרת ב-CSS (ולא ב-{#if}) —
-	   זו הסיבה שהרשימה נולדה מלכתחילה: היא הקישור הפנימי היחיד לכל עסק ועסק,
-	   והכרטיסים למעלה מוצגים 9 בכל פעם. הסרה מה-DOM הייתה מנתקת 80 עסקים
-	   מהסריקה של גוגל ומנועי ה-AI. */
-	let showTable = $state(false);
-	/** @type {'name' | 'category' | 'city'} */
-	let sortBy = $state('category');
-	let sortDir = $state(1);
+	/* ═══════════ שאר בעלי המקצוע ═══════════
+	   עד כאן ישבה כאן טבלה שריכזה את כל 92 בעלי המקצוע. עכשיו במקומה יושבים
+	   הכרטיסים של מי שלא הופיע באף קומה למעלה, מחולקים לעמודים.
 
-	/** @type {Array<{ key: 'name' | 'category' | 'city', label: string }>} */
-	const TABLE_COLS = [
-		{ key: 'name', label: 'שם העסק' },
-		{ key: 'category', label: 'תחום' },
-		{ key: 'city', label: 'עיר' }
-	];
+	   כל העמודים מרונדרים תמיד ב-HTML ורק הלא-נוכחיים מוסתרים ב-CSS (ולא
+	   ב-{#if}) — זו הסיבה שהרשימה הזו נולדה מלכתחילה: היא הקישור הפנימי היחיד
+	   לרוב העסקים, והכרטיסים למעלה מוצגים 9 בלבד. הסרה מה-DOM הייתה מנתקת
+	   עשרות עסקים מהסריקה של גוגל ומנועי ה-AI. התמונות נטענות ב-loading="lazy",
+	   ולכן עמודים מוסתרים לא מושכים בייטים. */
+	let showRest = $state(false);
+	let restPage = $state(0);
 
-	/** @param {'name' | 'category' | 'city'} col */
-	function sortTable(col) {
-		if (sortBy === col) sortDir = -sortDir;
-		else {
-			sortBy = col;
-			sortDir = 1;
-		}
-	}
+	/* 18 בעמוד: שש שורות של שלושה בדסקטופ, תשע שורות של שניים בנייד — בערך
+	   מסך מלא אחרי שהפרסומות לוקחות את חלקן, ומתחלק בלי שארית בשתי הפריסות. */
+	const REST_PAGE_SIZE = 18;
 
-	const tableRows = $derived(
-		[...businesses].sort((a, b) => {
-			const key = /** @param {any} x */ (x) => String(x[sortBy] ?? '');
-			// שובר-שוויון קבוע לפי שם: בלעדיו סדר הכרטיסיות בתוך תחום מתהפך
-			// בכל מיון חוזר, והטבלה נראית כאילו היא "מתערבבת" מעצמה
-			return (
-				sortDir * key(a).localeCompare(key(b), 'he') ||
-				String(a.name).localeCompare(String(b.name), 'he')
-			);
-		})
+	// "שאר" = מי שלא מוצג באף אחת מהקומות שמעל (מדורגים / שנתווספו / כלל העסקים),
+	// כדי שהמשתמש לא יפגוש כאן שוב את אותם כרטיסים שכבר גלל דרכם
+	const shownAbove = $derived(
+		new Set([...topRated, ...recentBusinesses, ...displayedBusinesses].map((b) => b.id))
 	);
+	const restBusinesses = $derived(businesses.filter((b) => !shownAbove.has(b.id)));
+
+	const restPageCount = $derived(Math.max(1, Math.ceil(restBusinesses.length / REST_PAGE_SIZE)));
+	const restPages = $derived(
+		Array.from({ length: restPageCount }, (_, i) =>
+			restBusinesses.slice(i * REST_PAGE_SIZE, (i + 1) * REST_PAGE_SIZE)
+		)
+	);
+	// נגזר ולא מתוקן ב-$effect: מספר העמודים מתכווץ כשנפתחים "המדורגים ביותר",
+	// והצמדה בתוך אפקט הייתה כותבת למצב שהיא עצמה קוראת
+	const currentRestPage = $derived(Math.min(restPage, restPageCount - 1));
+
+	/* חלון מספרי העמודים: עד 7 עמודים מציגים הכל, ומעבר לזה רק ראשון, אחרון
+	   והשכנים של הנוכחי — אחרת שורת העמודים נשברת לשתי שורות ככל שהאינדקס גדל */
+	const restPageNumbers = $derived.by(() => {
+		if (restPageCount <= 7) return Array.from({ length: restPageCount }, (_, i) => i);
+		const near = [0, restPageCount - 1, currentRestPage - 1, currentRestPage, currentRestPage + 1];
+		return [...new Set(near)].filter((n) => n >= 0 && n < restPageCount).sort((a, b) => a - b);
+	});
+
+	/** @param {number} page */
+	function goToRestPage(page) {
+		restPage = Math.min(Math.max(page, 0), restPageCount - 1);
+		// גלילה חזרה לראש הבלוק: בלעדיה מעבר עמוד משאיר את המשתמש בתחתית
+		// הרשימה הקודמת, מול כרטיסים שהתחלפו מתחתיו בלי שיראה את זה
+		const el = document.getElementById('rest-professionals');
+		if (!el) return;
+		const header = document.querySelector('header');
+		const top =
+			el.getBoundingClientRect().top + window.scrollY - ((header?.offsetHeight ?? 0) + 12);
+		window.scrollTo({
+			top: Math.max(0, top),
+			behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+		});
+	}
 
 	// ה-FAQPage אינו כאן יותר: ההסבר והשאלות הנפוצות עברו ללשונית "אודות"
 	// שבדף המידע (/policy), והסכימה נדדה לשם — גוגל דורש שהסכימה תשקף טקסט
@@ -429,14 +446,6 @@
 							<BusinessCard {business} />
 						{/each}
 					</div>
-					<div class="mt-8 flex justify-center">
-						<button
-							onclick={scrollToResults}
-							class="rounded-full border border-gray-700 px-6 py-2.5 text-sm font-semibold text-blue-400 transition hover:border-blue-500 hover:text-blue-300"
-						>
-							{t.allProfessionals}
-						</button>
-					</div>
 				</div>
 			{/if}
 
@@ -471,94 +480,99 @@
 			</div>
 		{/if}
 
-		<!-- ═══ טבלת כל בעלי המקצוע ═══
-		     הכרטיסים למעלה מוצגים 9 בכל פעם ("טען עוד"), ולכן רובם אינם מקושרים
-		     ב-HTML הראשון. הטבלה הזו מקשרת לכל עסק ועסק, וכך גוגל מגלה ומאנדקס
-		     את כולם — אבל היא סגורה עד שלוחצים, כדי שלא תתפוס מסך שלם בתחתית
+		<!-- ═══ שאר בעלי המקצוע ═══
+		     הכרטיסים למעלה מוצגים 9 בלבד, ולכן בלי הבלוק הזה רוב העסקים אינם
+		     מקושרים ב-HTML הראשון. כל העמודים יושבים ב-HTML וגוגל מגלה דרכם כל
+		     עסק ועסק — אבל הבלוק סגור עד שלוחצים, כדי שלא יתפוס מסך שלם בתחתית
 		     דף הבית. hidden ב-CSS ולא {#if}: התוכן חייב להישאר ב-HTML הראשון. -->
-		{#if businesses.length > 0}
+		{#if restBusinesses.length > 0}
 			<section
-				class="mt-20 border-t border-gray-800 pt-10 text-center"
-				aria-labelledby="full-index-title"
+				id="rest-professionals"
+				class="mt-20 border-t border-gray-800 pt-10"
+				aria-labelledby="rest-title"
 			>
-				<h2 id="full-index-title" class="mb-2 text-xl font-extrabold text-gray-100">
-					כל בעלי המקצוע לפי תחום
-				</h2>
-				<p class="mb-5 text-sm text-gray-400">
-					{businesses.length} בעלי מקצוע בטבלה אחת.
-				</p>
+				<div class="text-center">
+					<h2
+						id="rest-title"
+						class="bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 bg-clip-text text-2xl font-extrabold text-transparent sm:text-4xl"
+					>
+						לשאר בעלי המקצוע
+					</h2>
+					<p class="mt-2 mb-5 text-sm text-gray-400">
+						עוד {restBusinesses.length} בעלי מקצוע שלא הופיעו למעלה.
+					</p>
 
-				<button
-					type="button"
-					onclick={() => (showTable = !showTable)}
-					aria-expanded={showTable}
-					aria-controls="all-businesses-table"
-					class="inline-flex items-center gap-2 rounded-full border border-blue-500/40 bg-gradient-to-r from-blue-900/50 to-indigo-900/50 px-6 py-3 text-sm font-black text-blue-200 shadow-lg transition-all hover:border-blue-400/70 hover:from-blue-900/70 hover:to-indigo-900/70 active:scale-95"
-				>
-					<span aria-hidden="true">📋</span>
-					{showTable ? 'סגירת הטבלה' : 'פתיחת הטבלה'}
-					<span class="text-xs" aria-hidden="true">{showTable ? '▲' : '▼'}</span>
-				</button>
+					<button
+						type="button"
+						onclick={() => (showRest = !showRest)}
+						aria-expanded={showRest}
+						aria-controls="rest-list"
+						class="inline-flex items-center gap-2 rounded-full border border-blue-500/40 bg-gradient-to-r from-blue-900/50 to-indigo-900/50 px-6 py-3 text-sm font-black text-blue-200 shadow-lg transition-all hover:border-blue-400/70 hover:from-blue-900/70 hover:to-indigo-900/70 active:scale-95"
+					>
+						<span aria-hidden="true">👷</span>
+						{showRest ? 'סגירת הרשימה' : 'הצגת שאר בעלי המקצוע'}
+						<span class="text-xs" aria-hidden="true">{showRest ? '▲' : '▼'}</span>
+					</button>
+				</div>
 
-				<div id="all-businesses-table" class="mt-6" class:hidden={!showTable}>
-					<!-- overflow-x על העטיפה: בנייד הטבלה רחבה מהמסך, וגלילה אופקית
-					     בתוך המכל עדיפה על דחיסת עמודות עד לאי-קריאוּת -->
-					<div class="overflow-x-auto rounded-2xl border border-gray-800">
-						<table class="w-full min-w-[34rem] border-collapse text-right text-sm">
-							<caption class="sr-only">
-								כל בעלי המקצוע באינדקס — לחיצה על כותרת עמודה ממיינת לפיה
-							</caption>
-							<thead class="bg-gray-900/80 text-xs text-gray-300">
-								<tr>
-									<th scope="col" class="w-10 px-3 py-3 font-bold">#</th>
-									{#each TABLE_COLS as col (col.key)}
-										<th
-											scope="col"
-											class="px-3 py-3 font-bold"
-											aria-sort={sortBy === col.key
-												? sortDir === 1
-													? 'ascending'
-													: 'descending'
-												: 'none'}
-										>
-											<button
-												type="button"
-												onclick={() => sortTable(col.key)}
-												class="inline-flex items-center gap-1 hover:text-blue-300"
-											>
-												{col.label}
-												<span class="text-[0.65rem] opacity-70" aria-hidden="true">
-													{sortBy === col.key ? (sortDir === 1 ? '▲' : '▼') : '↕'}
-												</span>
-											</button>
-										</th>
-									{/each}
-									<th scope="col" class="px-3 py-3 font-bold">ההטבה לחברי הקהילה</th>
-								</tr>
-							</thead>
-							<tbody>
-								{#each tableRows as b, i (b.id)}
-									<tr class="border-t border-gray-800/80 even:bg-gray-900/30 hover:bg-gray-800/50">
-										<td class="px-3 py-2 text-xs text-gray-600 tabular-nums">{i + 1}</td>
-										<td class="px-3 py-2">
-											<a
-												href="/business/{b.id}"
-												class="font-medium text-gray-200 hover:text-blue-400 hover:underline"
-											>
-												{b.name}
-											</a>
-										</td>
-										<td class="px-3 py-2 whitespace-nowrap text-gray-400">
-											<span aria-hidden="true">{categoryIcon(b.category)}</span>
-											{b.category}
-										</td>
-										<td class="px-3 py-2 text-gray-400">{b.city || '—'}</td>
-										<td class="px-3 py-2 text-gray-400">{b.discount || '—'}</td>
-									</tr>
+				<div id="rest-list" class="mt-8" class:hidden={!showRest}>
+					<!-- ההסתרה יושבת על עטיפה נטולת מחלקות-display: על הרשת עצמה
+					     היא הייתה מפסידה ל-md:grid, שגובר על hidden בברייקפוינט -->
+					{#each restPages as page, i (i)}
+						<div class:hidden={i !== currentRestPage}>
+							<div class="flex flex-wrap justify-center gap-3 md:grid md:grid-cols-3 md:gap-6">
+								{#each page as business (business.id)}
+									<BusinessCard {business} />
 								{/each}
-							</tbody>
-						</table>
-					</div>
+							</div>
+						</div>
+					{/each}
+
+					{#if restPageCount > 1}
+						<nav
+							class="mt-10 flex flex-wrap items-center justify-center gap-2"
+							aria-label="עמודי בעלי המקצוע"
+						>
+							<button
+								type="button"
+								onclick={() => goToRestPage(currentRestPage - 1)}
+								disabled={currentRestPage === 0}
+								class="rounded-full border border-gray-700 px-4 py-2 text-sm font-semibold text-blue-400 transition hover:border-blue-500 hover:text-blue-300 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-gray-700"
+							>
+								הקודם
+							</button>
+
+							{#each restPageNumbers as n, idx (n)}
+								{#if idx > 0 && n - restPageNumbers[idx - 1] > 1}
+									<span class="px-1 text-gray-600" aria-hidden="true">…</span>
+								{/if}
+								<button
+									type="button"
+									onclick={() => goToRestPage(n)}
+									aria-current={n === currentRestPage ? 'page' : undefined}
+									class="min-w-9 rounded-full border px-3 py-2 text-sm font-bold tabular-nums transition {n ===
+									currentRestPage
+										? 'border-blue-400 bg-blue-900/50 text-blue-100'
+										: 'border-gray-700 text-gray-400 hover:border-blue-500 hover:text-blue-300'}"
+								>
+									{n + 1}
+								</button>
+							{/each}
+
+							<button
+								type="button"
+								onclick={() => goToRestPage(currentRestPage + 1)}
+								disabled={currentRestPage >= restPageCount - 1}
+								class="rounded-full border border-gray-700 px-4 py-2 text-sm font-semibold text-blue-400 transition hover:border-blue-500 hover:text-blue-300 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-gray-700"
+							>
+								הבא
+							</button>
+						</nav>
+
+						<p class="mt-4 text-center text-xs text-gray-500">
+							עמוד {currentRestPage + 1} מתוך {restPageCount}
+						</p>
+					{/if}
 				</div>
 			</section>
 		{/if}
