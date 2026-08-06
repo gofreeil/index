@@ -79,7 +79,9 @@ async function resolveAdminUserIds() {
 
 /** הודעה על *כל* בקשת פרסום חדשה — לא רק על שימוש בקוד. בלי זה פרסומת
  *  נשמרה כ"ממתינה לאישור" בשקט ואיש לא ידע עליה.
- *  @param {{ adTitle: string, durationDays: number, usedOwnerCode: boolean, submitter?: { name?: string | null, email?: string | null } | null }} info */
+ *  מפרסם ששב לשפר פרסומת קיימת מקבל ניסוח משלו: "עדכון" ולא "חדשה", כי
+ *  האישור יחליף את הישנה במקום להוסיף פרסומת שנייה לצידה.
+ *  @param {{ adTitle: string, durationDays: number, usedOwnerCode: boolean, submitter?: { name?: string | null, email?: string | null } | null, replacesTitle?: string, replacesLive?: boolean }} info */
 export async function notifyAdminsNewAd(info) {
 	try {
 		const receivers = await resolveAdminUserIds();
@@ -90,12 +92,23 @@ export async function notifyAdminsNewAd(info) {
 		const who = info.submitter?.email
 			? `${info.submitter.name || 'ללא שם'} (${info.submitter.email})`
 			: 'משתמש לא מחובר';
+		// מפרסם חוזר ששיפר פרסומת קיימת: זו לא בקשה חדשה אלא שדרוג של אותה
+		// פרסומת, והאישור מחליף את הישנה במקום להוסיף פרסומת שנייה לצידה.
+		const isUpdate = Boolean(info.replacesTitle);
 		const content =
-			`📢 בקשת פרסום חדשה — ${SITE_NAME}\n` +
+			(isUpdate
+				? `🔄 עדכון לפרסומת קיימת — ${SITE_NAME}\n`
+				: `📢 בקשת פרסום חדשה — ${SITE_NAME}\n`) +
 			`פרסומת: "${info.adTitle}"\n` +
+			(isUpdate
+				? `הגרסה הקודמת: "${info.replacesTitle}"${info.replacesLive ? '' : ' (לא על האתר)'}\n`
+				: '') +
 			`מי שלח: ${who}\n` +
 			`תקופה מבוקשת: ${info.durationDays === 180 ? 'חצי שנה' : 'חודש'}\n` +
 			`תשלום: ${info.usedOwnerCode ? 'קוד בעלים' : 'ממתין לתשלום'}\n` +
+			(isUpdate && info.replacesLive
+				? `עם האישור הגרסה החדשה נכנסת במקום הישנה — אותו מקום בטור, אותו תאריך סיום, והישנה יורדת מהאתר.\n`
+				: '') +
 			`המודעה ממתינה לאישור ב-index.gofreeil.com/admin/ads`;
 		await Promise.all(
 			receivers.map((receiver) =>

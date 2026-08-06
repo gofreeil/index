@@ -508,6 +508,31 @@
 										>
 									{/if}
 								</div>
+								<!-- מפרסם חוזר ששיפר את הפרסומת שלו: לא בקשה חדשה אלא גרסה
+								     מעודכנת, והאישור מחליף את הישנה במקום להוסיף פרסומת שנייה -->
+								{#if ad.replacesAdId && ad.status === 'pending'}
+									{@const prevLive = (data.approved ?? []).some(
+										(/** @type {any} */ o) => o.id === ad.replacesAdId
+									)}
+									<div class="mb-2 rounded-lg border border-blue-400/40 bg-blue-500/10 px-2.5 py-1.5">
+										<p class="m-0 text-[11px] font-black text-blue-200 md:text-xs">
+											🔄 עדכון לפרסומת קיימת{ad.replacesTitle
+												? ` — גרסה קודמת: "${ad.replacesTitle}"`
+												: ''}
+										</p>
+										<p class="m-0 mt-0.5 text-[10px] text-blue-100/70 md:text-[11px]">
+											{prevLive
+												? 'עם האישור הגרסה הזו נכנסת במקום הישנה, באותו מקום בטור ועם אותו תאריך סיום — הישנה יורדת מהאתר.'
+												: 'למפרסם אין כרגע פרסומת פעילה על האתר — האישור פשוט יפרסם את הגרסה הזו.'}
+										</p>
+									</div>
+								{:else if ad.supersededBy}
+									<div class="mb-2 rounded-lg border border-gray-500/40 bg-white/5 px-2.5 py-1.5">
+										<p class="m-0 text-[11px] font-black text-gray-300 md:text-xs">
+											🔄 גרסה ישנה — הוחלפה בגרסה מעודכנת של המפרסם
+										</p>
+									</div>
+								{/if}
 								<p class="mb-1 text-xs text-gray-300 md:text-sm">{ad.subtitle}</p>
 								{#if ad.cta}
 									<p class="mb-2 text-[10px] text-amber-300 md:text-xs">CTA: {ad.cta}</p>
@@ -593,9 +618,32 @@
 										type="submit"
 										class="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-black text-black hover:bg-emerald-400"
 									>
-										✅ אשר ופרסם
+										{(data.approved ?? []).some(
+											(/** @type {any} */ o) => o.id === ad.replacesAdId
+										)
+											? '✅ אשר והחלף את הישנה'
+											: '✅ אשר ופרסם'}
 									</button>
 								</form>
+								<!-- מפרסם שבאמת רוצה שתי פרסומות במקביל, ולא שדרג את הקיימת -->
+								{#if (data.approved ?? []).some((/** @type {any} */ o) => o.id === ad.replacesAdId)}
+									<form method="POST" action="?/approve" use:enhance>
+										<input type="hidden" name="id" value={ad.id} />
+										<input type="hidden" name="keepPrevious" value="1" />
+										<input
+											type="hidden"
+											name="durationDays"
+											value={ad.requestedDurationDays === 180 ? 180 : 30}
+										/>
+										<button
+											type="submit"
+											class="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-black text-gray-300 hover:bg-white/10"
+											title="הישנה תישאר על האתר וזו תתווסף לידה"
+										>
+											➕ אשר כפרסומת נוספת
+										</button>
+									</form>
+								{/if}
 								<button
 									type="button"
 									onclick={() => startEdit(ad)}

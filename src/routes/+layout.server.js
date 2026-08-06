@@ -34,9 +34,13 @@ export async function load({ locals }) {
 		cta: a.cta,
 		hover: a.hoverText,
 		gradient: a.gradient,
+		// הלוגו והעיצוב שהמפרסם קבע — בלעדיהם הכרטיס נבנה מברירות המחדל
+		// של האתר והמודעה מתפרסמת בלי הלוגו שהועלה
+		logo: a.logo,
 		mainImage: a.mainImage,
 		// מיקום+זום שנבחרו בבילדר — מוחלים בתצוגת הסרגל (adImgFit)
-		mainImageFit: a.mainImageFit
+		mainImageFit: a.mainImageFit,
+		adStyle: a.adStyle
 	}));
 
 	return {

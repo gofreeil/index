@@ -16,6 +16,7 @@
 
 import { env } from '$env/dynamic/private';
 import { parseAdImageFit } from '$lib/adImageFit';
+import { parseAdStyle } from '$lib/adStyle';
 
 const STRAPI_URL = (env.STRAPI_URL || 'https://api.gofreeil.com').replace(/\/$/, '');
 const TOKEN = env.STRAPI_TOKEN || '';
@@ -62,6 +63,7 @@ const TTL_ADS = 120_000;
  * @property {string} logo
  * @property {string} mainImage
  * @property {{x:number,y:number,z:number}} mainImageFit מיקום+זום התמונה הראשית במשבצת (מהבילדר)
+ * @property {import('$lib/adStyle').AdStyle|null} adStyle העיצוב שנקבע בבילדר (לוגו, רצועה, כותרת); null = מודעה ותיקה
  * @property {any} landing
  * @property {string} payment "code" = סומן כשולם; "pending" = תשלום לתיאום. הגשה תמיד נכנסת כ-pending.
  * @property {boolean} codeRequested המפרסם הקליד את קוד הבעלים — בקשה לפרסום חינם שממתינה לאישור ידני
@@ -69,6 +71,12 @@ const TTL_ADS = 120_000;
  * @property {number|undefined} [order] מיקום ידני בטור הפרסומות (0 = ראשונה); ריק = לפי תאריך
  * @property {boolean} [paused] מושהית — יורדת מהאתר ושומרת את הימים שנותרו
  * @property {number|undefined} [pausedDaysLeft] הימים ששמורים לה מרגע ההשהיה
+ * @property {string} [replacesAdId] הפרסומת הקודמת של אותו מפרסם שהגרסה הזו באה להחליף
+ * @property {string} [replacesTitle] כותרת אותה גרסה קודמת — כדי שהמנהל יראה מה מוחלף
+ * @property {AdStatus|''} [replacesStatus] הסטטוס שלה בזמן השליחה (רק approved באמת מוחלפת)
+ * @property {string} [supersededBy] מי החליפה אותה — פרסומת כזו היא היסטוריה
+ * @property {string[]} [retiredPendingIds] רגעי: בקשות ממתינות שירדו מהתור בשליחה הזו
+ * @property {string} [replacedNowTitle] רגעי: כותרת הפרסומת שירדה מהאתר באישור הזה
  */
 
 /** @param {string} path @param {any} [init] */
@@ -128,6 +136,8 @@ function fromStrapi(s) {
 		landing: s.landing ?? emptyLanding(),
 		// ערכי ההגשה הארוזים ב-landing (ראו כותרת הקובץ)
 		mainImageFit: parseAdImageFit(s.landing?._mainImageFit),
+		// null במודעות שנשלחו לפני שהעיצוב נשמר — הצרכן נופל ל-legacyAdStyle
+		adStyle: parseAdStyle(s.landing?._adStyle),
 		payment: s.landing?._payment === 'code' ? 'code' : 'pending',
 		// המפרסם הקליד את קוד הבעלים — בקשה לפרסום חינם, לא אישור שלה
 		codeRequested: s.landing?._codeRequested === true,
@@ -136,7 +146,13 @@ function fromStrapi(s) {
 		order: typeof s.landing?._order === 'number' ? s.landing._order : undefined,
 		paused: s.landing?._paused === true,
 		pausedDaysLeft:
-			typeof s.landing?._pausedDaysLeft === 'number' ? s.landing._pausedDaysLeft : undefined
+			typeof s.landing?._pausedDaysLeft === 'number' ? s.landing._pausedDaysLeft : undefined,
+		replacesAdId:
+			typeof s.landing?._replacesAdId === 'string' ? s.landing._replacesAdId : undefined,
+		replacesTitle:
+			typeof s.landing?._replacesTitle === 'string' ? s.landing._replacesTitle : undefined,
+		supersededBy:
+			typeof s.landing?._supersededBy === 'string' ? s.landing._supersededBy : undefined
 	};
 }
 
@@ -217,6 +233,93 @@ function byDisplayOrder(a, b) {
 	const bo = b.order ?? Number.MAX_SAFE_INTEGER;
 	if (ao !== bo) return ao - bo;
 	return new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime();
+}
+
+// ============================================================
+// מפרסם חוזר: זיהוי גרסה מעודכנת של פרסומת קיימת
+// ------------------------------------------------------------
+// בבילדר אין "עריכה" של רשומה קיימת — מפרסם ששב לשפר את הפרסומת שלו
+// שולח רשומה חדשה. בלי הקישור שכאן ההתראה למנהל נוסחה כבקשה חדשה,
+// ואישור שלה הוסיף פרסומת שנייה לאותו מפרסם במקום להחליף את הישנה.
+// ============================================================
+
+/** טלפון ישראלי מנורמל להשוואה: ספרות בלבד, 972 → 0 @param {string|undefined|null} raw */
+function normPhone(raw) {
+	const digits = (raw ?? '').replace(/\D/g, '').replace(/^972/, '0');
+	return digits.length >= 9 ? digits : '';
+}
+
+/** מפתחות הזהות של מפרסם — מזהה משתמש, אימייל, וטלפון מדף הנחיתה. @param {any} ad */
+function identityKeys(ad) {
+	/** @type {string[]} */
+	const keys = [];
+	if (ad?.submittedBy?.id) keys.push(`id:${ad.submittedBy.id}`);
+	const email = (ad?.submittedBy?.email || ad?.landing?.email || '').trim().toLowerCase();
+	if (email) keys.push(`email:${email}`);
+	const phone = normPhone(ad?.landing?.phone);
+	if (phone) keys.push(`phone:${phone}`);
+	return keys;
+}
+
+/** @param {any} a @param {any} b */
+function sameAdvertiser(a, b) {
+	const keysB = new Set(identityKeys(b));
+	return identityKeys(a).some((k) => keysB.has(k));
+}
+
+/** @param {SubmittedAd} a @param {SubmittedAd} b */
+const byNewest = (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime();
+
+/**
+ * מה כבר יש למפרסם הזה: target = הפרסומת שהשליחה החדשה היא גרסה מעודכנת
+ * שלה (מאושרת → ממתינה → נדחתה), stalePending = כל בקשותיו הממתינות.
+ * "נדחה, תיקן ושלח שוב" הוא המסלול הנפוץ ביותר ולכן גם נדחתה נספרת.
+ * כשל כאן לא מפיל שליחה — מפרסם שלא זוהה מתנהג פשוט כמפרסם חדש.
+ * @param {any} identity
+ * @returns {Promise<{ target: SubmittedAd|null, stalePending: SubmittedAd[] }>}
+ */
+async function findPredecessors(identity) {
+	/** @type {SubmittedAd[]} */
+	let candidates;
+	try {
+		const [approved, pending, rejected] = await Promise.all([
+			listByStatus('approved'),
+			listByStatus('pending'),
+			listByStatus('rejected')
+		]);
+		candidates = [...approved, ...pending, ...rejected];
+	} catch (e) {
+		console.warn('[adsStore] findPredecessors failed:', e instanceof Error ? e.message : e);
+		return { target: null, stalePending: [] };
+	}
+	const mine = candidates.filter((a) => !a.supersededBy && sameAdvertiser(a, identity));
+	const live = mine.filter((a) => a.status === 'approved').sort(byNewest);
+	const stalePending = mine.filter((a) => a.status === 'pending').sort(byNewest);
+	const past = mine.filter((a) => a.status === 'rejected').sort(byNewest);
+	return { target: live[0] ?? stalePending[0] ?? past[0] ?? null, stalePending };
+}
+
+/**
+ * מוציא גרסה ישנה מהמחזור אחרי שגרסה מעודכנת נכנסה במקומה. הסטטוס
+ * 'rejected' הוא הארכיון היחיד שיש בסכמה — הפרסומת יורדת מהאתר ומהתור
+ * אבל נשארת בטאב "נדחו" עם הסיבה, ואפשר להחזיר אותה. שום דבר לא נמחק.
+ * @param {SubmittedAd} old @param {string} newAdId @param {string} decidedBy @param {string} reason
+ */
+async function supersedeAd(old, newAdId, decidedBy, reason) {
+	const res = await api(`${ENDPOINT}/${encodeURIComponent(old.id)}`, {
+		method: 'PUT',
+		body: JSON.stringify({
+			data: {
+				ad_status: 'rejected',
+				decided_at: new Date().toISOString(),
+				decided_by: decidedBy,
+				rejection_reason: reason,
+				landing: { ...(old.landing ?? {}), _supersededBy: newAdId }
+			}
+		})
+	});
+	if (!res.ok) throw new Error(`strapi supersedeAd → ${res.status}`);
+	invalidateAds();
 }
 
 // ============================================================
@@ -308,6 +411,7 @@ export async function getAd(id) {
  *   logo?: string,
  *   mainImage?: string,
  *   mainImageFit?: unknown,
+ *   adStyle?: unknown,
  *   landing?: any,
  *   submittedBy?: { id?: string, email?: string, name?: string },
  *   payment?: string,
@@ -316,6 +420,8 @@ export async function getAd(id) {
  * @returns {Promise<SubmittedAd>}
  */
 export async function submitAd(payload) {
+	// מפרסם חוזר: מחפשים לפני היצירה, כדי שהרשומה החדשה עצמה לא תיספר
+	const { target: predecessor, stalePending } = await findPredecessors(payload);
 	const landing = {
 		...(payload.landing ?? emptyLanding()),
 		// הגשה לעולם לא נכנסת כ"שולם". קוד הבעלים הוא *בקשה* לפרסום חינם,
@@ -325,8 +431,14 @@ export async function submitAd(payload) {
 		_requestedDurationDays: Number(payload.requestedDurationDays) === 180 ? 180 : 30,
 		// parseAdImageFit מנקה קלט לא-בטוח מהדפדפן לערכים חוקיים בלבד
 		_mainImageFit: parseAdImageFit(payload.mainImageFit),
+		// העיצוב שהמפרסם קבע בבילדר (לוגו, רצועה, כותרת) — בלעדיו הפרסומת
+		// מתפרסמת עם ברירות המחדל של האתר ולא עם מה שהוא ראה על המסך
+		_adStyle: parseAdStyle(payload.adStyle),
 		// שיוך לאתר — בלעדיו הפרסומת תיבלע באוסף המשותף ותופיע גם באתרים אחרים
-		_site: SITE_ID
+		_site: SITE_ID,
+		// קישור לגרסה הקודמת של אותו מפרסם: ההתראה מדברת על עדכון,
+		// והאישור מחליף את הישנה במקום להוסיף פרסומת שנייה לידה
+		...(predecessor ? { _replacesAdId: predecessor.id, _replacesTitle: predecessor.title } : {})
 	};
 	const res = await api(ENDPOINT, {
 		method: 'POST',
@@ -351,40 +463,102 @@ export async function submitAd(payload) {
 	if (!res.ok) throw new Error(`strapi submitAd → ${res.status}`);
 	invalidateAds();
 	const data = await res.json();
-	return fromStrapi(data.data);
+	const ad = fromStrapi(data.data);
+	// לא נשענים על מה ש-Strapi מחזיר ב-POST: אם עמודת ה-json לא הוחזרה,
+	// ההתראה למנהל הייתה מנוסחת בטעות כבקשה חדשה במקום כעדכון
+	if (predecessor) {
+		ad.replacesAdId = predecessor.id;
+		ad.replacesTitle = predecessor.title;
+		ad.replacesStatus = predecessor.status;
+	}
+
+	// בקשות ממתינות קודמות של אותו מפרסם יורדות מהתור: המנהל אמור לראות
+	// בקשה אחת לכל מפרסם — האחרונה — ולא שתי בקשות שנראות כפולות.
+	// מאושרת קודמת נשארת חיה עד שהחדשה תאושר, אחרת האתר נשאר בלי פרסומת.
+	/** @type {string[]} */
+	const retired = [];
+	for (const stale of stalePending) {
+		try {
+			await supersedeAd(stale, ad.id, 'system', 'הוחלפה בגרסה מעודכנת שהמפרסם שלח');
+			retired.push(stale.id);
+		} catch (e) {
+			console.warn('[adsStore] retire pending predecessor failed:', e instanceof Error ? e.message : e);
+		}
+	}
+	if (retired.length > 0) ad.retiredPendingIds = retired;
+	return ad;
 }
 
 /**
  * אישור ופרסום: קובע תאריך תפוגה לפי durationDays (ברירת מחדל 30 יום).
  * @param {string} id @param {string} decidedBy @param {number} [durationDays]
+ * @param {{keepPrevious?: boolean}} [opts] keepPrevious = אשר כפרסומת נוספת
+ *        ואל תוריד את הקודמת (מפרסם שבאמת רוצה שתיים במקביל)
  * @returns {Promise<SubmittedAd|null>}
  */
-export async function approveAd(id, decidedBy, durationDays) {
+export async function approveAd(id, decidedBy, durationDays, opts = {}) {
 	const existing = await findByDocumentId(id);
 	if (!existing) return null;
+	const current = fromStrapi(existing);
+
+	// גרסה מעודכנת של מפרסם קיים נכנסת *במקום* הישנה: אותו מקום בטור
+	// ואותו תאריך סיום, ומיד אחרי האישור הישנה יורדת מהאתר. בלי זה
+	// האישור היה מוסיף פרסומת שנייה לאותו מפרסם, ליד הישנה.
+	const predecessor =
+		current.replacesAdId && !opts.keepPrevious ? await getAd(current.replacesAdId).catch(() => null) : null;
+	const replacing =
+		predecessor && predecessor.status === 'approved' && !predecessor.supersededBy ? predecessor : null;
+
 	// ברירת מחדל: התקופה שהמפרסם ביקש בשליחה (landing._requestedDurationDays)
 	const requested =
 		Number(existing.landing?._requestedDurationDays) === 180 ? 180 : DEFAULT_DURATION_DAYS;
-	const days = durationDays ?? existing.duration_days ?? requested;
 	const now = new Date();
-	const expires = new Date(now.getTime() + days * DAY_MS);
+	// התקופה שהמפרסם כבר שילם עליה ממשיכה כרגיל: אותו תאריך פקיעה, לא
+	// ספירה חדשה. שדרוג הפרסומת לא מאריך ולא מקצר את הזמן שנותר לה.
+	const inheritedExpiry =
+		replacing && !replacing.paused && replacing.expiresAt &&
+		new Date(replacing.expiresAt).getTime() > now.getTime()
+			? replacing.expiresAt
+			: null;
+	const days =
+		durationDays ?? existing.duration_days ??
+		(inheritedExpiry ? (replacing?.durationDays ?? requested) : requested);
+	const expires = inheritedExpiry ?? new Date(now.getTime() + days * DAY_MS).toISOString();
+
+	/** @type {Record<string, any>} */
+	const payload = {
+		ad_status: 'approved',
+		decided_at: now.toISOString(),
+		decided_by: decidedBy,
+		rejection_reason: null,
+		duration_days: days,
+		expires_at: expires
+	};
+	// מקום התצוגה בטור עובר לגרסה החדשה, אחרת היא הייתה קופצת לסוף הרשימה
+	if (replacing && typeof replacing.order === 'number' && replacing.order !== current.order) {
+		payload.landing = { ...(current.landing ?? {}), _order: replacing.order };
+	}
 	const res = await api(`${ENDPOINT}/${encodeURIComponent(id)}`, {
 		method: 'PUT',
-		body: JSON.stringify({
-			data: {
-				ad_status: 'approved',
-				decided_at: now.toISOString(),
-				decided_by: decidedBy,
-				rejection_reason: null,
-				duration_days: days,
-				expires_at: expires.toISOString()
-			}
-		})
+		body: JSON.stringify({ data: payload })
 	});
 	if (!res.ok) throw new Error(`strapi approveAd → ${res.status}`);
 	invalidateAds();
 	const data = await res.json();
-	return fromStrapi(data.data);
+	const approved = fromStrapi(data.data);
+
+	// סדר הפעולות מכוון: קודם החדשה עולה, רק אחר-כך הישנה יורדת. כשל כאן
+	// משאיר את שתיהן באוויר (מצב שהמנהל רואה ומתקן) — עדיף מלהוריד את
+	// הישנה ואז להיכשל בהעלאת החדשה ולהשאיר את המפרסם בלי פרסומת.
+	if (replacing) {
+		try {
+			await supersedeAd(replacing, id, decidedBy, 'הוחלפה בגרסה מעודכנת שאישרת');
+			approved.replacedNowTitle = replacing.title;
+		} catch (e) {
+			console.warn('[adsStore] supersede on approve failed:', e instanceof Error ? e.message : e);
+		}
+	}
+	return approved;
 }
 
 /**
@@ -415,16 +589,23 @@ export async function rejectAd(id, decidedBy, reason) {
 export async function backToPending(id) {
 	const existing = await findByDocumentId(id);
 	if (!existing) return null;
+	/** @type {Record<string, any>} */
+	const patch = {
+		ad_status: 'pending',
+		decided_at: null,
+		decided_by: null,
+		rejection_reason: null
+	};
+	// פרסומת שירדה כי גרסה מעודכנת נכנסה במקומה, והמנהל מחזיר אותה בכוונה:
+	// מסירים את סימון ההחלפה כדי שתתנהג שוב כבקשה ממתינה רגילה
+	if (existing.landing?._supersededBy != null) {
+		const landing = { ...existing.landing };
+		delete landing._supersededBy;
+		patch.landing = landing;
+	}
 	const res = await api(`${ENDPOINT}/${encodeURIComponent(id)}`, {
 		method: 'PUT',
-		body: JSON.stringify({
-			data: {
-				ad_status: 'pending',
-				decided_at: null,
-				decided_by: null,
-				rejection_reason: null
-			}
-		})
+		body: JSON.stringify({ data: patch })
 	});
 	if (!res.ok) throw new Error(`strapi backToPending → ${res.status}`);
 	invalidateAds();

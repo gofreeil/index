@@ -53,6 +53,9 @@ export async function POST({ request, locals }) {
 			logo: payload.logo ?? '',
 			mainImage: payload.mainImage,
 			mainImageFit: payload.mainImageFit,
+			// העיצוב מהבילדר (לוגו, רצועה, כותרת) — בלעדיו הפרסומת מתפרסמת
+			// עם ברירות המחדל של האתר ולא עם מה שהמפרסם ראה על המסך
+			adStyle: payload.adStyle,
 			landing: {
 				headline: payload.landing.headline ?? '',
 				pitch: payload.landing.pitch ?? '',
@@ -75,11 +78,14 @@ export async function POST({ request, locals }) {
 		});
 		// התראה על *כל* בקשת פרסום — קודם היא נשלחה רק על שימוש בקוד בעלים,
 		// כך שמפרסם רגיל הגיש פרסומת ואיש לא ידע עליה. לא חוסמת ולא מפילה.
+		// מפרסם ששב לשפר פרסומת קיימת מקבל ניסוח "עדכון" ולא "בקשה חדשה"
 		await notifyAdminsNewAd({
 			adTitle: payload.title,
 			durationDays: requestedDurationDays,
 			usedOwnerCode,
-			submitter: { name: user.name ?? '', email: user.email ?? '' }
+			submitter: { name: user.name ?? '', email: user.email ?? '' },
+			replacesTitle: ad.replacesTitle,
+			replacesLive: ad.replacesStatus === 'approved'
 		});
 		// התראה נפרדת על שימוש בקוד — נשמרת כדי לא לאבד את ההתראה הייעודית
 		if (usedOwnerCode) {

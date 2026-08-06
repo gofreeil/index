@@ -82,12 +82,15 @@
 		>
 			<div class="min-w-0">
 				{#if ad.logo}
+					<!-- לוגו שנחתך לעיגול בבילדר נשאר עגול גם כאן — ריבוע היה
+					     מחזיר לו פינות שהמפרסם דווקא הסיר -->
 					<img
 						src={ad.logo}
 						alt=""
-						class="mb-3 h-[68px] w-[68px] rounded-2xl bg-white/10 object-contain p-2 md:h-[88px] md:w-[88px] {heroImage
-							? 'mx-auto md:mx-0'
-							: 'mx-auto'}"
+						class="mb-3 h-[68px] w-[68px] bg-white/10 object-contain p-2 md:h-[88px] md:w-[88px] {ad
+							.adStyle?.logoShape === 'circle'
+							? 'rounded-full'
+							: 'rounded-2xl'} {heroImage ? 'mx-auto md:mx-0' : 'mx-auto'}"
 					/>
 				{/if}
 				<h1 class="mb-2 text-2xl leading-tight font-black drop-shadow md:text-4xl">

@@ -124,9 +124,19 @@ export const actions = {
 		// תקופת הפרסום שסומנה במסך (ברירת המחדל = מה שהמפרסם ביקש בשליחה)
 		const durRaw = Number(formData.get('durationDays'));
 		const durationDays = durRaw === 180 ? 180 : durRaw === 30 ? 30 : undefined;
-		const r = await runAdAction(() => approveAd(id, user.email, durationDays));
+		// ברירת המחדל לגרסה מעודכנת היא החלפה. keepPrevious הוא המקרה ההפוך:
+		// מפרסם שבאמת רוצה שתי פרסומות במקביל ולא שדרג את הקיימת.
+		const keepPrevious = String(formData.get('keepPrevious') || '') === '1';
+		const r = await runAdAction(() => approveAd(id, user.email, durationDays, { keepPrevious }));
 		if ('failResp' in r) return r.failResp;
-		return { success: true, message: `אושרה ופורסמה: ${r.result.title}` };
+		// גרסה מעודכנת: המנהל צריך לראות שהישנה ירדה, ולא להישאר בספק אם
+		// נוספה פרסומת שנייה לאותו מפרסם
+		return {
+			success: true,
+			message: r.result.replacedNowTitle
+				? `אושרה ופורסמה: ${r.result.title} — נכנסה במקום "${r.result.replacedNowTitle}", שירדה מהאתר`
+				: `אושרה ופורסמה: ${r.result.title}`
+		};
 	},
 
 	reject: async ({ request, locals }) => {
