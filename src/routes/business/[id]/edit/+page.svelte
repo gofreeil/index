@@ -70,7 +70,12 @@
 		}}
 		class="space-y-6"
 	>
-		<BusinessFormFields {biz} errors={form?.errors ?? {}} canModerate={data.isAdmin} />
+		<BusinessFormFields
+			{biz}
+			errors={form?.errors ?? {}}
+			canModerate={data.isAdmin}
+			categories={data.categoryOptions}
+		/>
 
 		<div class="flex flex-wrap items-center gap-3">
 			<button

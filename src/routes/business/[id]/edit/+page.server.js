@@ -1,5 +1,6 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { getBusinessAdmin, updateBusiness, isPrivileged } from '$lib/server/strapi.js';
+import { getCategoryOptions } from '$lib/server/categoryStore.js';
 import { canEditBusiness, isBusinessOwner, invalidateMatches } from '$lib/server/ownerMatch.js';
 import { parseBusinessForm } from '$lib/server/businessEdit.js';
 
@@ -22,7 +23,8 @@ export async function load({ params, locals }) {
 	return {
 		biz,
 		isAdmin: isPrivileged(locals.user),
-		isOwner: isBusinessOwner(biz, locals.user)
+		isOwner: isBusinessOwner(biz, locals.user),
+		categoryOptions: await getCategoryOptions().catch(() => [])
 	};
 }
 

@@ -440,6 +440,24 @@ export async function uploadImage(file) {
 	return Array.isArray(arr) && arr[0]?.id ? arr[0].id : null;
 }
 
+/**
+ * כמו uploadImage, אבל מחזיר גם כתובת מוחלטת — לתמונות שנשמרות כ-URL
+ * ב-KV (תמונות הקטגוריות) ולא כקשר מדיה על רשומה.
+ * @param {File} file
+ * @returns {Promise<{ id: number, url: string } | null>}
+ */
+export async function uploadImageMeta(file) {
+	const fd = new FormData();
+	fd.append('files', file, file.name);
+	const res = await api('/api/upload', { method: 'POST', body: fd });
+	if (!res.ok) return null;
+	const arr = await res.json().catch(() => null);
+	const m = Array.isArray(arr) ? arr[0] : null;
+	if (!m?.id || !m?.url) return null;
+	const url = String(m.url);
+	return { id: m.id, url: url.startsWith('http') ? url : STRAPI_URL + url };
+}
+
 // ── Moderation (מסך /admin) ──────────────────────────────────
 // כל הקריאות server-side עם STRAPI_TOKEN (trusted) — רואות pending ורשאיות לשנות status.
 

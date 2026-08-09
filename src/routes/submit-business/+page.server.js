@@ -1,5 +1,15 @@
 import { fail } from '@sveltejs/kit';
 import { createBusiness, uploadImage } from '$lib/server/strapi.js';
+import { getCategoryOptions } from '$lib/server/categoryStore.js';
+
+/**
+ * רשימת הקטגוריות לתפריט הבחירה — כולל דריסות השם והקטגוריות שהוסיף
+ * הסופר-אדמין במסך ניהול הקטגוריות.
+ * @type {import('./$types').PageServerLoad}
+ */
+export async function load() {
+	return { categoryOptions: await getCategoryOptions().catch(() => []) };
+}
 
 // ── Anti-spam: rate-limit per-IP (token bucket בזיכרון) ──────────
 /** @type {Map<string, {count:number, resetAt:number}>} */

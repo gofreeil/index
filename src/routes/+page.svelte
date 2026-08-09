@@ -17,7 +17,7 @@
 		collectionSchema
 	} from '$lib/seo';
 
-	/** @type {{ data: { businesses: any[], loadError: string | null } }} */
+	/** @type {{ data: { businesses: any[], catRail?: { byName: Record<string, {icon: string, image: string}>, order: string[], otherName: string }, loadError: string | null } }} */
 	let { data } = $props();
 
 	let currentLang = $state('he');
@@ -46,23 +46,38 @@
 	});
 
 	/* ═══════════ מסילת התחומים ═══════════
-	   התחום של כל כרטיסייה כבר נקבע בשרת (resolveCategory), ולכן כאן רק
-	   סופרים. הסדר הוא לפי מספר העסקים בפועל ולא לפי הרשימה הקנונית —
-	   מה שיש ממנו הכי הרבה באתר צריך להיות מה שרואים ראשון — ו"אחר" תמיד
-	   אחרון. תחומים ריקים אינם מוצגים כלל: אריח שמוביל ל-0 תוצאות הוא
-	   הבטחה שבורה (הם עדיין קיימים בטופס ההגשה). */
+	   התחום של כל כרטיסייה כבר נקבע בשרת (resolveCategory + דריסות התצוגה
+	   של הסופר-אדמין), ולכן כאן רק סופרים. הסדר: אם הסופר-אדמין קבע סדר
+	   במסך ניהול הקטגוריות — הוא הקובע; אחרת לפי מספר העסקים בפועל — מה
+	   שיש ממנו הכי הרבה באתר צריך להיות מה שרואים ראשון. "אחר" תמיד אחרון.
+	   תחומים ריקים אינם מוצגים כלל: אריח שמוביל ל-0 תוצאות הוא הבטחה
+	   שבורה (הם עדיין קיימים בטופס ההגשה). */
+	const railMeta = $derived(data.catRail?.byName ?? {});
+	const railOrder = $derived(
+		new Map(
+			(data.catRail?.order ?? []).map((/** @type {string} */ n, /** @type {number} */ i) => [n, i])
+		)
+	);
+	const otherName = $derived(data.catRail?.otherName ?? OTHER);
 	const railCategories = $derived.by(() => {
 		/** @type {Record<string, number>} */
 		const counts = {};
 		for (const b of businesses) {
-			const key = b.category || OTHER;
+			const key = b.category || otherName;
 			counts[key] = (counts[key] ?? 0) + 1;
 		}
 		return Object.entries(counts)
-			.map(([label, count]) => ({ key: label, label, icon: categoryIcon(label), count }))
+			.map(([label, count]) => ({
+				key: label,
+				label,
+				icon: railMeta[label]?.icon ?? categoryIcon(label),
+				image: railMeta[label]?.image ?? '',
+				count
+			}))
 			.sort(
 				(a, b) =>
-					(a.key === OTHER ? 1 : 0) - (b.key === OTHER ? 1 : 0) ||
+					(a.key === otherName ? 1 : 0) - (b.key === otherName ? 1 : 0) ||
+					(railOrder.get(a.key) ?? Infinity) - (railOrder.get(b.key) ?? Infinity) ||
 					b.count - a.count ||
 					a.label.localeCompare(b.label, 'he')
 			);

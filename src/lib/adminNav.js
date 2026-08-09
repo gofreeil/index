@@ -106,6 +106,14 @@ export function adminNav(isAdmin, superAdmin = false) {
 		...(superAdmin
 			? [
 					{
+						href: '/admin/categories',
+						path: '/admin/categories',
+						icon: '🗂️',
+						label: 'קטגוריות',
+						title: 'ניהול קטגוריות',
+						desc: 'שם, אייקון, תמונה וסדר של תחומי האינדקס'
+					},
+					{
 						href: '/admin/admins',
 						path: '/admin/admins',
 						icon: '🔑',

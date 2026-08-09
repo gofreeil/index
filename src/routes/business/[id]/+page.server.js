@@ -1,7 +1,8 @@
 import { error, fail } from '@sveltejs/kit';
 import { getBusiness, getUserPhone, isPrivileged } from '$lib/server/strapi.js';
+import { getCategorySettings } from '$lib/server/categoryStore.js';
 import { toBusiness } from '$lib/businessShape.js';
-import { resolveCategory } from '$lib/categories.js';
+import { resolveCategory, categoryDisplayResolver } from '$lib/categories.js';
 import {
 	businessOwnerId,
 	canEditBusiness,
@@ -20,9 +21,10 @@ import { invalidatePendingCounts } from '$lib/server/pendingCounts.js';
  */
 export async function load({ params, locals }) {
 	const user = locals.user;
-	const [b, userPhone] = await Promise.all([
+	const [b, userPhone, catSettings] = await Promise.all([
 		getBusiness(params.id),
-		user ? getUserPhone(user.id) : Promise.resolve('')
+		user ? getUserPhone(user.id) : Promise.resolve(''),
+		getCategorySettings()
 	]);
 	if (!b) throw error(404, 'העסק לא נמצא או ממתין לאישור');
 
@@ -41,8 +43,12 @@ export async function load({ params, locals }) {
 
 	return {
 		// אותו סיווג בדיוק כמו בדף הבית — כרטיסייה שהאינדקס מציג תחת "רפואה
-		// משלימה" לא תציג על עצמה "אחר" (או כלום) כשנכנסים אליה
-		business: { ...business, category: resolveCategory(business) },
+		// משלימה" לא תציג על עצמה "אחר" (או כלום) כשנכנסים אליה. גם דריסות
+		// השם של הסופר-אדמין חלות כאן, כדי שהצ'יפ יתאים למסילה.
+		business: {
+			...business,
+			category: categoryDisplayResolver(catSettings)(resolveCategory(business))
+		},
 		// "שיתוף חכם" הוא כלי של בעל העסק בלבד. ההכרעה כאן ולא בדפדפן:
 		// toBusiness לא מחזיר ללקוח את מפתחות הבעלות, ולכן אין מה לזייף.
 		// אדמין מקבל גישה גם הוא — הוא כבר עורך ומאשר את הכרטיסיות.

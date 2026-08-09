@@ -1,6 +1,7 @@
 import { listApprovedBusinesses } from '$lib/server/strapi.js';
+import { getCategorySettings } from '$lib/server/categoryStore.js';
 import { toBusiness } from '$lib/businessShape.js';
-import { resolveCategory } from '$lib/categories.js';
+import { resolveCategory, categoryDisplayResolver, categoryRailMeta } from '$lib/categories.js';
 
 // ============================================================
 // טעינת האינדקס בצד-השרת (SSR).
@@ -16,14 +17,20 @@ import { resolveCategory } from '$lib/categories.js';
 
 export async function load() {
 	try {
-		const rows = await listApprovedBusinesses();
+		// דריסות הסופר-אדמין (שם/אייקון/תמונה/סדר) חלות על התצוגה בלבד —
+		// המאגר ממשיך להחזיק את התוויות הקנוניות
+		const [rows, catSettings] = await Promise.all([
+			listApprovedBusinesses(),
+			getCategorySettings()
+		]);
+		const displayName = categoryDisplayResolver(catSettings);
 		const businesses = rows.map(toBusiness).map((b) => ({
 			id: b.documentId,
 			documentId: b.documentId,
 			slug: b.slug,
 			name: b.name || 'ללא שם',
 			phone: b.phone || '',
-			category: resolveCategory(b),
+			category: displayName(resolveCategory(b)),
 			banners: b.banners || [],
 			banner: b.banner || '',
 			description: b.description || '',
@@ -38,10 +45,14 @@ export async function load() {
 			lat: typeof b.lat === 'number' ? b.lat : null,
 			lng: typeof b.lng === 'number' ? b.lng : null
 		}));
-		return { businesses, loadError: null };
+		return { businesses, catRail: categoryRailMeta(catSettings), loadError: null };
 	} catch (/** @type {any} */ err) {
 		console.error('index home load error:', err);
 		// fail-soft: דף בלי רשימה עדיף על 500 — הטקסט, ה-FAQ וקישורי הרשת עדיין נסרקים
-		return { businesses: [], loadError: err?.message ?? 'load failed' };
+		return {
+			businesses: [],
+			catRail: categoryRailMeta(null),
+			loadError: err?.message ?? 'load failed'
+		};
 	}
 }

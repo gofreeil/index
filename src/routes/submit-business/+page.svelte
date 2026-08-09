@@ -5,8 +5,16 @@
 	import { CATEGORIES } from '$lib/categories.js';
 	import { formDraft, clearDraft, resumeDraft } from '$lib/formDraft';
 
-	/** @type {{ form: any }} */
-	let { form } = $props();
+	/** @type {{ data: any, form: any }} */
+	let { data, form } = $props();
+
+	// הרשימה מהשרת כוללת את דריסות הסופר-אדמין (שמות וקטגוריות שנוספו);
+	// הרשימה הסטטית היא רשת ביטחון אם הטעינה לא החזירה כלום
+	const categoryOptions = $derived(
+		Array.isArray(data?.categoryOptions) && data.categoryOptions.length
+			? data.categoryOptions
+			: CATEGORIES.map((c) => ({ value: c, label: c }))
+	);
 
 	let submitting = $state(false);
 	let renderedAt = $state(0);
@@ -41,9 +49,7 @@
 
 <main class="mx-auto max-w-2xl px-4 py-10 sm:px-6" dir="rtl">
 	{#if form?.success}
-		<div
-			class="rounded-3xl border border-green-500/30 bg-green-900/10 p-10 text-center shadow-xl"
-		>
+		<div class="rounded-3xl border border-green-500/30 bg-green-900/10 p-10 text-center shadow-xl">
 			<div class="mb-4 text-6xl">✅</div>
 			<h1 class="mb-3 text-2xl font-black text-green-400">הבקשה התקבלה!</h1>
 			<p class="mx-auto mb-8 max-w-md leading-relaxed text-gray-300">
@@ -78,16 +84,23 @@
 		</div>
 
 		{#if form?.error}
-			<div class="mb-6 rounded-xl border border-red-500/30 bg-red-900/20 p-4 text-center text-red-300">
+			<div
+				class="mb-6 rounded-xl border border-red-500/30 bg-red-900/20 p-4 text-center text-red-300"
+			>
 				{form.error}
 			</div>
 		{/if}
 
 		{#if draftRestored}
-			<div class="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-green-500/30 bg-green-900/20 px-4 py-3 text-sm text-green-200">
+			<div
+				class="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-green-500/30 bg-green-900/20 px-4 py-3 text-sm text-green-200"
+			>
 				<span class="font-bold">💾 שחזרנו את מה שמילאת קודם — הטופס ממשיך מהמקום שעצרת.</span>
-				<button type="button" onclick={discardDraft}
-					class="rounded-full border border-green-500/40 bg-green-900/40 px-3 py-1 text-xs font-bold text-green-100 transition hover:bg-green-800/50">
+				<button
+					type="button"
+					onclick={discardDraft}
+					class="rounded-full border border-green-500/40 bg-green-900/40 px-3 py-1 text-xs font-bold text-green-100 transition hover:bg-green-800/50"
+				>
 					התחל מטופס ריק
 				</button>
 			</div>
@@ -97,7 +110,11 @@
 			bind:this={formEl}
 			method="POST"
 			enctype="multipart/form-data"
-			use:formDraft={{ key: DRAFT_KEY, exclude: DRAFT_EXCLUDE, onRestore: () => (draftRestored = true) }}
+			use:formDraft={{
+				key: DRAFT_KEY,
+				exclude: DRAFT_EXCLUDE,
+				onRestore: () => (draftRestored = true)
+			}}
 			use:enhance={() => {
 				submitting = true;
 				return async ({ result, update }) => {
@@ -139,8 +156,8 @@
 						>
 						<select id="category" name="category" required class="field">
 							<option value="" disabled selected={!v.category}>בחרו קטגוריה…</option>
-							{#each CATEGORIES as cat}
-								<option value={cat} selected={v.category === cat}>{cat}</option>
+							{#each categoryOptions as cat (cat.value)}
+								<option value={cat.value} selected={v.category === cat.value}>{cat.label}</option>
 							{/each}
 						</select>
 						{#if errors.category}<p class="err">{errors.category}</p>{/if}
@@ -149,7 +166,12 @@
 						<label for="subcategory" class="mb-1 block text-sm font-medium text-gray-300"
 							>תת-תחום (חופשי)</label
 						>
-						<input id="subcategory" name="subcategory" defaultValue={v.subcategory ?? ''} class="field" />
+						<input
+							id="subcategory"
+							name="subcategory"
+							defaultValue={v.subcategory ?? ''}
+							class="field"
+						/>
 					</div>
 				</div>
 
@@ -209,12 +231,25 @@
 						<label for="contact_name" class="mb-1 block text-sm font-medium text-gray-300"
 							>שם איש קשר *</label
 						>
-						<input id="contact_name" name="contact_name" required defaultValue={v.contact_name ?? ''} class="field" />
+						<input
+							id="contact_name"
+							name="contact_name"
+							required
+							defaultValue={v.contact_name ?? ''}
+							class="field"
+						/>
 						{#if errors.contact_name}<p class="err">{errors.contact_name}</p>{/if}
 					</div>
 					<div>
 						<label for="phone" class="mb-1 block text-sm font-medium text-gray-300">טלפון *</label>
-						<input id="phone" name="phone" type="tel" required defaultValue={v.phone ?? ''} class="field" />
+						<input
+							id="phone"
+							name="phone"
+							type="tel"
+							required
+							defaultValue={v.phone ?? ''}
+							class="field"
+						/>
 						{#if errors.phone}<p class="err">{errors.phone}</p>{/if}
 					</div>
 				</div>
@@ -222,7 +257,14 @@
 					<label for="email" class="mb-1 block text-sm font-medium text-gray-300"
 						>אימייל * <span class="text-gray-500">(פרטי — לעריכת העסק בעתיד)</span></label
 					>
-					<input id="email" name="email" type="email" required defaultValue={v.email ?? ''} class="field" />
+					<input
+						id="email"
+						name="email"
+						type="email"
+						required
+						defaultValue={v.email ?? ''}
+						class="field"
+					/>
 					{#if errors.email}<p class="err">{errors.email}</p>{/if}
 				</div>
 				<div class="grid gap-4 sm:grid-cols-3">
@@ -231,21 +273,40 @@
 						<input id="city" name="city" defaultValue={v.city ?? ''} class="field" />
 					</div>
 					<div>
-						<label for="neighborhood" class="mb-1 block text-sm font-medium text-gray-300">שכונה</label>
-						<input id="neighborhood" name="neighborhood" defaultValue={v.neighborhood ?? ''} class="field" />
+						<label for="neighborhood" class="mb-1 block text-sm font-medium text-gray-300"
+							>שכונה</label
+						>
+						<input
+							id="neighborhood"
+							name="neighborhood"
+							defaultValue={v.neighborhood ?? ''}
+							class="field"
+						/>
 					</div>
 					<div>
 						<label for="sales_area" class="mb-1 block text-sm font-medium text-gray-300"
 							>אזור מכירה</label
 						>
-						<input id="sales_area" name="sales_area" defaultValue={v.sales_area ?? ''} placeholder="ארצי / אונליין" class="field" />
+						<input
+							id="sales_area"
+							name="sales_area"
+							defaultValue={v.sales_area ?? ''}
+							placeholder="ארצי / אונליין"
+							class="field"
+						/>
 					</div>
 				</div>
 				<div>
 					<label for="address" class="mb-1 block text-sm font-medium text-gray-300"
 						>כתובת מלאה *</label
 					>
-					<input id="address" name="address" required defaultValue={v.address ?? ''} class="field" />
+					<input
+						id="address"
+						name="address"
+						required
+						defaultValue={v.address ?? ''}
+						class="field"
+					/>
 					<p class="mt-1 text-xs text-gray-500">
 						העסק יופיע אוטומטית על המפה — גם כאן במדריך וגם באתר "קהילה בשכונה".
 					</p>
@@ -259,22 +320,52 @@
 				<div class="grid gap-4 sm:grid-cols-2">
 					<div>
 						<label for="website" class="mb-1 block text-sm font-medium text-gray-300">אתר</label>
-						<input id="website" name="website" defaultValue={v.website ?? ''} placeholder="https://" class="field" />
+						<input
+							id="website"
+							name="website"
+							defaultValue={v.website ?? ''}
+							placeholder="https://"
+							class="field"
+						/>
 						{#if errors.website}<p class="err">{errors.website}</p>{/if}
 					</div>
 					<div>
-						<label for="whatsapp" class="mb-1 block text-sm font-medium text-gray-300">וואטסאפ</label>
-						<input id="whatsapp" name="whatsapp" defaultValue={v.whatsapp ?? ''} placeholder="https://wa.me/…" class="field" />
+						<label for="whatsapp" class="mb-1 block text-sm font-medium text-gray-300"
+							>וואטסאפ</label
+						>
+						<input
+							id="whatsapp"
+							name="whatsapp"
+							defaultValue={v.whatsapp ?? ''}
+							placeholder="https://wa.me/…"
+							class="field"
+						/>
 						{#if errors.whatsapp}<p class="err">{errors.whatsapp}</p>{/if}
 					</div>
 					<div>
-						<label for="facebook" class="mb-1 block text-sm font-medium text-gray-300">פייסבוק</label>
-						<input id="facebook" name="facebook" defaultValue={v.facebook ?? ''} placeholder="https://" class="field" />
+						<label for="facebook" class="mb-1 block text-sm font-medium text-gray-300"
+							>פייסבוק</label
+						>
+						<input
+							id="facebook"
+							name="facebook"
+							defaultValue={v.facebook ?? ''}
+							placeholder="https://"
+							class="field"
+						/>
 						{#if errors.facebook}<p class="err">{errors.facebook}</p>{/if}
 					</div>
 					<div>
-						<label for="instagram" class="mb-1 block text-sm font-medium text-gray-300">אינסטגרם</label>
-						<input id="instagram" name="instagram" defaultValue={v.instagram ?? ''} placeholder="https://" class="field" />
+						<label for="instagram" class="mb-1 block text-sm font-medium text-gray-300"
+							>אינסטגרם</label
+						>
+						<input
+							id="instagram"
+							name="instagram"
+							defaultValue={v.instagram ?? ''}
+							placeholder="https://"
+							class="field"
+						/>
 						{#if errors.instagram}<p class="err">{errors.instagram}</p>{/if}
 					</div>
 				</div>
@@ -282,14 +373,26 @@
 					<label for="youtube" class="mb-1 block text-sm font-medium text-gray-300"
 						>סרטון יוטיוב</label
 					>
-					<input id="youtube" name="youtube" defaultValue={v.youtube ?? ''} placeholder="https://youtube.com/…" class="field" />
+					<input
+						id="youtube"
+						name="youtube"
+						defaultValue={v.youtube ?? ''}
+						placeholder="https://youtube.com/…"
+						class="field"
+					/>
 					{#if errors.youtube}<p class="err">{errors.youtube}</p>{/if}
 				</div>
 				<div>
 					<label for="logo" class="mb-1 block text-sm font-medium text-gray-300"
 						>לוגו העסק (תמונה עד 3MB)</label
 					>
-					<input id="logo" name="logo" type="file" accept="image/*" class="field file:mr-3 file:rounded-full file:border-0 file:bg-blue-600 file:px-4 file:py-1 file:text-white" />
+					<input
+						id="logo"
+						name="logo"
+						type="file"
+						accept="image/*"
+						class="field file:mr-3 file:rounded-full file:border-0 file:bg-blue-600 file:px-4 file:py-1 file:text-white"
+					/>
 					{#if errors.logo}<p class="err">{errors.logo}</p>{/if}
 				</div>
 				<div>
@@ -315,7 +418,9 @@
 			>
 				{submitting ? 'שולח…' : 'שליחת העסק לאישור'}
 			</button>
-			<p class="text-center text-xs text-gray-500">* שדות חובה. הפרטים נשלחים לצוות האינדקס לאישור.</p>
+			<p class="text-center text-xs text-gray-500">
+				* שדות חובה. הפרטים נשלחים לצוות האינדקס לאישור.
+			</p>
 		</form>
 	{/if}
 </main>

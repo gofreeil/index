@@ -8,13 +8,21 @@
 	import { mediaUrl } from '$lib/businessShape.js';
 	import { CATEGORIES } from '$lib/categories.js';
 
-	/** @type {{ biz: any, errors?: Record<string,string>, canModerate?: boolean }} */
-	let { biz, errors = {}, canModerate = false } = $props();
+	/** @type {{ biz: any, errors?: Record<string,string>, canModerate?: boolean, categories?: Array<{value:string,label:string}> | null }} */
+	let { biz, errors = {}, canModerate = false, categories = null } = $props();
 
-	// קטגוריה ישנה שאינה ברשימה הקנונית — עדיין מוצגת כאופציה כדי לא לאבד אותה
-	const categoryOptions = $derived(
-		biz.category && !CATEGORIES.includes(biz.category) ? [biz.category, ...CATEGORIES] : CATEGORIES
-	);
+	// הרשימה מהשרת כוללת את דריסות הסופר-אדמין (שמות וקטגוריות שנוספו);
+	// בלי פרופ נופלים לרשימה הסטטית. קטגוריה ישנה שאינה ברשימה עדיין
+	// מוצגת כאופציה כדי לא לאבד אותה.
+	const categoryOptions = $derived.by(() => {
+		const base =
+			Array.isArray(categories) && categories.length
+				? categories
+				: CATEGORIES.map((c) => ({ value: c, label: c }));
+		return biz.category && !base.some((o) => o.value === biz.category)
+			? [{ value: biz.category, label: biz.category }, ...base]
+			: base;
+	});
 
 	const banners = $derived(Array.isArray(biz.banners) ? biz.banners : []);
 	// לאוסף אין עמודת email — אימייל הבעלים יושב ב-extra_fields
@@ -56,8 +64,8 @@
 			<label class={LABEL} for="f-category">קטגוריה</label>
 			<select id="f-category" name="category" value={biz.category ?? ''} class={INPUT}>
 				<option value="">— ללא —</option>
-				{#each categoryOptions as c (c)}
-					<option value={c}>{c}</option>
+				{#each categoryOptions as c (c.value)}
+					<option value={c.value}>{c.label}</option>
 				{/each}
 			</select>
 		</div>

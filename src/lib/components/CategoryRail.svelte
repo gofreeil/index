@@ -13,7 +13,7 @@
 	// שמנווט במקלדת עובר בין האריחים בחצים, ב-Home וב-End.
 	// ============================================================
 
-	/** @typedef {{ key: string, label: string, icon: string, count: number }} RailCat */
+	/** @typedef {{ key: string, label: string, icon: string, image?: string, count: number }} RailCat */
 
 	/** @type {{ categories: RailCat[], selected?: string, onselect?: (key: string) => void, title?: string }} */
 	let { categories, selected = '', onselect, title = 'סינון מהיר לפי תחום' } = $props();
@@ -427,7 +427,15 @@
 								aria-label="הצג עסקים בתחום {cat.label} — {cat.count} עסקים"
 							>
 								<span class="cat-count-badge" aria-hidden="true">{cat.count}</span>
-								<span class="cat-ico" aria-hidden="true">{cat.icon}</span>
+								<span class="cat-ico" aria-hidden="true">
+									{#if cat.image}
+										<!-- תמונה שהסופר-אדמין העלה במקום האימוג'י; alt ריק — האריח כולו
+										     כבר מתויג ב-aria-label, ותמונה דקורטיבית לא צריכה שם משלה -->
+										<img class="cat-img" src={cat.image} alt="" loading="lazy" draggable="false" />
+									{:else}
+										{cat.icon}
+									{/if}
+								</span>
 								<span class="cat-label">{cat.label}</span>
 							</button>
 						</span>
@@ -719,6 +727,14 @@
 		font-size: 1.75rem;
 		line-height: 1;
 	}
+	/* תמונת תחום שהועלתה — יושבת בדיוק בתא של האימוג'י, בלי לשנות את מידות האריח */
+	.cat-img {
+		width: 2.4rem;
+		height: 2.4rem;
+		border-radius: 0.6rem;
+		object-fit: cover;
+		box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+	}
 	.cat-label {
 		font-size: 0.72rem;
 		font-weight: 700;
@@ -738,6 +754,11 @@
 		.cat-ico {
 			min-height: 2.75rem;
 			font-size: 2.15rem;
+		}
+		.cat-img {
+			width: 2.9rem;
+			height: 2.9rem;
+			border-radius: 0.7rem;
 		}
 		.cat-label {
 			font-size: 0.8125rem;

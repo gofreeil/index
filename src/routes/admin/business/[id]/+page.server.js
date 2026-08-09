@@ -9,6 +9,7 @@ import {
 	releaseBusinessOwner,
 	listUsersSlim
 } from '$lib/server/strapi.js';
+import { getCategoryOptions } from '$lib/server/categoryStore.js';
 import { parseBusinessForm } from '$lib/server/businessEdit.js';
 import { businessOwnerId, invalidateMatches } from '$lib/server/ownerMatch.js';
 import { createClaim, decideClaim, invalidateClaims } from '$lib/server/claimsStore.js';
@@ -17,15 +18,17 @@ import { invalidatePendingCounts } from '$lib/server/pendingCounts.js';
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ params, locals }) {
 	if (!isPrivileged(locals.user)) throw redirect(302, '/admin');
-	const [biz, users] = await Promise.all([
+	const [biz, users, categoryOptions] = await Promise.all([
 		getBusinessAdmin(params.id),
 		// רשימת המשתמשים לבורר הבעלות. כישלון שלה לא מפיל את מסך העריכה —
 		// פשוט לא תוצג אפשרות לשייך ידנית.
-		listUsersSlim().catch(() => [])
+		listUsersSlim().catch(() => []),
+		getCategoryOptions().catch(() => [])
 	]);
 	if (!biz) throw error(404, 'העסק לא נמצא');
 	return {
 		biz,
+		categoryOptions,
 		superAdmin: isSuperAdmin(locals.user),
 		users: users
 			.map((u) => ({ id: u.id, email: u.email, name: u.name, phone: u.phone }))

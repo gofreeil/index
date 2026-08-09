@@ -394,3 +394,142 @@ export function resolveCategory(b) {
 	}
 	return guessCategory(b) || OTHER;
 }
+
+/** נרמול תווית להשוואה — חשוף למסך ניהול הקטגוריות (ספירה והתאמת כפילויות) */
+export const normCategoryLabel = norm;
+
+// ============================================================
+// דריסות תצוגה של סופר-אדמין (נשמרות ב-configStore בשרת).
+//
+// הרשימה שבקוד נשארת מקור האמת לסיווג ולערכים שנשמרים במאגר — הדריסות
+// חלות על התצוגה בלבד: שם אחר, אימוג'י אחר, תמונה במקום אימוג'י, וסדר
+// מפורש למסילת דף הבית. בנוסף אפשר להוסיף מהמסך קטגוריות חדשות (extras)
+// שאינן בקוד — הן זמינות בטופס ההגשה ונשמרות במאגר לפי שמן.
+//
+// המפתחות יציבים: לקטגוריה מובנית — התווית הקנונית (גם אחרי שינוי שם);
+// לקטגוריה שנוספה מהמסך — מזהה x_... שנוצר פעם אחת. כך שינוי שם לא שובר
+// את הסדר השמור ולא את הרשומות במאגר (שם ישן של extra נשמר כ-alias).
+//
+// הפונקציות כאן טהורות (מקבלות settings כארגומנט) כדי שיעבדו גם בדפדפן —
+// אסור לייבא לכאן מודולי $lib/server.
+// ============================================================
+
+/**
+ * @typedef {Object} CategoryOverride
+ * @property {string} [name]  שם תצוגה שדורס את התווית
+ * @property {string} [icon]  אימוג'י שדורס את ברירת המחדל
+ * @property {string} [image] כתובת תמונה שמחליפה את האימוג'י באריח
+ *
+ * @typedef {Object} CategoryExtra
+ * @property {string} key       מזהה יציב (x_...)
+ * @property {string} name      השם הנוכחי — זה גם הערך שנשמר במאגר
+ * @property {string} [icon]
+ * @property {string} [image]
+ * @property {string[]} [aliases] שמות קודמים — רשומות ישנות ממופות לשם הנוכחי
+ *
+ * @typedef {Object} CategorySettings
+ * @property {string[]} order מפתחות בסדר התצוגה הרצוי; ריק = סדר אוטומטי לפי כמות
+ * @property {Record<string, CategoryOverride>} overrides לפי תווית קנונית
+ * @property {CategoryExtra[]} extras
+ *
+ * @typedef {Object} EffectiveCategory
+ * @property {string} key
+ * @property {string} name
+ * @property {string} icon
+ * @property {string} image
+ * @property {boolean} builtin
+ * @property {string} [defaultName] לקטגוריה מובנית — התווית שבקוד
+ * @property {string} [defaultIcon] לקטגוריה מובנית — האימוג'י שבקוד
+ * @property {string[]} [aliases]   לקטגוריה שנוספה מהמסך
+ */
+
+/**
+ * הרשימה האפקטיבית — הקטגוריות המובנות עם הדריסות + התוספות, בסדר שנקבע.
+ * "אחר" מוצמדת תמיד לסוף, בדיוק כמו במסילת דף הבית.
+ * @param {Partial<CategorySettings> | null | undefined} settings
+ * @returns {EffectiveCategory[]}
+ */
+export function effectiveCategories(settings) {
+	const overrides = settings?.overrides ?? {};
+	const extras = Array.isArray(settings?.extras) ? settings.extras : [];
+
+	/** @type {EffectiveCategory[]} */
+	const list = CATEGORY_DEFS.map((def) => {
+		const o = overrides[def.label] ?? {};
+		return {
+			key: def.label,
+			name: String(o.name || def.label),
+			icon: String(o.icon || def.icon),
+			image: String(o.image || ''),
+			builtin: true,
+			defaultName: def.label,
+			defaultIcon: def.icon
+		};
+	});
+	for (const x of extras) {
+		if (!x?.key || !x?.name) continue;
+		list.push({
+			key: String(x.key),
+			name: String(x.name),
+			icon: String(x.icon || '🏷️'),
+			image: String(x.image || ''),
+			builtin: false,
+			aliases: Array.isArray(x.aliases) ? x.aliases.map(String) : []
+		});
+	}
+
+	const order = Array.isArray(settings?.order) ? settings.order : [];
+	const pos = new Map(order.map((k, i) => [String(k), i]));
+	const natural = new Map(list.map((c, i) => [c.key, i]));
+	list.sort((a, b) => {
+		const lastA = a.key === OTHER ? 1 : 0;
+		const lastB = b.key === OTHER ? 1 : 0;
+		if (lastA !== lastB) return lastA - lastB;
+		const pa = pos.has(a.key) ? /** @type {number} */ (pos.get(a.key)) : Infinity;
+		const pb = pos.has(b.key) ? /** @type {number} */ (pos.get(b.key)) : Infinity;
+		if (pa !== pb) return pa - pb;
+		return (natural.get(a.key) ?? 0) - (natural.get(b.key) ?? 0);
+	});
+	return list;
+}
+
+/**
+ * ממיר תווית קנונית (או חופשית) לשם התצוגה שלה: דריסת שם של קטגוריה
+ * מובנית, או השם הנוכחי של extra (כולל שמות קודמים). תווית לא מוכרת
+ * חוזרת כמו שהיא.
+ * @param {Partial<CategorySettings> | null | undefined} settings
+ * @returns {(label: string) => string}
+ */
+export function categoryDisplayResolver(settings) {
+	/** @type {Map<string, string>} */
+	const byNorm = new Map();
+	for (const c of effectiveCategories(settings)) {
+		if (c.builtin) {
+			byNorm.set(norm(c.key), c.name);
+		} else {
+			byNorm.set(norm(c.name), c.name);
+			for (const a of c.aliases ?? []) byNorm.set(norm(a), c.name);
+		}
+	}
+	return (label) => byNorm.get(norm(label)) ?? label;
+}
+
+/**
+ * המידע שמסילת דף הבית צריכה, ממופתח לפי שם תצוגה (כי זה מה שיושב על
+ * הכרטיסיות אחרי ההמרה): אייקון/תמונה לכל תחום, הסדר המפורש (ריק אם
+ * הסופר-אדמין לא קבע סדר — ואז נשאר המיון לפי כמות), והשם הנוכחי של
+ * "אחר" כדי שיישאר מוצמד לסוף גם אם שונה שמו.
+ * @param {Partial<CategorySettings> | null | undefined} settings
+ */
+export function categoryRailMeta(settings) {
+	const list = effectiveCategories(settings);
+	/** @type {Record<string, { icon: string, image: string }>} */
+	const byName = {};
+	for (const c of list) byName[c.name] = { icon: c.icon, image: c.image };
+	const hasOrder = Array.isArray(settings?.order) && settings.order.length > 0;
+	return {
+		byName,
+		order: hasOrder ? list.map((c) => c.name) : /** @type {string[]} */ ([]),
+		otherName: list.find((c) => c.key === OTHER)?.name ?? OTHER
+	};
+}

@@ -188,7 +188,12 @@
 		}}
 		class="space-y-6"
 	>
-		<BusinessFormFields {biz} errors={form?.errors ?? {}} canModerate />
+		<BusinessFormFields
+			{biz}
+			errors={form?.errors ?? {}}
+			canModerate
+			categories={data.categoryOptions}
+		/>
 
 		<div class="flex items-center gap-3">
 			<button
