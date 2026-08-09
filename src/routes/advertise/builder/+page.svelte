@@ -814,6 +814,10 @@
     async function goToLandingEditor() {
         if (movingToLanding || !canLeaveToLanding) return;
         movingToLanding = true;
+        // מעבר מכוון לעורך דף הנחיתה - לא "יציאה מהאתר". הטיוטה כבר נשמרה
+        // ב-localStorage והעורך הבא קורא בדיוק אותה, ולכן אזהרת beforeunload
+        // כאן הייתה התראת שווא שהבהילה מפרסמים באמצע התהליך.
+        formDirty = false;
         await goto("/advertise/builder/landing");
     }
 
@@ -1287,10 +1291,12 @@
                         <br /><strong class="amber-strong">זה המקום למכור:</strong> מה מקבלים, למה דווקא אתם (עד 90 תווים).
                     </p>
 
+                    <!-- rows=3 - 90 תווים בשתי שורות + שורה שלישית פנויה, כדי שאפשר יהיה
+                         לרדת שורה ולראות את סוף המשפט בלי גלילה בתוך התיבה -->
                     <textarea
                         bind:value={hoverText}
                         maxlength="90"
-                        rows="2"
+                        rows="3"
                         onfocus={() => activeStep === "hover" || (activeStep = "hover")}
                         onblur={() => hoverText.trim() && commitField("hover")}
                         placeholder="למשל: 20% הנחה לחברי הקבוצה על כל התפריט!"
@@ -2616,9 +2622,11 @@
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
     }
     .popup-logo-above.circle { border-radius: 50%; }
+    /* יחס ולא פיקסלים: גובה קבוע של 130px הראה חיתוך אחר ממה שהגולש
+       מקבל בפועל במשבצת הרחבה-ונמוכה של הנייד */
     .popup-img {
         position: relative;
-        height: 130px;
+        aspect-ratio: 384 / 176;
     }
     .popup-img > img {
         width: 100%;
@@ -2870,6 +2878,9 @@
         line-height: 1.4;
         margin: 0;
         font-weight: 700;
+        /* pre-line - ירידות שורה שהמפרסם הקליד בשלב 6 נשמרות בתצוגה
+           המקדימה (בלי זה HTML מכווץ כל \n לרווח והמשפט נשפך לשורה אחת) */
+        white-space: pre-line;
     }
     .promo-cta {
         padding: 0.65rem;

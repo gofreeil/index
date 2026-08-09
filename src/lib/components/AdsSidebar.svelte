@@ -107,8 +107,10 @@
 				<div class="group/cta relative bg-gradient-to-r {ad.color} p-3 text-center">
 					<p class="text-xs leading-tight font-bold text-white">{ad.cta}</p>
 					{#if ad.hover}
+						<!-- pre-line + w-max: משפט בשורה אחת נשאר בשורה אחת, אבל ירידות
+						     שורה שהמפרסם הקליד נשמרות, וטקסט ארוך נגמר ב-max-w -->
 						<span
-							class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 hidden -translate-x-1/2 rounded-lg border border-white/10 bg-gray-900 px-3 py-1.5 text-xs font-bold whitespace-nowrap text-white shadow-xl group-hover/cta:block"
+							class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 hidden w-max max-w-[15rem] -translate-x-1/2 rounded-lg border border-white/10 bg-gray-900 px-3 py-1.5 text-center text-xs font-bold whitespace-pre-line text-white shadow-xl group-hover/cta:block"
 						>
 							{ad.hover}
 						</span>

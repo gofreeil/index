@@ -128,17 +128,18 @@
 	<title>{t.myArea} - {t.title}</title>
 </svelte:head>
 
-<div class="mx-auto flex min-h-[70vh] max-w-3xl flex-col gap-6 px-4 py-12">
-	<!-- כרטיס הזהות -->
+<div class="mx-auto flex min-h-[70vh] max-w-3xl flex-col gap-4 px-4 py-6">
+	<!-- כרטיס הזהות — שורת זהות אחת (אווטאר, שם, אימייל, התנתקות), ומתחתיה
+	     הטלפון והקיצורים. הכל דחוס: זהו כרטיס פרטים, לא באנר. -->
 	<div
-		class="mx-auto w-full max-w-lg rounded-2xl border border-gray-100 bg-white p-8 shadow-xl dark:border-gray-700 dark:bg-gray-800"
+		class="mx-auto w-full max-w-lg rounded-2xl border border-gray-100 bg-white p-4 shadow-xl dark:border-gray-700 dark:bg-gray-800"
 	>
-		<!-- אווטאר + שם. כשיש פריטים שממתינים לטיפול (אדמין) — בועה אדומה
-		     ממוספרת בפינה, אותו מספר שמופיע על האווטאר בהאדר. -->
-		<div class="flex flex-col items-center gap-3 text-center">
-			<div class="relative h-20 w-20">
+		<!-- אווטאר + שם + אימייל בשורה אחת. כשיש פריטים שממתינים לטיפול (אדמין)
+		     — בועה אדומה ממוספרת בפינה, אותו מספר שמופיע על האווטאר בהאדר. -->
+		<div class="flex items-center gap-3">
+			<div class="relative h-12 w-12 flex-shrink-0">
 				<div
-					class="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-2xl font-bold text-white shadow-lg"
+					class="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-lg font-bold text-white shadow-md"
 					aria-hidden="true"
 				>
 					{initial}
@@ -146,46 +147,40 @@
 				{#if alertTotal > 0}
 					<a
 						href={alertAnchor}
-						class="absolute -top-1 -left-1 flex h-7 min-w-7 items-center justify-center rounded-full bg-red-600 px-1.5 text-xs leading-none font-black text-white shadow-lg ring-4 ring-white transition hover:bg-red-500 dark:ring-gray-800"
+						class="absolute -top-1.5 -left-1.5 flex h-6 min-w-6 items-center justify-center rounded-full bg-red-600 px-1.5 text-[11px] leading-none font-black text-white shadow-lg ring-2 ring-white transition hover:bg-red-500 dark:ring-gray-800"
 						title="{alertTotal} פריטים ממתינים לטיפול"
 					>
 						<span class="sr-only">פריטים ממתינים לטיפול: </span>{alertTotal}
 					</a>
 				{/if}
 			</div>
-			<div>
-				<p class="text-sm text-gray-500 dark:text-gray-400">{t.profileHello},</p>
-				<h1 class="text-2xl font-extrabold text-gray-900 dark:text-gray-100">{user?.name}</h1>
+			<div class="min-w-0 flex-1">
+				<h1 class="truncate text-lg font-extrabold text-gray-900 dark:text-gray-100">
+					{user?.name}
+				</h1>
+				<p class="truncate text-xs text-gray-500 dark:text-gray-400" dir="ltr">{user?.email}</p>
 			</div>
-		</div>
-
-		<!-- פרטים -->
-		<dl class="mt-8">
-			<div
-				class="flex items-center justify-between rounded-lg bg-gray-50 px-4 py-3 dark:bg-gray-700/40"
+			<button
+				type="button"
+				onclick={logout}
+				class="flex-shrink-0 rounded-full border border-red-200 px-3 py-1.5 text-xs font-bold text-red-600 transition hover:bg-red-50 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-950/40"
 			>
-				<dt class="text-sm font-medium text-gray-500 dark:text-gray-400">{t.email}</dt>
-				<dd class="text-sm font-bold text-gray-900 dark:text-gray-100" dir="ltr">{user?.email}</dd>
-			</div>
-		</dl>
+				{t.logout}
+			</button>
+		</div>
 
 		<!-- הטלפון שלי — שני מפתחות הזיהוי של בעל כרטיסייה הם האימייל והטלפון.
 		     האימייל מגיע מההרשמה; את הטלפון המשתמש מוסיף כאן, וברגע שהוא נשמר
 		     המערכת מחפשת כרטיסיות תואמות. אין אימות SMS, ולכן המספר רק *מציע*
 		     התאמה — הבעלות עצמה ניתנת באישור אדמין. -->
-		<form
-			method="POST"
-			action="?/savePhone"
-			use:enhance
-			class="mt-3 rounded-lg bg-gray-50 px-4 py-3 dark:bg-gray-700/40"
-		>
-			<label
-				for="my-phone"
-				class="mb-1.5 block text-sm font-medium text-gray-500 dark:text-gray-400"
-			>
-				{t.myPhone}
-			</label>
+		<form method="POST" action="?/savePhone" use:enhance class="mt-3">
 			<div class="flex items-center gap-2">
+				<label
+					for="my-phone"
+					class="flex-shrink-0 text-xs font-medium text-gray-500 dark:text-gray-400"
+				>
+					{t.myPhone}
+				</label>
 				<input
 					id="my-phone"
 					name="phone"
@@ -193,15 +188,15 @@
 					dir="ltr"
 					value={data.myPhone ?? ''}
 					placeholder={t.myPhonePlaceholder}
-					class="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-bold text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+					class="min-w-0 flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm font-bold text-gray-900 dark:border-gray-600 dark:bg-gray-700/40 dark:text-gray-100"
 				/>
 				<button
-					class="flex-shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-blue-700"
+					class="flex-shrink-0 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-blue-700"
 				>
 					{t.myPhoneSave}
 				</button>
 			</div>
-			<p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">{t.myPhoneHint}</p>
+			<p class="mt-1 text-[11px] leading-tight text-gray-400 dark:text-gray-500">{t.myPhoneHint}</p>
 			{#if form?.phoneSaved}
 				<p class="mt-1 text-xs font-bold text-green-600 dark:text-green-400">✓ {t.myPhoneSaved}</p>
 			{/if}
@@ -211,29 +206,20 @@
 		</form>
 
 		<!-- קיצורים -->
-		<div class="mt-6 grid grid-cols-2 gap-3">
+		<div class="mt-3 grid grid-cols-2 gap-2">
 			<a
 				href="/submit-business"
-				class="flex items-center justify-center gap-1 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2.5 text-sm font-bold text-white shadow-md transition hover:scale-[1.02] active:scale-95"
+				class="flex items-center justify-center gap-1 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 text-sm font-bold text-white shadow-md transition hover:scale-[1.02] active:scale-95"
 			>
 				{t.addStore}
 			</a>
 			<a
 				href="/"
-				class="flex items-center justify-center rounded-full border border-gray-200 bg-white px-4 py-2.5 text-sm font-bold text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+				class="flex items-center justify-center rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
 			>
 				{t.backToDirectory}
 			</a>
 		</div>
-
-		<!-- התנתקות -->
-		<button
-			type="button"
-			onclick={logout}
-			class="mt-6 flex w-full items-center justify-center gap-2 rounded-full border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-bold text-red-600 transition hover:bg-red-100 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400 dark:hover:bg-red-950/50"
-		>
-			{t.logout}
-		</button>
 	</div>
 
 	<!-- כרטיסיות שנראות שלך — הכרטיסיות שהוזרמו בייבוא נוצרו בלי בעלים,
