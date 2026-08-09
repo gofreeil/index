@@ -14,6 +14,14 @@
 	let markersLayer;
 	/** @type {any} */
 	let L;
+	/** @type {any} */
+	let pinIcon;
+
+	// האייקון הדיפולטי של Leaflet מושך קובצי PNG מ-leaflet/dist/images לפי נתיב
+	// שהוא מנחש מה-CSS — נתיב ש-Vite לא מגיש, ולכן במקום פינים הופיעו ריבועי
+	// "תמונה שבורה". פין SVG inline מבטל את התלות: אפס בקשות רשת, חד בכל צפיפות
+	// מסך, ובצבע של הכפתור בפופאפ.
+	const PIN_SVG = `<svg viewBox="0 0 24 34" width="22" height="31" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 .9C6 .9 1.1 5.8 1.1 11.8c0 8.3 9.9 20.4 10.3 20.9a.8.8 0 0 0 1.2 0c.4-.5 10.3-12.6 10.3-20.9C22.9 5.8 18 .9 12 .9Z" fill="#2563eb" stroke="#fff" stroke-width="1.7"/><circle cx="12" cy="11.9" r="4.1" fill="#fff"/></svg>`;
 
 	// רק עסקים עם קואורדינטות אמיתיות (lat/lng) מקבלים פין. עסקים ארציים/אונליין
 	// בלי מיקום — לא מוצגים על המפה (סוף הפינים המזויפים מ-Math.random).
@@ -26,7 +34,9 @@
 		markersLayer.clearLayers();
 		const bounds = [];
 		for (const b of mapped) {
-			const marker = L.marker([b.lat, b.lng]).addTo(markersLayer);
+			const marker = L.marker([b.lat, b.lng], { icon: pinIcon, riseOnHover: true }).addTo(
+				markersLayer
+			);
 
 			// popup נבנה מ-DOM nodes עם textContent — לא string concat (חסין XSS).
 			const box = document.createElement('div');
@@ -71,6 +81,16 @@
 	onMount(() => {
 		(async () => {
 			L = (await import('leaflet')).default;
+			// iconAnchor בקצה התחתון של הפין — כך החוד יושב בדיוק על הקואורדינטה;
+			// ה-anchors השליליים מרימים את הפופאפ והתיאור אל מעל ראש הפין.
+			pinIcon = L.divIcon({
+				html: PIN_SVG,
+				className: 'biz-pin',
+				iconSize: [22, 31],
+				iconAnchor: [11, 31],
+				popupAnchor: [0, -30],
+				tooltipAnchor: [0, -30]
+			});
 			map = L.map(mapEl, { scrollWheelZoom: false }).setView([31.5, 35.0], 8);
 			L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 				attribution: '&copy; OpenStreetMap',
@@ -106,5 +126,12 @@
 <style>
 	:global(.leaflet-popup-content) {
 		margin: 10px 12px;
+	}
+
+	/* בלי איפוס מפורש, .leaflet-div-icon היה מצייר ריבוע לבן עם מסגרת מאחורי ה-SVG */
+	:global(.biz-pin) {
+		background: none;
+		border: none;
+		filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.45));
 	}
 </style>
