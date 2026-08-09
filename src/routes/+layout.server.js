@@ -1,5 +1,5 @@
 import { env } from '$env/dynamic/private';
-import { listApprovedLive } from '$lib/server/adsStore.js';
+import { listApprovedLive, computeAdSlots } from '$lib/server/adsStore.js';
 import { isPrivileged, isSuperAdmin } from '$lib/server/strapi.js';
 import { getPendingCounts, noPendingCounts } from '$lib/server/pendingCounts.js';
 import { countMatchesForUser } from '$lib/server/ownerMatch.js';
@@ -27,6 +27,9 @@ export async function load({ locals }) {
 		user ? countMatchesForUser(user).catch(() => 0) : Promise.resolve(0)
 	]);
 
+	// מספר המקום (1..12) קובע גם את סדר הפרסומות וגם אילו משבצות פנויות
+	// מוצגות סביבן — נקבע במסך הניהול ומחושב כאן פעם אחת לכל הרשימה.
+	const liveSlots = computeAdSlots(ads);
 	const approvedAds = ads.map((a) => ({
 		id: a.id,
 		title: a.title,
@@ -40,7 +43,9 @@ export async function load({ locals }) {
 		mainImage: a.mainImage,
 		// מיקום+זום שנבחרו בבילדר — מוחלים בתצוגת הסרגל (adImgFit)
 		mainImageFit: a.mainImageFit,
-		adStyle: a.adStyle
+		adStyle: a.adStyle,
+		// מספר המקום בטור (1..12) — נקבע במסך הניהול
+		slot: liveSlots.get(a.id)
 	}));
 
 	return {

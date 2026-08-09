@@ -16,6 +16,8 @@ import {
 	listSchedules,
 	listAdvertisers,
 	moveApprovedAd,
+	setAdSlot,
+	computeAdSlots,
 	setAdDuration,
 	normalizeDurationDays,
 	pauseAd,
@@ -64,11 +66,15 @@ export async function load({ locals }) {
 		);
 	}
 
+	// מספר המקום של כל מאושרת בטור (1..12) — לכותרת הכרטיס בטאב "פורסמו"
+	const approvedRaw = approvedRes.status === 'fulfilled' ? approvedRes.value : [];
+	const slotMap = computeAdSlots(approvedRaw);
+
 	return {
 		user,
 		superAdmin: isSuperAdmin(user),
 		pending: pendingRes.status === 'fulfilled' ? pendingRes.value : [],
-		approved: approvedRes.status === 'fulfilled' ? approvedRes.value : [],
+		approved: approvedRaw.map((a) => ({ ...a, slot: slotMap.get(a.id) })),
 		stats: statsRes.status === 'fulfilled' ? statsRes.value : emptyStats,
 		schedules: schedulesRes.status === 'fulfilled' ? schedulesRes.value : [],
 		advertisers: advertisersRes.status === 'fulfilled' ? advertisersRes.value : [],
@@ -243,6 +249,28 @@ export const actions = {
 		} catch (e) {
 			return fail(502, {
 				error: 'החלפת המקום נכשלה: ' + (e instanceof Error ? e.message.slice(0, 160) : '')
+			});
+		}
+	},
+
+	// הצבת פרסומת במקום מספרי בטור (1..12); מקום תפוס — השתיים מתחלפות
+	setSlot: async ({ request, locals }) => {
+		requireAdmin(locals);
+		const formData = await request.formData();
+		const id = String(formData.get('id') || '');
+		if (!id) return fail(400, { error: 'חסר מזהה' });
+		try {
+			const r = await setAdSlot(id, Number(formData.get('slot')));
+			if (!r) return fail(404, { error: 'הפרסומת לא נמצאה' });
+			return {
+				success: true,
+				message: r.swappedTitle
+					? `"${r.title}" עברה למקום ${r.slot}, ו"${r.swappedTitle}" עברה למקום ${r.swappedSlot}`
+					: `"${r.title}" עברה למקום ${r.slot}`
+			};
+		} catch (e) {
+			return fail(502, {
+				error: 'העברת המקום נכשלה: ' + (e instanceof Error ? e.message.slice(0, 160) : '')
 			});
 		}
 	},

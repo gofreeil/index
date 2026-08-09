@@ -6,6 +6,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { adImgFit, parseAdImageFit } from '$lib/adImageFit';
+	import { AD_SLOT_COUNT } from '$lib/adSlots.js';
 
 	/** @type {{ data: any, form: any }} */
 	let { data, form } = $props();
@@ -20,6 +21,14 @@
 	const canReorder = $derived(sortOrder === 'display' && !searchQuery.trim());
 	// תקופות הפרסום שאפשר לקצוב מטבלת התזמון (נספרות מיום הפרסום)
 	const DURATION_OPTIONS = [7, 14, 30, 60, 90, 180, 365];
+	// 12 המקומות הממוספרים בטור הפרסומות — בורר המקום בטבלת התזמון
+	const SLOT_NUMBERS = Array.from({ length: AD_SLOT_COUNT }, (_, i) => i + 1);
+
+	/** מספר המקום של פרסומת מאושרת; לממתינות/נדחות אין מקום
+	 *  @param {any} ad @param {number} fallback */
+	function slotOf(ad, fallback) {
+		return typeof ad?.slot === 'number' ? ad.slot : fallback;
+	}
 
 	// בחירה רב-פריטית (SvelteSet — ריאקטיבי לשינויים במקום)
 	const selected = new SvelteSet();
@@ -370,10 +379,10 @@
 							<span
 								class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-emerald-500/40 bg-emerald-500/20 text-sm font-black text-emerald-200"
 							>
-								{adIndex + 1}
+								{slotOf(ad, adIndex + 1)}
 							</span>
 							<span class="text-[11px] font-bold text-gray-400 md:text-xs">
-								מקום {adIndex + 1} מתוך {visibleList.length} בטור הפרסומות
+								מקום {slotOf(ad, adIndex + 1)} מתוך {AD_SLOT_COUNT} בטור הפרסומות
 							</span>
 							{#if canReorder}
 								<div class="mr-auto flex items-center gap-1.5">
@@ -786,6 +795,7 @@
 				<table class="w-full text-sm" dir="rtl">
 					<thead class="bg-white/5">
 						<tr class="text-[11px] tracking-wide text-gray-400 uppercase md:text-xs">
+							<th class="px-2 py-2.5 text-right font-bold">מקום</th>
 							<th class="px-3 py-2.5 text-right font-bold">פרסומת</th>
 							<th class="hidden px-3 py-2.5 text-right font-bold md:table-cell">מפרסם</th>
 							<th class="px-3 py-2.5 text-right font-bold">פורסם</th>
@@ -830,7 +840,48 @@
 							{@const durOptions = DURATION_OPTIONS.includes(s.durationDays)
 								? DURATION_OPTIONS
 								: [...DURATION_OPTIONS, s.durationDays].sort((a, b) => a - b)}
+							<!-- מקום מעל 12 (גלישה) מתווסף לבורר כדי שלא ייעלם -->
+							{@const slotOptions =
+								s.slot && !SLOT_NUMBERS.includes(s.slot)
+									? [...SLOT_NUMBERS, s.slot].sort((a, b) => a - b)
+									: SLOT_NUMBERS}
 							<tr class="border-t border-white/10 hover:bg-white/5">
+								<!-- מספר המקום בטור + העברה ישירה למקום אחר (מקום תפוס - מתחלפות).
+								     פריסה אנכית צרה - כדי שכל הטבלה תיכנס ברוחב המסך בלי גלילה -->
+								<td class="px-2 py-2">
+									<form
+										method="POST"
+										action="?/setSlot"
+										use:enhance
+										class="flex flex-col items-start gap-1"
+									>
+										<input type="hidden" name="id" value={s.id} />
+										<div class="flex items-center gap-1">
+											<span
+												class="inline-flex h-6 min-w-6 items-center justify-center rounded-lg border border-emerald-500/40 bg-emerald-500/20 px-1 text-xs font-black text-emerald-200"
+											>
+												{s.slot ?? '-'}
+											</span>
+											<select
+												name="slot"
+												class="rounded-lg border border-white/15 bg-black/40 px-1.5 py-1 text-[11px] text-white focus:border-amber-400/50 focus:outline-none"
+											>
+												{#each slotOptions as n (n)}
+													<option value={n} selected={n === s.slot} style="background:#fff;color:#111">
+														{n}
+													</option>
+												{/each}
+											</select>
+										</div>
+										<button
+											type="submit"
+											class="rounded-lg border border-purple-500/40 bg-purple-500/20 px-2 py-1 text-[11px] font-black whitespace-nowrap text-purple-200 hover:bg-purple-500/30"
+											title="העבר למקום שנבחר; אם המקום תפוס - שתי הפרסומות מתחלפות"
+										>
+											⇄ העבר
+										</button>
+									</form>
+								</td>
 								<td class="max-w-[180px] truncate px-3 py-2 font-bold text-white">{s.title}</td>
 								<td class="hidden px-3 py-2 text-gray-300 md:table-cell">
 									<div class="max-w-[160px] truncate">{s.advertiserName || '-'}</div>
