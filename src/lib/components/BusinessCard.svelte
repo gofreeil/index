@@ -20,11 +20,11 @@
 </script>
 
 <div
-	class="group relative flex w-[calc(50%-8px)] flex-col overflow-hidden rounded-xl border border-gray-700/60 bg-gray-800/50 transition-colors duration-200 hover:border-gray-500 sm:w-auto"
+	class="group relative flex w-[calc(50%-8px)] flex-col overflow-hidden rounded-xl border border-blue-800/60 bg-blue-950 transition-colors duration-200 hover:border-blue-500 sm:w-auto"
 >
 	<button
 		onclick={toggleFavorite}
-		class="absolute top-2 left-2 z-30 rounded-full bg-gray-900/30 p-1.5 backdrop-blur-sm transition hover:bg-gray-900/60"
+		class="absolute top-2 left-2 z-30 rounded-full bg-black/30 p-1.5 backdrop-blur-sm transition hover:bg-black/60"
 		aria-label={isFavorite ? t.removeFromFavorites : t.saveToFavorites}
 	>
 		<svg
@@ -47,7 +47,7 @@
 	<a href="/business/{business.id}" class="flex flex-1 flex-col">
 		<!-- אזור המדיה: משטח שטוח בלי גרדיאנט צבעוני. כשאין לוגו — מונוגרם
 		     שקט במקום ריבוע ריק. -->
-		<div class="relative h-24 w-full overflow-hidden bg-gray-900/40 sm:h-40">
+		<div class="relative h-24 w-full overflow-hidden bg-black/25 sm:h-40">
 			{#if business.banner}
 				<img
 					src={business.banner}
@@ -67,7 +67,7 @@
 				/>
 			{:else}
 				<span
-					class="absolute inset-0 z-10 flex items-center justify-center text-2xl font-bold text-gray-600 sm:text-4xl"
+					class="absolute inset-0 z-10 flex items-center justify-center text-2xl font-bold text-blue-300/40 sm:text-4xl"
 					aria-hidden="true"
 				>
 					{(business.name || '').trim().charAt(0)}
@@ -81,7 +81,7 @@
 			>
 				{business.name}
 			</h3>
-			<p class="mt-0.5 line-clamp-1 text-[10px] text-gray-500 sm:text-xs">
+			<p class="mt-0.5 line-clamp-1 text-[10px] text-gray-400 sm:text-xs">
 				{business.category}
 			</p>
 
@@ -92,7 +92,7 @@
 			{/if}
 
 			<div
-				class="mt-auto flex items-center gap-1.5 pt-2 text-[10px] text-gray-500 sm:pt-3 sm:text-xs"
+				class="mt-auto flex items-center gap-1.5 pt-2 text-[10px] text-gray-400 sm:pt-3 sm:text-xs"
 			>
 				<svg
 					class="h-3 w-3 flex-shrink-0 sm:h-3.5 sm:w-3.5"
