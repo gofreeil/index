@@ -24,7 +24,12 @@ export async function POST({ request, cookies }) {
 		} catch (err) {
 			const msg = String(/** @type {any} */ (err)?.message || '');
 			// אימייל/שם משתמש כבר תפוס
-			if (msg.includes('taken') || msg.includes('already') || msg.includes('409') || msg.includes('400')) {
+			if (
+				msg.includes('taken') ||
+				msg.includes('already') ||
+				msg.includes('409') ||
+				msg.includes('400')
+			) {
 				return json({ success: false, error: 'משתמש עם אימייל זה כבר קיים' }, { status: 400 });
 			}
 			throw err;

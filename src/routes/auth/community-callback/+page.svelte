@@ -32,7 +32,9 @@
 </svelte:head>
 
 <div class="flex min-h-[80vh] items-center justify-center px-4 py-12" dir="rtl">
-	<div class="w-full max-w-md rounded-2xl border border-gray-100 bg-white p-8 text-center shadow-xl dark:border-gray-700 dark:bg-gray-800">
+	<div
+		class="w-full max-w-md rounded-2xl border border-gray-100 bg-white p-8 text-center shadow-xl dark:border-gray-700 dark:bg-gray-800"
+	>
 		{#if phase === 'working'}
 			<div class="mb-4 text-5xl">🕊️</div>
 			<h1 class="mb-2 text-2xl font-black text-gray-900 dark:text-white">מזהה אותך...</h1>
@@ -41,13 +43,19 @@
 			<div class="mb-4 text-5xl">🔒</div>
 			<h1 class="mb-2 text-2xl font-black text-yellow-500">עדיין אין לכם חשבון</h1>
 			<p class="mb-6 text-sm leading-relaxed text-gray-500 dark:text-gray-400">
-				לא מצאנו אתכם ברשימת המשתמשים של יוצאים לחירות. ההרשמה לוקחת דקה, ומשם אתם מזוהים בכל אתרי הרשת — בלי להירשם שוב.
+				לא מצאנו אתכם ברשימת המשתמשים של יוצאים לחירות. ההרשמה לוקחת דקה, ומשם אתם מזוהים בכל אתרי
+				הרשת — בלי להירשם שוב.
 			</p>
 			<div class="flex flex-col gap-2.5">
-				<a href="/auth/register" class="w-full rounded-xl bg-blue-600 py-3 font-black text-white transition-opacity hover:opacity-90">
+				<a
+					href="/auth/register"
+					class="w-full rounded-xl bg-blue-600 py-3 font-black text-white transition-opacity hover:opacity-90"
+				>
 					✨ הרשמה לאתר
 				</a>
-				<a href="/auth/login" class="mt-1 text-sm text-gray-400 underline hover:text-gray-600">חזרה להתחברות</a>
+				<a href="/auth/login" class="mt-1 text-sm text-gray-400 underline hover:text-gray-600"
+					>חזרה להתחברות</a
+				>
 			</div>
 		{/if}
 	</div>

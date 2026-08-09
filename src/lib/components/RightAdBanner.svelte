@@ -177,9 +177,9 @@
 		}
 	];
 
-	const VIEW_MS = 14000;   // כמה זמן כל קבוצה נשארת על המסך (החלפה איטית)
-	const FADE_MS = 900;     // אורך הדעיכה בין קבוצה לקבוצה — חייב להתאים ל-CSS
-	const PER_GROUP = 4;     // כמה מקומות (פרסומות ופנויים) נראים בו-זמנית
+	const VIEW_MS = 14000; // כמה זמן כל קבוצה נשארת על המסך (החלפה איטית)
+	const FADE_MS = 900; // אורך הדעיכה בין קבוצה לקבוצה — חייב להתאים ל-CSS
+	const PER_GROUP = 4; // כמה מקומות (פרסומות ופנויים) נראים בו-זמנית
 
 	/** @typedef {{ num: number, ad?: ApprovedAd, tpl?: PlaceholderAd }} BoardCell */
 
@@ -267,7 +267,7 @@
 	     כל הכרטיסים מתחלפים בסבב כרגיל - פרסומות ומשבצות פנויות יחד:
 	     פרסומת שנקבעה למקום 5 מופיעה עם קבוצת 5-8, בין 6 ל-8, וסך
 	     המקומות הוא 12 בדיוק. הקישור תמיד לדף הנחיתה הפנימי /ads/<id>. -->
-	<div class="space-y-3 ads-track" class:fading>
+	<div class="ads-track space-y-3" class:fading>
 		{#each displayed as cell (cell.num)}
 			{#if cell.ad}
 				{@const ad = cell.ad}
@@ -283,7 +283,7 @@
 					use:adSeen={ad.id}
 					onclick={() => trackAdClick(ad.id)}
 				>
-					<div class="relative w-full overflow-hidden aspect-[144/450]">
+					<div class="relative aspect-[144/450] w-full overflow-hidden">
 						<div class="absolute inset-0 overflow-hidden">
 							<img
 								src={ad.mainImage}
@@ -369,7 +369,7 @@
 
 						<div class="pointer-events-none absolute inset-0 flex items-center justify-center">
 							<div
-								class="flex -rotate-90 transform items-center gap-3 whitespace-nowrap origin-center"
+								class="flex origin-center -rotate-90 transform items-center gap-3 whitespace-nowrap"
 							>
 								<span
 									class="text-2xl font-black {ad.textColor} {ad.hoverText} tracking-wider drop-shadow-sm"

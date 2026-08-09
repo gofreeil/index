@@ -50,7 +50,8 @@
 			<div class="mb-4 text-6xl">🕊️</div>
 			<h1 class="mb-3 text-2xl font-black text-green-400">הדיווח התקבל</h1>
 			<p class="mx-auto mb-8 max-w-md leading-relaxed text-gray-300">
-				תודה. הדיווח יטופל בדיסקרטיות על-ידי צוות האינדקס. שמירה על מרחב עסקי הוגן היא באחריות כולנו.
+				תודה. הדיווח יטופל בדיסקרטיות על-ידי צוות האינדקס. שמירה על מרחב עסקי הוגן היא באחריות
+				כולנו.
 			</p>
 			<a
 				href="/"
@@ -67,16 +68,23 @@
 		</div>
 
 		{#if form?.error}
-			<div class="mb-6 rounded-xl border border-red-500/30 bg-red-900/20 p-4 text-center text-red-300">
+			<div
+				class="mb-6 rounded-xl border border-red-500/30 bg-red-900/20 p-4 text-center text-red-300"
+			>
 				{form.error}
 			</div>
 		{/if}
 
 		{#if draftRestored}
-			<div class="mb-5 flex flex-wrap items-center gap-3 rounded-xl border border-green-500/30 bg-green-900/20 px-4 py-3 text-sm text-green-200">
+			<div
+				class="mb-5 flex flex-wrap items-center gap-3 rounded-xl border border-green-500/30 bg-green-900/20 px-4 py-3 text-sm text-green-200"
+			>
 				<span class="font-bold">💾 שחזרנו את מה שמילאת קודם — הטופס ממשיך מהמקום שעצרת.</span>
-				<button type="button" onclick={discardDraft}
-					class="rounded-full border border-green-500/40 bg-green-900/40 px-3 py-1 text-xs font-bold text-green-100 transition hover:bg-green-800/50">
+				<button
+					type="button"
+					onclick={discardDraft}
+					class="rounded-full border border-green-500/40 bg-green-900/40 px-3 py-1 text-xs font-bold text-green-100 transition hover:bg-green-800/50"
+				>
 					התחל מטופס ריק
 				</button>
 			</div>
@@ -85,7 +93,11 @@
 		<form
 			bind:this={formEl}
 			method="POST"
-			use:formDraft={{ key: DRAFT_KEY, exclude: DRAFT_EXCLUDE, onRestore: () => (draftRestored = true) }}
+			use:formDraft={{
+				key: DRAFT_KEY,
+				exclude: DRAFT_EXCLUDE,
+				onRestore: () => (draftRestored = true)
+			}}
 			use:enhance={() => {
 				submitting = true;
 				return async ({ result, update }) => {
@@ -110,12 +122,20 @@
 				<label for="business_name" class="mb-1 block text-sm font-medium text-gray-300"
 					>שם העסק המדווח *</label
 				>
-				<input id="business_name" name="business_name" required defaultValue={v.business_name ?? ''} class="field" />
+				<input
+					id="business_name"
+					name="business_name"
+					required
+					defaultValue={v.business_name ?? ''}
+					class="field"
+				/>
 				{#if errors.business_name}<p class="err">{errors.business_name}</p>{/if}
 			</div>
 
 			<div>
-				<label for="reason" class="mb-1 block text-sm font-medium text-gray-300">סיבת הדיווח *</label>
+				<label for="reason" class="mb-1 block text-sm font-medium text-gray-300"
+					>סיבת הדיווח *</label
+				>
 				<select id="reason" name="reason" required class="field">
 					<option value="" disabled selected={!v.reason}>בחרו…</option>
 					{#each REASONS as r}
@@ -127,7 +147,9 @@
 
 			<div>
 				<label for="details" class="mb-1 block text-sm font-medium text-gray-300">פירוט *</label>
-				<textarea id="details" name="details" required rows="4" class="field">{v.details ?? ''}</textarea>
+				<textarea id="details" name="details" required rows="4" class="field"
+					>{v.details ?? ''}</textarea
+				>
 				{#if errors.details}<p class="err">{errors.details}</p>{/if}
 			</div>
 
@@ -136,13 +158,23 @@
 					<label for="reporter_name" class="mb-1 block text-sm font-medium text-gray-300"
 						>שמך (לא חובה)</label
 					>
-					<input id="reporter_name" name="reporter_name" defaultValue={v.reporter_name ?? ''} class="field" />
+					<input
+						id="reporter_name"
+						name="reporter_name"
+						defaultValue={v.reporter_name ?? ''}
+						class="field"
+					/>
 				</div>
 				<div>
 					<label for="reporter_contact" class="mb-1 block text-sm font-medium text-gray-300"
 						>ליצירת קשר (לא חובה)</label
 					>
-					<input id="reporter_contact" name="reporter_contact" defaultValue={v.reporter_contact ?? ''} class="field" />
+					<input
+						id="reporter_contact"
+						name="reporter_contact"
+						defaultValue={v.reporter_contact ?? ''}
+						class="field"
+					/>
 				</div>
 			</div>
 

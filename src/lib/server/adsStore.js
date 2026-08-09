@@ -155,8 +155,7 @@ function fromStrapi(s) {
 			typeof s.landing?._replacesAdId === 'string' ? s.landing._replacesAdId : undefined,
 		replacesTitle:
 			typeof s.landing?._replacesTitle === 'string' ? s.landing._replacesTitle : undefined,
-		supersededBy:
-			typeof s.landing?._supersededBy === 'string' ? s.landing._supersededBy : undefined
+		supersededBy: typeof s.landing?._supersededBy === 'string' ? s.landing._supersededBy : undefined
 	};
 }
 
@@ -314,7 +313,9 @@ async function findPredecessors(identity) {
 async function findLiveAdsOfAdvertiser(current) {
 	try {
 		const approved = await listByStatus('approved');
-		return approved.filter((a) => a.id !== current.id && !a.supersededBy && sameAdvertiser(a, current));
+		return approved.filter(
+			(a) => a.id !== current.id && !a.supersededBy && sameAdvertiser(a, current)
+		);
 	} catch (e) {
 		console.warn('[adsStore] findLiveAdsOfAdvertiser failed:', e instanceof Error ? e.message : e);
 		return [];
@@ -504,7 +505,10 @@ export async function submitAd(payload) {
 			await supersedeAd(stale, ad.id, 'system', 'הוחלפה בגרסה מעודכנת שהמפרסם שלח');
 			retired.push(stale.id);
 		} catch (e) {
-			console.warn('[adsStore] retire pending predecessor failed:', e instanceof Error ? e.message : e);
+			console.warn(
+				'[adsStore] retire pending predecessor failed:',
+				e instanceof Error ? e.message : e
+			);
 		}
 	}
 	if (retired.length > 0) ad.retiredPendingIds = retired;
@@ -527,7 +531,9 @@ export async function approveAd(id, decidedBy, durationDays, opts = {}) {
 	// ואותו תאריך סיום, ומיד אחרי האישור הישנה יורדת מהאתר. בלי זה
 	// האישור היה מוסיף פרסומת שנייה לאותו מפרסם, ליד הישנה.
 	const predecessor =
-		current.replacesAdId && !opts.keepPrevious ? await getAd(current.replacesAdId).catch(() => null) : null;
+		current.replacesAdId && !opts.keepPrevious
+			? await getAd(current.replacesAdId).catch(() => null)
+			: null;
 
 	// כל מה שחי כרגע לאותו מפרסם: _replacesAdId מצביע על מה שהיה חי *בזמן
 	// השליחה* בלבד. כששתי גרסאות היו באוויר, האישור הוריד את הישנה, השאיר
@@ -535,7 +541,9 @@ export async function approveAd(id, decidedBy, durationDays, opts = {}) {
 	// היא שהחדשה מכסה את כולן.
 	const liveBefore = opts.keepPrevious ? [] : await findLiveAdsOfAdvertiser(current);
 	const replacingAll =
-		predecessor && predecessor.status === 'approved' && !predecessor.supersededBy &&
+		predecessor &&
+		predecessor.status === 'approved' &&
+		!predecessor.supersededBy &&
 		!liveBefore.some((a) => a.id === predecessor.id)
 			? [predecessor, ...liveBefore]
 			: liveBefore;
@@ -556,7 +564,8 @@ export async function approveAd(id, decidedBy, durationDays, opts = {}) {
 			.sort()
 			.pop() ?? null;
 	const days =
-		durationDays ?? existing.duration_days ??
+		durationDays ??
+		existing.duration_days ??
 		(inheritedExpiry ? (replacing?.durationDays ?? requested) : requested);
 	const expires = inheritedExpiry ?? new Date(now.getTime() + days * DAY_MS).toISOString();
 
@@ -573,7 +582,11 @@ export async function approveAd(id, decidedBy, durationDays, opts = {}) {
 		const inherited = replacing ? slots.get(replacing.id) : undefined;
 		if (inherited !== undefined) {
 			slot = inherited;
-		} else if (typeof current.order === 'number' && current.order >= 0 && !taken.has(current.order)) {
+		} else if (
+			typeof current.order === 'number' &&
+			current.order >= 0 &&
+			!taken.has(current.order)
+		) {
 			slot = current.order;
 		} else {
 			slot = 0;
@@ -743,9 +756,7 @@ async function ensureSlotsPersisted(list) {
 	const slots = computeSlots(list);
 	const dirty = list.filter((ad) => ad.order !== slots.get(ad.id));
 	if (dirty.length > 0) {
-		await Promise.all(
-			dirty.map((ad) => writeOrder(ad, /** @type {number} */ (slots.get(ad.id))))
-		);
+		await Promise.all(dirty.map((ad) => writeOrder(ad, /** @type {number} */ (slots.get(ad.id)))));
 		invalidateAds();
 	}
 	return slots;
@@ -826,7 +837,8 @@ export function normalizeDurationDays(raw) {
 export async function setAdDuration(id, days) {
 	const existing = await findByDocumentId(id);
 	if (!existing) return null;
-	const from = existing.decided_at ?? existing.submitted_at ?? existing.createdAt ?? new Date().toISOString();
+	const from =
+		existing.decided_at ?? existing.submitted_at ?? existing.createdAt ?? new Date().toISOString();
 	const expires = new Date(new Date(from).getTime() + days * DAY_MS);
 	const res = await api(`${ENDPOINT}/${encodeURIComponent(id)}`, {
 		method: 'PUT',

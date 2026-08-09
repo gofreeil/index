@@ -8,8 +8,7 @@
 	authUser.subscribe((v) => (user = v));
 
 	let isAuthPage = $derived(
-		page.url.pathname === '/auth/login' ||
-		page.url.pathname === '/auth/register'
+		page.url.pathname === '/auth/login' || page.url.pathname === '/auth/register'
 	);
 
 	let open = $state(false);
@@ -62,7 +61,7 @@
 
 	$effect(() => {
 		if (typeof window !== 'undefined' && tabY === 0) {
-			tabY = Math.round(window.innerHeight * 4 / 5);
+			tabY = Math.round((window.innerHeight * 4) / 5);
 		}
 	});
 
@@ -84,14 +83,19 @@
 	function onTabTouchMove(e) {
 		const dx = e.touches[0].clientX - tabTouchStartX;
 		const dy = e.touches[0].clientY - tabDragStartClientY;
-		const absX = Math.abs(dx), absY = Math.abs(dy);
+		const absX = Math.abs(dx),
+			absY = Math.abs(dy);
 
 		if (tabAxis === null && (absX > 10 || absY > 10)) {
 			tabAxis = absX > absY ? 'h' : 'v';
 		}
 
 		if (tabAxis !== null) {
-			try { e.preventDefault(); } catch { /* passive */ }
+			try {
+				e.preventDefault();
+			} catch {
+				/* passive */
+			}
 		}
 
 		if (tabAxis === 'h' && drawerSystemEl) {
@@ -121,13 +125,13 @@
 		const opts = { passive: false };
 		const removeOpts = false;
 		node.addEventListener('touchstart', onTabTouchStart, opts);
-		node.addEventListener('touchmove',  onTabTouchMove,  opts);
-		node.addEventListener('touchend',   onTabTouchEnd,   opts);
+		node.addEventListener('touchmove', onTabTouchMove, opts);
+		node.addEventListener('touchend', onTabTouchEnd, opts);
 		return {
 			destroy() {
 				node.removeEventListener('touchstart', onTabTouchStart, removeOpts);
-				node.removeEventListener('touchmove',  onTabTouchMove,  removeOpts);
-				node.removeEventListener('touchend',   onTabTouchEnd,   removeOpts);
+				node.removeEventListener('touchmove', onTabTouchMove, removeOpts);
+				node.removeEventListener('touchend', onTabTouchEnd, removeOpts);
 			}
 		};
 	}
@@ -192,116 +196,107 @@
 
 <!-- מוצג רק בנייד -->
 <div class="lg:hidden" dir="rtl">
-
 	<!-- Overlay כהה כשפתוח -->
 	{#if open}
-	<button
-		class="overlay"
-		onclick={closeAll}
-		aria-label="סגור פרסומות"
-	></button>
+		<button class="overlay" onclick={closeAll} aria-label="סגור פרסומות"></button>
 	{/if}
 
 	<!-- ה-Drawer והלשונית נעים יחד כיחידה אחת -->
 	<div class="drawer-system" class:is-open={open} bind:this={drawerSystemEl}>
+		<!-- Drawer -->
+		<div
+			class="drawer"
+			role="dialog"
+			aria-modal="true"
+			aria-label="האזור האישי וההטבות מהקהילה הארצית"
+			aria-hidden={!open}
+			ontouchstart={onDrawerTouchStart}
+			ontouchend={onDrawerTouchEnd}
+		>
+			<!-- כפתור התחברות / אזור אישי -->
+			<div class="section-title section-title-first">
+				האזור האישי
+				<button type="button" class="close-btn" onclick={closeAll} aria-label="סגור">×</button>
+			</div>
+			<div class="auth-section">
+				{#if user}
+					<a href="/profile" class="profile-btn" onclick={closeAll}>
+						<span class="profile-avatar-placeholder">👤</span>
+						<div class="profile-btn-text">
+							<span class="profile-btn-name">{user.name}</span>
+							<span class="profile-btn-sub">האזור האישי ←</span>
+						</div>
+					</a>
+				{:else}
+					<a href="/auth/login" class="login-btn" onclick={closeAll}>
+						<div class="anon-avatar-wrap">
+							<span class="anon-avatar">
+								<svg
+									viewBox="0 0 40 40"
+									fill="none"
+									xmlns="http://www.w3.org/2000/svg"
+									width="40"
+									height="40"
+								>
+									<circle cx="20" cy="20" r="20" fill="#374151" />
+									<circle cx="20" cy="16" r="7" fill="#6b7280" />
+									<ellipse cx="20" cy="34" rx="12" ry="8" fill="#6b7280" />
+								</svg>
+							</span>
+							<span class="login-icon">🔐</span>
+						</div>
+						<div class="login-btn-text">
+							<span class="login-btn-title">התחברות / הרשמה</span>
+							<span class="login-btn-sub">לאזור האישי שלך ←</span>
+						</div>
+					</a>
+				{/if}
+			</div>
 
-	<!-- Drawer -->
-	<div class="drawer"
-		role="dialog"
-		aria-modal="true"
-		aria-label="האזור האישי וההטבות מהקהילה הארצית"
-		aria-hidden={!open}
-		ontouchstart={onDrawerTouchStart}
-		ontouchend={onDrawerTouchEnd}
-	>
-		<!-- כפתור התחברות / אזור אישי -->
-		<div class="section-title section-title-first">
-			האזור האישי
+			<!-- רשימת פרסומות -->
+			<div class="benefits-list">
+				<div class="section-title section-title-benefits">
+					הטבות ארציות <span class="title-gold">יוצאים לחירות</span>
+				</div>
+
+				{#each ads as ad (ad.id)}
+					<a
+						href={ad.href}
+						target="_blank"
+						rel="noopener noreferrer"
+						class="benefit-card"
+						onclick={closeAll}
+					>
+						<div class="benefit-img-wrap">
+							<img src={ad.image} alt={ad.title} class="benefit-img" decoding="async" />
+						</div>
+						<div class="benefit-body">
+							<p class="benefit-title">{ad.title}</p>
+							<p class="benefit-desc">{ad.description}</p>
+							<span class="benefit-cta">← {ad.cta}</span>
+						</div>
+					</a>
+				{/each}
+			</div>
+		</div>
+
+		<!-- לשונית מחוברת לקצה הימני של הבאנר -->
+		{#if !isAuthPage}
 			<button
-				type="button"
-				class="close-btn"
-				onclick={closeAll}
-				aria-label="סגור"
-			>×</button>
-		</div>
-		<div class="auth-section">
-			{#if user}
-			<a href="/profile" class="profile-btn" onclick={closeAll}>
-				<span class="profile-avatar-placeholder">👤</span>
-				<div class="profile-btn-text">
-					<span class="profile-btn-name">{user.name}</span>
-					<span class="profile-btn-sub">האזור האישי ←</span>
-				</div>
-			</a>
-			{:else}
-			<a href="/auth/login" class="login-btn" onclick={closeAll}>
-				<div class="anon-avatar-wrap">
-					<span class="anon-avatar">
-						<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" width="40" height="40">
-							<circle cx="20" cy="20" r="20" fill="#374151"/>
-							<circle cx="20" cy="16" r="7" fill="#6b7280"/>
-							<ellipse cx="20" cy="34" rx="12" ry="8" fill="#6b7280"/>
-						</svg>
-					</span>
-					<span class="login-icon">🔐</span>
-				</div>
-				<div class="login-btn-text">
-					<span class="login-btn-title">התחברות / הרשמה</span>
-					<span class="login-btn-sub">לאזור האישי שלך ←</span>
-				</div>
-			</a>
-			{/if}
-		</div>
-
-		<!-- רשימת פרסומות -->
-		<div class="benefits-list">
-			<div class="section-title section-title-benefits">הטבות ארציות <span class="title-gold">יוצאים לחירות</span></div>
-
-			{#each ads as ad (ad.id)}
-			<a
-				href={ad.href}
-				target="_blank"
-				rel="noopener noreferrer"
-				class="benefit-card"
-				onclick={closeAll}
+				class="tab"
+				class:tab-dragging={tabDragging}
+				class:tab-collapsed={collapsed && !open}
+				style="top: {tabY > 0 ? `${tabY}px` : '80%'}; transform: translateY(-50%);"
+				onclick={onTabClick}
+				use:nonPassiveTouch
+				aria-label="פתח הטבות לקהילה"
 			>
-				<div class="benefit-img-wrap">
-					<img
-						src={ad.image}
-						alt={ad.title}
-						class="benefit-img"
-						decoding="async"
-					/>
-				</div>
-				<div class="benefit-body">
-					<p class="benefit-title">{ad.title}</p>
-					<p class="benefit-desc">{ad.description}</p>
-					<span class="benefit-cta">← {ad.cta}</span>
-				</div>
-			</a>
-			{/each}
-		</div>
-	</div>
-
-	<!-- לשונית מחוברת לקצה הימני של הבאנר -->
-	{#if !isAuthPage}
-	<button
-		class="tab"
-		class:tab-dragging={tabDragging}
-		class:tab-collapsed={collapsed && !open}
-		style="top: {tabY > 0 ? `${tabY}px` : '80%'}; transform: translateY(-50%);"
-		onclick={onTabClick}
-		use:nonPassiveTouch
-		aria-label="פתח הטבות לקהילה"
-	>
-		{#if !(collapsed && !open)}
-			<span class="tab-text">לאזור האישי ולהטבות</span>
+				{#if !(collapsed && !open)}
+					<span class="tab-text">לאזור האישי ולהטבות</span>
+				{/if}
+			</button>
 		{/if}
-	</button>
-	{/if}
-
 	</div>
-
 </div>
 
 <style>
@@ -404,7 +399,9 @@
 		-webkit-text-fill-color: #e0e7ff;
 		background-clip: border-box;
 		-webkit-background-clip: border-box;
-		transition: background 0.2s, border-color 0.2s;
+		transition:
+			background 0.2s,
+			border-color 0.2s;
 	}
 
 	.close-btn:hover {
@@ -419,11 +416,12 @@
 	.auth-section {
 		padding: 0.5rem 0.75rem 0.65rem;
 		margin-bottom: 0.25rem;
-		border-bottom: 1px solid rgba(99,102,241,0.15);
+		border-bottom: 1px solid rgba(99, 102, 241, 0.15);
 		flex-shrink: 0;
 	}
 
-	.profile-btn, .login-btn {
+	.profile-btn,
+	.login-btn {
 		display: flex;
 		align-items: center;
 		gap: 0.75rem;
@@ -435,22 +433,26 @@
 	}
 
 	.profile-btn {
-		background: rgba(99,102,241,0.12);
-		border: 1px solid rgba(99,102,241,0.3);
+		background: rgba(99, 102, 241, 0.12);
+		border: 1px solid rgba(99, 102, 241, 0.3);
 	}
-	.profile-btn:hover { background: rgba(99,102,241,0.22); }
+	.profile-btn:hover {
+		background: rgba(99, 102, 241, 0.22);
+	}
 
 	.login-btn {
-		background: rgba(250,204,21,0.1);
-		border: 1px solid rgba(250,204,21,0.3);
+		background: rgba(250, 204, 21, 0.1);
+		border: 1px solid rgba(250, 204, 21, 0.3);
 	}
-	.login-btn:hover { background: rgba(250,204,21,0.18); }
+	.login-btn:hover {
+		background: rgba(250, 204, 21, 0.18);
+	}
 
 	.profile-avatar-placeholder {
 		width: 40px;
 		height: 40px;
 		border-radius: 50%;
-		background: rgba(99,102,241,0.2);
+		background: rgba(99, 102, 241, 0.2);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -478,7 +480,8 @@
 		left: -4px;
 	}
 
-	.profile-btn-text, .login-btn-text {
+	.profile-btn-text,
+	.login-btn-text {
 		display: flex;
 		flex-direction: column;
 		text-align: right;
@@ -491,7 +494,8 @@
 		color: #e0e7ff;
 	}
 
-	.profile-btn-sub, .login-btn-sub {
+	.profile-btn-sub,
+	.login-btn-sub {
 		font-size: 0.7rem;
 		color: #94a3b8;
 	}
@@ -512,24 +516,27 @@
 		flex-direction: column;
 		gap: 0.75rem;
 		scrollbar-width: thin;
-		scrollbar-color: rgba(99,102,241,0.3) transparent;
+		scrollbar-color: rgba(99, 102, 241, 0.3) transparent;
 	}
 
 	.benefit-card {
 		display: flex;
 		gap: 0.75rem;
-		background: rgba(255,255,255,0.05);
-		border: 1px solid rgba(99,102,241,0.15);
+		background: rgba(255, 255, 255, 0.05);
+		border: 1px solid rgba(99, 102, 241, 0.15);
 		border-radius: 0.75rem;
 		text-decoration: none;
-		transition: background 0.2s, border-color 0.2s, transform 0.15s;
+		transition:
+			background 0.2s,
+			border-color 0.2s,
+			transform 0.15s;
 		padding: 0.75rem;
 		align-items: stretch;
 	}
 
 	.benefit-card:hover {
-		background: rgba(99,102,241,0.12);
-		border-color: rgba(99,102,241,0.35);
+		background: rgba(99, 102, 241, 0.12);
+		border-color: rgba(99, 102, 241, 0.35);
 		transform: scale(1.01);
 	}
 
@@ -583,7 +590,7 @@
 		font-size: 0.7rem;
 		color: #a5b4fc;
 		font-weight: 600;
-		background: rgba(99,102,241,0.12);
+		background: rgba(99, 102, 241, 0.12);
 		border-radius: 4px;
 		padding: 0.15rem 0.45rem;
 	}
@@ -600,8 +607,11 @@
 		border-radius: 0 9px 9px 0;
 		padding: 0.6rem 0.3rem;
 		cursor: grab;
-		box-shadow: 2px 0 6px rgba(79,70,229,0.25);
-		transition: padding 0.2s ease, box-shadow 0.2s, border-radius 0.2s;
+		box-shadow: 2px 0 6px rgba(79, 70, 229, 0.25);
+		transition:
+			padding 0.2s ease,
+			box-shadow 0.2s,
+			border-radius 0.2s;
 		touch-action: none;
 		overscroll-behavior: contain;
 		user-select: none;
@@ -623,7 +633,7 @@
 	}
 
 	.tab:hover {
-		box-shadow: 2px 0 10px rgba(79,70,229,0.45);
+		box-shadow: 2px 0 10px rgba(79, 70, 229, 0.45);
 	}
 
 	.tab-dragging {

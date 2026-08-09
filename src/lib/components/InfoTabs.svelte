@@ -98,7 +98,7 @@
 		aria-labelledby="info-tab-terms"
 		class:hidden={active !== 'terms'}
 	>
-		<header class="{isPage ? 'mb-10 border-b border-gray-100 pb-8' : 'mb-8'}">
+		<header class={isPage ? 'mb-10 border-b border-gray-100 pb-8' : 'mb-8'}>
 			{#if isPage}
 				<h1
 					class="bg-gradient-to-r from-blue-700 to-purple-700 bg-clip-text text-3xl leading-tight font-black text-transparent sm:text-5xl"

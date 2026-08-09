@@ -47,7 +47,10 @@ export const actions = {
 		if (!REASONS.includes(reason)) errors.reason = 'יש לבחור סיבת דיווח';
 		if (!details) errors.details = 'יש לפרט את הדיווח';
 		if (Object.keys(errors).length) {
-			return fail(400, { errors, values: { business_name, reason, details, reporter_name, reporter_contact } });
+			return fail(400, {
+				errors,
+				values: { business_name, reason, details, reporter_name, reporter_contact }
+			});
 		}
 
 		try {

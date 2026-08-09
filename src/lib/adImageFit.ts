@@ -17,9 +17,9 @@
 // ============================================================
 
 export interface AdImageFit {
-    x: number;
-    y: number;
-    z: number;
+	x: number;
+	y: number;
+	z: number;
 }
 
 export const DEFAULT_AD_FIT: AdImageFit = { x: 50, y: 50, z: 1 };
@@ -30,61 +30,61 @@ const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v
 
 /** מנרמל fit מקלט לא-בטוח (Strapi / localStorage / דפדפן) לערכים חוקיים. */
 export function parseAdImageFit(raw: unknown): AdImageFit {
-    if (!raw || typeof raw !== 'object') return { ...DEFAULT_AD_FIT };
-    const o = raw as Record<string, unknown>;
-    const num = (v: unknown, fallback: number) =>
-        typeof v === 'number' && isFinite(v) ? v : fallback;
-    return {
-        x: clamp(num(o.x, 50), 0, 100),
-        y: clamp(num(o.y, 50), 0, 100),
-        z: clamp(num(o.z, 1), AD_ZOOM_MIN, AD_ZOOM_MAX),
-    };
+	if (!raw || typeof raw !== 'object') return { ...DEFAULT_AD_FIT };
+	const o = raw as Record<string, unknown>;
+	const num = (v: unknown, fallback: number) =>
+		typeof v === 'number' && isFinite(v) ? v : fallback;
+	return {
+		x: clamp(num(o.x, 50), 0, 100),
+		y: clamp(num(o.y, 50), 0, 100),
+		z: clamp(num(o.z, 1), AD_ZOOM_MIN, AD_ZOOM_MAX)
+	};
 }
 
 /** פעולת Svelte על <img> בתוך עוטף position:relative + overflow:hidden.
  *  לפני שהתמונה/המשבצת נמדדו נשאר ה-CSS הקיים (object-cover) — ולכן
  *  ב-SSR ובטעינה הראשונה אין קפיצה; המדידה מחליפה אותו באותו מראה. */
 export function adImgFit(node: HTMLImageElement, fit: AdImageFit) {
-    let current = fit;
+	let current = fit;
 
-    function apply() {
-        const box = node.parentElement;
-        if (!box) return;
-        const W = box.clientWidth;
-        const H = box.clientHeight;
-        const w = node.naturalWidth;
-        const h = node.naturalHeight;
-        if (!W || !H || !w || !h) return;
-        const { x, y, z } = parseAdImageFit(current);
-        const k = Math.max(W / w, H / h) * z;
-        const dw = w * k;
-        const dh = h * k;
-        node.style.position = 'absolute';
-        node.style.width = `${dw}px`;
-        node.style.height = `${dh}px`;
-        node.style.left = `${((W - dw) * x) / 100}px`;
-        node.style.top = `${((H - dh) * y) / 100}px`;
-        // inset-0 / dir=rtl היו מושכים לצד הנגדי; left+top הם הקובעים
-        node.style.right = 'auto';
-        node.style.bottom = 'auto';
-        node.style.maxWidth = 'none';
-        node.style.maxHeight = 'none';
-        node.style.objectFit = 'fill';
-    }
+	function apply() {
+		const box = node.parentElement;
+		if (!box) return;
+		const W = box.clientWidth;
+		const H = box.clientHeight;
+		const w = node.naturalWidth;
+		const h = node.naturalHeight;
+		if (!W || !H || !w || !h) return;
+		const { x, y, z } = parseAdImageFit(current);
+		const k = Math.max(W / w, H / h) * z;
+		const dw = w * k;
+		const dh = h * k;
+		node.style.position = 'absolute';
+		node.style.width = `${dw}px`;
+		node.style.height = `${dh}px`;
+		node.style.left = `${((W - dw) * x) / 100}px`;
+		node.style.top = `${((H - dh) * y) / 100}px`;
+		// inset-0 / dir=rtl היו מושכים לצד הנגדי; left+top הם הקובעים
+		node.style.right = 'auto';
+		node.style.bottom = 'auto';
+		node.style.maxWidth = 'none';
+		node.style.maxHeight = 'none';
+		node.style.objectFit = 'fill';
+	}
 
-    node.addEventListener('load', apply);
-    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(apply) : null;
-    if (ro && node.parentElement) ro.observe(node.parentElement);
-    apply();
+	node.addEventListener('load', apply);
+	const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(apply) : null;
+	if (ro && node.parentElement) ro.observe(node.parentElement);
+	apply();
 
-    return {
-        update(next: AdImageFit) {
-            current = next;
-            apply();
-        },
-        destroy() {
-            node.removeEventListener('load', apply);
-            ro?.disconnect();
-        },
-    };
+	return {
+		update(next: AdImageFit) {
+			current = next;
+			apply();
+		},
+		destroy() {
+			node.removeEventListener('load', apply);
+			ro?.disconnect();
+		}
+	};
 }

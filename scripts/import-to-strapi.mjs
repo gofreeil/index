@@ -90,7 +90,8 @@ async function strapi(path, init = {}) {
 			...(init.headers || {})
 		}
 	});
-	if (!res.ok) throw new Error(`strapi ${path} → ${res.status} ${await res.text().catch(() => '')}`);
+	if (!res.ok)
+		throw new Error(`strapi ${path} → ${res.status} ${await res.text().catch(() => '')}`);
 	return res.json();
 }
 
@@ -108,80 +109,91 @@ async function main() {
 		failed = 0;
 
 	for (const row of rows) {
-	  try {
-		const name = col(row, 'שם העסק') || String(row.name || '').trim();
-		const phone = col(row, 'טלפון');
-		const discount = col(row, 'ההנחה הבלעדית');
-		if (!name) {
-			skipped++;
-			continue;
+		try {
+			const name = col(row, 'שם העסק') || String(row.name || '').trim();
+			const phone = col(row, 'טלפון');
+			const discount = col(row, 'ההנחה הבלעדית');
+			if (!name) {
+				skipped++;
+				continue;
+			}
+			const terms = col(row, 'אני מקבל על עצמי את תנאי הקהילה');
+			const address = col(row, 'מיקום המפעל');
+			const salesArea = col(row, 'אזור מכירה');
+
+			let lat = null,
+				lng = null;
+			if (address) ({ lat, lng } = await geocode(address));
+
+			const bannersRaw = col(row, 'הוסף תמונה לבאנר');
+			const banners_urls = bannersRaw
+				? bannersRaw
+						.split(',')
+						.map((s) => driveDirect(s.trim()))
+						.filter(Boolean)
+						.join(',')
+				: '';
+
+			const payload = {
+				name: s(name),
+				phone: s(phone, 60),
+				discount: discount || '—',
+				description: col(row, 'תיאור העסק') || col(row, 'הערות'),
+				unique_content: col(row, 'תוכן ייחודי'),
+				category: s(col(row, 'קטגוריה'), 120),
+				contact_name: s(col(row, 'שם איש קשר')),
+				address: s(address),
+				sales_area: s(salesArea),
+				whatsapp: s(col(row, 'קישור לווצאפ')),
+				facebook: s(col(row, 'קישור לדף הפייסבוק')),
+				website: s(col(row, 'קישור לאתר') || col(row, 'אתר')),
+				instagram: s(col(row, 'קישור לאינסטגרם')),
+				logo_url: driveDirect(row.logoFromColumnJ || col(row, 'לוגו')),
+				banners_urls,
+				accepted_terms: !!terms || !!discount,
+				external_id: externalId(name, phone),
+				source: 'sheet-import',
+				// המקור כבר החזיר רק מאושרים (סינון עמודת "אושר" ב-endpoint) → מייבאים כמאושרים
+				status: 'approved',
+				lat,
+				lng
+			};
+
+			if (DRY) {
+				console.log(`[dry] ${name} ${lat ? '📍' : '  '} (${payload.category || '—'})`);
+				continue;
+			}
+
+			const found = await strapi(
+				`/api/idx-businesses?filters[external_id][$eq]=${encodeURIComponent(payload.external_id)}&pagination[pageSize]=1`
+			);
+			const existing = found?.data?.[0];
+			if (existing) {
+				await strapi(`/api/idx-businesses/${existing.documentId}`, {
+					method: 'PUT',
+					body: JSON.stringify({ data: payload })
+				});
+				updated++;
+				console.log(`~ עודכן: ${name}`);
+			} else {
+				await strapi('/api/idx-businesses', {
+					method: 'POST',
+					body: JSON.stringify({ data: payload })
+				});
+				created++;
+				console.log(`+ נוצר: ${name} ${lat ? '📍' : ''}`);
+			}
+		} catch (e) {
+			failed++;
+			console.log(
+				`✗ נכשל: ${String(row?.['שם העסק'] || row?.name || '').slice(0, 40)} — ${e instanceof Error ? e.message.slice(0, 120) : e}`
+			);
 		}
-		const terms = col(row, 'אני מקבל על עצמי את תנאי הקהילה');
-		const address = col(row, 'מיקום המפעל');
-		const salesArea = col(row, 'אזור מכירה');
-
-		let lat = null,
-			lng = null;
-		if (address) ({ lat, lng } = await geocode(address));
-
-		const bannersRaw = col(row, 'הוסף תמונה לבאנר');
-		const banners_urls = bannersRaw
-			? bannersRaw.split(',').map((s) => driveDirect(s.trim())).filter(Boolean).join(',')
-			: '';
-
-		const payload = {
-			name: s(name),
-			phone: s(phone, 60),
-			discount: discount || '—',
-			description: col(row, 'תיאור העסק') || col(row, 'הערות'),
-			unique_content: col(row, 'תוכן ייחודי'),
-			category: s(col(row, 'קטגוריה'), 120),
-			contact_name: s(col(row, 'שם איש קשר')),
-			address: s(address),
-			sales_area: s(salesArea),
-			whatsapp: s(col(row, 'קישור לווצאפ')),
-			facebook: s(col(row, 'קישור לדף הפייסבוק')),
-			website: s(col(row, 'קישור לאתר') || col(row, 'אתר')),
-			instagram: s(col(row, 'קישור לאינסטגרם')),
-			logo_url: driveDirect(row.logoFromColumnJ || col(row, 'לוגו')),
-			banners_urls,
-			accepted_terms: !!terms || !!discount,
-			external_id: externalId(name, phone),
-			source: 'sheet-import',
-			// המקור כבר החזיר רק מאושרים (סינון עמודת "אושר" ב-endpoint) → מייבאים כמאושרים
-			status: 'approved',
-			lat,
-			lng
-		};
-
-		if (DRY) {
-			console.log(`[dry] ${name} ${lat ? '📍' : '  '} (${payload.category || '—'})`);
-			continue;
-		}
-
-		const found = await strapi(
-			`/api/idx-businesses?filters[external_id][$eq]=${encodeURIComponent(payload.external_id)}&pagination[pageSize]=1`
-		);
-		const existing = found?.data?.[0];
-		if (existing) {
-			await strapi(`/api/idx-businesses/${existing.documentId}`, {
-				method: 'PUT',
-				body: JSON.stringify({ data: payload })
-			});
-			updated++;
-			console.log(`~ עודכן: ${name}`);
-		} else {
-			await strapi('/api/idx-businesses', { method: 'POST', body: JSON.stringify({ data: payload }) });
-			created++;
-			console.log(`+ נוצר: ${name} ${lat ? '📍' : ''}`);
-		}
-	  } catch (e) {
-	    failed++;
-	    console.log(`✗ נכשל: ${String(row?.['שם העסק'] || row?.name || '').slice(0, 40)} — ${e instanceof Error ? e.message.slice(0, 120) : e}`);
-	  }
 	}
 
-	console.log(`\nסיכום: נוצרו ${created}, עודכנו ${updated}, דולגו ${skipped}, נכשלו ${failed}${DRY ? ' (dry-run)' : ''}.`);
+	console.log(
+		`\nסיכום: נוצרו ${created}, עודכנו ${updated}, דולגו ${skipped}, נכשלו ${failed}${DRY ? ' (dry-run)' : ''}.`
+	);
 }
 
 main().catch((e) => {

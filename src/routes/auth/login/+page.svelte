@@ -110,7 +110,9 @@
 				{t.login}
 			</h2>
 			<!-- הודעה ברורה למשתמש חדש: בפעם הראשונה יש להירשם תחילה -->
-			<p class="mt-3 text-center text-[13px] font-bold leading-relaxed text-amber-700 sm:text-sm dark:text-amber-300">
+			<p
+				class="mt-3 text-center text-[13px] leading-relaxed font-bold text-amber-700 sm:text-sm dark:text-amber-300"
+			>
 				{t.firstTimeRegister}
 			</p>
 		</div>

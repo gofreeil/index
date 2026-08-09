@@ -523,7 +523,9 @@
 									{@const prevLive = (data.approved ?? []).some(
 										(/** @type {any} */ o) => o.id === ad.replacesAdId
 									)}
-									<div class="mb-2 rounded-lg border border-blue-400/40 bg-blue-500/10 px-2.5 py-1.5">
+									<div
+										class="mb-2 rounded-lg border border-blue-400/40 bg-blue-500/10 px-2.5 py-1.5"
+									>
 										<p class="m-0 text-[11px] font-black text-blue-200 md:text-xs">
 											🔄 עדכון לפרסומת קיימת{ad.replacesTitle
 												? ` — גרסה קודמת: "${ad.replacesTitle}"`
@@ -627,9 +629,7 @@
 										type="submit"
 										class="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-black text-black hover:bg-emerald-400"
 									>
-										{(data.approved ?? []).some(
-											(/** @type {any} */ o) => o.id === ad.replacesAdId
-										)
+										{(data.approved ?? []).some((/** @type {any} */ o) => o.id === ad.replacesAdId)
 											? '✅ אשר והחלף את הישנה'
 											: '✅ אשר ופרסם'}
 									</button>
@@ -867,7 +867,11 @@
 												class="rounded-lg border border-white/15 bg-black/40 px-1.5 py-1 text-[11px] text-white focus:border-amber-400/50 focus:outline-none"
 											>
 												{#each slotOptions as n (n)}
-													<option value={n} selected={n === s.slot} style="background:#fff;color:#111">
+													<option
+														value={n}
+														selected={n === s.slot}
+														style="background:#fff;color:#111"
+													>
 														{n}
 													</option>
 												{/each}
@@ -926,7 +930,11 @@
 												class="rounded-lg border border-white/15 bg-black/40 px-2 py-1 text-[11px] text-white focus:border-amber-400/50 focus:outline-none"
 											>
 												{#each durOptions as d (d)}
-													<option value={d} selected={d === s.durationDays} style="background:#fff;color:#111">
+													<option
+														value={d}
+														selected={d === s.durationDays}
+														style="background:#fff;color:#111"
+													>
 														{d} ימים
 													</option>
 												{/each}
@@ -955,7 +963,9 @@
 													class="rounded-lg border border-white/20 bg-white/10 px-2.5 py-1 text-[11px] font-black whitespace-nowrap text-gray-200 hover:bg-white/20"
 													title="יורדת מהאתר ושומרת את הימים שנותרו"
 													onclick={(e) => {
-														if (!confirm('להשהות את הפרסומת? היא תרד מהאתר והימים שנותרו יישמרו לה.'))
+														if (
+															!confirm('להשהות את הפרסומת? היא תרד מהאתר והימים שנותרו יישמרו לה.')
+														)
 															e.preventDefault();
 													}}>⏸ השהה</button
 												>

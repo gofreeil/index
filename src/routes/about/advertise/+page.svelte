@@ -207,16 +207,100 @@
 
 	// Pricing rows — קטגוריות ומחירי הטבלה (מחיר שטוח, ללא הכפלה בשכונות).
 	const rows = [
-		{ num: 1, type: 'פרסומת ארוכה', half: 5, total: 30, single: 25, reach: 'לכל האזורים', details: 'מופיע ל-6 שניות ונעלם 12 שניות' },
-		{ num: 2, type: 'עסק', half: 25, total: 150, single: 35, reach: 'לכל האזורים', details: 'מופיע במפה וברשימה' },
-		{ num: 3, type: 'חוג', half: 10, total: 60, single: 25, reach: 'לכל האזורים', details: 'מופיע במפה וברשימה' },
-		{ num: 4, type: 'צימר / סאבלט', half: 45, total: 270, single: 60, reach: 'לכל האזורים', details: 'מופיע במפה וברשימה' },
-		{ num: 5, type: 'דרושים לעבודה', half: 5, total: 30, single: 25, reach: 'לכל האזורים', details: 'מופיע רק ברשימה' },
-		{ num: 6, type: 'פנויים פנויות', half: 10, total: 60, single: 15, regularHalf: 20, regularTotal: 120, regularSingle: 30, promo: true, reach: 'כולל רשימה ארצית', details: 'מופיע רק ברשימה' },
-		{ num: 7, type: 'מסעדה', half: 45, total: 270, single: 60, reach: 'לכל האזורים', details: 'מופיע במפה וברשימה' },
-		{ num: 8, type: 'בייבי סיטר', half: 8, total: 48, single: 20, reach: 'לכל האזורים', details: 'מופיע במפה וברשימה' },
-		{ num: 9, type: 'אולמות', half: 45, total: 270, single: 60, reach: 'לכל האזורים', details: 'מופיע במפה וברשימה' },
-		{ num: 10, type: 'מזון מהיר', half: 30, total: 180, single: 45, reach: 'לכל האזורים', details: 'פלאפל, שווארמה, פיצה, גלידה' }
+		{
+			num: 1,
+			type: 'פרסומת ארוכה',
+			half: 5,
+			total: 30,
+			single: 25,
+			reach: 'לכל האזורים',
+			details: 'מופיע ל-6 שניות ונעלם 12 שניות'
+		},
+		{
+			num: 2,
+			type: 'עסק',
+			half: 25,
+			total: 150,
+			single: 35,
+			reach: 'לכל האזורים',
+			details: 'מופיע במפה וברשימה'
+		},
+		{
+			num: 3,
+			type: 'חוג',
+			half: 10,
+			total: 60,
+			single: 25,
+			reach: 'לכל האזורים',
+			details: 'מופיע במפה וברשימה'
+		},
+		{
+			num: 4,
+			type: 'צימר / סאבלט',
+			half: 45,
+			total: 270,
+			single: 60,
+			reach: 'לכל האזורים',
+			details: 'מופיע במפה וברשימה'
+		},
+		{
+			num: 5,
+			type: 'דרושים לעבודה',
+			half: 5,
+			total: 30,
+			single: 25,
+			reach: 'לכל האזורים',
+			details: 'מופיע רק ברשימה'
+		},
+		{
+			num: 6,
+			type: 'פנויים פנויות',
+			half: 10,
+			total: 60,
+			single: 15,
+			regularHalf: 20,
+			regularTotal: 120,
+			regularSingle: 30,
+			promo: true,
+			reach: 'כולל רשימה ארצית',
+			details: 'מופיע רק ברשימה'
+		},
+		{
+			num: 7,
+			type: 'מסעדה',
+			half: 45,
+			total: 270,
+			single: 60,
+			reach: 'לכל האזורים',
+			details: 'מופיע במפה וברשימה'
+		},
+		{
+			num: 8,
+			type: 'בייבי סיטר',
+			half: 8,
+			total: 48,
+			single: 20,
+			reach: 'לכל האזורים',
+			details: 'מופיע במפה וברשימה'
+		},
+		{
+			num: 9,
+			type: 'אולמות',
+			half: 45,
+			total: 270,
+			single: 60,
+			reach: 'לכל האזורים',
+			details: 'מופיע במפה וברשימה'
+		},
+		{
+			num: 10,
+			type: 'מזון מהיר',
+			half: 30,
+			total: 180,
+			single: 45,
+			reach: 'לכל האזורים',
+			details: 'פלאפל, שווארמה, פיצה, גלידה'
+		}
 	];
 
 	// ---- Calculator state: each row can be 'half' | 'single' | unset ----
@@ -298,9 +382,7 @@
 	let mapImageAddon = $state(false);
 	let mapImageAddonPrice = $derived(mapImageAddon ? MAP_IMAGE_PRICE_YEARLY : 0);
 
-	let totalPayment = $derived(
-		selectedItems.reduce((s, r) => s + r.eTotal, 0) + mapImageAddonPrice
-	);
+	let totalPayment = $derived(selectedItems.reduce((s, r) => s + r.eTotal, 0) + mapImageAddonPrice);
 
 	let halfItems = $derived(selectedItems.filter((r) => r.plan === 'half'));
 	let singleItems = $derived(selectedItems.filter((r) => r.plan === 'single'));
@@ -560,10 +642,12 @@
 							type="button"
 							onclick={() => setPlan(row.num, 'half')}
 							class="toggle-segment relative z-10 flex items-center rounded-full px-3 text-xs leading-none font-black whitespace-nowrap transition-all duration-200"
-							style="background: {plan === 'half'
-								? '#f59e0b'
-								: 'transparent'}; color: {plan === 'half' ? '#000' : plan ? '#9ca3af' : '#e5e7eb'};"
-							>½שנה</button
+							style="background: {plan === 'half' ? '#f59e0b' : 'transparent'}; color: {plan ===
+							'half'
+								? '#000'
+								: plan
+									? '#9ca3af'
+									: '#e5e7eb'};">½שנה</button
 						>
 						{#if !plan}
 							<span
@@ -575,14 +659,12 @@
 							type="button"
 							onclick={() => setPlan(row.num, 'single')}
 							class="toggle-segment relative z-10 flex items-center rounded-full px-3 text-xs leading-none font-black whitespace-nowrap transition-all duration-200"
-							style="background: {plan === 'single'
-								? '#3b82f6'
-								: 'transparent'}; color: {plan === 'single'
+							style="background: {plan === 'single' ? '#3b82f6' : 'transparent'}; color: {plan ===
+							'single'
 								? '#fff'
 								: plan
 									? '#9ca3af'
-									: '#e5e7eb'};"
-							>חודש</button
+									: '#e5e7eb'};">חודש</button
 						>
 					</div>
 				</div>
@@ -711,7 +793,8 @@
 
 						<td class="px-4 py-4 text-center">
 							{#if row.regularSingle}
-								<span class="me-1 text-xs text-gray-500 line-through">₪{fmt(row.regularSingle)}</span
+								<span class="me-1 text-xs text-gray-500 line-through"
+									>₪{fmt(row.regularSingle)}</span
 								>
 							{/if}
 							<span class="font-bold {plan === 'single' ? 'text-blue-300' : 'text-gray-300'}"
@@ -744,7 +827,11 @@
 								</span>
 							{/if}
 
-							<div class="flex justify-center" role="presentation" onclick={(e) => e.stopPropagation()}>
+							<div
+								class="flex justify-center"
+								role="presentation"
+								onclick={(e) => e.stopPropagation()}
+							>
 								<div
 									class="relative inline-flex h-9 rounded-full transition-all duration-300"
 									style="
@@ -773,8 +860,7 @@
 											: plan
 												? '#9ca3af'
 												: '#e5e7eb'};"
-										title="חצי שנה"
-										>½שנה</button
+										title="חצי שנה">½שנה</button
 									>
 
 									{#if !plan}
@@ -796,8 +882,7 @@
 											: plan
 												? '#9ca3af'
 												: '#e5e7eb'};"
-										title="חודש בודד"
-										>חודש</button
+										title="חודש בודד">חודש</button
 									>
 								</div>
 							</div>
@@ -828,7 +913,9 @@
 
 			<!-- Selected items breakdown -->
 			<div class="mb-6 overflow-hidden rounded-xl border border-white/10 bg-black/40">
-				<div class="flex items-center justify-between border-b border-white/10 bg-white/5 px-4 py-2">
+				<div
+					class="flex items-center justify-between border-b border-white/10 bg-white/5 px-4 py-2"
+				>
 					<p class="text-xs font-bold tracking-wider text-gray-400 uppercase">פרסומות שנבחרו</p>
 					<div class="flex gap-3 text-[10px]">
 						{#if halfItems.length > 0}
@@ -851,8 +938,8 @@
 										planMap = n;
 									}}
 									class="flex-shrink-0 text-xs text-gray-600 transition-colors hover:text-red-400"
-									aria-label="הסר"
-								>✕</button>
+									aria-label="הסר">✕</button
+								>
 								<span
 									class="truncate text-sm font-bold
 									{item.plan === 'half' ? 'text-amber-200' : 'text-blue-200'}">{item.type}</span
@@ -898,7 +985,7 @@
 						<div class="space-y-1.5">
 							{#each selectedItems as item (item.num)}
 								<p class="text-base leading-snug font-bold text-gray-100 md:text-lg">
-									<span class="{item.plan === 'half' ? 'text-amber-300' : 'text-blue-300'}"
+									<span class={item.plan === 'half' ? 'text-amber-300' : 'text-blue-300'}
 										>{item.type}:</span
 									>
 									<span class="text-white">₪{fmt(item.eMonthly)}</span>
@@ -909,7 +996,8 @@
 										<span class="font-medium text-gray-300">חודשים</span>
 									{/if}
 									<span class="mx-1 text-gray-400">=</span>
-									<span class="{item.plan === 'half' ? 'text-amber-300' : 'text-blue-300'} font-black"
+									<span
+										class="{item.plan === 'half' ? 'text-amber-300' : 'text-blue-300'} font-black"
 										>₪{fmt(item.eTotal)}</span
 									>
 								</p>
@@ -987,7 +1075,10 @@
 					</div>
 
 					<!-- ===== Contact section (מייל / וואטסאפ) ===== -->
-					<div class="flex flex-col justify-center p-5" style="animation: slideDown 0.25s ease-out;">
+					<div
+						class="flex flex-col justify-center p-5"
+						style="animation: slideDown 0.25s ease-out;"
+					>
 						<p
 							class="mb-3 flex items-center justify-center gap-2 text-center text-sm font-bold text-gray-300"
 							class:step-title-light={step3TitleLight}
@@ -1080,7 +1171,9 @@
 			class="mt-8 rounded-2xl border-2 border-purple-500/40 bg-gradient-to-br from-purple-900/20 to-indigo-900/15 p-5 md:p-7"
 			dir="rtl"
 		>
-			<h2 class="mb-3 flex items-center justify-center gap-2 text-center text-xl font-black text-white md:text-2xl">
+			<h2
+				class="mb-3 flex items-center justify-center gap-2 text-center text-xl font-black text-white md:text-2xl"
+			>
 				<span
 					class="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-sm font-black text-black"
 					style="background: radial-gradient(circle, #fde047 0%, #f59e0b 60%, #d97706 100%); opacity: 0.85"
@@ -1172,8 +1265,9 @@
 					</p>
 					<p class="text-xs leading-relaxed text-gray-400 md:text-sm">
 						היום ({fmtDate(today)}) - יום עריכה חינם. הפרסומת שלי תפעל עד
-						{#each expirationInfos as info, i (info.date.getTime())}{#if i > 0} · {/if}<span
-								class="font-bold text-amber-300">{fmtDate(info.date)} כולל</span
+						{#each expirationInfos as info, i (info.date.getTime())}{#if i > 0}
+								·
+							{/if}<span class="font-bold text-amber-300">{fmtDate(info.date)} כולל</span
 							>{#if expirationInfos.length > 1}&nbsp;({info.label}){/if}{/each}.
 					</p>
 				</div>
@@ -1188,7 +1282,9 @@
 		class:opacity-50={hasSelection && !confirmedPeriod}
 		class:pointer-events-none={hasSelection && !confirmedPeriod}
 	>
-		<h2 class="mb-2 flex items-center justify-center gap-2 text-center text-xl font-black text-white md:text-2xl">
+		<h2
+			class="mb-2 flex items-center justify-center gap-2 text-center text-xl font-black text-white md:text-2xl"
+		>
 			<span
 				class="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-sm font-black text-black"
 				style="background: radial-gradient(circle, #fde047 0%, #f59e0b 60%, #d97706 100%); opacity: 0.75"
@@ -1197,7 +1293,7 @@
 			🔒 תשלום מאובטח
 		</h2>
 		{#if hasSelection && !confirmedPeriod}
-			<p class="mb-3 -mt-1 text-center text-sm font-bold text-amber-300">
+			<p class="-mt-1 mb-3 text-center text-sm font-bold text-amber-300">
 				⬆️ סמן/י תחילה את התיבה למעלה (שלב 4) כדי לפתוח את התשלום
 			</p>
 		{/if}
@@ -1280,12 +1376,12 @@
 				{/each}
 			</div>
 
-			<div class="rounded-xl border-2 border-dashed border-blue-500/40 bg-blue-900/10 p-6 text-center">
+			<div
+				class="rounded-xl border-2 border-dashed border-blue-500/40 bg-blue-900/10 p-6 text-center"
+			>
 				<div class="mb-3 text-3xl">💳</div>
 				<h3 class="mb-1 font-black text-white">סליקה מאובטחת</h3>
-				<p class="mb-4 text-sm text-gray-400">
-					מחוברים לחברת סליקה מורשית - עסקה מאובטחת ב-SSL
-				</p>
+				<p class="mb-4 text-sm text-gray-400">מחוברים לחברת סליקה מורשית - עסקה מאובטחת ב-SSL</p>
 
 				<!-- Temporary notice - payment processor not yet connected -->
 				<p
@@ -1333,7 +1429,9 @@
 				</p>
 
 				<!-- After-payment guidance -->
-				<div class="mt-3 rounded-xl border border-green-500/40 bg-green-500/10 px-4 py-3 text-right">
+				<div
+					class="mt-3 rounded-xl border border-green-500/40 bg-green-500/10 px-4 py-3 text-right"
+				>
 					<p class="mb-1.5 flex items-center gap-2 text-sm font-black text-green-300 md:text-base">
 						<span class="text-lg">💾</span>
 						<span>אחרי התשלום - איך ממשיכים?</span>

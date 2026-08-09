@@ -16,10 +16,15 @@
 		     ולחלק ביניהם את האמון (entity consolidation), ובמקביל שולח גם
 		     מבקרים אנושיים בין האתרים. -->
 		<nav aria-labelledby="network-links-title" class="border-b border-white/10 py-3">
-			<h2 id="network-links-title" class="mb-1.5 text-xs font-black tracking-wide text-yellow-400/90">
+			<h2
+				id="network-links-title"
+				class="mb-1.5 text-xs font-black tracking-wide text-yellow-400/90"
+			>
 				רשת יוצאים לחירות
 			</h2>
-			<ul class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-semibold text-gray-400 md:text-xs">
+			<ul
+				class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-semibold text-gray-400 md:text-xs"
+			>
 				{#each OTHER_NETWORK_SITES as site (site.url)}
 					<li>
 						<!-- לשונית חדשה, כמו כל קישור-חוץ באתר — הביקור כאן לא נקטע -->

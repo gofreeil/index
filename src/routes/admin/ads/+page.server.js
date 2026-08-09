@@ -193,7 +193,10 @@ export const actions = {
 			const r = await setAdDuration(id, days);
 			if (!r) return fail(404, { error: 'הפרסומת לא נמצאה' });
 			const suffix = r.daysLeft < 0 ? ' — התקופה כבר חלפה, הפרסומת ירדה מהאתר' : '';
-			return { success: true, message: `${r.title}: ${days} ימים, עד ${fmtDay(r.expiresAt)}${suffix}` };
+			return {
+				success: true,
+				message: `${r.title}: ${days} ימים, עד ${fmtDay(r.expiresAt)}${suffix}`
+			};
 		} catch (e) {
 			return fail(502, {
 				error: 'קציבת התקופה נכשלה: ' + (e instanceof Error ? e.message.slice(0, 160) : '')
@@ -227,7 +230,10 @@ export const actions = {
 		try {
 			const r = await resumeAd(id);
 			if (!r) return fail(404, { error: 'הפרסומת לא נמצאה' });
-			return { success: true, message: `${r.title} חזרה לאוויר — ${r.daysLeft} ימים, עד ${fmtDay(r.expiresAt)}` };
+			return {
+				success: true,
+				message: `${r.title} חזרה לאוויר — ${r.daysLeft} ימים, עד ${fmtDay(r.expiresAt)}`
+			};
 		} catch (e) {
 			return fail(502, {
 				error: 'ההפעלה מחדש נכשלה: ' + (e instanceof Error ? e.message.slice(0, 160) : '')
