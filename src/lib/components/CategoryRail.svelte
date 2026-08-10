@@ -555,7 +555,9 @@
 		gap: 0.75rem; /* חייב להתאים ל-GAP_PX בסקריפט */
 		list-style: none;
 		margin: 0;
-		padding: 0.75rem 0.5rem 1rem; /* טבעת הפוקוס היא 3px + offset — 4px לא הספיקו */
+		/* למעלה 1.5rem: תג הכמות מרחף חצי מעל קצה האריח, ועם ההרמה ב-hover
+		   וההגדלה של הנבחר הוא מטפס עד ‎~1.3rem‎ — overflow-y:hidden היה חותך אותו */
+		padding: 1.5rem 0.5rem 1rem; /* טבעת הפוקוס היא 3px + offset — 4px לא הספיקו */
 		overflow-x: auto;
 		overflow-y: hidden;
 		overscroll-behavior-x: contain; /* בלי back-swipe של הדפדפן באייפון */
@@ -632,7 +634,7 @@
 	.cat-tile {
 		position: relative;
 		width: clamp(5rem, 21vw, 7rem); /* vw ⇒ ההצצה לאריח הבא מובטחת בכל רוחב מסך */
-		min-height: 6.5rem;
+		min-height: 8rem; /* גבוה יותר — מפנה מקום לתמונת תחום גדולה, כמו בגמ"חים */
 		height: 100%; /* ה-li נמתח לגובה השורה; בלי זה תחתית האריחים מתפרעת */
 		display: flex;
 		flex-direction: column;
@@ -704,51 +706,59 @@
 	@media (min-width: 768px) {
 		.cat-tile {
 			width: clamp(7rem, 29vw, 8.5rem);
-			min-height: 8rem;
+			min-height: 10.25rem;
 			gap: 0.45rem;
 			padding: 0.85rem 0.5rem;
 			border-radius: 1rem;
 		}
 	}
 
-	/* תג הכמות בפינה — כמה עסקים בתחום. גלולה שמתרחבת לפי מספר הספרות */
+	/* תג הכמות — כמה עסקים בתחום. גלולה שמתרחבת לפי מספר הספרות,
+	   רוכבת חצי באוויר על הפינה העליונה (היסט שלילי בגובה חצי-תג);
+	   הטבעת בצבע רקע הדף (gray-950) מחדדת את קו החיתוך על קצה האריח */
 	.cat-count-badge {
 		position: absolute;
-		top: 0.3rem;
-		inset-inline-end: 0.35rem; /* לוגי ⇒ נוחת בפינה הנכונה ב-RTL */
+		top: -0.6rem;
+		inset-inline-end: -0.4rem; /* לוגי ⇒ נוחת בפינה הנכונה ב-RTL */
 		display: grid;
 		place-items: center;
-		min-width: 1.1rem;
-		height: 1.1rem;
-		padding: 0 0.28rem;
+		min-width: 1.2rem;
+		height: 1.2rem;
+		padding: 0 0.3rem;
 		z-index: 2;
 		border-radius: 999px;
-		font-size: 0.62rem;
+		font-size: 0.66rem;
 		font-weight: 900;
 		line-height: 1;
 		font-variant-numeric: tabular-nums;
 		color: #06182f;
 		background: linear-gradient(145deg, #93c5fd, #3b82f6);
-		box-shadow: 0 2px 6px -2px rgba(59, 130, 246, 0.8);
+		box-shadow:
+			0 0 0 2px #030712,
+			0 2px 6px -2px rgba(59, 130, 246, 0.8);
 	}
 	.cat-ico {
 		display: grid;
 		place-items: center;
 		width: 100%;
-		min-height: 2.25rem;
-		font-size: 1.75rem;
+		min-height: 2.5rem;
+		font-size: 2rem;
 		line-height: 1;
 	}
-	/* תמונת תחום שהועלתה — יושבת בדיוק בתא של האימוג'י, בלי לשנות את מידות
-	   האריח. המשבצת (cat-imgbox) היא העוגן של adImgFit: התמונה ממוקמת
-	   אבסולוטית בתוכה לפי המיקום והזום שנקבעו במסך ניהול הקטגוריות. */
+	/* תמונת תחום שהועלתה — גדולה, ממלאת כמעט את כל רוחב האריח (כמו בגמ"חים).
+	   ריבוע קבוע ⇒ המיקום/זום שנקבעו במשבצת הריבועית של מסך הניהול נשמרים.
+	   המשבצת (cat-imgbox) היא העוגן של adImgFit: התמונה ממוקמת אבסולוטית
+	   בתוכה לפי המיקום והזום שנקבעו שם. */
 	.cat-imgbox {
 		position: relative;
 		overflow: hidden;
-		width: 2.4rem;
-		height: 2.4rem;
-		border-radius: 0.6rem;
-		border: 1px solid rgba(255, 255, 255, 0.08);
+		width: 6.75rem; /* max-width מקצץ אותה לרוחב הפנימי של האריח בנייד */
+		max-width: 100%;
+		aspect-ratio: 1 / 1;
+		border-radius: 0.7rem;
+		border: 2px solid #000; /* מסגרת שחורה צמודה — התמונה ממלאת אותה בלי רווח */
+		background: #0b1220;
+		box-shadow: 0 10px 22px -12px rgba(0, 0, 0, 0.95);
 	}
 	.cat-img {
 		width: 100%;
@@ -764,21 +774,20 @@
 
 	@media (min-width: 768px) {
 		.cat-count-badge {
-			top: 0.45rem;
-			inset-inline-end: 0.55rem;
-			min-width: 1.35rem;
-			height: 1.35rem;
-			padding: 0 0.4rem;
-			font-size: 0.72rem;
+			top: -0.75rem;
+			inset-inline-end: -0.5rem;
+			min-width: 1.5rem;
+			height: 1.5rem;
+			padding: 0 0.45rem;
+			font-size: 0.78rem;
 		}
 		.cat-ico {
-			min-height: 2.75rem;
-			font-size: 2.15rem;
+			min-height: 3.5rem;
+			font-size: 2.5rem;
 		}
 		.cat-imgbox {
-			width: 2.9rem;
-			height: 2.9rem;
-			border-radius: 0.7rem;
+			border-radius: 0.85rem;
+			border-width: 3px;
 		}
 		.cat-label {
 			font-size: 0.8125rem;
