@@ -64,16 +64,19 @@ async function loadConfig(force = false) {
 
 /**
  * ממזג ערכים לפריט ההגדרות (לא דורס את מה שלא נשלח).
+ * זורק על כתיבה כושלת; המטמון מתעדכן רק אחרי שהשרת אישר — אחרת האינסטנס
+ * הזה היה מגיש 20 שניות ערכים שנראים שמורים ואינם.
  * @param {Record<string, unknown>} patch
  */
 async function saveConfig(patch) {
 	const current = await loadConfig(true);
 	const merged = { ...current, ...patch };
 	if (itemId) {
-		await api(`${ENDPOINT}/${itemId}`, {
+		const res = await api(`${ENDPOINT}/${itemId}`, {
 			method: 'PUT',
 			body: JSON.stringify({ data: { extra_fields: merged } })
 		});
+		if (!res.ok) throw new Error(`config PUT → ${res.status}`);
 	} else {
 		const res = await api(ENDPOINT, {
 			method: 'POST',
@@ -89,6 +92,7 @@ async function saveConfig(patch) {
 				}
 			})
 		});
+		if (!res.ok) throw new Error(`config POST → ${res.status}`);
 		const data = await res.json().catch(() => null);
 		itemId = data?.data?.documentId ?? null;
 	}
@@ -108,14 +112,26 @@ export async function getConfigValue(key) {
 }
 
 /**
- * כותב ערך יחיד להגדרות (ממזג, לא דורס). נכשל בשקט.
+ * כותב ערך יחיד להגדרות (ממזג, לא דורס). נכשל בשקט — למטמוני רקע
+ * (מוני מבקרים וכד') שכשל שלהם לא צריך להפיל טעינת דף.
  * @param {string} key
  * @param {unknown} value
  */
 export async function setConfigValue(key, value) {
 	try {
-		await saveConfig({ [key]: value });
+		await setConfigValueStrict(key, value);
 	} catch (e) {
 		console.error('[configStore] save failed:', e instanceof Error ? e.message : e);
 	}
+}
+
+/**
+ * כמו setConfigValue, אבל מפיץ כישלון — לשמירות שמאחוריהן משתמש שמחכה
+ * לתשובה אמיתית (מסך ניהול הקטגוריות). בלי זה המסך הציג "נשמר בהצלחה"
+ * גם כשהכתיבה ל-Strapi נכשלה.
+ * @param {string} key
+ * @param {unknown} value
+ */
+export async function setConfigValueStrict(key, value) {
+	await saveConfig({ [key]: value });
 }

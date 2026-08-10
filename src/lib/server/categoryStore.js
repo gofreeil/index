@@ -11,7 +11,7 @@
 // כל דבר; כל מה שלא עומד בצורה פשוט נשמט, והאתר ממשיך עם ברירות המחדל.
 // ============================================================
 
-import { getConfigValue, setConfigValue } from './configStore.js';
+import { getConfigValue, setConfigValueStrict } from './configStore.js';
 import { effectiveCategories, sanitizeCategoryFit, isDefaultCategoryFit } from '$lib/categories.js';
 
 const KEY = 'category_settings';
@@ -98,10 +98,11 @@ export async function getCategorySettings() {
 
 /**
  * שמירת הגדרות (דורס את המפתח כולו — המסך תמיד שולח מצב שלם).
+ * זורק על כישלון — מסך הניהול מציג את השגיאה במקום "נשמר" כוזב.
  * @param {import('$lib/categories.js').CategorySettings} settings
  */
 export async function saveCategorySettings(settings) {
-	await setConfigValue(KEY, sanitize(settings));
+	await setConfigValueStrict(KEY, sanitize(settings));
 }
 
 /**

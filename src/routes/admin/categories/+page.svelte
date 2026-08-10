@@ -174,10 +174,13 @@
 
 	/** @param {DragEvent} e @param {Row} r */
 	function onRowDragOver(e, r) {
-		// רק גרירת קבצים מהמחשב — לא גרירת טקסט או תמונה מתוך הדף עצמו
-		if (!e.dataTransfer?.types?.includes('Files')) return;
+		// קבצים מהמחשב, וגם תמונה שנגררת מתוך דפדפן (uri-list) — את השנייה
+		// מקבלים רק כדי שה-drop יקרה ונוכל להסביר בו למה היא לא נקלטת;
+		// בלי זה הגרירה מתה בשקט והמשתמש בטוח שהתמונה נתפסה
+		const dt = e.dataTransfer;
+		if (!dt || (!dt.types.includes('Files') && !dt.types.includes('text/uri-list'))) return;
 		e.preventDefault();
-		e.dataTransfer.dropEffect = 'copy';
+		dt.dropEffect = 'copy';
 		dragOverKey = r.key;
 	}
 
@@ -194,7 +197,12 @@
 		e.preventDefault();
 		dragOverKey = '';
 		const file = e.dataTransfer?.files?.[0];
-		if (!file) return;
+		if (!file) {
+			// גרירה מתוך דפדפן/אפליקציה מגיעה כתמונה בלי קובץ — בעבר נבלעה
+			// בשקט והמשתמש היה בטוח שהתמונה נקלטה
+			rows[i].dropError = 'זו תמונה מתוך דף — שמרו אותה קודם למחשב וגררו את הקובץ';
+			return;
+		}
 		if (!file.type.startsWith('image/')) {
 			rows[i].dropError = 'אפשר לגרור לכאן רק קובץ תמונה';
 			return;
