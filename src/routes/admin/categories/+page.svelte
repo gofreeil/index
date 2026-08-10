@@ -14,7 +14,7 @@
 	/** @type {{ data: any, form: any }} */
 	let { data, form } = $props();
 
-	/** @typedef {{ key: string, name: string, icon: string, image: string, count: number, builtin: boolean, defaultName?: string, defaultIcon?: string, isNew: boolean, removeImage: boolean }} Row */
+	/** @typedef {{ key: string, name: string, icon: string, image: string, count: number, builtin: boolean, defaultName?: string, defaultIcon?: string, isNew: boolean, removeImage: boolean, previewUrl: string, dropError: string }} Row */
 
 	/** @param {any[]} cats @returns {Row[]} */
 	const seed = (cats) =>
@@ -28,7 +28,10 @@
 			defaultName: c.defaultName,
 			defaultIcon: c.defaultIcon,
 			isNew: false,
-			removeImage: false
+			removeImage: false,
+			// תצוגה מקדימה מקומית של קובץ שנבחר/נגרר וטרם נשמר (ObjectURL)
+			previewUrl: '',
+			dropError: ''
 		}));
 
 	// המצב הנערך מקומית; נזרע מהשרת פעם אחת, ונזרע מחדש אחרי שמירה מוצלחת
@@ -49,6 +52,66 @@
 	// "אחר" מוצמדת לסוף — גם באתר (המסילה) וגם כאן; אין להזיז ואין למחוק
 	/** @param {Row} r */
 	const isPinned = (r) => r.builtin && r.key === OTHER;
+
+	/* ── גרירת תמונה על שורה ──────────────────────────────────────
+	   כל שורת קטגוריה היא אזור שחרור: הקובץ הנגרר נכנס לאותו <input type=file>
+	   שמאחורי "בחירת קובץ" (דרך DataTransfer), ולכן השמירה בשרת לא משתנה —
+	   הקובץ ממשיך לנסוע בשם img_<אינדקס>. */
+	let dragOverKey = $state(''); // השורה שמעליה מרחפים עכשיו עם קובץ
+
+	/** מעדכן את התצוגה המקדימה המקומית של שורה (ומשחרר את הקודמת)
+	 * @param {Row} r @param {File | null} file */
+	function setPreview(r, file) {
+		if (r.previewUrl) URL.revokeObjectURL(r.previewUrl);
+		r.previewUrl = file ? URL.createObjectURL(file) : '';
+	}
+
+	/** מכניס קובץ לקלט הקובץ של השורה — הנתיב המשותף לגרירה ולבחירה
+	 * @param {number} i @param {File} file */
+	function applyImageFile(i, file) {
+		const input = /** @type {HTMLInputElement | null} */ (
+			formEl?.querySelector(`input[name="img_${i}"]`)
+		);
+		if (!input) return;
+		const dt = new DataTransfer();
+		dt.items.add(file);
+		input.files = dt.files;
+		const r = rows[i];
+		setPreview(r, file);
+		r.removeImage = false; // תמונה חדשה מבטלת סימון הסרה — הכוונה היא החלפה
+		r.dropError = '';
+		filesPicked = true;
+	}
+
+	/** @param {DragEvent} e @param {Row} r */
+	function onRowDragOver(e, r) {
+		// רק גרירת קבצים מהמחשב — לא גרירת טקסט או תמונה מתוך הדף עצמו
+		if (!e.dataTransfer?.types?.includes('Files')) return;
+		e.preventDefault();
+		e.dataTransfer.dropEffect = 'copy';
+		dragOverKey = r.key;
+	}
+
+	/** @param {DragEvent} e @param {Row} r */
+	function onRowDragLeave(e, r) {
+		// dragleave יורה גם במעבר בין ילדים בתוך השורה — מתעלמים מאלה
+		const to = /** @type {Node | null} */ (e.relatedTarget);
+		if (to && /** @type {HTMLElement} */ (e.currentTarget)?.contains(to)) return;
+		if (dragOverKey === r.key) dragOverKey = '';
+	}
+
+	/** @param {DragEvent} e @param {number} i */
+	function onRowDrop(e, i) {
+		e.preventDefault();
+		dragOverKey = '';
+		const file = e.dataTransfer?.files?.[0];
+		if (!file) return;
+		if (!file.type.startsWith('image/')) {
+			rows[i].dropError = 'אפשר לגרור לכאן רק קובץ תמונה';
+			return;
+		}
+		applyImageFile(i, file);
+	}
 
 	const payloadJson = $derived(
 		JSON.stringify({
@@ -110,7 +173,9 @@
 			count: 0,
 			builtin: false,
 			isNew: true,
-			removeImage: false
+			removeImage: false,
+			previewUrl: '',
+			dropError: ''
 		};
 		// נכנסת לפני "אחר" המוצמדת לסוף
 		const at = rows.length && isPinned(rows[rows.length - 1]) ? rows.length - 1 : rows.length;
@@ -127,6 +192,7 @@
 			? `למחוק את "${r.name}"? ${r.count} כרטיסיות מסווגות אליה — הן יחזרו להציג את התווית שנשמרה בהן.`
 			: `למחוק את "${r.name}"?`;
 		if (!r.isNew && !confirm(warn)) return;
+		setPreview(r, null); // שחרור ה-ObjectURL של השורה שנמחקת
 		rows = rows.filter((_, idx) => idx !== i);
 	}
 
@@ -138,6 +204,7 @@
 	}
 
 	function reseed() {
+		for (const r of rows) setPreview(r, null); // שחרור כל ה-ObjectURL-ים
 		rows = seed(data.categories);
 		customOrder = Boolean(data.hasCustomOrder);
 		filesPicked = false;
@@ -175,6 +242,10 @@
 	<title>ניהול קטגוריות — פאנל ניהול</title>
 	<meta name="robots" content="noindex" />
 </svelte:head>
+
+<!-- שחרור קובץ בטעות מחוץ לשורה היה מנווט את הדפדפן אל התמונה ומוחק את
+     כל העריכות שטרם נשמרו — בולמים את ברירת המחדל בכל הדף -->
+<svelte:window ondragover={(e) => e.preventDefault()} ondrop={(e) => e.preventDefault()} />
 
 <main class="mx-auto max-w-4xl pb-10" dir="rtl">
 	<div class="mb-6 flex items-center justify-between gap-3">
@@ -249,10 +320,18 @@
 
 		<div class="space-y-2">
 			{#each rows as r, i (r.key)}
+				<!-- כל השורה היא אזור שחרור לתמונה — לא רק כפתור הבחירה -->
 				<div
-					class="rounded-2xl border bg-gray-900/40 p-3 {r.isNew
-						? 'border-green-500/30'
-						: 'border-gray-800'}"
+					role="group"
+					aria-label="קטגוריה {r.name} — אפשר לגרור לכאן קובץ תמונה"
+					ondragover={(e) => onRowDragOver(e, r)}
+					ondragleave={(e) => onRowDragLeave(e, r)}
+					ondrop={(e) => onRowDrop(e, i)}
+					class="rounded-2xl border bg-gray-900/40 p-3 transition-colors {dragOverKey === r.key
+						? 'border-blue-400 bg-blue-950/40 ring-2 ring-blue-500/40'
+						: r.isNew
+							? 'border-green-500/30'
+							: 'border-gray-800'}"
 				>
 					<div class="flex flex-wrap items-center gap-3">
 						<!-- מיקום + חיצי סדר -->
@@ -286,11 +365,14 @@
 							{/if}
 						</div>
 
-						<!-- תצוגה מקדימה: תמונה אם יש, אחרת האימוג'י -->
+						<!-- תצוגה מקדימה: קובץ שנבחר/נגרר וטרם נשמר גובר, אחריו התמונה
+						     השמורה, ואחרת האימוג'י -->
 						<div
 							class="grid h-11 w-11 flex-shrink-0 place-items-center overflow-hidden rounded-xl border border-gray-700 bg-gray-950/60 text-2xl"
 						>
-							{#if r.image && !r.removeImage}
+							{#if r.previewUrl}
+								<img src={r.previewUrl} alt="" class="h-full w-full object-cover" />
+							{:else if r.image && !r.removeImage}
 								<img src={r.image} alt="" class="h-full w-full object-cover" />
 							{:else}
 								{r.icon}
@@ -371,10 +453,21 @@
 								type="file"
 								name={'img_' + i}
 								accept="image/*"
-								onchange={() => (filesPicked = true)}
+								onchange={(e) => {
+									const f = /** @type {HTMLInputElement} */ (e.currentTarget).files?.[0] ?? null;
+									setPreview(r, f);
+									if (f) {
+										r.removeImage = false;
+										r.dropError = '';
+										filesPicked = true;
+									}
+								}}
 								class="block text-xs text-gray-400 file:me-2 file:rounded-lg file:border-0 file:bg-gray-700 file:px-2.5 file:py-1 file:text-gray-200"
 							/>
 						</label>
+						<span class="text-gray-600 select-none" aria-hidden="true"
+							>— או פשוט גררו תמונה על השורה</span
+						>
 						{#if r.image}
 							<label class="flex cursor-pointer items-center gap-1.5">
 								<input type="checkbox" bind:checked={r.removeImage} class="accent-red-500" />
@@ -382,6 +475,9 @@
 									>הסרת התמונה (חזרה לאימוג'י)</span
 								>
 							</label>
+						{/if}
+						{#if r.dropError}
+							<span class="font-bold text-red-400">{r.dropError}</span>
 						{/if}
 					</div>
 				</div>
