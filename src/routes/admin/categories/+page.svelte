@@ -1,6 +1,7 @@
 <script>
 	import { enhance } from '$app/forms';
-	import { OTHER } from '$lib/categories.js';
+	import { OTHER, DEFAULT_CATEGORY_FIT } from '$lib/categories.js';
+	import { adImgFit, AD_ZOOM_MIN, AD_ZOOM_MAX } from '$lib/adImageFit';
 
 	// ============================================================
 	// מסך ניהול הקטגוריות — לסופר-אדמין בלבד (הגייטינג בשרת).
@@ -14,7 +15,7 @@
 	/** @type {{ data: any, form: any }} */
 	let { data, form } = $props();
 
-	/** @typedef {{ key: string, name: string, icon: string, image: string, count: number, builtin: boolean, defaultName?: string, defaultIcon?: string, isNew: boolean, removeImage: boolean, previewUrl: string, dropError: string }} Row */
+	/** @typedef {{ key: string, name: string, icon: string, image: string, count: number, builtin: boolean, defaultName?: string, defaultIcon?: string, isNew: boolean, removeImage: boolean, previewUrl: string, dropError: string, fitX: number, fitY: number, fitZ: number }} Row */
 
 	/** @param {any[]} cats @returns {Row[]} */
 	const seed = (cats) =>
@@ -31,7 +32,11 @@
 			removeImage: false,
 			// תצוגה מקדימה מקומית של קובץ שנבחר/נגרר וטרם נשמר (ObjectURL)
 			previewUrl: '',
-			dropError: ''
+			dropError: '',
+			// מיקום+זום של התמונה באריח (אותה סמנטיקה כמו בפרסומות)
+			fitX: c.imageFit?.x ?? DEFAULT_CATEGORY_FIT.x,
+			fitY: c.imageFit?.y ?? DEFAULT_CATEGORY_FIT.y,
+			fitZ: c.imageFit?.z ?? DEFAULT_CATEGORY_FIT.z
 		}));
 
 	// המצב הנערך מקומית; נזרע מהשרת פעם אחת, ונזרע מחדש אחרי שמירה מוצלחת
@@ -80,7 +85,91 @@
 		setPreview(r, file);
 		r.removeImage = false; // תמונה חדשה מבטלת סימון הסרה — הכוונה היא החלפה
 		r.dropError = '';
+		centerFit(r); // נקודת מיקוד של תמונה קודמת חסרת משמעות בתמונה אחרת
 		filesPicked = true;
+	}
+
+	/* ── מיקום + זום של התמונה באריח ─────────────────────────────
+	   אותה סמנטיקה כמו בבילדר הפרסומות (adImgFit): גוררים את התצוגה
+	   המקדימה כדי למקם, כפתורי +/- לזום, "מרכז" מאפס. הערכים נוסעים
+	   ב-payload ונשמרים רק כשהם שונים מברירת המחדל. */
+
+	const ZOOM_FACTOR = 1.15;
+
+	/** @param {Row} r */
+	function centerFit(r) {
+		r.fitX = DEFAULT_CATEGORY_FIT.x;
+		r.fitY = DEFAULT_CATEGORY_FIT.y;
+		r.fitZ = DEFAULT_CATEGORY_FIT.z;
+	}
+
+	/** @param {Row} r @param {'in' | 'out'} dir */
+	function zoomFit(r, dir) {
+		const next = dir === 'in' ? r.fitZ * ZOOM_FACTOR : r.fitZ / ZOOM_FACTOR;
+		r.fitZ = Math.round(Math.min(AD_ZOOM_MAX, Math.max(AD_ZOOM_MIN, next)) * 100) / 100;
+	}
+
+	/** הסרת התמונה של השורה: קובץ טרי נמחק מהקלט; תמונה שמורה מסומנת
+	 *  להסרה בשמירה. @param {number} i */
+	function removeRowImage(i) {
+		const r = rows[i];
+		const input = /** @type {HTMLInputElement | null} */ (
+			formEl?.querySelector(`input[name="img_${i}"]`)
+		);
+		if (input) input.value = '';
+		setPreview(r, null);
+		if (r.image) r.removeImage = true;
+		centerFit(r);
+	}
+
+	/** האם יש לשורה תמונה על המסך (טרייה או שמורה) — ואז מציגים את עורך המיקום
+	 * @param {Row} r */
+	const hasVisibleImage = (r) => Boolean(r.previewUrl || (r.image && !r.removeImage));
+
+	/* גרירת התצוגה המקדימה ממקמת את נקודת המיקוד. ההמרה: הזזת המצביע
+	   בפיקסל אחד מזיזה את התמונה בפיקסל — כלומר משנה את האחוז ביחס לטווח
+	   הגלישה (רוחב התמונה המוצגת פחות רוחב המשבצת). */
+	/** @type {{ id: number, sx: number, sy: number, fx: number, fy: number, rx: number, ry: number } | null} */
+	let pan = null;
+
+	/** @param {PointerEvent} e @param {Row} r */
+	function panDown(e, r) {
+		const box = /** @type {HTMLElement} */ (e.currentTarget);
+		const img = box.querySelector('img');
+		if (!img?.naturalWidth || !img.naturalHeight) return;
+		const W = box.clientWidth;
+		const H = box.clientHeight;
+		const k = Math.max(W / img.naturalWidth, H / img.naturalHeight) * r.fitZ;
+		pan = {
+			id: e.pointerId,
+			sx: e.clientX,
+			sy: e.clientY,
+			fx: r.fitX,
+			fy: r.fitY,
+			rx: img.naturalWidth * k - W,
+			ry: img.naturalHeight * k - H
+		};
+		box.setPointerCapture(e.pointerId);
+		e.preventDefault();
+	}
+
+	/** @param {PointerEvent} e @param {Row} r */
+	function panMove(e, r) {
+		if (!pan || e.pointerId !== pan.id) return;
+		e.preventDefault();
+		const round1 = (/** @type {number} */ v) => Math.round(v * 10) / 10;
+		// גרירה ימינה מזיזה את התמונה ימינה = חושפת את צדה השמאלי = x קטן
+		if (pan.rx > 1) {
+			r.fitX = round1(Math.min(100, Math.max(0, pan.fx - ((e.clientX - pan.sx) / pan.rx) * 100)));
+		}
+		if (pan.ry > 1) {
+			r.fitY = round1(Math.min(100, Math.max(0, pan.fy - ((e.clientY - pan.sy) / pan.ry) * 100)));
+		}
+	}
+
+	/** @param {PointerEvent} e */
+	function panUp(e) {
+		if (pan && e.pointerId === pan.id) pan = null;
 	}
 
 	/** @param {DragEvent} e @param {Row} r */
@@ -121,7 +210,8 @@
 				name: r.name,
 				icon: r.icon,
 				removeImage: r.removeImage,
-				isNew: r.isNew
+				isNew: r.isNew,
+				imageFit: { x: r.fitX, y: r.fitY, z: r.fitZ }
 			}))
 		})
 	);
@@ -137,6 +227,9 @@
 				r.key !== base[i].key ||
 				r.name !== base[i].name ||
 				r.icon !== base[i].icon ||
+				r.fitX !== base[i].fitX ||
+				r.fitY !== base[i].fitY ||
+				r.fitZ !== base[i].fitZ ||
 				r.removeImage ||
 				r.isNew
 		);
@@ -175,7 +268,10 @@
 			isNew: true,
 			removeImage: false,
 			previewUrl: '',
-			dropError: ''
+			dropError: '',
+			fitX: DEFAULT_CATEGORY_FIT.x,
+			fitY: DEFAULT_CATEGORY_FIT.y,
+			fitZ: DEFAULT_CATEGORY_FIT.z
 		};
 		// נכנסת לפני "אחר" המוצמדת לסוף
 		const at = rows.length && isPinned(rows[rows.length - 1]) ? rows.length - 1 : rows.length;
@@ -366,14 +462,25 @@
 						</div>
 
 						<!-- תצוגה מקדימה: קובץ שנבחר/נגרר וטרם נשמר גובר, אחריו התמונה
-						     השמורה, ואחרת האימוג'י -->
+						     השמורה, ואחרת האימוג'י. המיקום והזום מוחלים גם כאן — מה
+						     שרואים בשורה הוא מה שיהיה על האריח בדף הבית. -->
 						<div
-							class="grid h-11 w-11 flex-shrink-0 place-items-center overflow-hidden rounded-xl border border-gray-700 bg-gray-950/60 text-2xl"
+							class="relative grid h-11 w-11 flex-shrink-0 place-items-center overflow-hidden rounded-xl border border-gray-700 bg-gray-950/60 text-2xl"
 						>
 							{#if r.previewUrl}
-								<img src={r.previewUrl} alt="" class="h-full w-full object-cover" />
+								<img
+									src={r.previewUrl}
+									alt=""
+									class="h-full w-full object-cover"
+									use:adImgFit={{ x: r.fitX, y: r.fitY, z: r.fitZ }}
+								/>
 							{:else if r.image && !r.removeImage}
-								<img src={r.image} alt="" class="h-full w-full object-cover" />
+								<img
+									src={r.image}
+									alt=""
+									class="h-full w-full object-cover"
+									use:adImgFit={{ x: r.fitX, y: r.fitY, z: r.fitZ }}
+								/>
 							{:else}
 								{r.icon}
 							{/if}
@@ -459,6 +566,7 @@
 									if (f) {
 										r.removeImage = false;
 										r.dropError = '';
+										centerFit(r);
 										filesPicked = true;
 									}
 								}}
@@ -468,18 +576,72 @@
 						<span class="text-gray-600 select-none" aria-hidden="true"
 							>— או פשוט גררו תמונה על השורה</span
 						>
-						{#if r.image}
-							<label class="flex cursor-pointer items-center gap-1.5">
-								<input type="checkbox" bind:checked={r.removeImage} class="accent-red-500" />
-								<span class={r.removeImage ? 'font-bold text-red-300' : ''}
-									>הסרת התמונה (חזרה לאימוג'י)</span
+						{#if r.removeImage && !r.previewUrl}
+							<span class="font-bold text-red-300">
+								התמונה תוסר בשמירה —
+								<button
+									type="button"
+									class="underline underline-offset-2 hover:text-red-200"
+									onclick={() => (r.removeImage = false)}>ביטול</button
 								>
-							</label>
+							</span>
 						{/if}
 						{#if r.dropError}
 							<span class="font-bold text-red-400">{r.dropError}</span>
 						{/if}
 					</div>
+
+					<!-- עורך מיקום + זום — מוצג כשיש תמונה על המסך -->
+					{#if hasVisibleImage(r)}
+						<div class="mt-2 flex flex-wrap items-center gap-3 ps-9">
+							<div
+								class="fit-box relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-xl border border-gray-600 bg-gray-950/80 shadow-inner"
+								title="גררו את התמונה כדי למקם אותה בתוך האריח"
+								onpointerdown={(e) => panDown(e, r)}
+								onpointermove={(e) => panMove(e, r)}
+								onpointerup={panUp}
+								onpointercancel={panUp}
+							>
+								<img
+									src={r.previewUrl || r.image}
+									alt=""
+									draggable="false"
+									class="h-full w-full object-cover"
+									use:adImgFit={{ x: r.fitX, y: r.fitY, z: r.fitZ }}
+								/>
+							</div>
+							<div class="flex flex-col gap-1.5 text-xs">
+								<div class="flex items-center gap-1.5">
+									<button
+										type="button"
+										class="fit-btn"
+										aria-label="זום פנימה"
+										onclick={() => zoomFit(r, 'in')}>🔍+</button
+									>
+									<button
+										type="button"
+										class="fit-btn"
+										aria-label="זום החוצה"
+										onclick={() => zoomFit(r, 'out')}>🔍−</button
+									>
+									<span class="w-10 text-center text-gray-500 tabular-nums"
+										>{Math.round(r.fitZ * 100)}%</span
+									>
+								</div>
+								<div class="flex items-center gap-1.5">
+									<button type="button" class="fit-btn" onclick={() => centerFit(r)}>⌖ מרכז</button>
+									<button
+										type="button"
+										class="fit-btn fit-btn--danger"
+										onclick={() => removeRowImage(i)}>🗑 הסרה</button
+									>
+								</div>
+								<p class="max-w-44 leading-snug text-gray-600">
+									גררו את התמונה כדי למקם, וזום +/− כדי לקרב או להרחיק
+								</p>
+							</div>
+						</div>
+					{/if}
 				</div>
 			{/each}
 		</div>
@@ -578,3 +740,34 @@
 		</form>
 	</section>
 </main>
+
+<style>
+	/* עורך מיקום התמונה — הגרירה ממקמת, לא גוללת */
+	.fit-box {
+		cursor: grab;
+		touch-action: none;
+	}
+	.fit-box:active {
+		cursor: grabbing;
+	}
+	.fit-btn {
+		border: 1px solid #374151; /* gray-700 */
+		background: rgba(31, 41, 55, 0.7); /* gray-800 */
+		color: #d1d5db; /* gray-300 */
+		border-radius: 0.5rem;
+		padding: 0.3rem 0.6rem;
+		font-weight: 700;
+		transition: background 0.15s ease;
+	}
+	.fit-btn:hover {
+		background: #374151;
+	}
+	.fit-btn--danger {
+		border-color: rgba(239, 68, 68, 0.4); /* red-500/40 */
+		background: rgba(69, 10, 10, 0.4); /* red-950/40 */
+		color: #fca5a5; /* red-300 */
+	}
+	.fit-btn--danger:hover {
+		background: rgba(127, 29, 29, 0.5); /* red-900/50 */
+	}
+</style>

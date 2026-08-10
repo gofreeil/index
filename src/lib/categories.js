@@ -415,16 +415,25 @@ export const normCategoryLabel = norm;
 // ============================================================
 
 /**
+ * @typedef {Object} CategoryImageFit מיקום+זום של תמונת התחום באריח —
+ *   אותה סמנטיקה של הפרסומות (ראו $lib/adImageFit): x/y נקודת מיקוד
+ *   באחוזים (50/50 = מרכז), z זום יחסית ל-cover (1 = מילוי מדויק).
+ * @property {number} x
+ * @property {number} y
+ * @property {number} z
+ *
  * @typedef {Object} CategoryOverride
  * @property {string} [name]  שם תצוגה שדורס את התווית
  * @property {string} [icon]  אימוג'י שדורס את ברירת המחדל
  * @property {string} [image] כתובת תמונה שמחליפה את האימוג'י באריח
+ * @property {CategoryImageFit} [imageFit] מיקום+זום של התמונה באריח
  *
  * @typedef {Object} CategoryExtra
  * @property {string} key       מזהה יציב (x_...)
  * @property {string} name      השם הנוכחי — זה גם הערך שנשמר במאגר
  * @property {string} [icon]
  * @property {string} [image]
+ * @property {CategoryImageFit} [imageFit]
  * @property {string[]} [aliases] שמות קודמים — רשומות ישנות ממופות לשם הנוכחי
  *
  * @typedef {Object} CategorySettings
@@ -437,11 +446,40 @@ export const normCategoryLabel = norm;
  * @property {string} name
  * @property {string} icon
  * @property {string} image
+ * @property {CategoryImageFit} imageFit
  * @property {boolean} builtin
  * @property {string} [defaultName] לקטגוריה מובנית — התווית שבקוד
  * @property {string} [defaultIcon] לקטגוריה מובנית — האימוג'י שבקוד
  * @property {string[]} [aliases]   לקטגוריה שנוספה מהמסך
  */
+
+/** ברירת המחדל: מרכז, בלי זום. @type {CategoryImageFit} */
+export const DEFAULT_CATEGORY_FIT = { x: 50, y: 50, z: 1 };
+
+/** @param {number} v @param {number} lo @param {number} hi */
+const clampNum = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
+/**
+ * מנרמל fit מקלט לא-בטוח (KV / טופס) לערכים חוקיים. הגבולות זהים לאלה
+ * של הפרסומות (0.4–3) — בלי לייבא את המודול (adImageFit הוא TS, והקובץ
+ * הזה חייב להישאר ניתן לייבוא גם מסקריפטים של node טהור).
+ * @param {unknown} raw
+ * @returns {CategoryImageFit}
+ */
+export function sanitizeCategoryFit(raw) {
+	if (!raw || typeof raw !== 'object') return { ...DEFAULT_CATEGORY_FIT };
+	const o = /** @type {Record<string, unknown>} */ (raw);
+	const num = (/** @type {unknown} */ v, /** @type {number} */ fallback) =>
+		typeof v === 'number' && isFinite(v) ? v : fallback;
+	return {
+		x: Math.round(clampNum(num(o.x, 50), 0, 100) * 10) / 10,
+		y: Math.round(clampNum(num(o.y, 50), 0, 100) * 10) / 10,
+		z: Math.round(clampNum(num(o.z, 1), 0.4, 3) * 100) / 100
+	};
+}
+
+/** האם ה-fit הוא ברירת המחדל (ואז אין טעם לשמור אותו). @param {CategoryImageFit} f */
+export const isDefaultCategoryFit = (f) => f.x === 50 && f.y === 50 && f.z === 1;
 
 /**
  * הרשימה האפקטיבית — הקטגוריות המובנות עם הדריסות + התוספות, בסדר שנקבע.
@@ -461,6 +499,7 @@ export function effectiveCategories(settings) {
 			name: String(o.name || def.label),
 			icon: String(o.icon || def.icon),
 			image: String(o.image || ''),
+			imageFit: sanitizeCategoryFit(o.imageFit),
 			builtin: true,
 			defaultName: def.label,
 			defaultIcon: def.icon
@@ -473,6 +512,7 @@ export function effectiveCategories(settings) {
 			name: String(x.name),
 			icon: String(x.icon || '🏷️'),
 			image: String(x.image || ''),
+			imageFit: sanitizeCategoryFit(x.imageFit),
 			builtin: false,
 			aliases: Array.isArray(x.aliases) ? x.aliases.map(String) : []
 		});
@@ -523,9 +563,9 @@ export function categoryDisplayResolver(settings) {
  */
 export function categoryRailMeta(settings) {
 	const list = effectiveCategories(settings);
-	/** @type {Record<string, { icon: string, image: string }>} */
+	/** @type {Record<string, { icon: string, image: string, imageFit: CategoryImageFit }>} */
 	const byName = {};
-	for (const c of list) byName[c.name] = { icon: c.icon, image: c.image };
+	for (const c of list) byName[c.name] = { icon: c.icon, image: c.image, imageFit: c.imageFit };
 	const hasOrder = Array.isArray(settings?.order) && settings.order.length > 0;
 	return {
 		byName,

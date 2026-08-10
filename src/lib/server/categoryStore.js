@@ -12,7 +12,7 @@
 // ============================================================
 
 import { getConfigValue, setConfigValue } from './configStore.js';
-import { effectiveCategories } from '$lib/categories.js';
+import { effectiveCategories, sanitizeCategoryFit, isDefaultCategoryFit } from '$lib/categories.js';
 
 const KEY = 'category_settings';
 
@@ -44,6 +44,11 @@ function sanitize(raw) {
 			if (name) o.name = name;
 			if (icon) o.icon = icon;
 			if (image) o.image = image;
+			// fit נשמר רק כשיש תמונה והוא שונה מברירת המחדל (מרכז, בלי זום)
+			if (image && anyV.imageFit) {
+				const fit = sanitizeCategoryFit(anyV.imageFit);
+				if (!isDefaultCategoryFit(fit)) o.imageFit = fit;
+			}
 			if (Object.keys(o).length) overrides[label] = o;
 		}
 	}
@@ -58,6 +63,7 @@ function sanitize(raw) {
 			if (!key || !name) continue;
 			const icon = cleanStr(x.icon, 16);
 			const image = cleanStr(x.image, 500);
+			const fit = image && x.imageFit ? sanitizeCategoryFit(x.imageFit) : null;
 			const aliases = Array.isArray(x.aliases)
 				? [
 						...new Set(
@@ -67,7 +73,14 @@ function sanitize(raw) {
 						)
 					]
 				: [];
-			extras.push({ key, name, ...(icon ? { icon } : {}), ...(image ? { image } : {}), aliases });
+			extras.push({
+				key,
+				name,
+				...(icon ? { icon } : {}),
+				...(image ? { image } : {}),
+				...(fit && !isDefaultCategoryFit(fit) ? { imageFit: fit } : {}),
+				aliases
+			});
 		}
 	}
 

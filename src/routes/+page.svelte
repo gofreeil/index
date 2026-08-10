@@ -17,7 +17,7 @@
 		collectionSchema
 	} from '$lib/seo';
 
-	/** @type {{ data: { businesses: any[], catRail?: { byName: Record<string, {icon: string, image: string}>, order: string[], otherName: string }, loadError: string | null } }} */
+	/** @type {{ data: { businesses: any[], catRail?: { byName: Record<string, {icon: string, image: string, imageFit?: { x: number, y: number, z: number }}>, order: string[], otherName: string }, loadError: string | null } }} */
 	let { data } = $props();
 
 	let currentLang = $state('he');
@@ -72,6 +72,7 @@
 				label,
 				icon: railMeta[label]?.icon ?? categoryIcon(label),
 				image: railMeta[label]?.image ?? '',
+				imageFit: railMeta[label]?.imageFit,
 				count
 			}))
 			.sort(

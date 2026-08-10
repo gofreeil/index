@@ -8,7 +8,9 @@ import {
 	OTHER,
 	effectiveCategories,
 	normCategoryLabel,
-	resolveCategory
+	resolveCategory,
+	sanitizeCategoryFit,
+	isDefaultCategoryFit
 } from '$lib/categories.js';
 
 // מסך ניהול הקטגוריות — לסופר-אדמין בלבד. הרשימה שבקוד נשארת מקור האמת
@@ -69,8 +71,9 @@ export async function load({ locals }) {
 }
 
 /**
- * שורה אחת מה-payload של הטופס.
- * @typedef {{ key: string, name: string, icon: string, removeImage?: boolean, isNew?: boolean }} EditRow
+ * שורה אחת מה-payload של הטופס. imageFit — מיקום+זום של התמונה באריח
+ * (x/y אחוזי מיקוד, z זום; ראו sanitizeCategoryFit).
+ * @typedef {{ key: string, name: string, icon: string, removeImage?: boolean, isNew?: boolean, imageFit?: unknown }} EditRow
  * ה-payload המלא: rows בסדר התצוגה + האם הסדר ידני. customOrder=false משאיר
  * את המסילה במיון האוטומטי לפי כמות — שמירה של שינוי-שם בלבד לא מקפיאה סדר.
  * @typedef {{ customOrder: boolean, rows: EditRow[] }} EditPayload
@@ -168,11 +171,13 @@ export const actions = {
 				const prev = current.overrides[r.key] ?? {};
 				// קובץ חדש גובר על סימון הסרה — מי שגם סימן וגם העלה התכוון להחליף
 				const image = uploadedByIndex.get(i) ?? (r.removeImage ? '' : (prev.image ?? ''));
+				const fit = sanitizeCategoryFit(r.imageFit);
 				/** @type {import('$lib/categories.js').CategoryOverride} */
 				const o = {};
 				if (r.name !== def.label) o.name = r.name;
 				if (r.icon && r.icon !== def.icon) o.icon = r.icon;
 				if (image) o.image = image;
+				if (image && !isDefaultCategoryFit(fit)) o.imageFit = fit;
 				if (Object.keys(o).length) next.overrides[r.key] = o;
 				next.order.push(r.key);
 				return;
@@ -182,6 +187,7 @@ export const actions = {
 			const prev = extrasByKey.get(r.key);
 			const key = prev ? prev.key : 'x_' + randomBytes(5).toString('hex');
 			const image = uploadedByIndex.get(i) ?? (r.removeImage ? '' : (prev?.image ?? ''));
+			const fit = sanitizeCategoryFit(r.imageFit);
 			// שינוי שם משאיר את השם הקודם כ-alias — רשומות שנשמרו איתו במאגר
 			// ממשיכות להתמפות לשם החדש
 			const aliases = new Set(prev?.aliases ?? []);
@@ -192,6 +198,7 @@ export const actions = {
 				name: r.name,
 				...(r.icon ? { icon: r.icon } : {}),
 				...(image ? { image } : {}),
+				...(image && !isDefaultCategoryFit(fit) ? { imageFit: fit } : {}),
 				aliases: [...aliases]
 			});
 			next.order.push(key);
