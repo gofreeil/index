@@ -274,6 +274,41 @@ function sameAdvertiser(a, b) {
 const byNewest = (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime();
 
 /**
+ * עוקב אחרי שרשרת ההחלפות (_supersededBy) עד הגלגול העדכני ביותר של
+ * הפרסומת. נחוץ כשעורכים לפי מזהה ישן: בין השליחה לאישור יכלה להיכנס
+ * גרסה נוספת, והפעולה צריכה לפגוש את מה שחי על האתר בפועל.
+ * @param {string} id @returns {Promise<SubmittedAd|null>}
+ */
+async function resolveLatestVersion(id) {
+	let cur = await getAd(id).catch(() => null);
+	for (let hops = 0; cur?.supersededBy && hops < 6; hops++) {
+		const next = await getAd(cur.supersededBy).catch(() => null);
+		if (!next) break;
+		cur = next;
+	}
+	return cur;
+}
+
+/**
+ * בקשות ממתינות קודמות שהן עריכות של אותה פרסומת ספציפית - השליחה
+ * החדשה מייתרת אותן. בקשות של פרסומות אחרות של אותו מפרסם לא נוגעות:
+ * הוא רשאי לערוך כמה מהמשבצות שלו במקביל.
+ * @param {string} targetId @param {any} identity
+ * @returns {Promise<SubmittedAd[]>}
+ */
+async function findStalePendingEditsOf(targetId, identity) {
+	try {
+		const pending = await listByStatus('pending');
+		return pending
+			.filter((a) => !a.supersededBy && a.replacesAdId === targetId && sameAdvertiser(a, identity))
+			.sort(byNewest);
+	} catch (e) {
+		console.warn('[adsStore] findStalePendingEditsOf failed:', e instanceof Error ? e.message : e);
+		return [];
+	}
+}
+
+/**
  * מה כבר יש למפרסם הזה: target = הפרסומת שהשליחה החדשה היא גרסה מעודכנת
  * שלה (מאושרת → ממתינה → נדחתה), stalePending = כל בקשותיו הממתינות.
  * "נדחה, תיקן ושלח שוב" הוא המסלול הנפוץ ביותר ולכן גם נדחתה נספרת.
@@ -300,26 +335,6 @@ async function findPredecessors(identity) {
 	const stalePending = mine.filter((a) => a.status === 'pending').sort(byNewest);
 	const past = mine.filter((a) => a.status === 'rejected').sort(byNewest);
 	return { target: live[0] ?? stalePending[0] ?? past[0] ?? null, stalePending };
-}
-
-/**
- * כל הפרסומות המאושרות שחיות כרגע על האתר לאותו מפרסם - חוץ מזו שמאשרים
- * עכשיו. מפרסם מקבל משבצת אחת; שתי מודעות שלו זו לצד זו הן תמיד תקלה ולא
- * בחירה - מי שבאמת רוצה שתיים מאשר עם keepPrevious.
- * שגיאה כאן לא מפילה את האישור: במקרה הגרוע הישנות יישארו וירדו ידנית.
- * @param {SubmittedAd} current
- * @returns {Promise<SubmittedAd[]>}
- */
-async function findLiveAdsOfAdvertiser(current) {
-	try {
-		const approved = await listByStatus('approved');
-		return approved.filter(
-			(a) => a.id !== current.id && !a.supersededBy && sameAdvertiser(a, current)
-		);
-	} catch (e) {
-		console.warn('[adsStore] findLiveAdsOfAdvertiser failed:', e instanceof Error ? e.message : e);
-		return [];
-	}
 }
 
 /**
@@ -422,6 +437,22 @@ export async function getAd(id) {
 }
 
 /**
+ * הפרסומת המלאה לעריכה בבילדר - לבעליה בלבד. הבעלות נבדקת לפי מפתחות
+ * הזהות של המפרסם (id/email וגם פרטי הקשר שבדף הנחיתה), כדי שאי אפשר
+ * יהיה למשוך תוכן של פרסומת זרה בניחוש מזהה. מזהה של גלגול ישן מוביל
+ * לגרסה העדכנית ביותר של אותה פרסומת.
+ * @param {string} id @param {{id?: string, email?: string}} identity
+ * @returns {Promise<SubmittedAd|null>}
+ */
+export async function getOwnAdForEdit(id, identity) {
+	if (!identity?.id && !identity?.email) return null;
+	const ad = await resolveLatestVersion(id);
+	if (!ad) return null;
+	const me = { submittedBy: { id: identity.id, email: identity.email } };
+	return sameAdvertiser(ad, me) ? ad : null;
+}
+
+/**
  * שליחת פרסומת חדשה מהבילדר המקומי (ad_status: pending).
  * payment ו-requestedDurationDays נארזים בתוך ה-JSON של landing —
  * לאוסף המשותף עמודות מוקלדות ואי אפשר להוסיף שדות חדשים.
@@ -438,13 +469,25 @@ export async function getAd(id) {
  *   landing?: any,
  *   submittedBy?: { id?: string, email?: string, name?: string },
  *   payment?: string,
- *   requestedDurationDays?: number
+ *   requestedDurationDays?: number,
+ *   editOfAdId?: string
  * }} payload
  * @returns {Promise<SubmittedAd>}
  */
 export async function submitAd(payload) {
+	// עריכה ממוקדת: המפרסם לחץ "ערוך" על פרסומת מסוימת באזור האישי והמזהה
+	// שלה הגיע עם השליחה. הגרסה החדשה מקושרת אליה בלבד - האישור יחליף
+	// בדיוק אותה ולא ייגע בשאר הפרסומות של המפרסם. מזהה שלא שייך לאותו
+	// מפרסם (טעות/זיוף) לא מכובד, ונופלים לזיהוי הרגיל לפי זהות.
+	const explicitRaw = payload.editOfAdId ? await resolveLatestVersion(payload.editOfAdId) : null;
+	const explicitTarget = explicitRaw && sameAdvertiser(explicitRaw, payload) ? explicitRaw : null;
 	// מפרסם חוזר: מחפשים לפני היצירה, כדי שהרשומה החדשה עצמה לא תיספר
-	const { target: predecessor, stalePending } = await findPredecessors(payload);
+	const { target: predecessor, stalePending } = explicitTarget
+		? {
+				target: explicitTarget,
+				stalePending: await findStalePendingEditsOf(explicitTarget.id, payload)
+			}
+		: await findPredecessors(payload);
 	const landing = {
 		...(payload.landing ?? emptyLanding()),
 		// הגשה לעולם לא נכנסת כ"שולם". קוד הבעלים הוא *בקשה* לפרסום חינם,
@@ -527,28 +570,21 @@ export async function approveAd(id, decidedBy, durationDays, opts = {}) {
 	if (!existing) return null;
 	const current = fromStrapi(existing);
 
-	// גרסה מעודכנת של מפרסם קיים נכנסת *במקום* הישנה: אותו מקום בטור
-	// ואותו תאריך סיום, ומיד אחרי האישור הישנה יורדת מהאתר. בלי זה
-	// האישור היה מוסיף פרסומת שנייה לאותו מפרסם, ליד הישנה.
-	const predecessor =
+	// גרסה מעודכנת נכנסת *במקום* הפרסומת שאליה היא מקושרת - ורק במקומה:
+	// אותו מקום בטור ואותו תאריך סיום, ומיד אחרי האישור המקושרת יורדת
+	// מהאתר. הקישור נקבע בשליחה (עריכה ממוקדת מהאזור האישי, או זיהוי
+	// מפרסם חוזר), וכאן עוקבים אחרי שרשרת ההחלפות למקרה שבינתיים אושרה
+	// גרסה נוספת. שאר הפרסומות החיות של אותו מפרסם לא נוגעות: מפרסם עם
+	// כמה משבצות מעדכן אחת בלי שהאחרות יירדו מהאתר.
+	const linked =
 		current.replacesAdId && !opts.keepPrevious
-			? await getAd(current.replacesAdId).catch(() => null)
+			? await resolveLatestVersion(current.replacesAdId)
 			: null;
-
-	// כל מה שחי כרגע לאותו מפרסם: _replacesAdId מצביע על מה שהיה חי *בזמן
-	// השליחה* בלבד. כששתי גרסאות היו באוויר, האישור הוריד את הישנה, השאיר
-	// את השנייה ודחף אותה למטה. מפרסם מקבל משבצת אחת, ולכן ברירת המחדל
-	// היא שהחדשה מכסה את כולן.
-	const liveBefore = opts.keepPrevious ? [] : await findLiveAdsOfAdvertiser(current);
-	const replacingAll =
-		predecessor &&
-		predecessor.status === 'approved' &&
-		!predecessor.supersededBy &&
-		!liveBefore.some((a) => a.id === predecessor.id)
-			? [predecessor, ...liveBefore]
-			: liveBefore;
-	// הכי חדשה מביניהן היא זו שהחדשה יורשת ממנה את המשבצת בטור
-	const replacing = [...replacingAll].sort(byNewest)[0] ?? null;
+	const replacing =
+		linked && linked.id !== id && linked.status === 'approved' && !linked.supersededBy
+			? linked
+			: null;
+	const replacingAll = replacing ? [replacing] : [];
 
 	// ברירת מחדל: התקופה שהמפרסם ביקש בשליחה (landing._requestedDurationDays)
 	const requested =

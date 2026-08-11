@@ -22,6 +22,17 @@
 	const LS_KEY = 'idx_ad_builder_draft_v1';
 	const PAID_KEY = 'ad_paid';
 	const PAID_AT_KEY = 'ad_paid_at';
+	// עריכה ממוקדת: המזהה של הפרסומת הספציפית שנערכת (נכתב בבילדר כשנכנסים
+	// עם ?edit=<id>). נוסע עם השליחה כדי שהאישור יחליף בדיוק אותה - ולא
+	// פרסומות אחרות של אותו מפרסם. אותו מפתח מוגדר גם ב-builder הראשי.
+	const EDIT_TARGET_KEY = 'idx_ad_edit_target_v1';
+	function getEditTarget() {
+		try {
+			return localStorage.getItem(EDIT_TARGET_KEY) || null;
+		} catch {
+			return null;
+		}
+	}
 
 	// ===== שערת גישה (כמו ב-builder הראשי) =====
 	let accessGranted = $state(false);
@@ -162,7 +173,9 @@
 			},
 			// הקוד עצמו נשלח לשרת והוא מאמת אותו שוב — הדגל לא נקבע בדפדפן
 			ownerCode: payCodeOk ? payCode : '',
-			requestedDurationDays: payDuration
+			requestedDurationDays: payDuration,
+			// עריכה ממוקדת: השרת מקשר את הגרסה החדשה לפרסומת הזו בלבד
+			editOfAdId: getEditTarget() ?? undefined
 		};
 	}
 
@@ -534,6 +547,10 @@
 				throw new Error(await extractServerError(res));
 			}
 			submitted = true;
+			// יעד העריכה נצרך - שליחה עתידית לא תתקשר בטעות לפרסומת הזו
+			try {
+				localStorage.removeItem(EDIT_TARGET_KEY);
+			} catch {}
 		} catch (e) {
 			if (e instanceof TypeError) {
 				submitError = 'בעיית תקשורת - בדקו את החיבור ונסו שוב';

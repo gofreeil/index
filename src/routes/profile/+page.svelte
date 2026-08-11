@@ -691,10 +691,19 @@
 								>
 							</span>
 						</span>
+						<!-- עריכה ממוקדת: פותח את הבילדר עם התוכן של המודעה הזו בדיוק,
+						     והשליחה תעדכן רק אותה - מודעות אחרות שלך לא מושפעות -->
+						<a
+							href="/advertise/builder?edit={a.id}"
+							class="ms-auto rounded-full bg-amber-500 px-3 py-1.5 text-xs font-black text-black transition hover:bg-amber-400"
+							title={t.editAdTitle}
+						>
+							{t.editAd}
+						</a>
 						{#if a.status === 'approved'}
 							<a
 								href="/ads/{a.id}"
-								class="ms-auto rounded-full border border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+								class="rounded-full border border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
 							>
 								{t.viewAd}
 							</a>

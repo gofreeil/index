@@ -56,6 +56,12 @@ export async function POST({ request, locals }) {
 			// העיצוב מהבילדר (לוגו, רצועה, כותרת) — בלעדיו הפרסומת מתפרסמת
 			// עם ברירות המחדל של האתר ולא עם מה שהמפרסם ראה על המסך
 			adStyle: payload.adStyle,
+			// עריכה ממוקדת: מזהה הפרסומת הספציפית ש"ערוך" נלחץ עליה באזור
+			// האישי. השרת מקשר את הגרסה החדשה אליה בלבד (אחרי אימות בעלות).
+			editOfAdId:
+				typeof payload.editOfAdId === 'string' && payload.editOfAdId.trim()
+					? payload.editOfAdId.trim()
+					: undefined,
 			landing: {
 				headline: payload.landing.headline ?? '',
 				pitch: payload.landing.pitch ?? '',

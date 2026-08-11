@@ -27,6 +27,9 @@
 	const LS_KEY = 'idx_ad_builder_draft_v1';
 	const PAID_KEY = 'ad_paid';
 	const PAID_AT_KEY = 'ad_paid_at';
+	// עריכה ממוקדת: המזהה של הפרסומת שנערכת (מ-?edit=<id> באזור האישי).
+	// נשמר כאן ונקרא בעורך דף הנחיתה בשליחה - האישור יחליף בדיוק אותה.
+	const EDIT_TARGET_KEY = 'idx_ad_edit_target_v1';
 
 	const ADMIN_WA_NUMBER = '972508750632';
 
@@ -709,6 +712,40 @@
 		advance(nextOf(field));
 	}
 
+	// ===== המרת גרדיאנט: מחלקות Tailwind (האוסף המשותף) → CSS (תצוגת הבילדר) =====
+	// ההיפוך של CSS_TO_TW שבעורך דף הנחיתה - נדרש כשטוענים פרסומת קיימת
+	// לעריכה (?edit=<id>): היא שמורה עם מחלקות Tailwind והבילדר מציג CSS.
+	// לשמור מסונכרן עם CSS_TO_TW שם, עם palettes שכאן ועם $lib/adGradients.js.
+	/** @type {Record<string, string>} */
+	const TW_TO_CSS = {
+		'from-amber-500 to-orange-600': 'linear-gradient(135deg, #f59e0b, #ea580c)',
+		'from-orange-500 to-red-500': 'linear-gradient(135deg, #f97316, #ef4444)',
+		'from-yellow-400 to-amber-500': 'linear-gradient(135deg, #facc15, #f59e0b)',
+		'from-red-600 to-pink-600': 'linear-gradient(135deg, #dc2626, #db2777)',
+		'from-rose-500 to-fuchsia-600': 'linear-gradient(135deg, #f43f5e, #c026d3)',
+		'from-rose-700 to-red-900': 'linear-gradient(135deg, #be123c, #7f1d1d)',
+		'from-fuchsia-500 to-purple-600': 'linear-gradient(135deg, #d946ef, #9333ea)',
+		'from-purple-600 to-pink-600': 'linear-gradient(135deg, #9333ea, #db2777)',
+		'from-violet-600 to-indigo-700': 'linear-gradient(135deg, #7c3aed, #4338ca)',
+		'from-indigo-600 to-blue-600': 'linear-gradient(135deg, #4f46e5, #2563eb)',
+		'from-blue-600 to-cyan-600': 'linear-gradient(135deg, #2563eb, #0891b2)',
+		'from-sky-400 to-blue-500': 'linear-gradient(135deg, #38bdf8, #3b82f6)',
+		'from-teal-500 to-cyan-600': 'linear-gradient(135deg, #14b8a6, #0891b2)',
+		'from-emerald-500 to-teal-700': 'linear-gradient(135deg, #10b981, #0f766e)',
+		'from-green-600 to-emerald-600': 'linear-gradient(135deg, #16a34a, #059669)',
+		'from-lime-400 to-green-500': 'linear-gradient(135deg, #a3e635, #22c55e)',
+		'from-slate-500 to-gray-700': 'linear-gradient(135deg, #64748b, #374151)',
+		'from-gray-800 to-slate-900': 'linear-gradient(135deg, #1f2937, #0f172a)',
+		'from-orange-300 to-pink-400': 'linear-gradient(135deg, #fdba74, #f472b6)',
+		'from-emerald-300 to-teal-400': 'linear-gradient(135deg, #6ee7b7, #2dd4bf)',
+		'from-yellow-500 to-amber-700': 'linear-gradient(135deg, #eab308, #b45309)',
+		'from-slate-700 to-blue-900': 'linear-gradient(135deg, #334155, #1e3a8a)'
+	};
+	/** @param {string} tw @returns {string | null} */
+	function gradientCss(tw) {
+		return TW_TO_CSS[tw] ?? null;
+	}
+
 	// ===== פלטת צבעים - גרדיאנטים כמחרוזות CSS =====
 	const palettes = [
 		{ id: 'amber', label: 'ענבר', cls: 'linear-gradient(135deg, #f59e0b, #ea580c)' },
@@ -852,6 +889,22 @@
 					nextProductId = (products.reduce((m, p) => Math.max(m, p.id), 0) || 0) + 1;
 				}
 			} catch {}
+
+			// ===== עריכה ממוקדת: ?edit=<id> - "ערוך" שנלחץ על פרסומת מסוימת =====
+			// התוכן של אותה פרסומת נטען מהשרת ודורס את הטיוטה, כדי שהמפרסם
+			// יערוך את מה שבאמת רץ על האתר. אם הטיוטה כבר שייכת לאותה פרסומת
+			// (עריכה שנקטעה) ממשיכים ממנה. המזהה נוסע עם השליחה, וכך האישור
+			// מחליף בדיוק את הפרסומת הזו - לא פרסומות אחרות של המפרסם.
+			const editId = new URLSearchParams(location.search).get('edit');
+			if (editId) {
+				let sameTarget = false;
+				try {
+					sameTarget = localStorage.getItem(EDIT_TARGET_KEY) === editId;
+					localStorage.setItem(EDIT_TARGET_KEY, editId);
+				} catch {}
+				if (!sameTarget) void loadAdForEdit(editId);
+			}
+
 			// טיוטה ישנה שחורגת מהתקציב מכווצת מיד — לא מחכים לכישלון בסוף
 			void repairDraftWeight();
 		}
@@ -922,10 +975,84 @@
 		}
 	});
 
+	// ===== טעינת פרסומת קיימת לעריכה (הגעה עם ?edit=<id>) =====
+	// 'loading' עד שהשרת עונה; 'failed' משאיר את הטיוטה הקיימת ומציג אזהרה,
+	// כדי שהמפרסם לא יערוך בטעות תוכן ישן בחושבו שזו הפרסומת החיה.
+	let editLoadState = $state(/** @type {'idle' | 'loading' | 'failed'} */ ('idle'));
+	let editingAdTitle = $state('');
+
+	/** @param {string} id */
+	async function loadAdForEdit(id) {
+		editLoadState = 'loading';
+		try {
+			const res = await fetch(`/api/ads/mine?id=${encodeURIComponent(id)}`);
+			if (!res.ok) throw new Error(String(res.status));
+			const ad = await res.json();
+
+			logo = ad.logo ?? '';
+			logoOriginal = ad.logo ?? '';
+			mainImage = ad.mainImage ?? '';
+			mainImageObjectX = typeof ad.mainImageFit?.x === 'number' ? ad.mainImageFit.x : 50;
+			mainImageObjectY = typeof ad.mainImageFit?.y === 'number' ? ad.mainImageFit.y : 50;
+			mainImageZoom = typeof ad.mainImageFit?.z === 'number' ? ad.mainImageFit.z : 1;
+			title = ad.title ?? '';
+			subtitle = ad.subtitle ?? '';
+			hoverText = ad.hoverText ?? '';
+			cta = ad.cta || 'הקלק לפרטים והזמנות';
+			// הטיוטה מחזיקה גרדיאנט כמחרוזת CSS לתצוגה; מהשרת מגיעות מחלקות
+			// Tailwind של האוסף המשותף - ממירים חזרה לפורמט המקומי
+			gradient = gradientCss(ad.gradient) ?? gradient;
+
+			// העיצוב שנשמר עם המודעה; מודעה ותיקה (null) נשארת על ברירות המחדל
+			const st = ad.adStyle;
+			if (st) {
+				logoShape = st.logoShape === 'circle' ? 'circle' : 'square';
+				hasCircleCrop = st.logoShape === 'circle';
+				logoPosition = st.logoAnchor ?? 'right';
+				logoPositionExplicit = true;
+				logoFreeX = typeof st.logoX === 'number' ? st.logoX : null;
+				logoFreeY = typeof st.logoY === 'number' ? st.logoY : null;
+				diagHeight = typeof st.bandHeight === 'number' ? st.bandHeight : diagHeight;
+				titleOffsetY = typeof st.titleOffsetY === 'number' ? st.titleOffsetY : 0;
+				titleColor = typeof st.titleColor === 'string' ? st.titleColor : '#ffffff';
+			}
+
+			landingHeadline = ad.landing?.headline ?? '';
+			landingPitch = ad.landing?.pitch ?? '';
+			landingExtended = ad.landing?.extended ?? '';
+			landingImage = ad.landing?.image ?? '';
+			landingAdvantages = [
+				ad.landing?.advantages?.[0] ?? '',
+				ad.landing?.advantages?.[1] ?? '',
+				ad.landing?.advantages?.[2] ?? ''
+			];
+			uniqueness = ad.landing?.uniqueness ?? '';
+			phone = ad.landing?.phone ?? phone;
+			whatsapp = ad.landing?.whatsapp ?? whatsapp;
+			website = ad.landing?.website ?? '';
+			email = ad.landing?.email ?? email;
+			address = ad.landing?.address ?? '';
+			hours = ad.landing?.hours ?? '';
+			products = Array.isArray(ad.landing?.products) ? ad.landing.products : [];
+			nextProductId = (products.reduce((m, p) => Math.max(m, p.id), 0) || 0) + 1;
+
+			editingAdTitle = ad.title ?? '';
+			editLoadState = 'idle';
+		} catch (e) {
+			console.warn('[builder] loadAdForEdit failed:', e);
+			editLoadState = 'failed';
+		}
+	}
+
 	function resetDraft() {
 		if (!confirm('לאפס את הטיוטה ולהתחיל מחדש?')) return;
 		try {
 			localStorage.removeItem(LS_KEY);
+		} catch {}
+		// עריכה ממוקדת: איפוס = התחלה מחדש מהתוכן החי של הפרסומת. ניקוי
+		// היעד גורם לטעינה מחדש מהשרת אחרי הרענון (ה-URL עדיין נושא ?edit).
+		try {
+			localStorage.removeItem(EDIT_TARGET_KEY);
 		} catch {}
 		location.reload();
 	}
@@ -1064,6 +1191,21 @@
 				מעצבים את הפרסומת שלכם צעד-צעד - בדיוק כפי שתיראה באתר.
 				<br />כל שינוי נשמר אוטומטית.
 			</p>
+
+			<!-- עריכה ממוקדת: מציין איזו פרסומת נערכת / כשל בטעינת התוכן שלה -->
+			{#if editLoadState === 'failed'}
+				<div style="margin: 14px auto 0; max-width: 640px; border: 1px solid rgba(239,68,68,.4); background: rgba(239,68,68,.1); border-radius: 14px; padding: 10px 14px; text-align: right;">
+					<p style="margin: 0; color: #fca5a5; font-weight: 700; font-size: .85rem;">
+						⚠️ טעינת הפרסומת לעריכה נכשלה - מוצגת הטיוטה המקומית. רעננו את הדף כדי לנסות שוב.
+					</p>
+				</div>
+			{:else if editingAdTitle}
+				<div style="margin: 14px auto 0; max-width: 640px; border: 1px solid rgba(59,130,246,.4); background: rgba(59,130,246,.1); border-radius: 14px; padding: 10px 14px; text-align: right;">
+					<p style="margin: 0; color: #bfdbfe; font-weight: 700; font-size: .85rem;">
+						✏️ עורכים את "{editingAdTitle}" - השליחה תעדכן את הפרסומת הזו בלבד
+					</p>
+				</div>
+			{/if}
 
 			<!-- ספירה לאחור ליום העריכה החינמי -->
 			{#if paidAt && !freeEditExpired && freeEditUntil}
