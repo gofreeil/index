@@ -1,6 +1,7 @@
 <script>
 	import { lang, translations } from '$lib/i18n';
 	import { favorites, toggleFavorite as toggleFav } from '$lib/favorites.js';
+	import { imgUrl, imgSrcSet, imgFallback } from '$lib/img.js';
 
 	let { business } = $props();
 
@@ -16,7 +17,19 @@
 		toggleFav(business.id);
 	}
 
+	/* הלוגו והבאנר מוגשים דרך ממטב התמונות ($lib/img.js): המקור הוא לרוב קובץ
+	   של מגה-בייטים, והמשבצת כאן היא ~160px. כפול תשעים כרטיסיות זה ההבדל
+	   בין דף שנפתח לדף שנטען.
+	   הלוגו נכשל בשני שלבים: כישלון ראשון = הממטב לא זמין ⇒ ניסיון בכתובת
+	   המקורית; כישלון שני = אין לוגו ⇒ מונוגרם. */
 	let failedImage = $state(false);
+	let rawLogo = $state(false);
+	const logoSrc = $derived(rawLogo ? business.logo : imgUrl(business.logo, 384));
+
+	function onLogoError() {
+		if (!rawLogo && logoSrc !== business.logo) rawLogo = true;
+		else failedImage = true;
+	}
 </script>
 
 <div
@@ -50,20 +63,27 @@
 		<div class="relative h-24 w-full overflow-hidden bg-black/25 sm:h-40">
 			{#if business.banner}
 				<img
-					src={business.banner}
+					src={imgUrl(business.banner, 256)}
+					srcset={imgSrcSet(business.banner, [128, 256])}
+					sizes="(min-width: 640px) 20rem, 50vw"
 					alt=""
 					aria-hidden="true"
 					class="absolute inset-0 h-full w-full object-cover opacity-25"
 					loading="lazy"
+					decoding="async"
+					use:imgFallback={business.banner}
 				/>
 			{/if}
 			{#if business.logo && !failedImage}
 				<img
-					src={business.logo}
+					src={logoSrc}
+					srcset={rawLogo ? undefined : imgSrcSet(business.logo, [128, 256, 384])}
+					sizes="(min-width: 640px) 20rem, 50vw"
 					alt={business.name}
 					class="absolute inset-0 z-10 h-full w-full object-contain p-3 sm:p-4"
 					loading="lazy"
-					onerror={() => (failedImage = true)}
+					decoding="async"
+					onerror={onLogoError}
 				/>
 			{:else}
 				<span

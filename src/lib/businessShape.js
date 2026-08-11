@@ -1,6 +1,8 @@
 // ממיר רשומת idx-business מ-Strapi לצורה שהפרונט צורך (מפתחות אנגלית נקיים).
 // משמש גם את ה-shim של /api/businesses וגם את עמוד העסק.
-const MEDIA_BASE = 'https://api.gofreeil.com';
+// מקור אחד לדומיין המדיה — אותו דומיין מוצהר גם כמורשה בממטב התמונות
+// (ראו mediaConfig.js ו-svelte.config.js), ופיצול ביניהם היה משתיק את המיטוב
+import { MEDIA_BASE } from './mediaConfig.js';
 
 /** @param {any} m מדיה בודדת של Strapi */
 export function mediaUrl(m) {

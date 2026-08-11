@@ -1,6 +1,7 @@
 <script>
 	import { untrack } from 'svelte';
 	import { adImgFit, parseAdImageFit } from '$lib/adImageFit';
+	import { imgUrl, imgSrcSet, imgFallback } from '$lib/img.js';
 
 	// ============================================================
 	// מסילת התחומים — יובאה מ"גמ"חי ישראל" (national-gemach) והותאמה כאן
@@ -412,7 +413,7 @@
 				onlostpointercapture={onRailLostCapture}
 				onclickcapture={onRailClickCapture}
 			>
-				{#each categories as cat (cat.key)}
+				{#each categories as cat, i (cat.key)}
 					<!-- העטיפה נושאת את טרנספורם הדומינו ולא ה-li ולא הכפתור: לכפתור יש
 					     טרנספורם משלו ב-hover וב-active, ושתי הצהרות transform על אותו
 					     אלמנט דורסות אחת את השנייה. -->
@@ -433,14 +434,23 @@
 										<!-- תמונה שהסופר-אדמין העלה במקום האימוג'י; alt ריק — האריח כולו
 										     כבר מתויג ב-aria-label, ותמונה דקורטיבית לא צריכה שם משלה.
 										     המיקום והזום שנקבעו במסך הניהול מוחלים עם אותה פעולה של
-										     הפרסומות (adImgFit) בתוך משבצת חתוכה. -->
+										     הפרסומות (adImgFit) בתוך משבצת חתוכה.
+										     המקור עובר דרך ממטב התמונות ($lib/img.js) ברוחב האריח בלבד:
+										     המקור הוא קובץ של מגה-בייטים, וכאן הוא נצרך כ~120px.
+										     האריחים הראשונים אינם lazy — הם מעל הקיפול, ו-lazy היה דוחה
+										     את הבקשה שלהם עד אחרי חישוב הפריסה. -->
 										<span class="cat-imgbox">
 											<img
 												class="cat-img"
-												src={cat.image}
+												src={imgUrl(cat.image, 384)}
+												srcset={imgSrcSet(cat.image, [128, 256, 384])}
+												sizes="(min-width: 768px) 8.25rem, 7rem"
 												alt=""
-												loading="lazy"
+												loading={i < 6 ? 'eager' : 'lazy'}
+												fetchpriority={i < 6 ? 'high' : 'auto'}
+												decoding="async"
 												draggable="false"
+												use:imgFallback={cat.image}
 												use:adImgFit={parseAdImageFit(cat.imageFit)}
 											/>
 										</span>
@@ -633,8 +643,8 @@
 	   וההצצה לאריח הבא נשמרת. מ-md ומעלה חוזרים לאריח הגדול. */
 	.cat-tile {
 		position: relative;
-		width: clamp(5rem, 21vw, 7rem); /* vw ⇒ ההצצה לאריח הבא מובטחת בכל רוחב מסך */
-		min-height: 8rem; /* גבוה יותר — מפנה מקום לתמונת תחום גדולה, כמו בגמ"חים */
+		width: clamp(5.5rem, 22.5vw, 7.5rem); /* vw ⇒ ההצצה לאריח הבא מובטחת בכל רוחב מסך */
+		min-height: 8.75rem; /* גבוה יותר — מפנה מקום לתמונת תחום גדולה, כמו בגמ"חים */
 		height: 100%; /* ה-li נמתח לגובה השורה; בלי זה תחתית האריחים מתפרעת */
 		display: flex;
 		flex-direction: column;
@@ -705,8 +715,8 @@
 	/* מהטאבלט ומעלה יש רוחב בשפע — אריח גדול */
 	@media (min-width: 768px) {
 		.cat-tile {
-			width: clamp(7rem, 29vw, 8.5rem);
-			min-height: 10.25rem;
+			width: clamp(7.5rem, 30vw, 9.25rem);
+			min-height: 11.5rem;
 			gap: 0.45rem;
 			padding: 0.85rem 0.5rem;
 			border-radius: 1rem;
@@ -752,11 +762,12 @@
 	.cat-imgbox {
 		position: relative;
 		overflow: hidden;
-		width: 6.75rem; /* max-width מקצץ אותה לרוחב הפנימי של האריח בנייד */
+		width: 7rem; /* max-width מקצץ אותה לרוחב הפנימי של האריח בנייד */
 		max-width: 100%;
 		aspect-ratio: 1 / 1;
 		border-radius: 0.7rem;
-		border: 2px solid #000; /* מסגרת שחורה צמודה — התמונה ממלאת אותה בלי רווח */
+		/* מסגרת דקה — קו הפרדה בלבד; מסגרת עבה גזלה מהתמונה עצמה */
+		border: 1px solid #000;
 		background: #0b1220;
 		box-shadow: 0 10px 22px -12px rgba(0, 0, 0, 0.95);
 	}
@@ -786,8 +797,9 @@
 			font-size: 2.5rem;
 		}
 		.cat-imgbox {
+			width: 8.25rem; /* = הרוחב הפנימי של האריח במסך רחב, בלי שוליים מבוזבזים */
 			border-radius: 0.85rem;
-			border-width: 3px;
+			border-width: 2px;
 		}
 		.cat-label {
 			font-size: 0.8125rem;
