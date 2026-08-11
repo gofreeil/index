@@ -125,6 +125,22 @@
 			minute: '2-digit'
 		});
 	}
+
+	/** @param {string} [s] */
+	function fmtDateOnly(s) {
+		if (!s) return '';
+		return new Date(s).toLocaleDateString('he-IL', {
+			day: '2-digit',
+			month: '2-digit',
+			year: '2-digit'
+		});
+	}
+
+	/** @param {string} [s] */
+	function fmtTimeOnly(s) {
+		if (!s) return '';
+		return new Date(s).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+	}
 </script>
 
 <svelte:head>
@@ -796,14 +812,14 @@
 					<thead class="bg-white/5">
 						<tr class="text-[11px] tracking-wide text-gray-400 uppercase md:text-xs">
 							<th class="px-2 py-2.5 text-right font-bold">מקום</th>
-							<th class="px-3 py-2.5 text-right font-bold">פרסומת</th>
-							<th class="hidden px-3 py-2.5 text-right font-bold md:table-cell">מפרסם</th>
-							<th class="px-3 py-2.5 text-right font-bold">פורסם</th>
-							<th class="px-3 py-2.5 text-right font-bold">פג בתאריך</th>
-							<th class="px-3 py-2.5 text-right font-bold">משך</th>
-							<th class="px-3 py-2.5 text-right font-bold">ימים שנותרו</th>
-							<th class="px-3 py-2.5 text-right font-bold">סטטוס</th>
-							<th class="px-3 py-2.5 text-right font-bold">ניהול</th>
+							<th class="px-2 py-2.5 text-right font-bold">פרסומת</th>
+							<th class="hidden px-2 py-2.5 text-right font-bold md:table-cell">מפרסם</th>
+							<th class="px-2 py-2.5 text-right font-bold">פורסם</th>
+							<th class="px-2 py-2.5 text-right font-bold">פג בתאריך</th>
+							<th class="px-2 py-2.5 text-right font-bold">משך</th>
+							<th class="px-2 py-2.5 text-right font-bold">ימים שנותרו</th>
+							<th class="px-2 py-2.5 text-right font-bold">סטטוס</th>
+							<th class="px-2 py-2.5 text-right font-bold">ניהול</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -886,19 +902,29 @@
 										</button>
 									</form>
 								</td>
-								<td class="max-w-[180px] truncate px-3 py-2 font-bold text-white">{s.title}</td>
-								<td class="hidden px-3 py-2 text-gray-300 md:table-cell">
-									<div class="max-w-[160px] truncate">{s.advertiserName || '-'}</div>
-									<div class="max-w-[160px] truncate text-[10px] text-gray-500">
+								<td class="max-w-[150px] truncate px-2 py-2 font-bold text-white">{s.title}</td>
+								<td class="hidden px-2 py-2 text-gray-300 md:table-cell">
+									<div class="max-w-[130px] truncate">{s.advertiserName || '-'}</div>
+									<div class="max-w-[130px] truncate text-[10px] text-gray-500">
 										{s.advertiserEmail}
 									</div>
 								</td>
-								<td class="px-3 py-2 whitespace-nowrap text-gray-300">{fmtDate(s.publishedAt)}</td>
-								<td class="px-3 py-2 whitespace-nowrap text-gray-300">{fmtDate(s.expiresAt)}</td>
-								<td class="px-3 py-2 text-gray-300">{s.durationDays} ימים</td>
-								<td class="px-3 py-2 font-black whitespace-nowrap {daysColor}">
+								<!-- תאריך ושעה בשתי שורות - חוסך רוחב כדי שהטבלה תיכנס למסך בלי גלילה -->
+								<td class="px-2 py-2 text-gray-300">
+									<div>{fmtDateOnly(s.publishedAt)}</div>
+									<div class="text-[10px] text-gray-500">{fmtTimeOnly(s.publishedAt)}</div>
+								</td>
+								<td class="px-2 py-2 text-gray-300">
+									<div>{fmtDateOnly(s.expiresAt)}</div>
+									<div class="text-[10px] text-gray-500">{fmtTimeOnly(s.expiresAt)}</div>
+								</td>
+								<td class="px-2 py-2 text-gray-300">
+									<div>{s.durationDays}</div>
+									<div class="text-[10px] text-gray-500">ימים</div>
+								</td>
+								<td class="px-2 py-2 font-black {daysColor}">
 									{s.daysLeft < 0 ? `${-s.daysLeft}- ימים` : `${s.daysLeft} ימים`}
-									<div class="mt-1 h-1.5 w-24 overflow-hidden rounded-full bg-white/10">
+									<div class="mt-1 h-1.5 w-16 overflow-hidden rounded-full bg-white/10">
 										<div
 											class="h-full {s.state === 'expired'
 												? 'bg-red-400'
@@ -909,20 +935,20 @@
 										></div>
 									</div>
 								</td>
-								<td class="px-3 py-2">
+								<td class="px-2 py-2">
 									<span
 										class="rounded-full border px-2 py-0.5 text-[11px] font-black whitespace-nowrap {stateColor}"
 										>{stateLabel}</span
 									>
 								</td>
 								<!-- ניהול הפרסומת ישירות מהשורה: קציבת תקופה, השהיה, הורדה, מחיקה -->
-								<td class="px-3 py-2">
-									<div class="flex flex-wrap items-center gap-1.5">
+								<td class="px-2 py-2">
+									<div class="flex flex-wrap items-center gap-1">
 										<form
 											method="POST"
 											action="?/setDuration"
 											use:enhance
-											class="flex items-center gap-1"
+											class="flex flex-wrap items-center gap-1"
 										>
 											<input type="hidden" name="id" value={s.id} />
 											<select
@@ -941,7 +967,7 @@
 											</select>
 											<button
 												type="submit"
-												class="rounded-lg border border-blue-500/40 bg-blue-500/20 px-2.5 py-1 text-[11px] font-black whitespace-nowrap text-blue-200 hover:bg-blue-500/30"
+												class="rounded-lg border border-blue-500/40 bg-blue-500/20 px-2 py-1 text-[11px] font-black whitespace-nowrap text-blue-200 hover:bg-blue-500/30"
 												title="התקופה נספרת מיום הפרסום">⏱ קצוב</button
 											>
 										</form>
@@ -951,7 +977,7 @@
 												<input type="hidden" name="id" value={s.id} />
 												<button
 													type="submit"
-													class="rounded-lg border border-emerald-500/40 bg-emerald-500/20 px-2.5 py-1 text-[11px] font-black whitespace-nowrap text-emerald-200 hover:bg-emerald-500/30"
+													class="rounded-lg border border-emerald-500/40 bg-emerald-500/20 px-2 py-1 text-[11px] font-black whitespace-nowrap text-emerald-200 hover:bg-emerald-500/30"
 													title="הימים השמורים נספרים מהיום">▶ המשך</button
 												>
 											</form>
@@ -960,7 +986,7 @@
 												<input type="hidden" name="id" value={s.id} />
 												<button
 													type="submit"
-													class="rounded-lg border border-white/20 bg-white/10 px-2.5 py-1 text-[11px] font-black whitespace-nowrap text-gray-200 hover:bg-white/20"
+													class="rounded-lg border border-white/20 bg-white/10 px-2 py-1 text-[11px] font-black whitespace-nowrap text-gray-200 hover:bg-white/20"
 													title="יורדת מהאתר ושומרת את הימים שנותרו"
 													onclick={(e) => {
 														if (
@@ -976,7 +1002,7 @@
 											<input type="hidden" name="id" value={s.id} />
 											<button
 												type="submit"
-												class="rounded-lg border border-amber-500/40 bg-amber-500/15 px-2.5 py-1 text-[11px] font-black whitespace-nowrap text-amber-200 hover:bg-amber-500/25"
+												class="rounded-lg border border-amber-500/40 bg-amber-500/15 px-2 py-1 text-[11px] font-black whitespace-nowrap text-amber-200 hover:bg-amber-500/25"
 												title="חוזרת לתור האישורים"
 												onclick={(e) => {
 													if (!confirm('להוריד את הפרסומת מהאתר ולהחזיר אותה לממתינות?'))
@@ -990,7 +1016,7 @@
 												<input type="hidden" name="id" value={s.id} />
 												<button
 													type="submit"
-													class="rounded-lg border border-red-500/40 bg-red-600/20 px-2.5 py-1 text-[11px] font-black whitespace-nowrap text-red-300 hover:bg-red-600/30"
+													class="rounded-lg border border-red-500/40 bg-red-600/20 px-2 py-1 text-[11px] font-black whitespace-nowrap text-red-300 hover:bg-red-600/30"
 													onclick={(e) => {
 														if (!confirm(`למחוק לצמיתות את "${s.title}"?`)) e.preventDefault();
 													}}>🗑 מחק</button
