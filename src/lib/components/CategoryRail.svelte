@@ -370,6 +370,14 @@
 		tiles[next].focus(); // הדפדפן גולל פנימה; scroll-padding שומר על טבעת הפוקוס
 	}
 
+	/** שם האריח לקורא-מסך. תחום ריק אינו "הצג עסקים" — אין מה להציג, ומי
+	 *  שמנווט בהקראה צריך לדעת את זה לפני הלחיצה ולא אחריה.
+	 *  @param {RailCat} c */
+	const tileLabel = (c) =>
+		c.count === 0
+			? `תחום ${c.label} — אין בו עדיין עסקים`
+			: `הצג עסקים בתחום ${c.label} — ${c.count === 1 ? 'עסק אחד' : `${c.count} עסקים`}`;
+
 	/** @param {string} key @param {MouseEvent} [e] */
 	function pick(key, e) {
 		// חגורה שנייה מעל onclickcapture; Enter/Space מהמקלדת (detail=0) פטורים ממנה
@@ -426,9 +434,12 @@
 								class:is-selected={selected === cat.key}
 								onclick={(e) => pick(cat.key, e)}
 								aria-pressed={selected === cat.key}
-								aria-label="הצג עסקים בתחום {cat.label} — {cat.count} עסקים"
+								aria-label={tileLabel(cat)}
 							>
-								<span class="cat-count-badge" aria-hidden="true">{cat.count}</span>
+								<!-- תחום ריק מקבל תג אפור: "0" בגלולה הכחולה הזוהרת נקרא כתקלה -->
+								<span class="cat-count-badge" class:is-empty={cat.count === 0} aria-hidden="true"
+									>{cat.count}</span
+								>
 								<span class="cat-ico" aria-hidden="true">
 									{#if cat.image}
 										<!-- תמונה שהסופר-אדמין העלה במקום האימוג'י; alt ריק — האריח כולו
@@ -748,6 +759,12 @@
 		box-shadow:
 			0 0 0 2px #030712,
 			0 2px 6px -2px rgba(59, 130, 246, 0.8);
+	}
+	/* תחום שעדיין ריק — אותה גלולה בדיוק, בלי הזוהר הכחול שמזמין ללחוץ */
+	.cat-count-badge.is-empty {
+		color: #cbd5e1; /* gray-300 */
+		background: linear-gradient(145deg, #4b5563, #374151);
+		box-shadow: 0 0 0 2px #030712;
 	}
 	.cat-ico {
 		display: grid;

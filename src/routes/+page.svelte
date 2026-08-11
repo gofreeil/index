@@ -50,8 +50,10 @@
 	   של הסופר-אדמין), ולכן כאן רק סופרים. הסדר: אם הסופר-אדמין קבע סדר
 	   במסך ניהול הקטגוריות — הוא הקובע; אחרת לפי מספר העסקים בפועל — מה
 	   שיש ממנו הכי הרבה באתר צריך להיות מה שרואים ראשון. "אחר" תמיד אחרון.
-	   תחומים ריקים אינם מוצגים כלל: אריח שמוביל ל-0 תוצאות הוא הבטחה
-	   שבורה (הם עדיין קיימים בטופס ההגשה). */
+	   כל תחום חי מוצג, גם כשאין בו עדיין אף עסק: המסילה היא מפת התחומים
+	   של האתר, ותחום שנעלם ממנה נקרא כ"האתר לא עוסק בזה" — גם למי שמחפש
+	   וגם למי ששוקל להגיש עסק. תחום שנמחק במסך הניהול אינו מגיע לכאן
+	   מלכתחילה (effectiveCategories מסנן אותו). */
 	const railMeta = $derived(data.catRail?.byName ?? {});
 	const railOrder = $derived(
 		new Map(
@@ -66,14 +68,17 @@
 			const key = b.category || otherName;
 			counts[key] = (counts[key] ?? 0) + 1;
 		}
-		return Object.entries(counts)
-			.map(([label, count]) => ({
+		// railMeta = כל התחומים החיים (כולל הריקים); counts מוסיף תוויות חופשיות
+		// שהוקלדו על כרטיסיות ואינן ברשימת הניהול — גם להן מגיע אריח
+		const labels = new Set([...Object.keys(railMeta), ...Object.keys(counts)]);
+		return [...labels]
+			.map((label) => ({
 				key: label,
 				label,
 				icon: railMeta[label]?.icon ?? categoryIcon(label),
 				image: railMeta[label]?.image ?? '',
 				imageFit: railMeta[label]?.imageFit,
-				count
+				count: counts[label] ?? 0
 			}))
 			.sort(
 				(a, b) =>
@@ -377,7 +382,18 @@
 			</div>
 
 			{#if filteredBusinesses.length === 0}
-				<p class="mt-8 text-center text-gray-500">לא נמצאו עסקים התואמים לחיפוש.</p>
+				<!-- אריח של תחום ריק מוביל לכאן, ואז "לא נמצאו... לחיפוש" מטעה: לא
+				     חיפשו כלום, פשוט אין עדיין עסקים בתחום -->
+				{#if selectedCategory !== 'all' && !searchTerm && selectedLocation === 'all'}
+					<p class="mt-8 text-center text-gray-500">
+						עדיין אין עסקים בתחום הזה. יש לכם עסק מתאים?
+						<a href="/submit-business" class="font-semibold text-blue-400 hover:text-blue-300"
+							>הוסיפו אותו לאינדקס</a
+						>
+					</p>
+				{:else}
+					<p class="mt-8 text-center text-gray-500">לא נמצאו עסקים התואמים לחיפוש.</p>
+				{/if}
 			{/if}
 
 			{#if withLoadMore && visibleCount < filteredBusinesses.length}
