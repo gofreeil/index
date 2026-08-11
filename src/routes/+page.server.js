@@ -5,7 +5,7 @@ import {
 	resolveCategory,
 	categoryDisplayResolver,
 	categoryRailMeta,
-	hiddenCategorySet
+	retiredLabelSet
 } from '$lib/categories.js';
 
 // ============================================================
@@ -29,15 +29,17 @@ export async function load() {
 			getCategorySettings()
 		]);
 		const displayName = categoryDisplayResolver(catSettings);
-		// קטגוריה מובנית שנמחקה במסך הניהול לא צדה כרטיסיות בסיווג האוטומטי
-		const hidden = hiddenCategorySet(catSettings);
+		// קטגוריה שנמחקה במסך הניהול אינה קיימת יותר: היא לא צדה כרטיסיות
+		// בסיווג האוטומטי, וכרטיסייה שנשמרה איתה מסווגת מחדש — כך לא נשאר
+		// במסילה אריח של תחום מחוק
+		const retired = retiredLabelSet(catSettings);
 		const businesses = rows.map(toBusiness).map((b) => ({
 			id: b.documentId,
 			documentId: b.documentId,
 			slug: b.slug,
 			name: b.name || 'ללא שם',
 			phone: b.phone || '',
-			category: displayName(resolveCategory(b, hidden)),
+			category: displayName(resolveCategory(b, retired)),
 			banners: b.banners || [],
 			banner: b.banner || '',
 			description: b.description || '',

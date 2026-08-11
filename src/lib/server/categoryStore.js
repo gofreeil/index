@@ -14,14 +14,17 @@
 
 import { getConfigValue, setConfigValueStrict } from './configStore.js';
 import {
-	CATEGORIES,
 	OTHER,
 	effectiveCategories,
+	normCategoryLabel,
+	resolveCategory,
+	retiredLabelSet,
 	sanitizeCategoryFit,
 	isDefaultCategoryFit
 } from '$lib/categories.js';
 
 const KEY = 'category_settings';
+const MAX_HIDDEN = 200;
 
 /** @param {unknown} v @param {number} max */
 const cleanStr = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
@@ -91,16 +94,17 @@ function sanitize(raw) {
 		}
 	}
 
-	// מובנות שנמחקו — רק תוויות שבאמת קיימות בקוד; "אחר" אינה ניתנת למחיקה.
-	// תווית שהוסרה מהקוד בינתיים פשוט נשמטת מכאן — אין למה להסתיר אותה.
+	// תוויות שנמחקו — מובנות שהוסתרו וגם שמות של extras שנמחקו, ולכן אין
+	// כאן סינון מול הרשימה שבקוד. "אחר" אינה ניתנת למחיקה. התקרה מונעת
+	// צבירה אינסופית של שמות ישנים ב-KV.
 	const hidden = Array.isArray(s.hidden)
 		? [
 				...new Set(
 					s.hidden
 						.map((/** @type {unknown} */ k) => cleanStr(k, 80))
-						.filter((/** @type {string} */ l) => l && l !== OTHER && CATEGORIES.includes(l))
+						.filter((/** @type {string} */ l) => l && l !== OTHER)
 				)
-			]
+			].slice(0, MAX_HIDDEN)
 		: [];
 
 	return { order, overrides, extras, hidden };
@@ -136,4 +140,20 @@ export async function getCategoryOptions() {
 		value: c.builtin ? c.key : c.name,
 		label: c.name
 	}));
+}
+
+/**
+ * התווית שטופס העריכה יציג ככרטיסייה הנוכחית: מה שנשמר בה — אלא אם
+ * הקטגוריה נמחקה ממסך הניהול, ואז הסיווג החי (אוטומטי או "אחר"). בלי זה
+ * הטופס היה מציג תווית מתה כאופציה נבחרת ושומר אותה שוב בכל עריכה, בעוד
+ * האתר כבר מציג את הכרטיסייה תחת תחום אחר.
+ * @param {{category?: string, name?: string, subcategory?: string, description?: string, unique_content?: string}} biz
+ * @returns {Promise<string>}
+ */
+export async function liveCategory(biz) {
+	const raw = String(biz?.category ?? '').trim();
+	if (!raw) return '';
+	const retired = retiredLabelSet(await getCategorySettings());
+	if (!retired.has(normCategoryLabel(raw))) return raw;
+	return resolveCategory({ ...biz, category: '' }, retired);
 }

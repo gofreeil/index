@@ -347,6 +347,7 @@ for (const def of CATEGORY_DEFS) {
 /** מילות מפתח מנורמלות מראש — הסיווג רץ על 92 כרטיסיות בכל טעינת דף בית */
 const MATCHERS = CATEGORY_DEFS.filter((c) => c.match?.length).map((c) => ({
 	label: c.label,
+	labelNorm: norm(c.label),
 	words: (c.match ?? []).map(norm)
 }));
 
@@ -360,12 +361,12 @@ const MATCHERS = CATEGORY_DEFS.filter((c) => c.match?.length).map((c) => ({
  * שכתבה שם "עיצוב חוויית לקוח" נחתה תחת "עיצוב ואומנות". רק אם שכבה שלמה
  * לא הניבה התאמה עוברים לשכבה הבאה.
  * @param {{name?: string, subcategory?: string, description?: string, unique_content?: string}} b
- * @param {Set<string>} [skip] תוויות שאין לסווג אליהן (מובנות שנמחקו מהמסך) —
- *   בלעדי הדילוג קטגוריה מחוקה הייתה "קמה לתחייה" מכל כרטיסייה חדשה
- *   שהטקסט שלה פוגע במילות המפתח שלה
+ * @param {Set<string>} [retired] תוויות מנורמלות שנמחקו ממסך הניהול
+ *   (retiredLabelSet) — בלעדי הדילוג קטגוריה מחוקה הייתה "קמה לתחייה"
+ *   מכל כרטיסייה שהטקסט שלה פוגע במילות המפתח שלה
  * @returns {string}
  */
-export function guessCategory(b, skip) {
+export function guessCategory(b, retired) {
 	const layers = [
 		`${b?.name ?? ''} ${b?.subcategory ?? ''}`,
 		String(b?.description ?? ''),
@@ -375,7 +376,7 @@ export function guessCategory(b, skip) {
 		const text = norm(layer);
 		if (!text) continue;
 		for (const m of MATCHERS) {
-			if (skip?.has(m.label)) continue;
+			if (retired?.has(m.labelNorm)) continue;
 			if (m.words.some((w) => w && text.includes(w))) return m.label;
 		}
 	}
@@ -387,20 +388,20 @@ export function guessCategory(b, skip) {
  * נשלח לסיווג האוטומטי; תווית חופשית שאינה ברשימה נשמרת כמו שהיא (לא
  * מוחקים בחירה של אדמין).
  * @param {{category?: string, name?: string, subcategory?: string, description?: string, unique_content?: string}} b
- * @param {Set<string>} [hidden] מובנות שנמחקו (hiddenCategorySet) — הסיווג
- *   האוטומטי מדלג עליהן. תווית שנשמרה במפורש כן ממשיכה להתמפות לקנונית
- *   גם כשזו מחוקה, כדי שכל ה-aliases שלה יתקבצו לאריח אחד ולא יתפצלו
- *   לפי גלגולי השם שבמאגר.
+ * @param {Set<string>} [retired] תוויות שנמחקו ממסך הניהול (retiredLabelSet).
+ *   תווית מתה אינה מכובדת גם כשנשמרה במפורש: הכרטיסייה עוברת סיווג מחדש
+ *   ונוחתת בתחום אמיתי (או ב"אחר") במקום להיתלות על קטגוריה שאינה קיימת.
+ *   הרשומה במאגר לא משתנה — התווית שלה פשוט מתורגמת בכל תצוגה.
  * @returns {string}
  */
-export function resolveCategory(b, hidden) {
+export function resolveCategory(b, retired) {
 	const raw = String(b?.category ?? '').trim();
-	if (raw) {
+	if (raw && !retired?.has(norm(raw))) {
 		const canonical = BY_ALIAS.get(norm(raw));
 		if (canonical && canonical !== OTHER) return canonical;
 		if (!canonical) return raw;
 	}
-	return guessCategory(b, hidden) || OTHER;
+	return guessCategory(b, retired) || OTHER;
 }
 
 /** נרמול תווית להשוואה — חשוף למסך ניהול הקטגוריות (ספירה והתאמת כפילויות) */
@@ -414,10 +415,12 @@ export const normCategoryLabel = norm;
 // מפורש למסילת דף הבית. בנוסף אפשר להוסיף מהמסך קטגוריות חדשות (extras)
 // שאינן בקוד — הן זמינות בטופס ההגשה ונשמרות במאגר לפי שמן.
 //
-// מחיקת קטגוריה מובנית מהמסך לא נוגעת בקוד: התווית נרשמת ב-hidden, והיא
-// נעלמת מהמסילה, מהטפסים, ממסך הניהול ומהסיווג האוטומטי. כרטיסייה שכבר
-// נשמרה עם התווית ממשיכה להציג אותה (כמו תווית חופשית); שחזור ממסך
-// הניהול מחזיר הכול. "אחר" אינה ניתנת למחיקה — היא ברירת המחדל של הסיווג.
+// מחיקת קטגוריה מהמסך לא נוגעת בקוד ולא ברשומות: התווית נרשמת ב-hidden
+// ("תוויות מתות") והיא נעלמת מהמסילה, מהטפסים, ממסך הניהול ומהסיווג
+// האוטומטי. כרטיסייה שנשמרה עם תווית מתה עוברת סיווג מחדש בכל תצוגה —
+// נוחתת בתחום שמתאים לה לפי הטקסט, או ב"אחר" — והתוכן שלה נשאר שלם.
+// מובנית שנמחקה ניתנת לשחזור ממסך הניהול, ואז התווית קמה לתחייה וכל
+// הכרטיסיות חוזרות אליה. "אחר" אינה ניתנת למחיקה — היא ברירת המחדל.
 //
 // המפתחות יציבים: לקטגוריה מובנית — התווית הקנונית (גם אחרי שינוי שם);
 // לקטגוריה שנוספה מהמסך — מזהה x_... שנוצר פעם אחת. כך שינוי שם לא שובר
@@ -453,7 +456,8 @@ export const normCategoryLabel = norm;
  * @property {string[]} order מפתחות בסדר התצוגה הרצוי; ריק = סדר אוטומטי לפי כמות
  * @property {Record<string, CategoryOverride>} overrides לפי תווית קנונית
  * @property {CategoryExtra[]} extras
- * @property {string[]} [hidden] תוויות קנוניות של מובנות שנמחקו מהמסך
+ * @property {string[]} [hidden] תוויות שנמחקו מהמסך: תווית קנונית של מובנית
+ *   שהוסתרה, ושמו (ושמותיו הקודמים) של extra שנמחק
  *
  * @typedef {Object} EffectiveCategory
  * @property {string} key
@@ -496,8 +500,9 @@ export function sanitizeCategoryFit(raw) {
 export const isDefaultCategoryFit = (f) => f.x === 50 && f.y === 50 && f.z === 1;
 
 /**
- * קבוצת המובנות שנמחקו מהמסך — רק תוויות שבאמת קיימות בקוד; "אחר" לעולם
- * לא נחשבת מחוקה. הקלט מגיע מה-KV ולכן לא סומכים עליו.
+ * המובנות שנמחקו מהמסך — רק תוויות שבאמת קיימות בקוד; "אחר" לעולם לא
+ * נחשבת מחוקה. משמש לסינון הרשימה האפקטיבית. הקלט מגיע מה-KV ולכן לא
+ * סומכים עליו.
  * @param {Partial<CategorySettings> | null | undefined} settings
  * @returns {Set<string>}
  */
@@ -507,6 +512,52 @@ export function hiddenCategorySet(settings) {
 	for (const l of Array.isArray(settings?.hidden) ? settings.hidden : []) {
 		const label = String(l);
 		if (label !== OTHER && BY_LABEL.has(label)) out.add(label);
+	}
+	return out;
+}
+
+/**
+ * כל התוויות המתות — מנורמלות, להשוואה מול מה שנשמר על הכרטיסיות: מובנית
+ * שנמחקה (וגם השמות הישנים שלה, שרשומות ותיקות עדיין נושאות), ו-extra
+ * שנמחק. כרטיסייה שנושאת אחת מהן עוברת סיווג מחדש (ראו resolveCategory).
+ * @param {Partial<CategorySettings> | null | undefined} settings
+ * @returns {Set<string>}
+ */
+export function retiredLabelSet(settings) {
+	/** @type {Set<string>} */
+	const out = new Set();
+	for (const l of Array.isArray(settings?.hidden) ? settings.hidden : []) {
+		const label = String(l).trim();
+		if (!label || label === OTHER) continue;
+		out.add(norm(label));
+		for (const a of BY_LABEL.get(label)?.aliases ?? []) out.add(norm(a));
+	}
+	return out;
+}
+
+/**
+ * רשימת התוויות המתות אחרי שמירה: מה שכבר היה מת ומה שנעלם עכשיו מהמסך,
+ * פחות כל מה שחי בו. ההחסרה היא מה שמחזיר קטגוריה לחיים — שחזור מובנית,
+ * או קטגוריה שנוצרה מחדש באותו שם — ואיתה כל הכרטיסיות שנשמרו עם התווית.
+ * ההשוואה מנורמלת, כי אותה תווית מופיעה במאגר בכמה גלגולי כתיב.
+ * @param {Object} p
+ * @param {string[]} p.wasRetired התוויות המתות עד עכשיו
+ * @param {string[]} p.gone נמחקו בשמירה הזו (כולל שמות קודמים)
+ * @param {string[]} p.live כל מה שהמסך מציג עכשיו (כולל שמות קודמים)
+ * @returns {string[]}
+ */
+export function nextRetiredLabels({ wasRetired, gone, live }) {
+	const inUse = new Set(live.map((l) => norm(l)));
+	/** @type {string[]} */
+	const out = [];
+	/** @type {Set<string>} */
+	const seen = new Set();
+	for (const raw of [...wasRetired, ...gone]) {
+		const label = String(raw ?? '').trim();
+		const n = norm(label);
+		if (!label || label === OTHER || inUse.has(n) || seen.has(n)) continue;
+		seen.add(n);
+		out.push(label);
 	}
 	return out;
 }

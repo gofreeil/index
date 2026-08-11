@@ -9,7 +9,7 @@ import {
 	releaseBusinessOwner,
 	listUsersSlim
 } from '$lib/server/strapi.js';
-import { getCategoryOptions } from '$lib/server/categoryStore.js';
+import { getCategoryOptions, liveCategory } from '$lib/server/categoryStore.js';
 import { parseBusinessForm } from '$lib/server/businessEdit.js';
 import { businessOwnerId, invalidateMatches } from '$lib/server/ownerMatch.js';
 import { createClaim, decideClaim, invalidateClaims } from '$lib/server/claimsStore.js';
@@ -26,8 +26,11 @@ export async function load({ params, locals }) {
 		getCategoryOptions().catch(() => [])
 	]);
 	if (!biz) throw error(404, 'העסק לא נמצא');
+	// תווית של קטגוריה שנמחקה ממסך הניהול כבר לא קיימת — הטופס מציג את
+	// הסיווג החי (מה שהאתר מראה) כדי לא לשמור אותה שוב
+	const category = await liveCategory(biz).catch(() => biz.category ?? '');
 	return {
-		biz,
+		biz: { ...biz, category },
 		categoryOptions,
 		superAdmin: isSuperAdmin(locals.user),
 		users: users

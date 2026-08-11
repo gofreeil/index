@@ -1,6 +1,6 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { getBusinessAdmin, updateBusiness, isPrivileged } from '$lib/server/strapi.js';
-import { getCategoryOptions } from '$lib/server/categoryStore.js';
+import { getCategoryOptions, liveCategory } from '$lib/server/categoryStore.js';
 import { canEditBusiness, isBusinessOwner, invalidateMatches } from '$lib/server/ownerMatch.js';
 import { parseBusinessForm } from '$lib/server/businessEdit.js';
 
@@ -20,11 +20,17 @@ export async function load({ params, locals }) {
 	if (!canEditBusiness(biz, locals.user)) {
 		throw error(403, 'רק בעל הכרטיסייה (או אדמין) רשאי לערוך אותה');
 	}
+	const [categoryOptions, category] = await Promise.all([
+		getCategoryOptions().catch(() => []),
+		// תווית של קטגוריה שנמחקה ממסך הניהול כבר לא קיימת — הטופס מציג את
+		// הסיווג החי (מה שהאתר מראה) כדי לא לשמור אותה שוב
+		liveCategory(biz).catch(() => biz.category ?? '')
+	]);
 	return {
-		biz,
+		biz: { ...biz, category },
 		isAdmin: isPrivileged(locals.user),
 		isOwner: isBusinessOwner(biz, locals.user),
-		categoryOptions: await getCategoryOptions().catch(() => [])
+		categoryOptions
 	};
 }
 

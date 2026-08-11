@@ -2,7 +2,7 @@ import { error, fail } from '@sveltejs/kit';
 import { getBusiness, getUserPhone, isPrivileged } from '$lib/server/strapi.js';
 import { getCategorySettings } from '$lib/server/categoryStore.js';
 import { toBusiness } from '$lib/businessShape.js';
-import { resolveCategory, categoryDisplayResolver, hiddenCategorySet } from '$lib/categories.js';
+import { resolveCategory, categoryDisplayResolver, retiredLabelSet } from '$lib/categories.js';
 import {
 	businessOwnerId,
 	canEditBusiness,
@@ -48,7 +48,7 @@ export async function load({ params, locals }) {
 		business: {
 			...business,
 			category: categoryDisplayResolver(catSettings)(
-				resolveCategory(business, hiddenCategorySet(catSettings))
+				resolveCategory(business, retiredLabelSet(catSettings))
 			)
 		},
 		// "שיתוף חכם" הוא כלי של בעל העסק בלבד. ההכרעה כאן ולא בדפדפן:

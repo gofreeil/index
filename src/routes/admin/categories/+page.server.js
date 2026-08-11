@@ -7,17 +7,19 @@ import {
 	CATEGORY_DEFS,
 	OTHER,
 	effectiveCategories,
-	hiddenCategorySet,
+	nextRetiredLabels,
 	normCategoryLabel,
 	resolveCategory,
+	retiredLabelSet,
 	sanitizeCategoryFit,
 	isDefaultCategoryFit
 } from '$lib/categories.js';
 
 // מסך ניהול הקטגוריות — לסופר-אדמין בלבד. הרשימה שבקוד נשארת מקור האמת
 // לסיווג; כאן נשמרות דריסות תצוגה (שם/אימוג'י/תמונה/סדר), קטגוריות
-// שנוספו מהמסך, ומובנות שנמחקו (hidden — מוסתרות וניתנות לשחזור).
-// הכול יושב ב-KV (ראו $lib/server/categoryStore.js).
+// שנוספו מהמסך, ותוויות שנמחקו (hidden). הכול יושב ב-KV (ראו
+// $lib/server/categoryStore.js). מחיקה לעולם אינה נוגעת ברשומות במאגר —
+// כרטיסייה של קטגוריה מחוקה מסווגת מחדש בתצוגה, והתוכן שלה נשאר שלם.
 
 const MAX_IMAGE_BYTES = 3_000_000;
 const MAX_NAME = 40;
@@ -49,11 +51,12 @@ export async function load({ locals }) {
 	const counts = {};
 	/** @type {Record<string, number>} תוויות חופשיות שהוקלדו על כרטיסיות ואינן ברשימה */
 	const freeLabels = {};
-	// אותו סיווג כמו בדף הבית: קטגוריה מחוקה לא צדה כרטיסיות, וכרטיסיות
-	// שכבר משויכות אליה נספרות כתווית חופשית — כך רואים כאן מה קרה להן
-	const hiddenSet = hiddenCategorySet(settings);
+	// אותו סיווג בדיוק כמו בדף הבית: תווית מתה אינה נספרת, והכרטיסיות
+	// שנשאו אותה נספרות בתחומים שאליהם סווגו מחדש — כך המונים שכאן הם מה
+	// שהגולש באמת רואה
+	const retired = retiredLabelSet(settings);
 	for (const row of rows) {
-		const canonical = resolveCategory(toBusiness(row), hiddenSet);
+		const canonical = resolveCategory(toBusiness(row), retired);
 		const key = keyByNorm.get(normCategoryLabel(canonical));
 		if (key) counts[key] = (counts[key] ?? 0) + 1;
 		else freeLabels[canonical] = (freeLabels[canonical] ?? 0) + 1;
@@ -89,9 +92,10 @@ export const actions = {
 	/**
 	 * שמירת המצב המלא של המסך: סדר השורות = הסדר במסילה; שם/אימוג'י לכל
 	 * שורה; תמונות מצורפות כקבצים img_<אינדקס>. קטגוריה שנוספה מקבלת מזהה
-	 * x_... יציב; extra שנמחק מהרשימה פשוט לא נשלח — והעסקים שלו חוזרים
-	 * להופיע תחת התווית שנשמרה אצלם במאגר. מובנית שנמחקה גם היא לא נשלחת —
-	 * היא נרשמת ב-hidden (ההתאמות שלה נמחקות איתה) וניתנת לשחזור מהמסך.
+	 * x_... יציב. קטגוריה שנמחקה — מובנית או שנוספה מהמסך — פשוט לא נשלחת,
+	 * והשרת מסיק אותה מההפרש: התווית נרשמת ב-hidden ("מתה"), ההתאמות שלה
+	 * נמחקות, והכרטיסיות שנשאו אותה מסווגות מחדש בכל תצוגה. מובנית שנמחקה
+	 * ניתנת לשחזור מהמסך, ואז התווית קמה לתחייה עם כל הכרטיסיות שלה.
 	 */
 	save: async ({ request, locals }) => {
 		if (!isSuperAdmin(locals.user)) return fail(403, { error: 'פעולה זו לסופר-אדמין בלבד' });
@@ -149,13 +153,10 @@ export const actions = {
 			}
 		}
 		// "אחר" חייבת להישאר — היא ברירת המחדל של הסיווג ועוגן המסילה; כל
-		// מובנית אחרת שחסרה מהמסך נמחקה בכוונה ונרשמת כמוסתרת (hidden)
+		// מובנית אחרת שחסרה מהמסך נמחקה בכוונה ונרשמת כתווית מתה (hidden)
 		if (!seenBuiltins.has(OTHER)) {
 			return fail(400, { error: 'חסרה קטגוריית "אחר" — רעננו את הדף ונסו שוב' });
 		}
-		const hidden = CATEGORY_DEFS.filter((d) => d.label !== OTHER && !seenBuiltins.has(d.label)).map(
-			(d) => d.label
-		);
 
 		// ── העלאת תמונות (לפי אינדקס השורה בטופס) ──
 		/** @type {Map<number, string>} */
@@ -173,7 +174,7 @@ export const actions = {
 
 		// ── בניית ההגדרות החדשות ──
 		/** @type {import('$lib/categories.js').CategorySettings} */
-		const next = { order: [], overrides: {}, extras: [], hidden };
+		const next = { order: [], overrides: {}, extras: [], hidden: [] };
 
 		rows.forEach((r, i) => {
 			if (builtinByLabel.has(r.key)) {
@@ -213,6 +214,29 @@ export const actions = {
 			});
 			next.order.push(key);
 		});
+
+		// ── תוויות מתות ──
+		// מה שנעלם מהמסך נמחק: מובנית שחסרה, ו-extra שלא נשלח (שמו וגם
+		// שמותיו הקודמים — רשומות ותיקות עדיין נושאות אותם). את השמות
+		// הישנים של מובנית אין צורך לשמור: retiredLabelSet גוזר אותם מהקוד.
+		const submittedExtraKeys = new Set(
+			rows.filter((r) => !builtinByLabel.has(r.key)).map((r) => r.key)
+		);
+		/** @type {string[]} */
+		const gone = [];
+		for (const d of CATEGORY_DEFS) {
+			if (d.label !== OTHER && !seenBuiltins.has(d.label)) gone.push(d.label);
+		}
+		for (const x of current.extras) {
+			if (!submittedExtraKeys.has(x.key)) gone.push(x.name, ...(x.aliases ?? []));
+		}
+		/** @type {string[]} */
+		const live = [];
+		for (const label of seenBuiltins) {
+			live.push(label, ...(builtinByLabel.get(label)?.aliases ?? []));
+		}
+		for (const x of next.extras) live.push(x.name, ...(x.aliases ?? []));
+		next.hidden = nextRetiredLabels({ wasRetired: current.hidden ?? [], gone, live });
 
 		// סדר אוטומטי = לא שומרים סדר בכלל; המסילה ממשיכה להסתדר לפי כמות
 		if (!payload.customOrder) next.order = [];
