@@ -13,6 +13,7 @@
 		shrinkAdPayload,
 		heaviestImageLabel
 	} from '$lib/adPayloadBudget';
+	import { parseAdStyle } from '$lib/adStyle';
 
 	// עורך דף הנחיתה + שליחה סופית - פורט מהגמ"ח הארצי (במקור מ"קהילה בשכונה").
 	// חולק את אותה טיוטת localStorage עם ה-builder הראשי.
@@ -102,6 +103,17 @@
 	let mainImageFit = $state({ x: 50, y: 50, z: 1 });
 	let logo = $state('');
 	let logoShape = $state(/** @type {'square' | 'circle'} */ ('square'));
+	// שאר עיצוב הכרטיס מהבילדר — לא נערך כאן, אבל חייב לנסוע עם השליחה:
+	// בלעדיו הפרסומת המפורסמת נבנית מברירות המחדל של האתר (legacyAdStyle)
+	// ולא ממה שהמפרסם ראה בתצוגת הבילדר
+	let logoPosition = $state(/** @type {'right' | 'left' | 'cta'} */ ('right'));
+	/** @type {number | null} */
+	let logoFreeX = $state(null);
+	/** @type {number | null} */
+	let logoFreeY = $state(null);
+	let titleColor = $state('#ffffff');
+	let titleOffsetY = $state(0);
+	let diagHeight = $state(12);
 	let gradient = $state('linear-gradient(135deg, #f59e0b, #ea580c)');
 
 	// ===== גרירת קבצים =====
@@ -155,6 +167,17 @@
 			logo,
 			mainImage,
 			mainImageFit,
+			// העיצוב שנקבע בבילדר נוסע עם המודעה עד לאתר. parseAdStyle מנרמל
+			// את הערכים שנטענו מ-localStorage (תחומים, צבע hex) לפני השליחה
+			adStyle: parseAdStyle({
+				logoShape,
+				logoAnchor: logoPosition,
+				logoX: logoFreeX,
+				logoY: logoFreeY,
+				bandHeight: diagHeight,
+				titleOffsetY,
+				titleColor
+			}),
 			landing: {
 				headline: landingHeadline,
 				pitch: landingPitch,
@@ -430,6 +453,12 @@
 					};
 					logo = d.logo ?? '';
 					logoShape = d.logoShape ?? 'square';
+					logoPosition = d.logoPosition ?? 'right';
+					logoFreeX = typeof d.logoFreeX === 'number' ? d.logoFreeX : null;
+					logoFreeY = typeof d.logoFreeY === 'number' ? d.logoFreeY : null;
+					titleColor = d.titleColor ?? '#ffffff';
+					titleOffsetY = typeof d.titleOffsetY === 'number' ? d.titleOffsetY : 0;
+					diagHeight = typeof d.diagHeight === 'number' ? d.diagHeight : 12;
 					gradient = d.gradient ?? gradient;
 				}
 			} catch {}
