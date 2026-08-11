@@ -28,7 +28,7 @@
 	 * @property {string} mainImage
 	 * @property {{x:number,y:number,z:number}} [mainImageFit] מיקום+זום מהבילדר
 	 * @property {import('$lib/adStyle').AdStyle|null} [adStyle] העיצוב מהבילדר; חסר במודעות ותיקות
-	 * @property {number} [slot] מספר המקום בטור (1..12) - נקבע במסך הניהול; חסר במודעות ותיקות
+	 * @property {number} [slot] מספר המקום בטור (1..16) - נקבע במסך הניהול; חסר במודעות ותיקות
 	 */
 
 	/** @type {{ approvedAds?: ApprovedAd[] }} */
@@ -174,18 +174,53 @@
 			textColor: 'text-fuchsia-400',
 			hoverText: 'group-hover:text-fuchsia-200',
 			buttonColor: 'bg-fuchsia-600 hover:bg-fuchsia-500'
+		},
+		{
+			borderColor: 'border-cyan-500/30',
+			bgColor: 'bg-cyan-900/10',
+			hoverBorder: 'hover:border-cyan-500',
+			hoverBg: 'hover:bg-cyan-900/20',
+			textColor: 'text-cyan-400',
+			hoverText: 'group-hover:text-cyan-200',
+			buttonColor: 'bg-cyan-600 hover:bg-cyan-500'
+		},
+		{
+			borderColor: 'border-rose-500/30',
+			bgColor: 'bg-rose-900/10',
+			hoverBorder: 'hover:border-rose-500',
+			hoverBg: 'hover:bg-rose-900/20',
+			textColor: 'text-rose-400',
+			hoverText: 'group-hover:text-rose-200',
+			buttonColor: 'bg-rose-600 hover:bg-rose-500'
+		},
+		{
+			borderColor: 'border-lime-500/30',
+			bgColor: 'bg-lime-900/10',
+			hoverBorder: 'hover:border-lime-500',
+			hoverBg: 'hover:bg-lime-900/20',
+			textColor: 'text-lime-400',
+			hoverText: 'group-hover:text-lime-200',
+			buttonColor: 'bg-lime-600 hover:bg-lime-500'
+		},
+		{
+			borderColor: 'border-sky-500/30',
+			bgColor: 'bg-sky-900/10',
+			hoverBorder: 'hover:border-sky-500',
+			hoverBg: 'hover:bg-sky-900/20',
+			textColor: 'text-sky-400',
+			hoverText: 'group-hover:text-sky-200',
+			buttonColor: 'bg-sky-600 hover:bg-sky-500'
 		}
 	];
 
-	const VIEW_MS = 14000; // כמה זמן כל קבוצה נשארת על המסך (החלפה איטית)
-	const FADE_MS = 900; // אורך הדעיכה בין קבוצה לקבוצה — חייב להתאים ל-CSS
+	const VIEW_MS = 7000; // כמה זמן כל קבוצה נשארת על המסך — חצי מהקצב הישן (14 ש׳)
 	const PER_GROUP = 4; // כמה מקומות (פרסומות ופנויים) נראים בו-זמנית
 
 	/** @typedef {{ num: number, ad?: ApprovedAd, tpl?: PlaceholderAd }} BoardCell */
 
-	// לוח 12 המקומות בסדר מספרי: מקום שנתפס מציג את הפרסומת, מקום פנוי
+	// לוח 16 המקומות בסדר מספרי: מקום שנתפס מציג את הפרסומת, מקום פנוי
 	// מציג משבצת "יכול להיות שלך". פרסומת מאושרת *תופסת* מקום - סך
-	// הכרטיסים הוא תמיד 12 בדיוק. המספר מגיע מהשרת (נקבע במסך הניהול);
+	// הכרטיסים הוא תמיד 16 בדיוק. המספר מגיע מהשרת (נקבע במסך הניהול);
 	// מודעה ותיקה בלי מספר ממלאת את המספר הפנוי הנמוך ביותר.
 	const board = $derived.by(() => {
 		/** @type {Set<number>} */
@@ -217,41 +252,34 @@
 			// גם כשמקומות לפניה נתפסים
 			cells.push(ad ? { num: n, ad } : { num: n, tpl: slots[(n - 1) % slots.length] });
 		}
-		// מעבר ל-12 (גלישה) - בסוף הלוח, כדי שפרסומת לא תיעלם
+		// מעבר ל-16 (גלישה) - בסוף הלוח, כדי שפרסומת לא תיעלם
 		return [...cells, ...overflow];
 	});
 	const groupCount = $derived(Math.max(1, Math.ceil(board.length / PER_GROUP)));
 
-	let fading = $state(false);
-
 	onMount(() => {
-		/** @type {ReturnType<typeof setTimeout> | undefined} */
-		let fadeTimer;
-		// דעיכה החוצה → החלפת הקבוצה בזמן שהטור שקוף → דעיכה פנימה.
-		// כך אין קפיצה: הכרטיסים לא מתחלפים מול העין אלא מתוך שקיפות מלאה.
+		// ההחלפה עצמה היא מיזוג שקיפות (crossfade) שקורה כולו ב-CSS —
+		// כאן רק מקדמים את מספר הקבוצה, בלי מכונת מצבים של דעיכה.
 		// הסבב רץ כל עוד הדף פתוח: גם הפרסומות המשולמות מתחלפות בו, ולכן
 		// עצירה הייתה מקבעת קבוצה אחת ומסתירה לצמיתות את הפרסומות שבאחרות.
 		const interval = setInterval(() => {
 			if (groupCount <= 1) return;
-			fading = true;
-			fadeTimer = setTimeout(() => {
-				currentGroup = (currentGroup + 1) % groupCount;
-				fading = false;
-			}, FADE_MS);
+			currentGroup = (currentGroup + 1) % groupCount;
 		}, VIEW_MS);
 
-		return () => {
-			clearInterval(interval);
-			clearTimeout(fadeTimer);
-		};
+		return () => clearInterval(interval);
 	});
 
 	// שינוי במספר הקבוצות תוך כדי סבב (למשל אישור פרסומת) לא משאיר את
 	// הטור ריק עד לסיבוב הבא
 	const safeGroup = $derived(currentGroup % groupCount);
 
-	// הקבוצה המוצגת כרגע: 4 מקומות עוקבים לפי הסדר המספרי (1-4, 5-8, 9-12)
-	const displayed = $derived(board.slice(safeGroup * PER_GROUP, (safeGroup + 1) * PER_GROUP));
+	// הלוח בקבוצות של 4 לפי הסדר המספרי (1-4, 5-8, 9-12, 13-16). כל
+	// הקבוצות מרונדרות זו על גבי זו ורק הפעילה נראית, כך שההחלפה היא
+	// מיזוג עדין בין שתי שכבות ולא החלפת תוכן מול העין.
+	const groups = $derived(
+		Array.from({ length: groupCount }, (_, g) => board.slice(g * PER_GROUP, (g + 1) * PER_GROUP))
+	);
 </script>
 
 <!-- RightAdBanner.svelte -->
@@ -263,12 +291,16 @@
 		{t.marketingContent}
 	</h4>
 
-	<!-- לוח 12 המקומות בסדר מספרי, בקבוצות של 4 (1-4, 5-8, 9-12).
+	<!-- לוח 16 המקומות בסדר מספרי, בקבוצות של 4 (1-4, 5-8, 9-12, 13-16).
 	     כל הכרטיסים מתחלפים בסבב כרגיל - פרסומות ומשבצות פנויות יחד:
 	     פרסומת שנקבעה למקום 5 מופיעה עם קבוצת 5-8, בין 6 ל-8, וסך
-	     המקומות הוא 12 בדיוק. הקישור תמיד לדף הנחיתה הפנימי /ads/<id>. -->
-	<div class="ads-track space-y-3" class:fading>
-		{#each displayed as cell (cell.num)}
+	     המקומות הוא 16 בדיוק. הקישור תמיד לדף הנחיתה הפנימי /ads/<id>.
+	     כל הקבוצות שוכבות זו על זו באותו תא grid; ההחלפה היא מיזוג
+	     שקיפות איטי בין השכבות - בלי רגע ריק ובלי קפיצות תוכן. -->
+	<div class="ads-stage">
+		{#each groups as grp, gi}
+		<div class="ads-group space-y-3" class:active={gi === safeGroup}>
+		{#each grp as cell (cell.num)}
 			{#if cell.ad}
 				{@const ad = cell.ad}
 				{@const st = styleOf(ad)}
@@ -394,22 +426,38 @@
 				</div>
 			{/if}
 		{/each}
+		</div>
+		{/each}
 	</div>
 </aside>
 
 <style>
-	/* דעיכה רכה בין קבוצות הלוח — כל הקבוצה (פרסומות ומשבצות פנויות)
-	   דועכת ומתחלפת יחד. הערך חייב להתאים ל-FADE_MS שבסקריפט. */
-	.ads-track {
-		opacity: 1;
-		transition: opacity 900ms ease-in-out;
+	/* מעבר עדין בין קבוצות הלוח: כל הקבוצות שוכבות זו על זו באותו תא
+	   grid, וההחלפה היא מיזוג שקיפות איטי (crossfade) - הקבוצה הנכנסת
+	   מופיעה בהדרגה בזמן שהיוצאת נמוגה. אין רגע שבו הטור ריק, אין הבזק
+	   ואין שום תזוזה. */
+	.ads-stage {
+		display: grid;
 	}
-	.ads-track.fading {
+	.ads-group {
+		grid-area: 1 / 1;
 		opacity: 0;
+		visibility: hidden;
+		pointer-events: none;
+		transition:
+			opacity 1800ms ease-in-out,
+			visibility 0s linear 1800ms;
+	}
+	.ads-group.active {
+		opacity: 1;
+		visibility: visible;
+		pointer-events: auto;
+		transition: opacity 1800ms ease-in-out;
 	}
 	@media (prefers-reduced-motion: reduce) {
-		.ads-track {
-			transition-duration: 1ms;
+		.ads-group,
+		.ads-group.active {
+			transition: none;
 		}
 	}
 
