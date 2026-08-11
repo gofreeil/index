@@ -7,6 +7,7 @@ import {
 	CATEGORY_DEFS,
 	OTHER,
 	effectiveCategories,
+	hiddenCategorySet,
 	normCategoryLabel,
 	resolveCategory,
 	sanitizeCategoryFit,
@@ -14,8 +15,9 @@ import {
 } from '$lib/categories.js';
 
 // מסך ניהול הקטגוריות — לסופר-אדמין בלבד. הרשימה שבקוד נשארת מקור האמת
-// לסיווג; כאן נשמרות דריסות תצוגה (שם/אימוג'י/תמונה/סדר) וקטגוריות
-// שנוספו מהמסך. הכול יושב ב-KV (ראו $lib/server/categoryStore.js).
+// לסיווג; כאן נשמרות דריסות תצוגה (שם/אימוג'י/תמונה/סדר), קטגוריות
+// שנוספו מהמסך, ומובנות שנמחקו (hidden — מוסתרות וניתנות לשחזור).
+// הכול יושב ב-KV (ראו $lib/server/categoryStore.js).
 
 const MAX_IMAGE_BYTES = 3_000_000;
 const MAX_NAME = 40;
@@ -47,8 +49,11 @@ export async function load({ locals }) {
 	const counts = {};
 	/** @type {Record<string, number>} תוויות חופשיות שהוקלדו על כרטיסיות ואינן ברשימה */
 	const freeLabels = {};
+	// אותו סיווג כמו בדף הבית: קטגוריה מחוקה לא צדה כרטיסיות, וכרטיסיות
+	// שכבר משויכות אליה נספרות כתווית חופשית — כך רואים כאן מה קרה להן
+	const hiddenSet = hiddenCategorySet(settings);
 	for (const row of rows) {
-		const canonical = resolveCategory(toBusiness(row));
+		const canonical = resolveCategory(toBusiness(row), hiddenSet);
 		const key = keyByNorm.get(normCategoryLabel(canonical));
 		if (key) counts[key] = (counts[key] ?? 0) + 1;
 		else freeLabels[canonical] = (freeLabels[canonical] ?? 0) + 1;
@@ -85,7 +90,8 @@ export const actions = {
 	 * שמירת המצב המלא של המסך: סדר השורות = הסדר במסילה; שם/אימוג'י לכל
 	 * שורה; תמונות מצורפות כקבצים img_<אינדקס>. קטגוריה שנוספה מקבלת מזהה
 	 * x_... יציב; extra שנמחק מהרשימה פשוט לא נשלח — והעסקים שלו חוזרים
-	 * להופיע תחת התווית שנשמרה אצלם במאגר.
+	 * להופיע תחת התווית שנשמרה אצלם במאגר. מובנית שנמחקה גם היא לא נשלחת —
+	 * היא נרשמת ב-hidden (ההתאמות שלה נמחקות איתה) וניתנת לשחזור מהמסך.
 	 */
 	save: async ({ request, locals }) => {
 		if (!isSuperAdmin(locals.user)) return fail(403, { error: 'פעולה זו לסופר-אדמין בלבד' });
@@ -142,10 +148,14 @@ export const actions = {
 				}
 			}
 		}
-		// כל הקטגוריות המובנות חייבות להישאר — אי אפשר למחוק מה שמוגדר בקוד
-		if (seenBuiltins.size !== CATEGORY_DEFS.length) {
-			return fail(400, { error: 'חסרה קטגוריה מובנית — רעננו את הדף ונסו שוב' });
+		// "אחר" חייבת להישאר — היא ברירת המחדל של הסיווג ועוגן המסילה; כל
+		// מובנית אחרת שחסרה מהמסך נמחקה בכוונה ונרשמת כמוסתרת (hidden)
+		if (!seenBuiltins.has(OTHER)) {
+			return fail(400, { error: 'חסרה קטגוריית "אחר" — רעננו את הדף ונסו שוב' });
 		}
+		const hidden = CATEGORY_DEFS.filter((d) => d.label !== OTHER && !seenBuiltins.has(d.label)).map(
+			(d) => d.label
+		);
 
 		// ── העלאת תמונות (לפי אינדקס השורה בטופס) ──
 		/** @type {Map<number, string>} */
@@ -163,7 +173,7 @@ export const actions = {
 
 		// ── בניית ההגדרות החדשות ──
 		/** @type {import('$lib/categories.js').CategorySettings} */
-		const next = { order: [], overrides: {}, extras: [] };
+		const next = { order: [], overrides: {}, extras: [], hidden };
 
 		rows.forEach((r, i) => {
 			if (builtinByLabel.has(r.key)) {
@@ -221,11 +231,12 @@ export const actions = {
 		return { success: true, message: `הקטגוריות נשמרו — השינויים חיים באתר${imgNote}` };
 	},
 
-	/** חזרה לברירות המחדל שבקוד — מוחק את כל הדריסות, הסדר והתוספות */
+	/** חזרה לברירות המחדל שבקוד — מוחק את כל הדריסות, הסדר, התוספות
+	 *  וההסתרות (מובנות שנמחקו חוזרות לרשימה) */
 	reset: async ({ locals }) => {
 		if (!isSuperAdmin(locals.user)) return fail(403, { error: 'פעולה זו לסופר-אדמין בלבד' });
 		try {
-			await saveCategorySettings({ order: [], overrides: {}, extras: [] });
+			await saveCategorySettings({ order: [], overrides: {}, extras: [], hidden: [] });
 		} catch (e) {
 			return fail(502, {
 				error: 'האיפוס נכשל: ' + (e instanceof Error ? e.message.slice(0, 140) : '')

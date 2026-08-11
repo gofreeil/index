@@ -360,9 +360,12 @@ const MATCHERS = CATEGORY_DEFS.filter((c) => c.match?.length).map((c) => ({
  * שכתבה שם "עיצוב חוויית לקוח" נחתה תחת "עיצוב ואומנות". רק אם שכבה שלמה
  * לא הניבה התאמה עוברים לשכבה הבאה.
  * @param {{name?: string, subcategory?: string, description?: string, unique_content?: string}} b
+ * @param {Set<string>} [skip] תוויות שאין לסווג אליהן (מובנות שנמחקו מהמסך) —
+ *   בלעדי הדילוג קטגוריה מחוקה הייתה "קמה לתחייה" מכל כרטיסייה חדשה
+ *   שהטקסט שלה פוגע במילות המפתח שלה
  * @returns {string}
  */
-export function guessCategory(b) {
+export function guessCategory(b, skip) {
 	const layers = [
 		`${b?.name ?? ''} ${b?.subcategory ?? ''}`,
 		String(b?.description ?? ''),
@@ -372,6 +375,7 @@ export function guessCategory(b) {
 		const text = norm(layer);
 		if (!text) continue;
 		for (const m of MATCHERS) {
+			if (skip?.has(m.label)) continue;
 			if (m.words.some((w) => w && text.includes(w))) return m.label;
 		}
 	}
@@ -383,16 +387,20 @@ export function guessCategory(b) {
  * נשלח לסיווג האוטומטי; תווית חופשית שאינה ברשימה נשמרת כמו שהיא (לא
  * מוחקים בחירה של אדמין).
  * @param {{category?: string, name?: string, subcategory?: string, description?: string, unique_content?: string}} b
+ * @param {Set<string>} [hidden] מובנות שנמחקו (hiddenCategorySet) — הסיווג
+ *   האוטומטי מדלג עליהן. תווית שנשמרה במפורש כן ממשיכה להתמפות לקנונית
+ *   גם כשזו מחוקה, כדי שכל ה-aliases שלה יתקבצו לאריח אחד ולא יתפצלו
+ *   לפי גלגולי השם שבמאגר.
  * @returns {string}
  */
-export function resolveCategory(b) {
+export function resolveCategory(b, hidden) {
 	const raw = String(b?.category ?? '').trim();
 	if (raw) {
 		const canonical = BY_ALIAS.get(norm(raw));
 		if (canonical && canonical !== OTHER) return canonical;
 		if (!canonical) return raw;
 	}
-	return guessCategory(b) || OTHER;
+	return guessCategory(b, hidden) || OTHER;
 }
 
 /** נרמול תווית להשוואה — חשוף למסך ניהול הקטגוריות (ספירה והתאמת כפילויות) */
@@ -405,6 +413,11 @@ export const normCategoryLabel = norm;
 // חלות על התצוגה בלבד: שם אחר, אימוג'י אחר, תמונה במקום אימוג'י, וסדר
 // מפורש למסילת דף הבית. בנוסף אפשר להוסיף מהמסך קטגוריות חדשות (extras)
 // שאינן בקוד — הן זמינות בטופס ההגשה ונשמרות במאגר לפי שמן.
+//
+// מחיקת קטגוריה מובנית מהמסך לא נוגעת בקוד: התווית נרשמת ב-hidden, והיא
+// נעלמת מהמסילה, מהטפסים, ממסך הניהול ומהסיווג האוטומטי. כרטיסייה שכבר
+// נשמרה עם התווית ממשיכה להציג אותה (כמו תווית חופשית); שחזור ממסך
+// הניהול מחזיר הכול. "אחר" אינה ניתנת למחיקה — היא ברירת המחדל של הסיווג.
 //
 // המפתחות יציבים: לקטגוריה מובנית — התווית הקנונית (גם אחרי שינוי שם);
 // לקטגוריה שנוספה מהמסך — מזהה x_... שנוצר פעם אחת. כך שינוי שם לא שובר
@@ -440,6 +453,7 @@ export const normCategoryLabel = norm;
  * @property {string[]} order מפתחות בסדר התצוגה הרצוי; ריק = סדר אוטומטי לפי כמות
  * @property {Record<string, CategoryOverride>} overrides לפי תווית קנונית
  * @property {CategoryExtra[]} extras
+ * @property {string[]} [hidden] תוויות קנוניות של מובנות שנמחקו מהמסך
  *
  * @typedef {Object} EffectiveCategory
  * @property {string} key
@@ -482,17 +496,35 @@ export function sanitizeCategoryFit(raw) {
 export const isDefaultCategoryFit = (f) => f.x === 50 && f.y === 50 && f.z === 1;
 
 /**
+ * קבוצת המובנות שנמחקו מהמסך — רק תוויות שבאמת קיימות בקוד; "אחר" לעולם
+ * לא נחשבת מחוקה. הקלט מגיע מה-KV ולכן לא סומכים עליו.
+ * @param {Partial<CategorySettings> | null | undefined} settings
+ * @returns {Set<string>}
+ */
+export function hiddenCategorySet(settings) {
+	/** @type {Set<string>} */
+	const out = new Set();
+	for (const l of Array.isArray(settings?.hidden) ? settings.hidden : []) {
+		const label = String(l);
+		if (label !== OTHER && BY_LABEL.has(label)) out.add(label);
+	}
+	return out;
+}
+
+/**
  * הרשימה האפקטיבית — הקטגוריות המובנות עם הדריסות + התוספות, בסדר שנקבע.
- * "אחר" מוצמדת תמיד לסוף, בדיוק כמו במסילת דף הבית.
+ * "אחר" מוצמדת תמיד לסוף, בדיוק כמו במסילת דף הבית. מובנית שנמחקה (hidden)
+ * לא נכללת — וכך היא נשמטת מהמסילה, מהטפסים וממסך הניהול בבת אחת.
  * @param {Partial<CategorySettings> | null | undefined} settings
  * @returns {EffectiveCategory[]}
  */
 export function effectiveCategories(settings) {
 	const overrides = settings?.overrides ?? {};
 	const extras = Array.isArray(settings?.extras) ? settings.extras : [];
+	const hidden = hiddenCategorySet(settings);
 
 	/** @type {EffectiveCategory[]} */
-	const list = CATEGORY_DEFS.map((def) => {
+	const list = CATEGORY_DEFS.filter((def) => !hidden.has(def.label)).map((def) => {
 		const o = overrides[def.label] ?? {};
 		return {
 			key: def.label,

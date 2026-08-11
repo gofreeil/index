@@ -1,7 +1,12 @@
 import { listApprovedBusinesses } from '$lib/server/strapi.js';
 import { getCategorySettings } from '$lib/server/categoryStore.js';
 import { toBusiness } from '$lib/businessShape.js';
-import { resolveCategory, categoryDisplayResolver, categoryRailMeta } from '$lib/categories.js';
+import {
+	resolveCategory,
+	categoryDisplayResolver,
+	categoryRailMeta,
+	hiddenCategorySet
+} from '$lib/categories.js';
 
 // ============================================================
 // טעינת האינדקס בצד-השרת (SSR).
@@ -24,13 +29,15 @@ export async function load() {
 			getCategorySettings()
 		]);
 		const displayName = categoryDisplayResolver(catSettings);
+		// קטגוריה מובנית שנמחקה במסך הניהול לא צדה כרטיסיות בסיווג האוטומטי
+		const hidden = hiddenCategorySet(catSettings);
 		const businesses = rows.map(toBusiness).map((b) => ({
 			id: b.documentId,
 			documentId: b.documentId,
 			slug: b.slug,
 			name: b.name || 'ללא שם',
 			phone: b.phone || '',
-			category: displayName(resolveCategory(b)),
+			category: displayName(resolveCategory(b, hidden)),
 			banners: b.banners || [],
 			banner: b.banner || '',
 			description: b.description || '',

@@ -2,7 +2,7 @@ import { error, fail } from '@sveltejs/kit';
 import { getBusiness, getUserPhone, isPrivileged } from '$lib/server/strapi.js';
 import { getCategorySettings } from '$lib/server/categoryStore.js';
 import { toBusiness } from '$lib/businessShape.js';
-import { resolveCategory, categoryDisplayResolver } from '$lib/categories.js';
+import { resolveCategory, categoryDisplayResolver, hiddenCategorySet } from '$lib/categories.js';
 import {
 	businessOwnerId,
 	canEditBusiness,
@@ -47,7 +47,9 @@ export async function load({ params, locals }) {
 		// השם של הסופר-אדמין חלות כאן, כדי שהצ'יפ יתאים למסילה.
 		business: {
 			...business,
-			category: categoryDisplayResolver(catSettings)(resolveCategory(business))
+			category: categoryDisplayResolver(catSettings)(
+				resolveCategory(business, hiddenCategorySet(catSettings))
+			)
 		},
 		// "שיתוף חכם" הוא כלי של בעל העסק בלבד. ההכרעה כאן ולא בדפדפן:
 		// toBusiness לא מחזיר ללקוח את מפתחות הבעלות, ולכן אין מה לזייף.

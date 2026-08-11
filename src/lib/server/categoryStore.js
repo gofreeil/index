@@ -6,13 +6,20 @@
 //   order      מפתחות בסדר התצוגה של מסילת דף הבית (ריק = מיון לפי כמות)
 //   overrides  שם/אימוג'י/תמונה לקטגוריות המובנות, לפי התווית הקנונית
 //   extras     קטגוריות שנוספו מהמסך (מזהה x_..., שם, aliases לשמות קודמים)
+//   hidden     מובנות שנמחקו מהמסך — מוסתרות מהאתר, מהטפסים ומהסיווג
 //
 // הסניטציה כאן היא ההגנה היחידה על הצורה — ה-KV חוזר מהרשת ויכול להכיל
 // כל דבר; כל מה שלא עומד בצורה פשוט נשמט, והאתר ממשיך עם ברירות המחדל.
 // ============================================================
 
 import { getConfigValue, setConfigValueStrict } from './configStore.js';
-import { effectiveCategories, sanitizeCategoryFit, isDefaultCategoryFit } from '$lib/categories.js';
+import {
+	CATEGORIES,
+	OTHER,
+	effectiveCategories,
+	sanitizeCategoryFit,
+	isDefaultCategoryFit
+} from '$lib/categories.js';
 
 const KEY = 'category_settings';
 
@@ -84,7 +91,19 @@ function sanitize(raw) {
 		}
 	}
 
-	return { order, overrides, extras };
+	// מובנות שנמחקו — רק תוויות שבאמת קיימות בקוד; "אחר" אינה ניתנת למחיקה.
+	// תווית שהוסרה מהקוד בינתיים פשוט נשמטת מכאן — אין למה להסתיר אותה.
+	const hidden = Array.isArray(s.hidden)
+		? [
+				...new Set(
+					s.hidden
+						.map((/** @type {unknown} */ k) => cleanStr(k, 80))
+						.filter((/** @type {string} */ l) => l && l !== OTHER && CATEGORIES.includes(l))
+				)
+			]
+		: [];
+
+	return { order, overrides, extras, hidden };
 }
 
 /**

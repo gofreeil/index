@@ -1,6 +1,6 @@
 <script>
 	import { enhance } from '$app/forms';
-	import { OTHER, DEFAULT_CATEGORY_FIT } from '$lib/categories.js';
+	import { CATEGORY_DEFS, OTHER, DEFAULT_CATEGORY_FIT } from '$lib/categories.js';
 	import { adImgFit, AD_ZOOM_MIN, AD_ZOOM_MAX } from '$lib/adImageFit';
 
 	// ============================================================
@@ -288,16 +288,57 @@
 		newIcon = '';
 	}
 
-	/** @param {number} i */
+	/** מחיקת שורה: extra נמחק סופית; מובנית נרשמת בשרת כמוסתרת וניתנת
+	 *  לשחזור מרשימת המחוקות. "אחר" מוצמדת ואינה נמחקת. @param {number} i */
 	function removeRow(i) {
 		const r = rows[i];
-		if (r.builtin) return;
-		const warn = r.count
-			? `למחוק את "${r.name}"? ${r.count} כרטיסיות מסווגות אליה — הן יחזרו להציג את התווית שנשמרה בהן.`
-			: `למחוק את "${r.name}"?`;
+		if (isPinned(r)) return;
+		const impact = r.count
+			? ` ${r.count} כרטיסיות מסווגות אליה — הן יחזרו להציג את התווית שנשמרה בהן.`
+			: '';
+		const warn = r.builtin
+			? `למחוק את "${r.name}"? היא תוסר מהאתר ומטופס ההגשה, וההתאמות שלה (שם, תמונה, מיקום) יימחקו.${impact}\nאפשר לשחזר אותה מרשימת המחוקות שתופיע מתחת לקטגוריות.`
+			: `למחוק את "${r.name}"?${impact}`;
 		if (!r.isNew && !confirm(warn)) return;
 		setPreview(r, null); // שחרור ה-ObjectURL של השורה שנמחקת
 		rows = rows.filter((_, idx) => idx !== i);
+	}
+
+	/* ── מובנות שנמחקו — הצעה לשחזור ─────────────────────────────
+	   נגזר מהשוואה לרשימה שבקוד: מובנית שאינה על המסך מחוקה — בין אם
+	   בשמירה קודמת (הגיעה מהשרת כ-hidden) ובין אם הרגע וטרם נשמרה. */
+	const removedBuiltins = $derived(
+		CATEGORY_DEFS.filter((d) => d.label !== OTHER && !rows.some((r) => r.key === d.label))
+	);
+
+	/** החזרת מובנית מחוקה לרשימה (נכנסת לפני "אחר" המוצמדת)
+	 * @param {{ label: string, icon: string }} def */
+	function restoreBuiltin(def) {
+		// מחיקה שטרם נשמרה מתבטלת במלואה — השורה חוזרת עם הדריסות השמורות
+		// (שם/תמונה); מובנית שנמחקה בשמירה קודמת חוזרת עם ברירות המחדל שבקוד
+		const prev = (data.categories ?? []).find((/** @type {any} */ c) => c.key === def.label);
+		/** @type {Row} */
+		const row = prev
+			? seed([prev])[0]
+			: {
+					key: def.label,
+					name: def.label,
+					icon: def.icon,
+					image: '',
+					count: 0,
+					builtin: true,
+					defaultName: def.label,
+					defaultIcon: def.icon,
+					isNew: false,
+					removeImage: false,
+					previewUrl: '',
+					dropError: '',
+					fitX: DEFAULT_CATEGORY_FIT.x,
+					fitY: DEFAULT_CATEGORY_FIT.y,
+					fitZ: DEFAULT_CATEGORY_FIT.z
+				};
+		const at = rows.length && isPinned(rows[rows.length - 1]) ? rows.length - 1 : rows.length;
+		rows = [...rows.slice(0, at), row, ...rows.slice(at)];
 	}
 
 	/** שחזור שם/אימוג'י של קטגוריה מובנית לברירת המחדל שבקוד @param {Row} r */
@@ -324,7 +365,9 @@
 		(/** @type {any} */ { cancel }) => {
 			if (
 				kind === 'reset' &&
-				!confirm('לאפס את כל הקטגוריות לברירת המחדל? שמות, סדר ותמונות שהוגדרו כאן יימחקו.')
+				!confirm(
+					'לאפס את כל הקטגוריות לברירת המחדל? שמות, סדר ותמונות שהוגדרו כאן יימחקו, קטגוריות שנוספו יוסרו ומובנות שנמחקו יחזרו.'
+				)
 			) {
 				cancel();
 				return;
@@ -390,6 +433,7 @@
 			<li>תמונה שמועלית מחליפה את האימוג'י על האריח; "אחר" תמיד אחרונה.</li>
 			<li>קטגוריה בלי עסקים לא מוצגת במסילה, אבל כן מופיעה בטופס ההגשה.</li>
 			<li>שינוי שם חל בכל האתר (מסילה, כרטיסיות, דפי עסק) — בלי לשנות את הרשומות במאגר.</li>
+			<li>מחיקה (🗑) מסירה קטגוריה מהאתר ומהטפסים; מובנית שנמחקה ממתינה ברשימת שחזור.</li>
 		</ul>
 	</div>
 
@@ -547,8 +591,9 @@
 							{/if}
 						</div>
 
-						<!-- מחיקה (רק לקטגוריות שנוספו מהמסך) -->
-						{#if !r.builtin}
+						<!-- מחיקה — לכל שורה חוץ מ"אחר" המוצמדת; מובנית שנמחקה
+						     מוסתרת מהאתר וניתנת לשחזור מרשימת המחוקות -->
+						{#if !isPinned(r)}
 							<button
 								type="button"
 								class="flex-shrink-0 rounded-lg border border-red-500/40 bg-red-950/40 px-2.5 py-1.5 text-xs font-bold text-red-300 transition hover:bg-red-900/50"
@@ -654,6 +699,28 @@
 			{/each}
 		</div>
 
+		<!-- מובנות שנמחקו — שחזור בלחיצה; המחיקה עצמה נכנסת לתוקף רק בשמירה -->
+		{#if removedBuiltins.length}
+			<div class="mt-4 rounded-2xl border border-dashed border-red-500/25 bg-red-950/10 p-4">
+				<p class="mb-2 text-xs font-bold text-gray-400">
+					🗑 קטגוריות מובנות שנמחקו — לא מוצגות באתר, בטופס ההגשה או בסיווג האוטומטי:
+				</p>
+				<div class="flex flex-wrap gap-2">
+					{#each removedBuiltins as d (d.label)}
+						<button
+							type="button"
+							class="rounded-full border border-gray-700 bg-gray-900/60 px-3 py-1 text-xs text-gray-300 transition hover:border-green-500/50 hover:text-green-300"
+							title={'להחזיר את "' + d.label + '" לרשימה'}
+							onclick={() => restoreBuiltin(d)}
+						>
+							{d.icon}
+							{d.label} · ↩ שחזור
+						</button>
+					{/each}
+				</div>
+			</div>
+		{/if}
+
 		<!-- הוספת קטגוריה -->
 		<div class="mt-4 rounded-2xl border border-dashed border-gray-700 bg-gray-900/30 p-4">
 			<p class="mb-2 text-sm font-bold text-gray-300">➕ קטגוריה חדשה</p>
@@ -736,7 +803,7 @@
 		<h2 class="mb-1 text-sm font-bold text-red-300">איפוס מלא</h2>
 		<p class="mb-3 text-xs text-gray-500">
 			מחיקת כל ההתאמות — שמות, אימוג'ים, תמונות, סדר וקטגוריות שנוספו — וחזרה לברירת המחדל שבקוד.
-			הכרטיסיות עצמן לא נפגעות.
+			מובנות שנמחקו חוזרות לרשימה; הכרטיסיות עצמן לא נפגעות.
 		</p>
 		<form method="POST" action="?/reset" use:enhance={submitFn('reset')}>
 			<button
