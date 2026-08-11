@@ -444,7 +444,7 @@
 												class="cat-img"
 												src={imgUrl(cat.image, 384)}
 												srcset={imgSrcSet(cat.image, [128, 256, 384])}
-												sizes="(min-width: 768px) 8.25rem, 7rem"
+												sizes="(min-width: 768px) 9.4rem, 7.6rem"
 												alt=""
 												loading={i < 6 ? 'eager' : 'lazy'}
 												fetchpriority={i < 6 ? 'high' : 'auto'}
@@ -643,15 +643,17 @@
 	   וההצצה לאריח הבא נשמרת. מ-md ומעלה חוזרים לאריח הגדול. */
 	.cat-tile {
 		position: relative;
-		width: clamp(5.5rem, 22.5vw, 7.5rem); /* vw ⇒ ההצצה לאריח הבא מובטחת בכל רוחב מסך */
-		min-height: 8.75rem; /* גבוה יותר — מפנה מקום לתמונת תחום גדולה, כמו בגמ"חים */
+		width: clamp(6rem, 24vw, 8rem); /* vw ⇒ ההצצה לאריח הבא מובטחת בכל רוחב מסך */
+		min-height: 10rem; /* גבוה יותר — מפנה מקום לתמונת תחום גדולה, כמו בגמ"חים */
 		height: 100%; /* ה-li נמתח לגובה השורה; בלי זה תחתית האריחים מתפרעת */
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
 		gap: 0.35rem;
-		padding: 0.6rem 0.35rem;
+		/* ריפוד צר — התמונה היא העיקר באריח, וכל מה שנגזר ממנו לשוליים נגזל
+		   ממנה. מספיק שהמסגרת השחורה לא תיגע במסגרת האריח */
+		padding: 0.4rem 0.2rem;
 		border-radius: 0.85rem;
 		border: 1px solid #374151; /* gray-700 */
 		background: linear-gradient(160deg, #1f2937 0%, #131c2b 55%, #0b1220 100%);
@@ -715,10 +717,10 @@
 	/* מהטאבלט ומעלה יש רוחב בשפע — אריח גדול */
 	@media (min-width: 768px) {
 		.cat-tile {
-			width: clamp(7.5rem, 30vw, 9.25rem);
-			min-height: 11.5rem;
+			width: clamp(8rem, 32vw, 10rem);
+			min-height: 13rem;
 			gap: 0.45rem;
-			padding: 0.85rem 0.5rem;
+			padding: 0.5rem 0.3rem;
 			border-radius: 1rem;
 		}
 	}
@@ -762,7 +764,7 @@
 	.cat-imgbox {
 		position: relative;
 		overflow: hidden;
-		width: 7rem; /* max-width מקצץ אותה לרוחב הפנימי של האריח בנייד */
+		width: 7.6rem; /* = הרוחב הפנימי של האריח; max-width מקצץ במסכים צרים */
 		max-width: 100%;
 		aspect-ratio: 1 / 1;
 		border-radius: 0.7rem;
@@ -797,7 +799,7 @@
 			font-size: 2.5rem;
 		}
 		.cat-imgbox {
-			width: 8.25rem; /* = הרוחב הפנימי של האריח במסך רחב, בלי שוליים מבוזבזים */
+			width: 9.4rem; /* = הרוחב הפנימי של האריח במסך רחב, בלי שוליים מבוזבזים */
 			border-radius: 0.85rem;
 			border-width: 2px;
 		}
