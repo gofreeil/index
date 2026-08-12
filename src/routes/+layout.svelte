@@ -136,7 +136,7 @@
 					<img
 						src="/logo-professionals.png?v=4"
 						alt="לוגו בעלי מקצוע כשירים — סדר בכל עניין"
-						class="h-8 w-auto rounded-lg object-contain shadow-sm transition-transform duration-300 ease-out group-hover:scale-125 sm:h-14"
+						class="h-12 w-auto rounded-lg object-contain shadow-sm transition-transform duration-300 ease-out group-hover:scale-125 sm:h-14"
 					/>
 					<div class="flex flex-col text-right transition-opacity group-hover:opacity-80">
 						<!-- שם המותג בכותרת הוא <p> ולא <h1>: ה-h1 שייך לכותרת הייחודית של כל דף
@@ -156,8 +156,10 @@
 				</a>
 
 				<!-- Action Buttons — סדר ה-DOM הוא מימין לשמאל (העמוד ב-RTL):
-				     שפה, מידע, הוסף עסק, ואזור אישי בקצה השמאלי. -->
-				<div class="flex flex-shrink-0 items-center gap-1.5 sm:gap-3">
+				     שפה, מידע, הוסף עסק, ואזור אישי בקצה השמאלי.
+				     בנייד הם דחוסים (gap-1, ריפוד צר) כדי לפנות רוחב ללוגו
+				     ולשם המותג שמימין. -->
+				<div class="flex flex-shrink-0 items-center gap-1 sm:gap-3">
 					<!-- Language Selector -->
 					<div class="relative flex items-center">
 						<button

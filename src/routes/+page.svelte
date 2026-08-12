@@ -290,8 +290,9 @@
 <JsonLd data={schemas} />
 
 <div class="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
-	<!-- H1 — הכותרת הראשית של הדף. עד כאן לא היה בדף אף h1, וגוגל לא ידע במה הדף עוסק. -->
-	<h1 class="mb-5 text-center text-2xl font-extrabold text-gray-100 sm:mb-8 sm:text-4xl">
+	<!-- H1 — הכותרת הראשית של הדף. עד כאן לא היה בדף אף h1, וגוגל לא ידע במה הדף עוסק.
+	     font-heebo — ניסוי גופן, על הכותרת הזו בלבד (ראו layout.css). -->
+	<h1 class="font-heebo mb-5 text-center text-2xl font-extrabold text-gray-100 sm:mb-8 sm:text-4xl">
 		בעלי מקצוע כשירים — מומלצים, מדורגים ובהטבה לחברי הקהילה
 	</h1>
 
@@ -308,47 +309,40 @@
 		     לראש השורה נפער מתחתיו חלל ריק — מרכוז אנכי מיישר אותו למפה. -->
 		<div class="mb-5 grid items-start gap-4 md:mb-8 md:grid-cols-2 md:items-center md:gap-6">
 			<!-- Filters -->
-			<div class="space-y-4">
-				<div class="relative">
-					<input
-						type="text"
-						bind:value={searchTerm}
-						placeholder={t.search}
-						aria-label={t.search}
-						class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 pr-12 text-gray-100 transition outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-900/30"
-					/>
-					<svg
-						class="absolute top-3.5 right-4 h-5 w-5 text-gray-400"
-						fill="none"
-						stroke="currentColor"
-						viewBox="0 0 24 24"
-						aria-hidden="true"
-					>
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+			<div class="space-y-3">
+				<!-- החיפוש ובורר העיר באותה שורה: שניהם מצמצמים את אותה רשימה,
+				     והפרדתם לשתי שורות הרחיקה את המסנן הגיאוגרפי מהשדה שהוא
+				     משלים. השדה נמתח, הבורר ברוחב תוכנו. -->
+				<div class="flex items-center gap-2">
+					<div class="relative flex-1">
+						<input
+							type="text"
+							bind:value={searchTerm}
+							placeholder={t.search}
+							aria-label={t.search}
+							class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 pr-12 text-gray-100 transition outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-900/30"
 						/>
-					</svg>
-				</div>
-
-				<div class="flex flex-wrap items-center gap-2 px-1 text-sm text-gray-400">
-					<span>{t.totalBusinesses.replace('{count}', businesses.length.toString())}</span>
-					{#if searchTerm || selectedCategory !== 'all' || selectedLocation !== 'all'}
-						<span class="text-gray-700">|</span>
-						<span class="font-medium text-blue-400"
-							>{t.foundResults.replace('{count}', filteredBusinesses.length.toString())}</span
+						<svg
+							class="absolute top-3.5 right-4 h-5 w-5 text-gray-400"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+							aria-hidden="true"
 						>
-					{/if}
-				</div>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+							/>
+						</svg>
+					</div>
 
-				<div class="flex flex-wrap items-center gap-3">
 					{#if cities.length > 0}
 						<select
 							bind:value={selectedLocation}
 							aria-label="עיר"
-							class="rounded-xl border border-gray-700 bg-purple-600 px-4 py-3 text-sm font-bold text-white outline-none"
+							class="max-w-[45%] flex-shrink-0 rounded-xl border border-gray-700 bg-purple-600 px-3 py-3 text-sm font-bold text-white outline-none sm:px-4"
 						>
 							<option value="all">כל הארץ</option>
 							{#each cities as city}
@@ -356,11 +350,18 @@
 							{/each}
 						</select>
 					{/if}
+				</div>
 
+				<div class="flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-sm text-gray-400">
+					<span>{t.totalBusinesses.replace('{count}', businesses.length.toString())}</span>
 					{#if searchTerm || selectedCategory !== 'all' || selectedLocation !== 'all'}
+						<span class="text-gray-700">|</span>
+						<span class="font-medium text-blue-400"
+							>{t.foundResults.replace('{count}', filteredBusinesses.length.toString())}</span
+						>
 						<button
 							onclick={clearFilters}
-							class="text-sm font-medium text-gray-400 hover:text-blue-400"
+							class="font-medium text-gray-400 underline-offset-2 hover:text-blue-400 hover:underline"
 						>
 							ביטול כל המסננים
 						</button>
@@ -568,15 +569,14 @@
 				aria-labelledby="rest-title"
 			>
 				<div class="text-center">
+					<!-- המספר חי: businesses.length נגזר מהרשימה שמגיעה מהשרת, ולכן
+					     הוא מתעדכן מאליו עם כל בעל מקצוע שמתווסף לאתר. -->
 					<h2
 						id="rest-title"
-						class="bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 bg-clip-text text-xl font-extrabold text-transparent sm:text-4xl"
+						class="mb-5 bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 bg-clip-text text-xl font-extrabold text-transparent sm:text-4xl"
 					>
-						לשאר בעלי המקצוע
+						לכלל {businesses.length} בעלי המקצוע באתר
 					</h2>
-					<p class="mt-2 mb-5 text-sm text-gray-400">
-						עוד {restBusinesses.length} בעלי מקצוע שלא הופיעו למעלה.
-					</p>
 
 					<button
 						type="button"

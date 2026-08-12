@@ -388,9 +388,11 @@
 
 <section class="cat-section" aria-labelledby="cat-rail-title">
 	<div class="mx-auto max-w-7xl">
-		<div class="mb-2 flex flex-wrap items-baseline gap-x-3 gap-y-1 px-1">
+		<!-- הכותרת לבדה, ממורכזת. תת-הכותרת ("בחרו תחום — או גררו...") הוסרה:
+		     אותה הוראה בדיוק חוזרת בשורת הבקרים שמתחת למסילה, והיא גזלה שורה
+		     שלמה מהמסך הראשון בנייד. -->
+		<div class="mb-2 px-1 text-center">
 			<h2 id="cat-rail-title" class="text-xl font-extrabold text-gray-100">{title}</h2>
-			<p class="text-sm text-gray-400">בחרו תחום — או גררו את השורה כדי לראות את כולם</p>
 		</div>
 
 		<p id="cat-rail-help" class="sr-only">
