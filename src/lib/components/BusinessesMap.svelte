@@ -1,7 +1,7 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { resolveServiceArea, serviceCircles } from '$lib/serviceArea.js';
+	import { resolveServiceArea, serviceShapes, ISRAEL_OUTLINE } from '$lib/serviceArea.js';
 	import 'leaflet/dist/leaflet.css';
 
 	/** @type {{ businesses: any[] }} */
@@ -31,30 +31,28 @@
 	);
 
 	// אזור העבודה נגזר מ"אזור מכירה" — טקסט חופשי — ולכן מצויר כעיגול מקורב
-	// ולא כגבול. עסק ארצי לא מקבל עיגול (הוא היה מכסה את המפה כולה) אלא נספר
-	// בשורת ההסבר שמתחתיה.
+	// ולא כגבול. עסק ארצי, וגם מי שלא ניתן היה לגזור ממנו מקום, מסומן ככל
+	// הארץ; כולם חולקים מתאר אחד ולא נערמים זה על זה.
 	const areas = $derived(businesses.map((b) => ({ b, area: resolveServiceArea(b) })));
-	const nationwide = $derived(
-		areas.filter(({ area }) => area.kind === 'country' || area.kind === 'global').length
-	);
 
-	/* כמה עסקים באותו יישוב = אותו עיגול בדיוק. מיזוג למעגל אחד מונע ערימת
+	/* כמה עסקים באותו יישוב = אותה צורה בדיוק. מיזוג לצורה אחת מונע ערימת
 	   שכבות שמכהה את המפה, ומאפשר פופאפ שמונה את כולם במקום להסתיר את התחתונים. */
-	const circles = $derived.by(() => {
-		/** @type {Record<string, {lat:number, lng:number, radius:number, items:any[]}>} */
+	const shapes = $derived.by(() => {
+		/** @type {Record<string, any>} */
 		const groups = {};
 		for (const { b, area } of areas) {
-			for (const c of serviceCircles(area)) {
-				const key = `${c.lat.toFixed(3)}|${c.lng.toFixed(3)}|${c.radius}`;
-				groups[key] ??= { ...c, items: [] };
-				groups[key].items.push({ ...b, areaLabel: area.label });
+			for (const s of serviceShapes(area)) {
+				groups[s.key] ??= { ...s, items: [] };
+				groups[s.key].items.push(b);
 			}
 		}
-		// הגדולים נכנסים ראשונים, כדי שעיגול קטן שיושב בתוכם יישאר לחיץ
-		return Object.values(groups).sort((a, b) => b.radius - a.radius);
+		// הגדולים נכנסים ראשונים, כדי שצורה קטנה שיושבת בתוכם תישאר לחיצה
+		const size = (/** @type {any} */ s) =>
+			s.type === 'country' ? Number.MAX_SAFE_INTEGER : s.radius;
+		return Object.values(groups).sort((a, b) => size(b) - size(a));
 	});
 
-	const drawn = $derived(mapped.length > 0 || circles.length > 0);
+	const drawn = $derived(mapped.length > 0 || shapes.length > 0);
 
 	/** קישור לעסק — DOM node עם textContent, לא string concat (חסין XSS). @param {any} b */
 	function bizLink(b) {
@@ -99,13 +97,13 @@
 		return box;
 	}
 
-	/** @param {{items:any[]}} group */
-	function circlePopup(group) {
+	/** @param {{label:string, items:any[]}} group */
+	function areaPopup(group) {
 		const box = document.createElement('div');
 		box.setAttribute('dir', 'rtl');
 		box.style.cssText = 'text-align:right;min-width:190px;max-height:220px;overflow:auto';
 		const h = document.createElement('h3');
-		h.textContent = group.items[0].areaLabel || 'אזור עבודה';
+		h.textContent = group.label || 'אזור עבודה';
 		h.style.cssText = 'margin:0 0 2px;font-size:14px;font-weight:700;color:#111';
 		box.appendChild(h);
 		const sub = document.createElement('p');
@@ -129,21 +127,29 @@
 		if (!map || !L || !markersLayer) return;
 		markersLayer.clearLayers();
 
-		for (const g of circles) {
-			const circle = L.circle([g.lat, g.lng], {
-				radius: g.radius,
+		for (const g of shapes) {
+			// מתאר המדינה שוכב מתחת לכולם ובעדינות רבה יותר, אחרת העיגולים
+			// המקומיים היו נבלעים בתוכו
+			const faint = g.type === 'country';
+			const base = {
 				color: '#2563eb',
-				weight: 1.5,
-				opacity: 0.5,
+				weight: faint ? 1 : 1.5,
+				opacity: faint ? 0.35 : 0.5,
 				fillColor: '#3b82f6',
-				fillOpacity: 0.1
-			}).addTo(markersLayer);
-			circle.bindPopup(circlePopup(g));
-			circle.bindTooltip(`${g.items[0].areaLabel} · ${g.items.length} עסקים`, {
-				direction: 'top'
-			});
-			circle.on('mouseover', () => circle.setStyle({ fillOpacity: 0.22, opacity: 0.85 }));
-			circle.on('mouseout', () => circle.setStyle({ fillOpacity: 0.1, opacity: 0.5 }));
+				fillOpacity: faint ? 0.05 : 0.1,
+				dashArray: faint ? '6 5' : undefined
+			};
+			const shape =
+				g.type === 'country'
+					? L.polygon(ISRAEL_OUTLINE, base)
+					: L.circle([g.lat, g.lng], { ...base, radius: g.radius });
+			shape.addTo(markersLayer);
+			shape.bindPopup(areaPopup(g));
+			shape.bindTooltip(`${g.label} · ${g.items.length} עסקים`, { direction: 'top' });
+			shape.on('mouseover', () =>
+				shape.setStyle({ fillOpacity: faint ? 0.12 : 0.22, opacity: 0.85 })
+			);
+			shape.on('mouseout', () => shape.setStyle(base));
 		}
 
 		for (const b of mapped) {
@@ -208,10 +214,7 @@
      הדף קופץ כשהמפה מחליפה את השלד. לכן הפסקה מרונדרת תמיד, גם כשריקה. -->
 <p class="mt-1.5 h-8 px-1 text-center text-[11px] leading-4 text-gray-500 sm:h-4">
 	{#if drawn}
-		אזור עבודה מקורב לפי הכרטיסייה, לא גבול מדויק.
-		{#if nationwide}
-			<span class="text-gray-400">ועוד {nationwide} עסקים ארציים.</span>
-		{/if}
+		אזור עבודה מקורב לפי הכרטיסייה, לא גבול מדויק. מי שלא ציין אזור מסומן ככל הארץ.
 	{/if}
 </p>
 

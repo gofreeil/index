@@ -229,8 +229,10 @@ export function resolveServiceArea(b) {
 	let fromAddress = false;
 
 	if (!cities.length && !regions.length) {
-		if (GLOBAL_RE.test(raw)) return { ...base, kind: 'global', label: 'כל הארץ והעולם' };
-		if (COUNTRY_RE.test(raw)) return { ...base, kind: 'country', label: 'כל הארץ' };
+		// גם עסק ארצי מקבל עיגול על סניף שנרשם בשדה נפרד — הוא נוכח שם בפועל
+		const branchOnly = { ...base, cities: findCities(branchText) };
+		if (GLOBAL_RE.test(raw)) return { ...branchOnly, kind: 'global', label: 'כל הארץ והעולם' };
+		if (COUNTRY_RE.test(raw)) return { ...branchOnly, kind: 'country', label: 'כל הארץ' };
 		({ cities, regions } = scanGeo(
 			clean([b.city, b.address, branchText].filter(Boolean).join(' '))
 		));
@@ -259,22 +261,82 @@ const CITY_RADIUS = 8000;
 const WIDE_RADIUS = 20000;
 const MULTI_RADIUS = 14000;
 
+/** קו המתאר של ישראל, מפושט — הצורה של "כל הארץ". */
+export const ISRAEL_OUTLINE = /** @type {[number, number][]} */ ([
+	[33.09, 35.1],
+	[33.28, 35.57],
+	[33.1, 35.66],
+	[32.9, 35.9],
+	[32.71, 35.57],
+	[32.5, 35.52],
+	[32.2, 35.57],
+	[31.85, 35.55],
+	[31.55, 35.5],
+	[31.36, 35.47],
+	[31.1, 35.47],
+	[30.95, 35.4],
+	[30.5, 35.15],
+	[30.15, 35.05],
+	[29.55, 34.97],
+	[29.49, 34.92],
+	[30.4, 34.42],
+	[30.9, 34.35],
+	[31.22, 34.27],
+	[31.35, 34.3],
+	[31.6, 34.5],
+	[32.0, 34.75],
+	[32.4, 34.85],
+	[32.83, 34.95]
+]);
+
 /**
- * העיגולים שמצויירים עבור כרטיסייה. ריק עבור ארצי/עולמי (עיגול כזה היה
- * מכסה את כל המפה) ועבור מי שאין לו שום גיאוגרפיה.
- * @param {ReturnType<typeof resolveServiceArea>} area
- * @returns {{lat:number, lng:number, radius:number}[]}
+ * @typedef {{type: 'country', key: string, label: string}
+ *   | {type: 'circle', key: string, lat: number, lng: number, radius: number, label: string}} Shape
  */
-export function serviceCircles(area) {
-	if (area.kind === 'country' || area.kind === 'global' || area.kind === 'none') return [];
-	const radius = area.cities.length > 1 ? MULTI_RADIUS : area.wide ? WIDE_RADIUS : CITY_RADIUS;
-	/** @type {{lat:number, lng:number, radius:number}[]} */
+
+/**
+ * הצורות שמצוירות עבור כרטיסייה, כל אחת עם התווית שלה — עיגול של סניף
+ * נושא את שם היישוב שלו גם כשהאזור המוצהר הוא "כל הארץ".
+ *
+ * key מזהה צורה זהה בין כרטיסיות שונות, כדי שהמפה תמזג אותן לצורה אחת
+ * במקום לערום שכבות שמכהות זו את זו.
+ *
+ * @param {ReturnType<typeof resolveServiceArea>} area
+ * @returns {Shape[]}
+ */
+export function serviceShapes(area) {
+	/** @type {Shape[]} */
 	const out = [];
+
+	// ארצי, עולמי, ומי שלא ניתן היה לגזור ממנו שום מקום — כולם מסומנים
+	// כמדינה שלמה. כל אלה חולקים צורה אחת (key זהה), ולכן היא מצוירת פעם
+	// אחת עם פופאפ שמונה את כולם, ולא 62 מתארים זה על גבי זה.
+	if (area.kind === 'country' || area.kind === 'global' || area.kind === 'none') {
+		out.push({ type: 'country', key: 'country', label: 'כל הארץ' });
+	}
+
+	const radius = area.cities.length > 1 ? MULTI_RADIUS : area.wide ? WIDE_RADIUS : CITY_RADIUS;
 	for (const key of area.regions)
-		for (const [lat, lng, r] of REGIONS[key].circles) out.push({ lat, lng, radius: r });
+		for (const [lat, lng, r] of REGIONS[key].circles)
+			out.push({
+				type: 'circle',
+				key: `${lat}|${lng}|${r}`,
+				lat,
+				lng,
+				radius: r,
+				label: REGIONS[key].label
+			});
 	for (const name of area.cities) {
 		const ll = CITY_LATLNG[name];
-		if (ll) out.push({ lat: ll[0], lng: ll[1], radius });
+		if (!ll) continue;
+		out.push({
+			type: 'circle',
+			key: `${ll[0]}|${ll[1]}|${radius}`,
+			lat: ll[0],
+			lng: ll[1],
+			radius,
+			label: name
+		});
 	}
 	return out;
 }

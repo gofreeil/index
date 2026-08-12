@@ -9,6 +9,7 @@
 	import Seo from '$lib/components/Seo.svelte';
 	import SmartShare from '$lib/components/SmartShare.svelte';
 	import { branchLine } from '$lib/branches.js';
+	import ServiceAreaMap from '$lib/components/ServiceAreaMap.svelte';
 	import { adImgFit } from '$lib/adImageFit';
 	import { parseFit, isDefaultFit, logoShapeClass } from '$lib/mediaFit.js';
 	import { sameAsLinks } from '$lib/socialLinks.js';
@@ -635,6 +636,19 @@
 					></iframe>
 				</div>
 			{/if}
+		</div>
+
+		<!-- מפת גוגל שלמעלה עונה על "איפה העסק"; זו עונה על "לאן הוא מגיע".
+		     היא לא מחליפה אותה: iframe של גוגל אינו ניתן לציור מבחוץ, וגם
+		     מוצא כתובת רחוב מטקסט חופשי — יכולת שאין ל-Leaflet בלי קואורדינטות. -->
+		<div class="mt-5">
+			<h3 class="mb-2 text-sm font-semibold text-gray-400">{t.serviceZones}</h3>
+			<div class="overflow-hidden rounded-xl border border-white/10">
+				<ServiceAreaMap {business} height="h-56 sm:h-72" />
+			</div>
+			<p class="mt-1.5 text-center text-[11px] leading-4 text-gray-500">
+				אזור עבודה מקורב לפי הכרטיסייה, לא גבול מדויק. מי שלא ציין אזור מסומן ככל הארץ.
+			</p>
 		</div>
 	</section>
 
