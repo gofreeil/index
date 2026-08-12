@@ -53,11 +53,26 @@ export function parseLogoShape(raw) {
 export const logoShapeClass = (raw) =>
 	parseLogoShape(raw) === 'circle' ? 'rounded-full' : 'rounded-xl';
 
+/* ── התמונה הראשית ────────────────────────────────────────────
+   התמונה שמייצגת את העסק: היא הבאנר של האריח בדף הבית, היא שנפתחת
+   ראשונה בגלריה שבכרטיסייה, והיא שנשלחת לרשתות בשיתוף. עד היום זו
+   הייתה תמיד התמונה הראשונה שהועלתה, בלי שלבעל העסק תהיה בכך בחירה.
+   נשמר כאינדקס ולא ככתובת: העלאה חדשה מחליפה את כל התמונות, וכתובת
+   שמורה הייתה הופכת לשבורה. */
+
+/** @param {unknown} raw @param {number} [count] כמה תמונות יש בפועל */
+export function parseMainIndex(raw, count) {
+	const n = typeof raw === 'number' && Number.isFinite(raw) ? Math.floor(raw) : 0;
+	if (n < 0) return 0;
+	if (typeof count === 'number' && n >= count) return 0;
+	return n;
+}
+
 /**
  * קורא את השדה המוסתר של הטופס ומחזיר את מה ששווה לשמור. ברירות מחדל
  * מושמטות, ורשימת תמונות שכולה ברירת מחדל לא נשמרת כלל.
  * @param {unknown} raw
- * @returns {{logo?: Fit, banners?: Fit[], logo_shape?: LogoShape} | null}
+ * @returns {{logo?: Fit, banners?: Fit[], logo_shape?: LogoShape, main?: number} | null}
  */
 export function parseMediaFit(raw) {
 	/** @type {any} */
@@ -71,7 +86,7 @@ export function parseMediaFit(raw) {
 	}
 	if (!obj || typeof obj !== 'object') return null;
 
-	/** @type {{logo?: Fit, banners?: Fit[], logo_shape?: LogoShape}} */
+	/** @type {{logo?: Fit, banners?: Fit[], logo_shape?: LogoShape, main?: number}} */
 	const out = {};
 	const logo = parseFit(obj.logo);
 	if (!isDefaultFit(logo)) out.logo = logo;
@@ -82,6 +97,10 @@ export function parseMediaFit(raw) {
 	// מסגרת הלוגו נשמרת רק כשהיא לא ברירת המחדל, כמו המיקום והזום
 	const shape = parseLogoShape(obj.logo_shape);
 	if (shape !== DEFAULT_LOGO_SHAPE) out.logo_shape = shape;
+
+	// התמונה הראשונה היא ברירת המחדל, ואין טעם לשמור אותה
+	const main = parseMainIndex(obj.main);
+	if (main > 0) out.main = main;
 
 	return Object.keys(out).length ? out : null;
 }

@@ -11,7 +11,13 @@
 	import { LINK_FIELDS, parseExtraLinks } from '$lib/socialLinks.js';
 	import ImageDropField from '$lib/components/ImageDropField.svelte';
 	import ImageFitEditor from '$lib/components/ImageFitEditor.svelte';
-	import { parseFit, parseFitList, parseLogoShape, DEFAULT_FIT } from '$lib/mediaFit.js';
+	import {
+		parseFit,
+		parseFitList,
+		parseLogoShape,
+		parseMainIndex,
+		DEFAULT_FIT
+	} from '$lib/mediaFit.js';
 
 	/** @type {{ biz: any, errors?: Record<string,string>, canModerate?: boolean, categories?: Array<{value:string,label:string}> | null }} */
 	let { biz, errors = {}, canModerate = false, categories = null } = $props();
@@ -60,6 +66,8 @@
 	let bannerFits = $state(parseFitList(biz.extra_fields?.media_fit?.banners));
 	// מסגרת הלוגו בכרטיסייה — ריבוע מעוגל או עיגול, נוסע באותו json
 	let logoShape = $state(parseLogoShape(biz.extra_fields?.media_fit?.logo_shape));
+	// התמונה הראשית — הבאנר של האריח בדף הבית ופתיחת הגלריה בכרטיסייה
+	let mainIndex = $state(parseMainIndex(biz.extra_fields?.media_fit?.main));
 	/** @type {{name: string, url: string}[]} */
 	let logoPicked = $state([]);
 	/** @type {{name: string, url: string}[]} */
@@ -84,7 +92,9 @@
 		JSON.stringify({
 			logo: logoFit,
 			banners: bannerFits.slice(0, bannerPreviews.length),
-			logo_shape: logoShape
+			logo_shape: logoShape,
+			// תמונה ראשית שכבר לא קיימת (הועלו תמונות חדשות) חוזרת לראשונה
+			main: mainIndex < bannerPreviews.length ? mainIndex : 0
 		})
 	);
 
@@ -336,9 +346,33 @@
 			/>
 			{#each bannerPreviews as url, i (url)}
 				<div class="mt-3">
+					<div class="mb-1 flex flex-wrap items-center gap-2 text-xs">
+						<span class="font-bold text-gray-400">תמונה {i + 1}</span>
+						<!-- התמונה הראשית: זו שתופיע כבאנר באריח שבדף הבית, תיפתח
+						     ראשונה בגלריה ותישלח בשיתוף -->
+						{#if mainIndex === i}
+							<span
+								class="rounded-full border border-amber-500/50 bg-amber-500/10 px-2 py-0.5 font-bold text-amber-300"
+								>★ ראשית</span
+							>
+						{:else}
+							<button
+								type="button"
+								onclick={() => (mainIndex = i)}
+								class="rounded-full border border-gray-700 px-2 py-0.5 font-bold text-gray-400 transition hover:border-amber-500/50 hover:text-amber-300"
+							>
+								☆ הפוך לראשית
+							</button>
+						{/if}
+					</div>
 					<ImageFitEditor src={url} bind:fit={bannerFits[i]} aspect="wide" label="תמונה {i + 1}" />
 				</div>
 			{/each}
+			{#if bannerPreviews.length > 1}
+				<p class="mt-2 text-xs text-gray-500">
+					התמונה הראשית היא שמופיעה באריח של העסק בדף הבית ובשיתוף.
+				</p>
+			{/if}
 			{#if err('banners')}<p class="mt-1 text-xs text-red-400">{err('banners')}</p>{/if}
 		</div>
 		<!-- סרטון התדמית הוא נגן מוטמע בכרטיסייה, ולכן שדה משלו ולא שורה

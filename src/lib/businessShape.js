@@ -5,7 +5,7 @@
 import { MEDIA_BASE } from './mediaConfig.js';
 import { parseBranches } from './branches.js';
 import { parseExtraLinks } from './socialLinks.js';
-import { parseFit, parseFitList, parseLogoShape } from './mediaFit.js';
+import { parseFit, parseFitList, parseLogoShape, parseMainIndex } from './mediaFit.js';
 
 /** @param {any} m מדיה בודדת של Strapi */
 export function mediaUrl(m) {
@@ -37,6 +37,9 @@ export function toBusiness(b) {
 	// עמודת json של הסניפים ואימייל הבעלים (ראו socialLinks.js). כאן הם
 	// עולים לרמה העליונה, כדי שהפרונט יצרוך את כל הקישורים באותה צורה.
 	const links = parseExtraLinks(b.extra_fields?.links);
+	// התמונה הראשית שבחר בעל העסק — הבאנר של האריח, הפתיחה של הגלריה
+	// ותמונת השיתוף. ברירת המחדל היא הראשונה שהועלתה (ראו mediaFit.js).
+	const mainIndex = parseMainIndex(b.extra_fields?.media_fit?.main, banners.length);
 	return {
 		documentId: b.documentId,
 		slug: b.slug || b.documentId,
@@ -70,7 +73,8 @@ export function toBusiness(b) {
 		accepted_terms: !!b.accepted_terms,
 		logo,
 		banners,
-		banner: banners[0] || '',
+		main_index: mainIndex,
+		banner: banners[mainIndex] || banners[0] || '',
 		// מיקום וזום שנקבעו בעורך (extra_fields.media_fit). ברירת מחדל = מרכז,
 		// ואז התצוגה לא נוגעת ב-CSS המקורי בכלל (ראו mediaFit.js)
 		logo_fit: parseFit(b.extra_fields?.media_fit?.logo),

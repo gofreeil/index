@@ -7,7 +7,13 @@
 	import { LINK_FIELDS } from '$lib/socialLinks.js';
 	import ImageDropField from '$lib/components/ImageDropField.svelte';
 	import ImageFitEditor from '$lib/components/ImageFitEditor.svelte';
-	import { parseFit, parseFitList, parseLogoShape, DEFAULT_FIT } from '$lib/mediaFit.js';
+	import {
+		parseFit,
+		parseFitList,
+		parseLogoShape,
+		parseMainIndex,
+		DEFAULT_FIT
+	} from '$lib/mediaFit.js';
 	import { formDraft, clearDraft, resumeDraft } from '$lib/formDraft';
 
 	/** @type {{ data: any, form: any }} */
@@ -73,6 +79,8 @@
 	let bannerFits = $state(parseFitList([]));
 	// מסגרת הלוגו בכרטיסייה — ריבוע מעוגל (ברירת מחדל) או עיגול
 	let logoShape = $state(parseLogoShape(null));
+	// התמונה הראשית — הבאנר של האריח בדף הבית ופתיחת הגלריה בכרטיסייה
+	let mainIndex = $state(parseMainIndex(null));
 	/** @type {{name: string, url: string}[]} */
 	let logoPicked = $state([]);
 	/** @type {{name: string, url: string}[]} */
@@ -88,7 +96,9 @@
 		JSON.stringify({
 			logo: logoFit,
 			banners: bannerFits.slice(0, bannersPicked.length),
-			logo_shape: logoShape
+			logo_shape: logoShape,
+			// בחירה שהתייתמה אחרי החלפת התמונות חוזרת לראשונה
+			main: mainIndex < bannersPicked.length ? mainIndex : 0
 		})
 	);
 </script>
@@ -487,6 +497,25 @@
 					/>
 					{#each bannersPicked as p, i (p.url)}
 						<div class="mt-3">
+							<div class="mb-1 flex flex-wrap items-center gap-2 text-xs">
+								<span class="font-bold text-gray-400">תמונה {i + 1}</span>
+								<!-- התמונה הראשית: הבאנר של האריח בדף הבית, פתיחת הגלריה
+								     בכרטיסייה ותמונת השיתוף -->
+								{#if mainIndex === i}
+									<span
+										class="rounded-full border border-amber-500/50 bg-amber-500/10 px-2 py-0.5 font-bold text-amber-300"
+										>★ ראשית</span
+									>
+								{:else}
+									<button
+										type="button"
+										onclick={() => (mainIndex = i)}
+										class="rounded-full border border-gray-700 px-2 py-0.5 font-bold text-gray-400 transition hover:border-amber-500/50 hover:text-amber-300"
+									>
+										☆ הפוך לראשית
+									</button>
+								{/if}
+							</div>
 							<ImageFitEditor
 								src={p.url}
 								bind:fit={bannerFits[i]}
@@ -495,6 +524,11 @@
 							/>
 						</div>
 					{/each}
+					{#if bannersPicked.length > 1}
+						<p class="mt-2 text-xs text-gray-500">
+							התמונה הראשית היא שמופיעה באריח של העסק בדף הבית ובשיתוף.
+						</p>
+					{/if}
 					{#if errors.banners}<p class="err">{errors.banners}</p>{/if}
 				</div>
 				<!-- סרטון התדמית הוא נגן מוטמע בכרטיסייה, ולכן שדה משלו ולא

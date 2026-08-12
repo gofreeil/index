@@ -45,6 +45,8 @@ export async function load() {
 			// מיקום וזום של הלוגו והתמונה באריח (ראו mediaFit.js)
 			logo_fit: b.logo_fit,
 			banner_fits: b.banner_fits,
+			// איזו מהתמונות היא הראשית — הבאנר של האריח (ראו mediaFit.js)
+			main_index: b.main_index,
 			description: b.description || '',
 			discount: b.discount || '',
 			salesArea: b.sales_area || '',

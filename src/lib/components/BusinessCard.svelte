@@ -36,7 +36,9 @@
 	// מיקום וזום שנקבעו בעורך. כשהם ברירת המחדל הפעולה מכובה לגמרי,
 	// והמראה נשאר בדיוק כפי שה-class מגדיר (ראו mediaFit.js).
 	const logoFit = $derived(parseFit(business.logo_fit));
-	const bannerFit = $derived(parseFit(business.banner_fits?.[0]));
+	// business.banner הוא כבר התמונה הראשית שבחר בעל העסק — והמיקום שנלקח
+	// כאן הוא המיקום שלה, ולא של הראשונה שהועלתה (ראו mediaFit.js)
+	const bannerFit = $derived(parseFit(business.banner_fits?.[business.main_index ?? 0]));
 </script>
 
 <!-- הרוחב נקבע ע"י רשת הכרטיסים בדף (cards-grid), לא כאן -->
