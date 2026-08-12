@@ -54,10 +54,16 @@
 			if (dead) return;
 			L = mod;
 			map = L.map(mapEl, { scrollWheelZoom: false }).setView([31.5, 35.0], 7);
-			L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-				attribution: '&copy; OpenStreetMap',
-				maxZoom: 18
-			}).addTo(map);
+			// בסיס בלי כיתוב, כמו במפה הראשית: אריחי OSM הרגילים צורבים לתוך
+			// התמונה שמות בערבית לצד העברית, ואי אפשר לסנן שפה מ-PNG מוכן.
+			L.tileLayer(
+				'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png',
+				{
+					attribution: '&copy; OpenStreetMap &copy; CARTO',
+					subdomains: 'abcd',
+					maxZoom: 20
+				}
+			).addTo(map);
 			const layer = L.featureGroup().addTo(map);
 
 			for (const s of shapes) {

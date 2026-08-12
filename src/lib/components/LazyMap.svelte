@@ -25,13 +25,15 @@
 
 <!-- מפה קומפקטית: היא יושבת בראש הדף לצד שורת החיפוש (חצי רוחב), ולכן
      היא נותנת הצצה לפריסה הארצית בלי לדחוף את התוכן מתחתיה אל מחוץ למסך.
+     המסגרת צרה וגבוהה בכוונה: הארץ ארוכה מצפון לדרום וצרה ממערב למזרח,
+     ובמסגרת רחבה נותרו פסי ים ומדבר משני הצדדים בזמן שהארץ עצמה יצאה זעירה.
      גובה השלד חייב להתאים לגובה המפה ב-BusinessesMap, אחרת יש קפיצה. -->
-<div bind:this={container} class="mx-auto max-w-2xl">
+<div bind:this={container} class="mx-auto max-w-md">
 	<div class="rounded-2xl border border-gray-800 bg-gray-900/40 p-2 shadow-lg">
 		{#if show}
 			<BusinessesMap {businesses} />
 		{:else}
-			<div class="h-[190px] w-full animate-pulse rounded-xl bg-gray-800 sm:h-[240px]"></div>
+			<div class="h-[240px] w-full animate-pulse rounded-xl bg-gray-800 sm:h-[300px]"></div>
 			<!-- תופס את מקומה של שורת ההסבר שמתחת למפה (BusinessesMap), אחרת הדף קופץ -->
 			<div class="mt-1.5 h-8 sm:h-4"></div>
 		{/if}

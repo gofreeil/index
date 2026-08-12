@@ -164,7 +164,9 @@
 			fit.extend(marker.getLatLng());
 		}
 
-		if (fit.isValid()) map.fitBounds(fit, { padding: [24, 24], maxZoom: 12 });
+		// שוליים צרים: ב-24 פיקסלים לכל צד רבע מגובה המפה הלך על אוויר, והארץ
+		// יצאה קטנה באמצע. 8 מספיקים כדי שעיגול בקצה לא ייחתך.
+		if (fit.isValid()) map.fitBounds(fit, { padding: [8, 8], maxZoom: 13 });
 	}
 
 	onMount(() => {
@@ -182,10 +184,18 @@
 			});
 			// תצוגת פתיחה על הארץ, למקרה שאין ולו עסק אחד עם מיקום למסגר לפיו
 			map = L.map(mapEl, { scrollWheelZoom: false }).setView([31.7, 35.0], 7);
-			L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-				attribution: '&copy; OpenStreetMap',
-				maxZoom: 18
-			}).addTo(map);
+			// אריחי OSM הרגילים צורבים את השמות אל תוך התמונה, ובאזור שלנו הם
+			// מגיעים בערבית לצד העברית — אין דרך לסנן שפה מאריח PNG מוכן. לכן
+			// בסיס בלי שום כיתוב (Voyager no-labels): המראה נשאר, הטקסט נעלם,
+			// והשמות שכן צריך נמסרים בעברית בתיאורי העיגולים והפינים.
+			L.tileLayer(
+				'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png',
+				{
+					attribution: '&copy; OpenStreetMap &copy; CARTO',
+					subdomains: 'abcd',
+					maxZoom: 20
+				}
+			).addTo(map);
 			// featureGroup ולא layerGroup: רק לו יש getBounds, שממסגר גם עיגולים
 			markersLayer = L.featureGroup().addTo(map);
 			render();
@@ -202,7 +212,7 @@
 <!-- isolate: כולא את ה-z-index הגבוהים של Leaflet (400–1000) בתוך stacking context משלו, שלא יצוירו מעל ההדר (z-50) -->
 <div class="relative isolate">
 	<!-- הגובה חייב להתאים לשלד ב-LazyMap, אחרת הדף קופץ כשהמפה נטענת -->
-	<div bind:this={mapEl} class="h-[190px] w-full rounded-xl sm:h-[240px]"></div>
+	<div bind:this={mapEl} class="h-[240px] w-full rounded-xl sm:h-[300px]"></div>
 	{#if !drawn}
 		<div
 			class="pointer-events-none absolute inset-0 flex items-center justify-center rounded-xl bg-gray-900/60 text-center text-xs text-gray-300"
