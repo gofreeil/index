@@ -411,10 +411,6 @@
 		</div>
 	{/if}
 
-	<!-- הרשתות של העסק — לוגו לכל רשת שהוא מילא. האתר לא כאן: הוא כבר
-	     כפתור מילולי בשורת הפעולות שמעל. -->
-	<SocialLinks {business} />
-
 	{#if business.discount}
 		<p class="mt-3 text-sm text-emerald-400">
 			<span class="text-gray-500">{t.exclusiveBenefit}:</span>
@@ -582,16 +578,48 @@
 		</div>
 	{/if}
 
-	<!-- ── על העסק והמפה ───────────────────────────────────
-	     המפה עלתה לכאן ועומדת לאורך על חצי מסך לצד התיאור — בעברית בצד
-	     שמאל, ובממשק האנגלי/הרוסי היא מתהפכת עם כיוון הקריאה. במסך צר
-	     השתיים נערמות, התיאור ראשון. -->
+	<!-- ── על העסק, פרטי קשר ומפה ──────────────────────────
+	     המפה עומדת לאורך על חצי מסך — בעברית בצד שמאל, ובממשק האנגלי/הרוסי
+	     היא מתהפכת עם כיוון הקריאה. החצי השני נושא את התיאור *ואת* פרטי הקשר
+	     יחד: תיאור קצר השאיר חצי מסך ריק לצד מפה גבוהה, ופרטי הקשר ישבו
+	     מתחתיה במדור נפרד. במסך צר הכול נערם, התוכן ראשון. -->
 	<section class="mt-6 border-t border-white/[0.08] pt-5">
-		<h2 class="text-sm font-semibold text-gray-400">{t.aboutBusiness}</h2>
-		<div class="mt-2 flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
-			<p class="min-w-0 flex-1 leading-6 whitespace-pre-line text-gray-300">
-				{business.description || t.noDescription}
-			</p>
+		<div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
+			<div class="min-w-0 flex-1">
+				<h2 class="text-sm font-semibold text-gray-400">{t.aboutBusiness}</h2>
+				<p class="mt-2 leading-6 whitespace-pre-line text-gray-300">
+					{business.description || t.noDescription}
+				</p>
+
+				{#if business.address || business.sales_area || business.branches?.length}
+					<h2 class="mt-5 text-sm font-semibold text-gray-400">{t.contactInfo}</h2>
+					<dl class="mt-2 space-y-2 text-sm">
+						{#if business.address}
+							<div>
+								<dt class="text-xs text-gray-500">{t.addressLabel}</dt>
+								<dd class="mt-0.5 text-gray-300">{business.address}</dd>
+							</div>
+						{/if}
+						{#if business.sales_area}
+							<div>
+								<dt class="text-xs text-gray-500">{t.serviceBorders}</dt>
+								<dd class="mt-0.5 text-gray-300">{business.sales_area}</dd>
+							</div>
+						{/if}
+						{#if business.branches?.length}
+							<div>
+								<dt class="text-xs text-gray-500">{t.moreLocations}</dt>
+								<dd class="mt-0.5 space-y-0.5 text-gray-300">
+									{#each business.branches as branch, i (i)}
+										<p>{branchLine(branch)}</p>
+									{/each}
+								</dd>
+							</div>
+						{/if}
+					</dl>
+				{/if}
+			</div>
+
 			{#if mapSrc}
 				<div
 					class="w-full flex-shrink-0 overflow-hidden rounded-xl border border-white/10 sm:w-1/2"
@@ -609,38 +637,6 @@
 			{/if}
 		</div>
 	</section>
-
-	<!-- ── פרטי קשר ומיקום ─────────────────────────────────── -->
-	{#if business.address || business.sales_area || business.branches?.length}
-		<section class="mt-6 border-t border-white/[0.08] pt-5">
-			<h2 class="text-sm font-semibold text-gray-400">{t.contactInfo}</h2>
-
-			<dl class="mt-2 grid gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
-				{#if business.address}
-					<div>
-						<dt class="text-xs text-gray-500">{t.addressLabel}</dt>
-						<dd class="mt-0.5 text-gray-300">{business.address}</dd>
-					</div>
-				{/if}
-				{#if business.sales_area}
-					<div>
-						<dt class="text-xs text-gray-500">{t.serviceBorders}</dt>
-						<dd class="mt-0.5 text-gray-300">{business.sales_area}</dd>
-					</div>
-				{/if}
-				{#if business.branches?.length}
-					<div class="sm:col-span-2">
-						<dt class="text-xs text-gray-500">{t.moreLocations}</dt>
-						<dd class="mt-0.5 space-y-0.5 text-gray-300">
-							{#each business.branches as branch, i (i)}
-								<p>{branchLine(branch)}</p>
-							{/each}
-						</dd>
-					</div>
-				{/if}
-			</dl>
-		</section>
-	{/if}
 
 	<!-- ── סרטון תדמית ─────────────────────────────────────── -->
 	{#if ytEmbed || data.canSmartShare}
@@ -671,6 +667,11 @@
 			{/if}
 		</section>
 	{/if}
+
+	<!-- הרשתות של העסק — לוגו לכל רשת שהוא מילא, מתחת לסרטון התדמית.
+	     מחוץ למדור הווידאו בכוונה: עסק בלי סרטון עדיין מציג את הרשתות.
+	     האתר לא כאן: הוא כפתור מילולי בשורת הפעולות שבראש הדף. -->
+	<SocialLinks {business} />
 
 	<!-- ── חוות דעת ────────────────────────────────────────── -->
 	<section class="mt-6 border-t border-white/[0.08] pt-5">
