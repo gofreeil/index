@@ -1,4 +1,4 @@
-<script>
+﻿<script>
 	// שדות טופס עריכת כרטיסייה — משותפים לבעל העסק (/business/[id]/edit)
 	// ולפאנל הניהול (/admin/business/[id]). הרכיב מרנדר שדות בלבד, בלי
 	// <form> ובלי כפתור שמירה: כל מסך עוטף אותו ב-action משלו.
@@ -9,6 +9,7 @@
 	import { CATEGORIES } from '$lib/categories.js';
 	import { MAX_BRANCHES, parseBranches } from '$lib/branches.js';
 	import { LINK_FIELDS, parseExtraLinks } from '$lib/socialLinks.js';
+	import ImageDropField from '$lib/components/ImageDropField.svelte';
 
 	/** @type {{ biz: any, errors?: Record<string,string>, canModerate?: boolean, categories?: Array<{value:string,label:string}> | null }} */
 	let { biz, errors = {}, canModerate = false, categories = null } = $props();
@@ -33,8 +34,7 @@
 	// טיקטוק, X, לינקדאין ו"נוסף" יושבים ב-extra_fields.links ולא בעמודה
 	// משלהם, ולכן הערך שלהם נשלף משם ולא מ-biz הישר (ראו socialLinks.js).
 	const links = $derived(parseExtraLinks(biz.extra_fields?.links));
-	/** @param {string} k */
-	const linkValue = (k) => links[k] ?? biz[k] ?? '';
+	const linkValue = (/** @type {string} */ k) => links[k] ?? biz[k] ?? '';
 
 	// סניפים ומקומות שירות נוספים — באותה עמודת json, ונשלחים כ-JSON בשדה
 	// מוסתר אחד (ראו branches.js). לשדות שעל המסך אין name: הם רק ממשק.
@@ -55,8 +55,6 @@
 		'w-full rounded-xl border border-gray-700 bg-gray-900/60 px-4 py-2.5 text-sm text-gray-100 placeholder:text-gray-600 focus:border-blue-500/60 focus:outline-none';
 	const LABEL = 'mb-1.5 block text-sm font-bold text-gray-300';
 	const SECTION = 'rounded-2xl border border-gray-800 bg-gray-900/40 p-5';
-	const FILE =
-		'block w-full text-xs text-gray-400 file:me-3 file:rounded-lg file:border-0 file:bg-gray-700 file:px-3 file:py-1.5 file:text-gray-200';
 
 	/** @param {string} k */
 	const err = (k) => errors?.[k] ?? '';
@@ -143,20 +141,6 @@
 			</p>
 			{#if err('email')}<p class="mt-1 text-xs text-red-400">{err('email')}</p>{/if}
 		</div>
-	</div>
-</section>
-
-<!-- קישורים -->
-<section class={SECTION}>
-	<h2 class="mb-4 font-bold text-gray-200">קישורים</h2>
-	<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-		{#each LINK_FIELDS as [k, lbl, ph] (k)}
-			<div>
-				<label class={LABEL} for="f-{k}">{lbl}</label>
-				<input id="f-{k}" name={k} dir="ltr" placeholder={ph} value={linkValue(k)} class={INPUT} />
-				{#if err(k)}<p class="mt-1 text-xs text-red-400">{err(k)}</p>{/if}
-			</div>
-		{/each}
 	</div>
 </section>
 
@@ -248,12 +232,12 @@
 	</div>
 </section>
 
-<!-- מדיה -->
+<!-- מדיה — מיד אחרי המיקום, כי התמונה היא הדבר הראשון שרואים בכרטיסייה -->
 <section class={SECTION}>
 	<h2 class="mb-4 font-bold text-gray-200">מדיה</h2>
 	<div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
 		<div>
-			<span class={LABEL}>לוגו</span>
+			<span class={LABEL} id="lbl-logo">לוגו</span>
 			{#if mediaUrl(biz.logo)}
 				<img
 					src={mediaUrl(biz.logo)}
@@ -266,11 +250,11 @@
 			{:else}
 				<p class="mb-2 text-xs text-gray-600">אין לוגו</p>
 			{/if}
-			<input type="file" name="logo" accept="image/*" class={FILE} />
+			<ImageDropField name="logo" labelledBy="lbl-logo" hint="קובץ תמונה עד 3MB" />
 			{#if err('logo')}<p class="mt-1 text-xs text-red-400">{err('logo')}</p>{/if}
 		</div>
 		<div>
-			<span class={LABEL}>תמונות העסק (עד 4 — העלאה חדשה מחליפה את כולן)</span>
+			<span class={LABEL} id="lbl-banners">תמונות העסק (עד 4 — העלאה חדשה מחליפה את כולן)</span>
 			{#if banners.length}
 				<div class="mb-2 flex flex-wrap gap-2">
 					{#each banners as b, i (b?.id ?? i)}
@@ -283,8 +267,28 @@
 			{:else}
 				<p class="mb-2 text-xs text-gray-600">אין תמונות</p>
 			{/if}
-			<input type="file" name="banners" accept="image/*" multiple class={FILE} />
+			<ImageDropField
+				name="banners"
+				labelledBy="lbl-banners"
+				multiple
+				max={4}
+				hint="עד 4 תמונות, כל אחת עד 3MB"
+			/>
 			{#if err('banners')}<p class="mt-1 text-xs text-red-400">{err('banners')}</p>{/if}
 		</div>
+	</div>
+</section>
+
+<!-- קישורים -->
+<section class={SECTION}>
+	<h2 class="mb-4 font-bold text-gray-200">קישורים</h2>
+	<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+		{#each LINK_FIELDS as [k, lbl, ph] (k)}
+			<div>
+				<label class={LABEL} for="f-{k}">{lbl}</label>
+				<input id="f-{k}" name={k} dir="ltr" placeholder={ph} value={linkValue(k)} class={INPUT} />
+				{#if err(k)}<p class="mt-1 text-xs text-red-400">{err(k)}</p>{/if}
+			</div>
+		{/each}
 	</div>
 </section>

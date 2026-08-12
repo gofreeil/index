@@ -5,6 +5,7 @@
 	import { CATEGORIES } from '$lib/categories.js';
 	import { MAX_BRANCHES, parseBranches } from '$lib/branches.js';
 	import { LINK_FIELDS } from '$lib/socialLinks.js';
+	import ImageDropField from '$lib/components/ImageDropField.svelte';
 	import { formDraft, clearDraft, resumeDraft } from '$lib/formDraft';
 
 	/** @type {{ data: any, form: any }} */
@@ -402,7 +403,32 @@
 				</div>
 			</fieldset>
 
-			<!-- נוכחות דיגיטלית + לוגו -->
+			<!-- תמונות — מיד אחרי השם, הטלפון והכתובת: זה מה שרואים בכרטיסייה -->
+			<fieldset class="space-y-4 rounded-2xl border border-gray-800 bg-gray-900/40 p-5">
+				<legend class="px-2 text-sm font-bold text-blue-400">תמונות העסק</legend>
+				<div>
+					<span id="lbl-logo" class="mb-1 block text-sm font-medium text-gray-300"
+						>לוגו העסק (תמונה עד 3MB)</span
+					>
+					<ImageDropField name="logo" labelledBy="lbl-logo" hint="PNG או JPG, עד 3MB" />
+					{#if errors.logo}<p class="err">{errors.logo}</p>{/if}
+				</div>
+				<div>
+					<span id="lbl-banners" class="mb-1 block text-sm font-medium text-gray-300"
+						>תמונות העסק (עד 4 תמונות, כל אחת עד 3MB)</span
+					>
+					<ImageDropField
+						name="banners"
+						labelledBy="lbl-banners"
+						multiple
+						max={4}
+						hint="אפשר לגרור כמה תמונות יחד, או אחת בכל פעם"
+					/>
+					{#if errors.banners}<p class="err">{errors.banners}</p>{/if}
+				</div>
+			</fieldset>
+
+			<!-- נוכחות דיגיטלית -->
 			<fieldset class="space-y-4 rounded-2xl border border-gray-800 bg-gray-900/40 p-5">
 				<legend class="px-2 text-sm font-bold text-blue-400">נוכחות דיגיטלית</legend>
 				<!-- הרשתות והקישורים — הרשימה, התוויות והדוגמאות מגיעות מ-socialLinks.js,
@@ -415,33 +441,6 @@
 							{#if errors[k]}<p class="err">{errors[k]}</p>{/if}
 						</div>
 					{/each}
-				</div>
-				<div>
-					<label for="logo" class="mb-1 block text-sm font-medium text-gray-300"
-						>לוגו העסק (תמונה עד 3MB)</label
-					>
-					<input
-						id="logo"
-						name="logo"
-						type="file"
-						accept="image/*"
-						class="field file:mr-3 file:rounded-full file:border-0 file:bg-blue-600 file:px-4 file:py-1 file:text-white"
-					/>
-					{#if errors.logo}<p class="err">{errors.logo}</p>{/if}
-				</div>
-				<div>
-					<label for="banners" class="mb-1 block text-sm font-medium text-gray-300"
-						>תמונות העסק (עד 4 תמונות, כל אחת עד 3MB)</label
-					>
-					<input
-						id="banners"
-						name="banners"
-						type="file"
-						accept="image/*"
-						multiple
-						class="field file:mr-3 file:rounded-full file:border-0 file:bg-blue-600 file:px-4 file:py-1 file:text-white"
-					/>
-					{#if errors.banners}<p class="err">{errors.banners}</p>{/if}
 				</div>
 			</fieldset>
 
