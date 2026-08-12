@@ -19,6 +19,7 @@
 
 import { uploadImage } from './strapi.js';
 import { parseBranches } from '../branches.js';
+import { parseMediaFit } from '../mediaFit.js';
 import { EXTRA_LINK_KEYS } from '../socialLinks.js';
 
 export const STATUSES = ['pending', 'approved', 'rejected', 'frozen'];
@@ -93,6 +94,12 @@ export async function parseBusinessForm(fd, { canModerate, current }) {
 	// סניפים ומקומות שירות נוספים — באותה עמודה. רק טופס ששלח את השדה נוגע
 	// בהם: טופס ישן שאינו מכיר אותו לא ימחק רשימה קיימת.
 	if (fd.has('branches')) extraPatch.branches = parseBranches(fd.get('branches'));
+
+	// מיקום וזום של הלוגו והתמונות. גם כאן רק טופס ששלח את השדה נוגע בהם,
+	// ומיקום שחזר לברירת המחדל מוחק את המפתח במקום לשמור אותו סתם.
+	// null ולא undefined: מפתח עם undefined נעלם ב-JSON.stringify, והערך הישן
+	// היה שורד את השמירה — כלומר "מרכז" לא היה מוחק מיקום קודם.
+	if (fd.has('media_fit')) extraPatch.media_fit = parseMediaFit(fd.get('media_fit'));
 
 	// טיקטוק, X, לינקדאין ו"נוסף" — לרשתות האלה אין עמודה, ולכן הן נשמרות
 	// באותו json (ראו socialLinks.js). גם כאן רק טופס ששלח את השדות נוגע

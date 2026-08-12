@@ -2,6 +2,8 @@
 	import { lang, translations } from '$lib/i18n';
 	import { favorites, toggleFavorite as toggleFav } from '$lib/favorites.js';
 	import { imgUrl, imgSrcSet, imgFallback } from '$lib/img.js';
+	import { adImgFit } from '$lib/adImageFit';
+	import { parseFit, isDefaultFit } from '$lib/mediaFit.js';
 
 	let { business } = $props();
 
@@ -30,6 +32,11 @@
 		if (!rawLogo && logoSrc !== business.logo) rawLogo = true;
 		else failedImage = true;
 	}
+
+	// מיקום וזום שנקבעו בעורך. כשהם ברירת המחדל הפעולה מכובה לגמרי,
+	// והמראה נשאר בדיוק כפי שה-class מגדיר (ראו mediaFit.js).
+	const logoFit = $derived(parseFit(business.logo_fit));
+	const bannerFit = $derived(parseFit(business.banner_fits?.[0]));
 </script>
 
 <!-- הרוחב נקבע ע"י רשת הכרטיסים בדף (cards-grid), לא כאן -->
@@ -76,6 +83,7 @@
 					loading="lazy"
 					decoding="async"
 					use:imgFallback={business.banner}
+					use:adImgFit={{ ...bannerFit, enabled: !isDefaultFit(bannerFit) }}
 				/>
 			{/if}
 			{#if business.logo && !failedImage}
@@ -88,6 +96,7 @@
 					loading="lazy"
 					decoding="async"
 					onerror={onLogoError}
+					use:adImgFit={{ ...logoFit, mode: 'contain', enabled: !isDefaultFit(logoFit) }}
 				/>
 			{:else}
 				<span

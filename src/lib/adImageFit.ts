@@ -20,6 +20,10 @@ export interface AdImageFit {
 	x: number;
 	y: number;
 	z: number;
+	/** cover = מילוי המשבצת (ברירת המחדל); contain = התמונה כולה נראית, כמו לוגו */
+	mode?: 'cover' | 'contain';
+	/** false = הפעולה לא נוגעת בסגנון בכלל, ומה שנכתב ב-class נשאר */
+	enabled?: boolean;
 }
 
 export const DEFAULT_AD_FIT: AdImageFit = { x: 50, y: 50, z: 1 };
@@ -47,7 +51,26 @@ export function parseAdImageFit(raw: unknown): AdImageFit {
 export function adImgFit(node: HTMLImageElement, fit: AdImageFit) {
 	let current = fit;
 
+	/** מחזיר את התמונה לסגנון שב-class — למי שכיבה את הפעולה או איפס את ה-fit */
+	function reset() {
+		for (const p of [
+			'position',
+			'width',
+			'height',
+			'left',
+			'top',
+			'right',
+			'bottom',
+			'maxWidth',
+			'maxHeight',
+			'objectFit'
+		] as const) {
+			node.style[p] = '';
+		}
+	}
+
 	function apply() {
+		if (current?.enabled === false) return reset();
 		const box = node.parentElement;
 		if (!box) return;
 		const W = box.clientWidth;
@@ -56,7 +79,8 @@ export function adImgFit(node: HTMLImageElement, fit: AdImageFit) {
 		const h = node.naturalHeight;
 		if (!W || !H || !w || !h) return;
 		const { x, y, z } = parseAdImageFit(current);
-		const k = Math.max(W / w, H / h) * z;
+		const base = current?.mode === 'contain' ? Math.min(W / w, H / h) : Math.max(W / w, H / h);
+		const k = base * z;
 		const dw = w * k;
 		const dh = h * k;
 		node.style.position = 'absolute';

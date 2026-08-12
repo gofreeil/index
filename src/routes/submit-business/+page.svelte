@@ -6,6 +6,8 @@
 	import { MAX_BRANCHES, parseBranches } from '$lib/branches.js';
 	import { LINK_FIELDS } from '$lib/socialLinks.js';
 	import ImageDropField from '$lib/components/ImageDropField.svelte';
+	import ImageFitEditor from '$lib/components/ImageFitEditor.svelte';
+	import { parseFit, parseFitList, DEFAULT_FIT } from '$lib/mediaFit.js';
 	import { formDraft, clearDraft, resumeDraft } from '$lib/formDraft';
 
 	/** @type {{ data: any, form: any }} */
@@ -64,6 +66,25 @@
 	function syncBranches(e) {
 		branches = parseBranches(e.currentTarget.value);
 	}
+
+	// ── מיקום וזום של הלוגו והתמונות ──
+	// העורך עובד על התמונה שנבחרה עכשיו, ונשלח כ-JSON בשדה מוסתר אחד.
+	let logoFit = $state(parseFit(null));
+	let bannerFits = $state(parseFitList([]));
+	/** @type {{name: string, url: string}[]} */
+	let logoPicked = $state([]);
+	/** @type {{name: string, url: string}[]} */
+	let bannersPicked = $state([]);
+
+	$effect(() => {
+		if (bannersPicked.length > bannerFits.length) {
+			bannerFits = bannersPicked.map((_, i) => bannerFits[i] ?? { ...DEFAULT_FIT });
+		}
+	});
+
+	const mediaFitJson = $derived(
+		JSON.stringify({ logo: logoFit, banners: bannerFits.slice(0, bannersPicked.length) })
+	);
 </script>
 
 <Seo
@@ -410,7 +431,23 @@
 					<span id="lbl-logo" class="mb-1 block text-sm font-medium text-gray-300"
 						>לוגו העסק (תמונה עד 3MB)</span
 					>
-					<ImageDropField name="logo" labelledBy="lbl-logo" hint="PNG או JPG, עד 3MB" />
+					<ImageDropField
+						name="logo"
+						labelledBy="lbl-logo"
+						hint="PNG או JPG, עד 3MB"
+						bind:previews={logoPicked}
+					/>
+					{#if logoPicked[0]}
+						<div class="mt-3">
+							<ImageFitEditor
+								src={logoPicked[0].url}
+								bind:fit={logoFit}
+								aspect="square"
+								mode="contain"
+								label="לוגו"
+							/>
+						</div>
+					{/if}
 					{#if errors.logo}<p class="err">{errors.logo}</p>{/if}
 				</div>
 				<div>
@@ -423,7 +460,18 @@
 						multiple
 						max={4}
 						hint="אפשר לגרור כמה תמונות יחד, או אחת בכל פעם"
+						bind:previews={bannersPicked}
 					/>
+					{#each bannersPicked as p, i (p.url)}
+						<div class="mt-3">
+							<ImageFitEditor
+								src={p.url}
+								bind:fit={bannerFits[i]}
+								aspect="wide"
+								label="תמונה {i + 1}"
+							/>
+						</div>
+					{/each}
 					{#if errors.banners}<p class="err">{errors.banners}</p>{/if}
 				</div>
 				<!-- סרטון התדמית הוא נגן מוטמע בכרטיסייה, ולכן שדה משלו ולא
@@ -442,6 +490,7 @@
 					<p class="mt-1 text-xs text-gray-500">הסרטון יוטמע בכרטיסייה ויוצג לגולשים.</p>
 					{#if errors.video}<p class="err">{errors.video}</p>{/if}
 				</div>
+				<input type="hidden" name="media_fit" value={mediaFitJson} />
 			</fieldset>
 
 			<!-- נוכחות דיגיטלית -->

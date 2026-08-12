@@ -13,16 +13,27 @@
 	// ============================================================
 
 	/**
+	 * `previews` נחשף החוצה (bindable) כדי שההורה יוכל לתלות בו עורך מיקום
+	 * וזום לתמונה שנבחרה — ראו ImageFitEditor.
 	 * @type {{
 	 *   name: string,
 	 *   multiple?: boolean,
 	 *   max?: number,
 	 *   accept?: string,
 	 *   hint?: string,
-	 *   labelledBy?: string
+	 *   labelledBy?: string,
+	 *   previews?: {name: string, url: string}[]
 	 * }}
 	 */
-	let { name, multiple = false, max = 0, accept = 'image/*', hint = '', labelledBy } = $props();
+	let {
+		name,
+		multiple = false,
+		max = 0,
+		accept = 'image/*',
+		hint = '',
+		labelledBy,
+		previews = $bindable([])
+	} = $props();
 
 	/** @type {HTMLInputElement | null} */
 	let input = $state(null);
@@ -44,6 +55,7 @@
 			name: f.name,
 			url: URL.createObjectURL(f)
 		}));
+		previews = picked;
 	}
 
 	/** @param {File[]} files */

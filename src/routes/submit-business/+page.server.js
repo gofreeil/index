@@ -3,6 +3,7 @@ import { createBusiness, uploadImage } from '$lib/server/strapi.js';
 import { getCategoryOptions } from '$lib/server/categoryStore.js';
 import { parseBranches } from '$lib/branches.js';
 import { EXTRA_LINK_KEYS, parseExtraLinks } from '$lib/socialLinks.js';
+import { parseMediaFit } from '$lib/mediaFit.js';
 
 /**
  * רשימת הקטגוריות לתפריט הבחירה — כולל דריסות השם והקטגוריות שהוסיף
@@ -165,13 +166,16 @@ export const actions = {
 		// זה גם המפתח שבו המערכת מזהה אותו כשהוא נרשם לאתר (ownerMatch.js).
 		const { email, branches, tiktok, x, linkedin, extra, video, ...fields } = values;
 		const links = parseExtraLinks({ tiktok, x, linkedin, extra, video });
+		// מיקום וזום של הלוגו והתמונות — null כשלא נגעו בהם, וכך הוא לא נשמר
+		const mediaFit = parseMediaFit(fd.get('media_fit'));
 		try {
 			await createBusiness({
 				...fields,
 				extra_fields: {
 					owner_email: email.toLowerCase(),
 					...(branches.length ? { branches } : {}),
-					...(Object.keys(links).length ? { links } : {})
+					...(Object.keys(links).length ? { links } : {}),
+					...(mediaFit ? { media_fit: mediaFit } : {})
 				},
 				accepted_terms: true,
 				logo: logoId ?? undefined,

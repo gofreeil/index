@@ -42,6 +42,9 @@ export async function load() {
 			category: displayName(resolveCategory(b, retired)),
 			banners: b.banners || [],
 			banner: b.banner || '',
+			// מיקום וזום של הלוגו והתמונה באריח (ראו mediaFit.js)
+			logo_fit: b.logo_fit,
+			banner_fits: b.banner_fits,
 			description: b.description || '',
 			discount: b.discount || '',
 			salesArea: b.sales_area || '',

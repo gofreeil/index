@@ -8,6 +8,8 @@
 	import Seo from '$lib/components/Seo.svelte';
 	import SmartShare from '$lib/components/SmartShare.svelte';
 	import { branchLine } from '$lib/branches.js';
+	import { adImgFit } from '$lib/adImageFit';
+	import { parseFit, isDefaultFit } from '$lib/mediaFit.js';
 	import { sameAsLinks } from '$lib/socialLinks.js';
 	import SocialLinks from '$lib/components/SocialLinks.svelte';
 	import { SITE_NAME, DEFAULT_OG_IMAGE, professionalSchema, breadcrumbSchema } from '$lib/seo';
@@ -55,6 +57,12 @@
 	// שבהן הסרטון הוקלד בשדה היוטיוב, לפני שהופרד מערוץ היוטיוב.
 	// כתובת ערוץ לא מייצרת embed בכל מקרה — YT_PATTERNS דורש מזהה סרטון.
 	const ytEmbed = $derived(youtubeEmbed(business.video || business.youtube));
+
+	// מיקום וזום שנקבעו בעורך הכרטיסייה. ברירת מחדל = הפעולה כבויה,
+	// והתמונה נשארת בדיוק כפי שה-class מציג אותה היום (ראו mediaFit.js).
+	const logoFit = $derived(parseFit(business.logo_fit));
+	/** @param {number} i */
+	const bannerFit = (i) => parseFit(business.banner_fits?.[i]);
 
 	let currentImageIndex = $state(0);
 	/** @type {any} */
@@ -300,7 +308,7 @@
 />
 <JsonLd data={schemas} />
 
-<main class="mx-auto max-w-3xl px-4 py-10 sm:px-6">
+<main class="mx-auto max-w-3xl px-4 py-6 sm:px-6">
 	<div class="flex items-center justify-between gap-3">
 		<a href="/" class="text-xs text-gray-500 transition hover:text-gray-300"
 			>→ {t.backToDirectory}</a
@@ -318,7 +326,7 @@
 	</div>
 
 	<!-- ── כותרת ───────────────────────────────────────────── -->
-	<header class="mt-6 flex items-start gap-4">
+	<header class="mt-4 flex items-start gap-4">
 		<div
 			class="h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl bg-white/5 sm:h-16 sm:w-16"
 			aria-hidden={!business.logo}
@@ -328,7 +336,8 @@
 					src={business.logo}
 					alt="לוגו {business.name}"
 					class="h-full w-full object-contain p-1.5"
-					onerror={(e) => {
+					use:adImgFit={{ ...logoFit, mode: 'contain', enabled: !isDefaultFit(logoFit) }}
+					onerror={(/** @type {Event} */ e) => {
 						const img = /** @type {HTMLImageElement} */ (e.target);
 						img.src = PLACEHOLDER_IMG;
 					}}
@@ -371,7 +380,7 @@
 	</header>
 
 	<!-- ── פעולות ──────────────────────────────────────────── -->
-	<div class="mt-6 flex flex-wrap items-center gap-2">
+	<div class="mt-4 flex flex-wrap items-center gap-2">
 		{#if business.phone}
 			{#if isPhoneRevealed}
 				<a
@@ -406,10 +415,16 @@
 	<SocialLinks {business} />
 
 	{#if business.discount}
-		<p class="mt-4 text-sm text-emerald-400">
+		<p class="mt-3 text-sm text-emerald-400">
 			<span class="text-gray-500">{t.exclusiveBenefit}:</span>
 			{business.discount}
 		</p>
+	{/if}
+
+	<!-- ── שיתוף חכם — בראש הדף, בהישג יד של בעל העסק ולא בסוף הגלילה.
+	     כלי שלו בלבד; השרת מכריע מי רואה אותו. -->
+	{#if data.canSmartShare}
+		<SmartShare {business} />
 	{/if}
 
 	<!-- ── דרישת בעלות ──────────────────────────────────────────
@@ -499,7 +514,7 @@
 
 	<!-- ── תמונות ──────────────────────────────────────────── -->
 	{#if business.banners.length > 0}
-		<div class="relative mt-8 aspect-[16/9] overflow-hidden rounded-xl bg-white/5">
+		<div class="relative mt-5 aspect-[16/9] overflow-hidden rounded-xl bg-white/5">
 			{#each business.banners as banner, i}
 				{#if i === currentImageIndex}
 					<img
@@ -508,6 +523,7 @@
 						src={banner}
 						alt="{business.name} {i + 1}"
 						class="absolute inset-0 h-full w-full object-cover"
+						use:adImgFit={{ ...bannerFit(i), enabled: !isDefaultFit(bannerFit(i)) }}
 					/>
 				{/if}
 			{/each}
@@ -528,19 +544,19 @@
 	{/if}
 
 	<!-- ── על העסק ─────────────────────────────────────────── -->
-	<section class="mt-10 border-t border-white/[0.08] pt-8">
+	<section class="mt-6 border-t border-white/[0.08] pt-5">
 		<h2 class="text-sm font-semibold text-gray-400">{t.aboutBusiness}</h2>
-		<p class="mt-3 leading-7 whitespace-pre-line text-gray-300">
+		<p class="mt-2 leading-6 whitespace-pre-line text-gray-300">
 			{business.description || t.noDescription}
 		</p>
 	</section>
 
 	<!-- ── פרטי קשר ומיקום ─────────────────────────────────── -->
 	{#if business.address || business.sales_area || business.branches?.length || mapSrc}
-		<section class="mt-10 border-t border-white/[0.08] pt-8">
+		<section class="mt-6 border-t border-white/[0.08] pt-5">
 			<h2 class="text-sm font-semibold text-gray-400">{t.contactInfo}</h2>
 
-			<dl class="mt-3 grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
+			<dl class="mt-2 grid gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
 				{#if business.address}
 					<div>
 						<dt class="text-xs text-gray-500">{t.addressLabel}</dt>
@@ -566,10 +582,10 @@
 			</dl>
 
 			{#if mapSrc}
-				<div class="mt-5 overflow-hidden rounded-xl border border-white/10">
+				<div class="mt-4 overflow-hidden rounded-xl border border-white/10">
 					<iframe
 						title="{t.serviceZones} — {business.name}"
-						class="block h-56 w-full sm:h-72"
+						class="block h-44 w-full sm:h-56"
 						style="border:0"
 						loading="lazy"
 						allowfullscreen
@@ -583,10 +599,10 @@
 
 	<!-- ── סרטון תדמית ─────────────────────────────────────── -->
 	{#if ytEmbed || data.canSmartShare}
-		<section class="mt-10 border-t border-white/[0.08] pt-8">
+		<section class="mt-6 border-t border-white/[0.08] pt-5">
 			<h2 class="text-sm font-semibold text-gray-400">{t.businessVideo}</h2>
 			{#if ytEmbed}
-				<div class="mt-3 aspect-video overflow-hidden rounded-xl bg-white/5">
+				<div class="mt-2 aspect-video overflow-hidden rounded-xl bg-white/5">
 					<iframe
 						src={ytEmbed}
 						title={business.name}
@@ -598,7 +614,7 @@
 				</div>
 			{:else}
 				<!-- ריק רק לבעל הכרטיסייה/אדמין: מבקר רגיל לא רואה מדור ריק. -->
-				<p class="mt-3 text-sm text-gray-500">
+				<p class="mt-2 text-sm text-gray-500">
 					{t.businessVideoEmpty}
 					{#if data.canEdit}
 						<a
@@ -612,7 +628,7 @@
 	{/if}
 
 	<!-- ── חוות דעת ────────────────────────────────────────── -->
-	<section class="mt-10 border-t border-white/[0.08] pt-8">
+	<section class="mt-6 border-t border-white/[0.08] pt-5">
 		<div class="flex items-center justify-between gap-4">
 			<h2 class="text-sm font-semibold text-gray-400">{t.reviews}</h2>
 			<button
@@ -624,11 +640,11 @@
 		</div>
 
 		{#if reviewSubmitted}
-			<p class="mt-4 text-sm text-emerald-400">{t.reviewThanks}</p>
+			<p class="mt-3 text-sm text-emerald-400">{t.reviewThanks}</p>
 		{/if}
 
 		{#if showReviewForm}
-			<div transition:slide={{ duration: 200 }} class="mt-4 rounded-xl bg-white/[0.03] p-4">
+			<div transition:slide={{ duration: 200 }} class="mt-3 rounded-xl bg-white/[0.03] p-4">
 				{#if !user}
 					<p class="text-sm text-gray-400">{t.loginToReview}</p>
 					<div class="mt-3 flex gap-2">
@@ -677,11 +693,11 @@
 		{/if}
 
 		{#if reviews.length === 0}
-			<p class="mt-4 text-sm text-gray-500">{t.noReviews}</p>
+			<p class="mt-3 text-sm text-gray-500">{t.noReviews}</p>
 		{:else}
-			<ul class="mt-2 divide-y divide-white/[0.08]">
+			<ul class="mt-1 divide-y divide-white/[0.08]">
 				{#each reviews as review}
-					<li class="py-4">
+					<li class="py-3">
 						<div class="flex items-baseline justify-between gap-3">
 							<span class="text-sm font-medium text-gray-200">{review.author_name}</span>
 							<span class="text-xs text-gray-600">{review.date}</span>
@@ -708,10 +724,4 @@
 			</ul>
 		{/if}
 	</section>
-
-	<!-- ── שיתוף חכם — בסוף הדף, אחרי כל תוכן הכרטיסייה.
-	     כלי של בעל העסק, לא חלק ממה שמבקר בא לקרוא. השרת מכריע מי רואה. -->
-	{#if data.canSmartShare}
-		<SmartShare {business} />
-	{/if}
 </main>

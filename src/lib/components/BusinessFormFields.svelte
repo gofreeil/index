@@ -10,6 +10,8 @@
 	import { MAX_BRANCHES, parseBranches } from '$lib/branches.js';
 	import { LINK_FIELDS, parseExtraLinks } from '$lib/socialLinks.js';
 	import ImageDropField from '$lib/components/ImageDropField.svelte';
+	import ImageFitEditor from '$lib/components/ImageFitEditor.svelte';
+	import { parseFit, parseFitList, DEFAULT_FIT } from '$lib/mediaFit.js';
 
 	/** @type {{ biz: any, errors?: Record<string,string>, canModerate?: boolean, categories?: Array<{value:string,label:string}> | null }} */
 	let { biz, errors = {}, canModerate = false, categories = null } = $props();
@@ -50,6 +52,35 @@
 	function removeBranch(i) {
 		branches = branches.filter((_, idx) => idx !== i);
 	}
+
+	// ── מיקום וזום של הלוגו והתמונות ──
+	// העורך עובד על מה שרואים: קובץ חדש שנבחר גובר על התמונה השמורה.
+	// הערכים נוסעים כ-JSON בשדה מוסתר אחד ונשמרים ב-extra_fields.media_fit.
+	let logoFit = $state(parseFit(biz.extra_fields?.media_fit?.logo));
+	let bannerFits = $state(parseFitList(biz.extra_fields?.media_fit?.banners));
+	/** @type {{name: string, url: string}[]} */
+	let logoPicked = $state([]);
+	/** @type {{name: string, url: string}[]} */
+	let bannersPicked = $state([]);
+
+	const logoPreview = $derived(logoPicked[0]?.url || mediaUrl(biz.logo));
+	/** @type {string[]} */
+	const bannerPreviews = $derived(
+		bannersPicked.length
+			? bannersPicked.map((p) => p.url)
+			: banners.map((/** @type {any} */ b) => mediaUrl(b)).filter(Boolean)
+	);
+
+	// תמונה שאין לה עדיין fit מקבלת ברירת מחדל, כדי שהעורך לא יקרוס על undefined
+	$effect(() => {
+		if (bannerPreviews.length > bannerFits.length) {
+			bannerFits = bannerPreviews.map((_, i) => bannerFits[i] ?? { ...DEFAULT_FIT });
+		}
+	});
+
+	const mediaFitJson = $derived(
+		JSON.stringify({ logo: logoFit, banners: bannerFits.slice(0, bannerPreviews.length) })
+	);
 
 	const INPUT =
 		'w-full rounded-xl border border-gray-700 bg-gray-900/60 px-4 py-2.5 text-sm text-gray-100 placeholder:text-gray-600 focus:border-blue-500/60 focus:outline-none';
@@ -238,7 +269,23 @@
 			{:else}
 				<p class="mb-2 text-xs text-gray-600">אין לוגו</p>
 			{/if}
-			<ImageDropField name="logo" labelledBy="lbl-logo" hint="קובץ תמונה עד 3MB" />
+			<ImageDropField
+				name="logo"
+				labelledBy="lbl-logo"
+				hint="קובץ תמונה עד 3MB"
+				bind:previews={logoPicked}
+			/>
+			{#if logoPreview}
+				<div class="mt-3">
+					<ImageFitEditor
+						src={logoPreview}
+						bind:fit={logoFit}
+						aspect="square"
+						mode="contain"
+						label="לוגו"
+					/>
+				</div>
+			{/if}
 			{#if err('logo')}<p class="mt-1 text-xs text-red-400">{err('logo')}</p>{/if}
 		</div>
 		<div>
@@ -261,7 +308,13 @@
 				multiple
 				max={4}
 				hint="עד 4 תמונות, כל אחת עד 3MB"
+				bind:previews={bannersPicked}
 			/>
+			{#each bannerPreviews as url, i (url)}
+				<div class="mt-3">
+					<ImageFitEditor src={url} bind:fit={bannerFits[i]} aspect="wide" label="תמונה {i + 1}" />
+				</div>
+			{/each}
 			{#if err('banners')}<p class="mt-1 text-xs text-red-400">{err('banners')}</p>{/if}
 		</div>
 		<!-- סרטון התדמית הוא נגן מוטמע בכרטיסייה, ולכן שדה משלו ולא שורה
@@ -279,6 +332,7 @@
 			<p class="mt-1 text-xs text-gray-500">מוטמע כנגן בכרטיסייה. ערוץ היוטיוב הוא שדה נפרד.</p>
 			{#if err('video')}<p class="mt-1 text-xs text-red-400">{err('video')}</p>{/if}
 		</div>
+		<input type="hidden" name="media_fit" value={mediaFitJson} />
 	</div>
 </section>
 
