@@ -31,6 +31,10 @@
 	let selectedCategory = $state('all');
 	let selectedLocation = $state('all');
 
+	/* המפה בנייד מקופלת מאחורי כפתור: במסך צר היא דחפה את מסילת התחומים —
+	   המסנן הראשי — אל מתחת לקיפול. בדסקטופ היא מוצגת תמיד, לצד החיפוש. */
+	let showMobileMap = $state(false);
+
 	// Pagination
 	let visibleCount = $state(9);
 	let incrementBy = $state(21);
@@ -174,6 +178,14 @@
 	// שנתווספו לאחרונה — ה-API מחזיר createdAt:desc, ולכן ראש הרשימה הוא החדש
 	const recentBusinesses = $derived(filteredBusinesses.slice(0, 3));
 
+	/* הקומה התחתונה "לכלל ההטבות והעסקים" — בלי הכרטיסים שכבר מוצגים בקומות
+	   שמעל (מדורגים/שנתווספו): כל הרשימות נגזרות מאותו מיון, ובלי הסינון הזה
+	   שלושת הכרטיסים הראשונים הופיעו פעמיים ברצף על אותו מסך. */
+	const allFloorBusinesses = $derived.by(() => {
+		const above = new Set([...topRated, ...recentBusinesses].map((b) => b.id));
+		return filteredBusinesses.filter((b) => !above.has(b.id)).slice(0, visibleCount);
+	});
+
 	const favoriteBusinesses = $derived(businesses.filter((b) => $favorites.includes(b.id)));
 
 	function clearFilters() {
@@ -205,9 +217,16 @@
 	const REST_PAGE_SIZE = 18;
 
 	// "שאר" = מי שלא מוצג באף אחת מהקומות שמעל (מדורגים / שנתווספו / כלל העסקים),
-	// כדי שהמשתמש לא יפגוש כאן שוב את אותם כרטיסים שכבר גלל דרכם
+	// כדי שהמשתמש לא יפגוש כאן שוב את אותם כרטיסים שכבר גלל דרכם.
+	// במצב סינון הרשימה המוצגת היא displayedBusinesses; בלעדיו — allFloorBusinesses.
 	const shownAbove = $derived(
-		new Set([...topRated, ...recentBusinesses, ...displayedBusinesses].map((b) => b.id))
+		new Set(
+			[
+				...topRated,
+				...recentBusinesses,
+				...(isFiltering ? displayedBusinesses : allFloorBusinesses)
+			].map((b) => b.id)
+		)
 	);
 	const restBusinesses = $derived(businesses.filter((b) => !shownAbove.has(b.id)));
 
@@ -270,9 +289,9 @@
 />
 <JsonLd data={schemas} />
 
-<div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+<div class="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
 	<!-- H1 — הכותרת הראשית של הדף. עד כאן לא היה בדף אף h1, וגוגל לא ידע במה הדף עוסק. -->
-	<h1 class="mb-8 text-center text-2xl font-extrabold text-gray-100 sm:text-4xl">
+	<h1 class="mb-5 text-center text-2xl font-extrabold text-gray-100 sm:mb-8 sm:text-4xl">
 		בעלי מקצוע כשירים — מומלצים, מדורגים ובהטבה לחברי הקהילה
 	</h1>
 
@@ -287,7 +306,7 @@
 		     בלי גלילה. בנייד הם נערמים: חיפוש למעלה, מפה מתחתיו.
 		     items-center בדסקטופ: המפה גבוהה מבלוק החיפוש, וכשהחיפוש נצמד
 		     לראש השורה נפער מתחתיו חלל ריק — מרכוז אנכי מיישר אותו למפה. -->
-		<div class="mb-8 grid items-start gap-4 md:grid-cols-2 md:items-center md:gap-6">
+		<div class="mb-5 grid items-start gap-4 md:mb-8 md:grid-cols-2 md:items-center md:gap-6">
 			<!-- Filters -->
 			<div class="space-y-4">
 				<div class="relative">
@@ -329,7 +348,7 @@
 						<select
 							bind:value={selectedLocation}
 							aria-label="עיר"
-							class="rounded-xl border border-gray-700 bg-purple-600 px-4 py-2.5 text-sm font-bold text-white outline-none"
+							class="rounded-xl border border-gray-700 bg-purple-600 px-4 py-3 text-sm font-bold text-white outline-none"
 						>
 							<option value="all">כל הארץ</option>
 							{#each cities as city}
@@ -350,8 +369,9 @@
 			</div>
 
 			<!-- מפה — מציגה תמיד את התוצאות המסוננות, ולכן חיפוש או בחירת תחום
-			     מצטיירים גם עליה. -->
-			<div>
+			     מצטיירים גם עליה. בנייד היא מקופלת מאחורי כפתור מתחת למסילה
+			     (ראו למטה): במסך צר היא דחפה את מסילת התחומים אל מתחת לקיפול. -->
+			<div class="hidden md:block">
 				<h2 class="mb-2 text-center text-sm font-bold text-gray-300 sm:text-base">
 					{t.mapTitle}
 				</h2>
@@ -369,14 +389,35 @@
 			/>
 		{/if}
 
+		<!-- המפה בנייד — נפתחת רק למי שמבקש: כפתור צנוע מתחת למסילה, ו-Leaflet
+		     לא נטען בכלל עד הפתיחה (LazyMap נכנס ל-DOM רק אז). -->
+		<div class="mb-6 md:hidden">
+			<button
+				type="button"
+				onclick={() => (showMobileMap = !showMobileMap)}
+				aria-expanded={showMobileMap}
+				class="mx-auto flex items-center gap-2 rounded-full border border-gray-700 px-5 py-2.5 text-sm font-semibold text-blue-400 transition hover:border-blue-500 hover:text-blue-300"
+			>
+				<span aria-hidden="true">🗺️</span>
+				{showMobileMap ? 'הסתרת המפה' : 'הצגת העסקים על המפה'}
+				<span class="text-xs" aria-hidden="true">{showMobileMap ? '▲' : '▼'}</span>
+			</button>
+			{#if showMobileMap}
+				<div class="mt-3">
+					<LazyMap businesses={filteredBusinesses} />
+				</div>
+			{/if}
+		</div>
+
 		<!-- גוף רשימת התוצאות — מוגדר פעם אחת ומרונדר במקום אחד בכל רגע:
-		     מיד מתחת למסילה כשיש סינון פעיל, ובתחתית הדף כשאין.
+		     מיד מתחת למסילה כשיש סינון פעיל (עם displayedBusinesses), ובתחתית
+		     הדף כשאין (עם allFloorBusinesses, בלי מה שכבר הוצג בקומות שמעל).
 		     withLoadMore: ברשימה התחתונה הכרטיסים הם מדגם, והדרך לראות את כולם
 		     היא הטבלה שמתחתיה — ולכן "טען עוד" מופיע רק במצב סינון, שם רשימה
 		     קטועה בלי המשך היא תוצאה חסרה. -->
-		{#snippet resultsBody(withLoadMore = false)}
-			<div class="flex flex-wrap justify-center gap-3 md:grid md:grid-cols-3 md:gap-6">
-				{#each displayedBusinesses as business (business.id)}
+		{#snippet resultsBody(/** @type {any[]} */ list, withLoadMore = false)}
+			<div class="cards-grid">
+				{#each list as business (business.id)}
 					<BusinessCard {business} />
 				{/each}
 			</div>
@@ -385,19 +426,19 @@
 				<!-- אריח של תחום ריק מוביל לכאן, ואז "לא נמצאו... לחיפוש" מטעה: לא
 				     חיפשו כלום, פשוט אין עדיין עסקים בתחום -->
 				{#if selectedCategory !== 'all' && !searchTerm && selectedLocation === 'all'}
-					<p class="mt-8 text-center text-gray-500">
+					<p class="mt-8 text-center text-gray-400">
 						עדיין אין עסקים בתחום הזה. יש לכם עסק מתאים?
 						<a href="/submit-business" class="font-semibold text-blue-400 hover:text-blue-300"
 							>הוסיפו אותו לאינדקס</a
 						>
 					</p>
 				{:else}
-					<p class="mt-8 text-center text-gray-500">לא נמצאו עסקים התואמים לחיפוש.</p>
+					<p class="mt-8 text-center text-gray-400">לא נמצאו עסקים התואמים לחיפוש.</p>
 				{/if}
 			{/if}
 
 			{#if withLoadMore && visibleCount < filteredBusinesses.length}
-				<div class="mt-12 flex justify-center">
+				<div class="mt-8 flex justify-center md:mt-12">
 					<button
 						onclick={loadMore}
 						class="rounded-full bg-gray-800 px-8 py-3 text-lg font-bold text-blue-400 shadow-md transition hover:bg-gray-700 active:scale-95"
@@ -411,10 +452,10 @@
 		{#if isFiltering}
 			<!-- מצב תוצאות: מי שבחר תחום במסילה (או חיפש/בחר עיר) מקבל את
 			     העסקים הרלוונטיים כאן ועכשיו, ולא מתחת לקומות ולמפה. -->
-			<div id="results" class="mt-6 mb-16">
-				<div class="mb-8 text-center">
+			<div id="results" class="mt-6 mb-8 md:mb-16">
+				<div class="mb-4 text-center md:mb-8">
 					<h2
-						class="bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 bg-clip-text text-2xl font-extrabold text-transparent sm:text-4xl"
+						class="bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 bg-clip-text text-xl font-extrabold text-transparent sm:text-4xl"
 					>
 						{selectedCategory === 'all' ? t.filterResultsTitle : selectedCategory}
 					</h2>
@@ -423,9 +464,9 @@
 					</p>
 				</div>
 
-				{@render resultsBody(true)}
+				{@render resultsBody(displayedBusinesses, true)}
 
-				<div class="mt-10 flex justify-center">
+				<div class="mt-6 flex justify-center md:mt-10">
 					<button
 						onclick={goToAllBusinesses}
 						class="rounded-full border border-gray-700 px-6 py-2.5 text-sm font-semibold text-blue-400 transition hover:border-blue-500 hover:text-blue-300"
@@ -437,15 +478,15 @@
 		{:else}
 			<!-- קומה 1: המדורגים ביותר (רק כשיש דירוגים אמיתיים) -->
 			{#if topRated.length > 0}
-				<div class="mt-6 mb-16">
-					<div class="mb-8 text-center">
+				<div class="mt-6 mb-8 md:mb-16">
+					<div class="mb-4 text-center md:mb-8">
 						<h2
-							class="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 bg-clip-text text-2xl font-extrabold text-transparent sm:text-4xl"
+							class="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 bg-clip-text text-xl font-extrabold text-transparent sm:text-4xl"
 						>
 							{t.topRated}
 						</h2>
 					</div>
-					<div class="flex flex-wrap justify-center gap-3 md:grid md:grid-cols-3 md:gap-6">
+					<div class="cards-grid">
 						{#each topRated as business (business.id)}
 							<BusinessCard {business} />
 						{/each}
@@ -466,15 +507,15 @@
 			<!-- קומה 2: בעלי מקצוע שנתווספו לאחרונה -->
 			{#if recentBusinesses.length > 0}
 				<!-- mt-6 כמו בקומה 1: כשאין דירוגים זו הקומה הראשונה, והיא נצמדה למסילה -->
-				<div class="mt-6 mb-16">
-					<div class="mb-8 text-center">
+				<div class="mt-6 mb-8 md:mb-16">
+					<div class="mb-4 text-center md:mb-8">
 						<h2
-							class="bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-2xl font-extrabold text-transparent sm:text-4xl"
+							class="bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-xl font-extrabold text-transparent sm:text-4xl"
 						>
 							{t.newBusinesses}
 						</h2>
 					</div>
-					<div class="flex flex-wrap justify-center gap-3 md:grid md:grid-cols-3 md:gap-6">
+					<div class="cards-grid">
 						{#each recentBusinesses as business (business.id)}
 							<BusinessCard {business} />
 						{/each}
@@ -484,12 +525,12 @@
 
 			<!-- Favorites -->
 			{#if favoriteBusinesses.length > 0}
-				<div class="mb-16">
-					<div class="mb-8 flex items-center gap-3">
+				<div class="mb-8 md:mb-16">
+					<div class="mb-4 flex items-center gap-3 md:mb-8">
 						<div class="h-8 w-1.5 rounded-full bg-red-500"></div>
-						<h2 class="text-2xl font-bold text-gray-100">{t.favorites}</h2>
+						<h2 class="text-xl font-bold text-gray-100 sm:text-2xl">{t.favorites}</h2>
 					</div>
-					<div class="flex flex-wrap justify-center gap-3 md:grid md:grid-cols-3 md:gap-6">
+					<div class="cards-grid">
 						{#each favoriteBusinesses as business (business.id)}
 							<BusinessCard {business} />
 						{/each}
@@ -498,18 +539,20 @@
 			{/if}
 		{/if}
 
-		<!-- All businesses — יעד הכפתור "לכלל בעלי המקצוע והעסקים" -->
-		{#if !isFiltering}
-			<div id="results" class="mt-16">
-				<div class="mb-8 text-center">
+		<!-- All businesses — יעד הכפתור "לכלל בעלי המקצוע והעסקים".
+		     allFloorBusinesses ריק כשכל העסקים כבר מוצגים בקומות שמעל —
+		     ואז אין מה להציג וגם לא כותרת יתומה. -->
+		{#if !isFiltering && allFloorBusinesses.length > 0}
+			<div id="results" class="mt-8 md:mt-16">
+				<div class="mb-4 text-center md:mb-8">
 					<h2
-						class="bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 bg-clip-text text-2xl font-extrabold text-transparent sm:text-4xl"
+						class="bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 bg-clip-text text-xl font-extrabold text-transparent sm:text-4xl"
 					>
 						{t.allBusinesses}
 					</h2>
 				</div>
 
-				{@render resultsBody()}
+				{@render resultsBody(allFloorBusinesses)}
 			</div>
 		{/if}
 
@@ -521,13 +564,13 @@
 		{#if restBusinesses.length > 0}
 			<section
 				id="rest-professionals"
-				class="mt-20 border-t border-gray-800 pt-10"
+				class="mt-10 border-t border-gray-800 pt-6 md:mt-20 md:pt-10"
 				aria-labelledby="rest-title"
 			>
 				<div class="text-center">
 					<h2
 						id="rest-title"
-						class="bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 bg-clip-text text-2xl font-extrabold text-transparent sm:text-4xl"
+						class="bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 bg-clip-text text-xl font-extrabold text-transparent sm:text-4xl"
 					>
 						לשאר בעלי המקצוע
 					</h2>
@@ -553,7 +596,7 @@
 					     היא הייתה מפסידה ל-md:grid, שגובר על hidden בברייקפוינט -->
 					{#each restPages as page, i (i)}
 						<div class:hidden={i !== currentRestPage}>
-							<div class="flex flex-wrap justify-center gap-3 md:grid md:grid-cols-3 md:gap-6">
+							<div class="cards-grid">
 								{#each page as business (business.id)}
 									<BusinessCard {business} />
 								{/each}
@@ -570,7 +613,7 @@
 								type="button"
 								onclick={() => goToRestPage(currentRestPage - 1)}
 								disabled={currentRestPage === 0}
-								class="rounded-full border border-gray-700 px-4 py-2 text-sm font-semibold text-blue-400 transition hover:border-blue-500 hover:text-blue-300 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-gray-700"
+								class="rounded-full border border-gray-700 px-4 py-2.5 text-sm font-semibold text-blue-400 transition hover:border-blue-500 hover:text-blue-300 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-gray-700"
 							>
 								הקודם
 							</button>
@@ -583,7 +626,7 @@
 									type="button"
 									onclick={() => goToRestPage(n)}
 									aria-current={n === currentRestPage ? 'page' : undefined}
-									class="min-w-9 rounded-full border px-3 py-2 text-sm font-bold tabular-nums transition {n ===
+									class="min-w-11 rounded-full border px-3 py-2.5 text-sm font-bold tabular-nums transition {n ===
 									currentRestPage
 										? 'border-blue-400 bg-blue-900/50 text-blue-100'
 										: 'border-gray-700 text-gray-400 hover:border-blue-500 hover:text-blue-300'}"
@@ -596,13 +639,13 @@
 								type="button"
 								onclick={() => goToRestPage(currentRestPage + 1)}
 								disabled={currentRestPage >= restPageCount - 1}
-								class="rounded-full border border-gray-700 px-4 py-2 text-sm font-semibold text-blue-400 transition hover:border-blue-500 hover:text-blue-300 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-gray-700"
+								class="rounded-full border border-gray-700 px-4 py-2.5 text-sm font-semibold text-blue-400 transition hover:border-blue-500 hover:text-blue-300 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-gray-700"
 							>
 								הבא
 							</button>
 						</nav>
 
-						<p class="mt-4 text-center text-xs text-gray-500">
+						<p class="mt-4 text-center text-xs text-gray-400">
 							עמוד {currentRestPage + 1} מתוך {restPageCount}
 						</p>
 					{/if}
@@ -615,3 +658,28 @@
 	     (/policy, וגם בחלון שנפתח מכפתור "מידע" שבכותרת), כדי שכל המידע על
 	     האתר יישב במקום אחד. הקישור לשם יושב בכותרת, בכל דף. -->
 </div>
+
+<style>
+	/* רשת הכרטיסים: זוגות בנייד, שלשות מדסקטופ. רשת ולא flex-wrap ממורכז —
+	   כרטיס אחרון יתום צף שם לבדו במרכז ונקרא כשבירת פריסה; כאן הוא נמתח
+	   לכל הרוחב, ובדסקטופ (שלוש עמודות) חוזר לרוחב עמודה רגיל. */
+	.cards-grid {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 0.75rem;
+	}
+	/* הילדים הם קומפוננטות (BusinessCard) ולכן :global — הסקופינג של Svelte
+	   לא מגיע אל תוכן. */
+	.cards-grid > :global(:last-child:nth-child(odd)) {
+		grid-column: 1 / -1;
+	}
+	@media (min-width: 768px) {
+		.cards-grid {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: 1.5rem;
+		}
+		.cards-grid > :global(:last-child:nth-child(odd)) {
+			grid-column: auto;
+		}
+	}
+</style>

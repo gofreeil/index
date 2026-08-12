@@ -192,6 +192,27 @@
 		document.addEventListener('keydown', handleKeydown);
 		return () => document.removeEventListener('keydown', handleKeydown);
 	});
+
+	/* כיווץ אוטומטי בגלילה: הלשונית המלאה מוצגת בנחיתה (גילוי נקודת הכניסה
+	   לאזור האישי), ומתקפלת לחץ צר ברגע שמתחילים לגלול ולצרוך תוכן — פרושׂה
+	   היא רוכבת על כרטיסים לחיצים, על המפה ועל הפוטר. גלילה חזרה לראש הדף
+	   פורשת אותה מחדש. הקשה על הלשונית — מכווצת או פרושה — פותחת את המגירה. */
+	$effect(() => {
+		let raf = 0;
+		const onScroll = () => {
+			if (raf) return;
+			raf = requestAnimationFrame(() => {
+				raf = 0;
+				if (open) return; // כשהמגירה פתוחה הלשונית שייכת לה, לא לגלילה
+				collapsed = window.scrollY > 120;
+			});
+		};
+		window.addEventListener('scroll', onScroll, { passive: true });
+		return () => {
+			window.removeEventListener('scroll', onScroll);
+			if (raf) cancelAnimationFrame(raf);
+		};
+	});
 </script>
 
 <!-- מוצג רק בנייד -->
@@ -622,6 +643,14 @@
 		gap: 0.35rem;
 	}
 
+	/* שכבת מגע בלתי-נראית: הלשונית עצמה צרה (~23px, ובמצב מכווץ עוד פחות) —
+	   ההרחבה ימינה ולמעלה/למטה מביאה את יעד ההקשה ל~44px בלי לכסות תוכן. */
+	.tab::before {
+		content: '';
+		position: absolute;
+		inset: -0.5rem -0.9rem -0.5rem 0;
+	}
+
 	.tab::after {
 		content: '';
 		width: 0;
@@ -658,7 +687,7 @@
 		writing-mode: vertical-rl;
 		text-orientation: mixed;
 		transform: rotate(180deg);
-		font-size: 0.6rem;
+		font-size: 0.7rem;
 		font-weight: 700;
 		color: #fff;
 		letter-spacing: 0.06em;

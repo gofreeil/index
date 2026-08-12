@@ -122,7 +122,7 @@
 <div class="relative min-h-screen bg-gray-950 text-gray-100" dir={t.dir}>
 	<!-- Header -->
 	<header class="sticky top-0 z-50 border-b border-gray-800 bg-gray-900/80 backdrop-blur-md">
-		<div class="mx-auto max-w-7xl px-2 py-3 sm:px-6 lg:px-8">
+		<div class="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
 			<div class="flex items-center justify-between">
 				<!-- Title & Logo Section -->
 				<a
@@ -145,7 +145,7 @@
 						<!-- הגרדיאנט בגוונים בהירים (400/300) ולא 600: הכותרת יושבת על רקע
 						     gray-900 כהה, וכחול-סגול כהה כמעט נבלע בו. -->
 						<p
-							class="bg-gradient-to-r from-sky-400 via-blue-300 to-fuchsia-400 bg-clip-text text-right text-xs leading-tight font-black text-transparent sm:text-4xl"
+							class="bg-gradient-to-r from-sky-400 via-blue-300 to-fuchsia-400 bg-clip-text text-right text-sm leading-tight font-black text-transparent sm:text-4xl"
 						>
 							מדריך בעלי מקצוע כשירים
 						</p>
@@ -157,7 +157,7 @@
 
 				<!-- Action Buttons — סדר ה-DOM הוא מימין לשמאל (העמוד ב-RTL):
 				     שפה, מידע, הוסף עסק, ואזור אישי בקצה השמאלי. -->
-				<div class="flex flex-shrink-0 items-center gap-1 sm:gap-3">
+				<div class="flex flex-shrink-0 items-center gap-1.5 sm:gap-3">
 					<!-- Language Selector -->
 					<div class="relative flex items-center">
 						<button
@@ -327,11 +327,17 @@
 					{/if}
 				</div>
 			</div>
-			<p class="mt-2 text-right text-xs font-bold text-blue-600 sm:hidden dark:text-blue-300">
-				{t.subtitle}
-			</p>
 		</div>
 	</header>
+
+	<!-- שורת המשנה בנייד — מחוץ להדר הדביק: היא נגללת עם הדף ולא מקבעת
+	     שורה שלמה מכל מסך. ההדר הדביק נשאר שורה אחת. בדסקטופ היא ממשיכה
+	     לשבת בתוך ההדר, לצד הלוגו. -->
+	<p
+		class="border-b border-gray-800 bg-gray-900 px-4 py-1.5 text-right text-[11px] font-semibold text-blue-300 sm:hidden"
+	>
+		{t.subtitle}
+	</p>
 
 	<div class="layout-container">
 		<!-- ב-RTL הילד הראשון הוא הצד הימני: הפרסומות בימין, אתרי הרשת בשמאל.
@@ -348,8 +354,13 @@
 
 <style>
 	:global(body) {
+		/* 'Hebrew Sans Guard' לפני Segoe UI: משפחה וירטואלית (layout.css)
+		   שתופסת את הטווח העברי בלבד וממפה משקלים כבדים ל-Segoe UI Bold —
+		   בלעדיה עברית ב-font-extrabold/black נפלה ל-Times New Roman הסריפי
+		   על Windows. 'Noto Sans Hebrew' — הרשת העברית של אנדרואיד. */
 		font-family:
-			-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+			-apple-system, BlinkMacSystemFont, 'Hebrew Sans Guard', 'Segoe UI', 'Noto Sans Hebrew', Arial,
+			Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 	}
 
 	/* פריסת התוכן עם שני מסילות פרסום (מפורט מקהילה) */

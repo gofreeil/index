@@ -32,12 +32,16 @@
 	}
 </script>
 
+<!-- הרוחב נקבע ע"י רשת הכרטיסים בדף (cards-grid), לא כאן -->
 <div
-	class="group relative flex w-[calc(50%-8px)] flex-col overflow-hidden rounded-xl border border-blue-800/60 bg-blue-950 transition-colors duration-200 hover:border-blue-500 sm:w-auto"
+	class="group relative flex flex-col overflow-hidden rounded-xl border border-blue-800/60 bg-blue-950 transition-colors duration-200 hover:border-blue-500"
 >
+	<!-- שכבת המגע (before:-inset-2) מרחיבה את יעד ההקשה ל~44px בלי לשנות את
+	     הוויזואל: הכפתור הנראה 28px, וכל החטאה קלה פתחה את דף העסק במקום
+	     לסמן מועדף. -->
 	<button
 		onclick={toggleFavorite}
-		class="absolute top-2 left-2 z-30 rounded-full bg-black/30 p-1.5 backdrop-blur-sm transition hover:bg-black/60"
+		class="absolute top-2 left-2 z-30 rounded-full bg-black/30 p-1.5 backdrop-blur-sm transition before:absolute before:-inset-2 before:content-[''] hover:bg-black/60"
 		aria-label={isFavorite ? t.removeFromFavorites : t.saveToFavorites}
 	>
 		<svg
@@ -96,24 +100,25 @@
 		</div>
 
 		<div class="flex flex-1 flex-col p-3 sm:p-4">
+			<!-- בנייד השם בשתי שורות (הכרטיס צר והשמות נחתכו באמצע), עם גובה
+			     מינימלי כדי ששורות הרשת יישארו מיושרות; בדסקטופ שורה אחת כתמיד.
+			     שאר הטקסט עלה מ-10px — מתחת לסף הקריאוּת — ל-12px. -->
 			<h3
-				class="line-clamp-1 text-xs font-semibold text-gray-100 transition-colors group-hover:text-white sm:text-base"
+				class="line-clamp-2 min-h-10 text-sm font-semibold text-gray-100 transition-colors group-hover:text-white sm:line-clamp-1 sm:min-h-0 sm:text-base"
 			>
 				{business.name}
 			</h3>
-			<p class="mt-0.5 line-clamp-1 text-[10px] text-gray-400 sm:text-xs">
+			<p class="mt-0.5 line-clamp-1 text-xs text-gray-400">
 				{business.category}
 			</p>
 
 			{#if business.discount}
-				<p class="mt-2 line-clamp-2 text-[10px] leading-tight text-emerald-400 sm:text-xs">
+				<p class="mt-2 line-clamp-2 text-xs leading-tight text-emerald-400">
 					{business.discount}
 				</p>
 			{/if}
 
-			<div
-				class="mt-auto flex items-center gap-1.5 pt-2 text-[10px] text-gray-400 sm:pt-3 sm:text-xs"
-			>
+			<div class="mt-auto flex items-center gap-1.5 pt-2 text-xs text-gray-400 sm:pt-3">
 				<svg
 					class="h-3 w-3 flex-shrink-0 sm:h-3.5 sm:w-3.5"
 					fill="none"

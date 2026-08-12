@@ -481,10 +481,12 @@
 		</div>
 
 		<!-- בקרי החשיפה מרוכזים מתחת למסילה, צמודים לאלמנט שהם מזיזים:
-		     רמז (בלי מסגרת, לא ככפתור) מעל שורת חץ ← סקראבר נגרר → חץ+מונה. -->
+		     רמז (בלי מסגרת, לא ככפתור) מעל שורת חץ ← סקראבר נגרר → חץ+מונה.
+		     פסקת הרמז מוסתרת בנייד: אותה הוראה כבר כתובה מעל המסילה, גרירה
+		     היא מחווה טבעית במגע, והנדנוד האוטומטי והגלולה "עוד N" משלימים. -->
 		<div class="mt-2 flex flex-col items-center gap-2 {overflowing ? '' : 'invisible'}">
 			<p
-				class="inline-flex items-center gap-1.5 text-sm font-bold text-gray-400"
+				class="hidden items-center gap-1.5 text-sm font-bold text-gray-400 md:inline-flex"
 				aria-hidden="true"
 			>
 				<span>גררו את השורה כדי לגלות עוד</span>
@@ -566,8 +568,14 @@
 <style>
 	.cat-section {
 		/* התחתון גדול מהעליון: שורת הבקרים נגמרת ממש בקצה המקטע, וכותרת הקומה
-		   שמתחתיה נצמדה אליה. הריווח כאן שייך למסילה ולא לקומה שאחריה. */
-		padding-block: 0.25rem 1.25rem;
+		   שמתחתיה נצמדה אליה. הריווח כאן שייך למסילה ולא לקומה שאחריה.
+		   בנייד הוא הדוק יותר — כל פיקסל אנכי דוחף את התוצאות מתחת לקיפול. */
+		padding-block: 0.25rem 0.75rem;
+	}
+	@media (min-width: 768px) {
+		.cat-section {
+			padding-block: 0.25rem 1.25rem;
+		}
 	}
 
 	/* ═══ המסילה ═══ */
@@ -577,8 +585,9 @@
 		list-style: none;
 		margin: 0;
 		/* למעלה 1.5rem: תג הכמות מרחף חצי מעל קצה האריח, ועם ההרמה ב-hover
-		   וההגדלה של הנבחר הוא מטפס עד ‎~1.3rem‎ — overflow-y:hidden היה חותך אותו */
-		padding: 1.5rem 0.5rem 1rem; /* טבעת הפוקוס היא 3px + offset — 4px לא הספיקו */
+		   וההגדלה של הנבחר הוא מטפס עד ‎~1.3rem‎ — overflow-y:hidden היה חותך אותו.
+		   למטה 0.5rem בנייד (בדסקטופ 1rem במדיה-קוורי למטה) — הידוק אנכי. */
+		padding: 1.5rem 0.5rem 0.5rem; /* טבעת הפוקוס היא 3px + offset — 4px לא הספיקו */
 		overflow-x: auto;
 		overflow-y: hidden;
 		overscroll-behavior-x: contain; /* בלי back-swipe של הדפדפן באייפון */
