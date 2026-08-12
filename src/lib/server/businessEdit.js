@@ -18,6 +18,8 @@
 // ============================================================
 
 import { uploadImage } from './strapi.js';
+import { parseBranches } from '../branches.js';
+import { EXTRA_LINK_KEYS } from '../socialLinks.js';
 
 export const STATUSES = ['pending', 'approved', 'rejected', 'frozen'];
 
@@ -86,7 +88,27 @@ export async function parseBusinessForm(fd, { canModerate, current }) {
 	// אימייל בעל העסק — ב-extra_fields (ראו כותרת הקובץ). ריק מוחק.
 	const email = str(fd.get('email')).toLowerCase();
 	if (email && !EMAIL_RE.test(email)) errors.email = 'אימייל לא תקין';
-	values.extra_fields = mergeExtra(current, { owner_email: email });
+	/** @type {Record<string, unknown>} */
+	const extraPatch = { owner_email: email };
+	// סניפים ומקומות שירות נוספים — באותה עמודה. רק טופס ששלח את השדה נוגע
+	// בהם: טופס ישן שאינו מכיר אותו לא ימחק רשימה קיימת.
+	if (fd.has('branches')) extraPatch.branches = parseBranches(fd.get('branches'));
+
+	// טיקטוק, X, לינקדאין ו"נוסף" — לרשתות האלה אין עמודה, ולכן הן נשמרות
+	// באותו json (ראו socialLinks.js). גם כאן רק טופס ששלח את השדות נוגע
+	// בהם; שדה שנשלח ריק מוחק את הקישור.
+	if (EXTRA_LINK_KEYS.some((k) => fd.has(k))) {
+		/** @type {Record<string, string>} */
+		const links = {};
+		for (const k of EXTRA_LINK_KEYS) {
+			const v = normUrl(str(fd.get(k)));
+			if (!v) continue;
+			if (!URL_RE.test(v)) errors[k] = 'קישור לא תקין';
+			links[k] = v;
+		}
+		extraPatch.links = links;
+	}
+	values.extra_fields = mergeExtra(current, extraPatch);
 
 	// ── שדות ניהול: סטטוס וקואורדינטות ──
 	if (canModerate) {

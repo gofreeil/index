@@ -7,6 +7,8 @@
 	// אותם — האכיפה עצמה בשרת (ראו $lib/server/businessEdit.js).
 	import { mediaUrl } from '$lib/businessShape.js';
 	import { CATEGORIES } from '$lib/categories.js';
+	import { MAX_BRANCHES, parseBranches } from '$lib/branches.js';
+	import { LINK_FIELDS, parseExtraLinks } from '$lib/socialLinks.js';
 
 	/** @type {{ biz: any, errors?: Record<string,string>, canModerate?: boolean, categories?: Array<{value:string,label:string}> | null }} */
 	let { biz, errors = {}, canModerate = false, categories = null } = $props();
@@ -27,6 +29,27 @@
 	const banners = $derived(Array.isArray(biz.banners) ? biz.banners : []);
 	// לאוסף אין עמודת email — אימייל הבעלים יושב ב-extra_fields
 	const ownerEmail = $derived(biz.extra_fields?.owner_email ?? '');
+
+	// טיקטוק, X, לינקדאין ו"נוסף" יושבים ב-extra_fields.links ולא בעמודה
+	// משלהם, ולכן הערך שלהם נשלף משם ולא מ-biz הישר (ראו socialLinks.js).
+	const links = $derived(parseExtraLinks(biz.extra_fields?.links));
+	/** @param {string} k */
+	const linkValue = (k) => links[k] ?? biz[k] ?? '';
+
+	// סניפים ומקומות שירות נוספים — באותה עמודת json, ונשלחים כ-JSON בשדה
+	// מוסתר אחד (ראו branches.js). לשדות שעל המסך אין name: הם רק ממשק.
+	let branches = $state(parseBranches(biz.extra_fields?.branches));
+	const branchesJson = $derived(JSON.stringify(branches));
+
+	function addBranch() {
+		if (branches.length >= MAX_BRANCHES) return;
+		branches = [...branches, { city: '', neighborhood: '', address: '' }];
+	}
+
+	/** @param {number} i */
+	function removeBranch(i) {
+		branches = branches.filter((_, idx) => idx !== i);
+	}
 
 	const INPUT =
 		'w-full rounded-xl border border-gray-700 bg-gray-900/60 px-4 py-2.5 text-sm text-gray-100 placeholder:text-gray-600 focus:border-blue-500/60 focus:outline-none';
@@ -127,17 +150,10 @@
 <section class={SECTION}>
 	<h2 class="mb-4 font-bold text-gray-200">קישורים</h2>
 	<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-		{#each [['website', 'אתר'], ['whatsapp', 'וואטסאפ'], ['facebook', 'פייסבוק'], ['instagram', 'אינסטגרם'], ['youtube', 'יוטיוב (סרטון תדמית)']] as [k, lbl] (k)}
+		{#each LINK_FIELDS as [k, lbl, ph] (k)}
 			<div>
 				<label class={LABEL} for="f-{k}">{lbl}</label>
-				<input
-					id="f-{k}"
-					name={k}
-					dir="ltr"
-					placeholder="https://…"
-					value={biz[k] ?? ''}
-					class={INPUT}
-				/>
+				<input id="f-{k}" name={k} dir="ltr" placeholder={ph} value={linkValue(k)} class={INPUT} />
 				{#if err(k)}<p class="mt-1 text-xs text-red-400">{err(k)}</p>{/if}
 			</div>
 		{/each}
@@ -163,6 +179,59 @@
 		<div class="sm:col-span-2">
 			<label class={LABEL} for="f-sales">אזור מכירה / שירות</label>
 			<input id="f-sales" name="sales_area" value={biz.sales_area ?? ''} class={INPUT} />
+		</div>
+
+		<!-- מקומות נוספים: סניף שני, מחסן, קליניקה בעיר אחרת -->
+		<div class="rounded-xl border border-dashed border-gray-700 p-4 sm:col-span-2">
+			<div class="flex flex-wrap items-center justify-between gap-3">
+				<div>
+					<span class="text-sm font-bold text-gray-300">סניפים ומקומות שירות נוספים</span>
+					<p class="mt-0.5 text-xs text-gray-500">כל מקום שיתווסף יופיע גם הוא על המפה.</p>
+				</div>
+				<button
+					type="button"
+					onclick={addBranch}
+					disabled={branches.length >= MAX_BRANCHES}
+					class="shrink-0 rounded-full border border-blue-500/40 bg-blue-600/10 px-4 py-1.5 text-sm font-bold text-blue-300 transition hover:bg-blue-600/20 disabled:opacity-40"
+				>
+					＋ הוספת מקום
+				</button>
+			</div>
+
+			{#each branches as branch, i (branch)}
+				<div class="mt-3 rounded-lg border border-gray-700 bg-gray-900/60 p-3">
+					<div class="mb-2 flex items-center justify-between gap-2">
+						<span class="text-xs font-bold text-gray-400">מקום נוסף {i + 1}</span>
+						<button
+							type="button"
+							onclick={() => removeBranch(i)}
+							class="text-xs font-bold text-red-400 transition hover:text-red-300">הסרה</button
+						>
+					</div>
+					<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+						<input
+							bind:value={branch.city}
+							placeholder="עיר"
+							aria-label="עיר — מקום נוסף {i + 1}"
+							class={INPUT}
+						/>
+						<input
+							bind:value={branch.neighborhood}
+							placeholder="שכונה"
+							aria-label="שכונה — מקום נוסף {i + 1}"
+							class={INPUT}
+						/>
+						<input
+							bind:value={branch.address}
+							placeholder="כתובת מלאה"
+							aria-label="כתובת — מקום נוסף {i + 1}"
+							class={INPUT}
+						/>
+					</div>
+				</div>
+			{/each}
+
+			<input type="hidden" name="branches" value={branchesJson} />
 		</div>
 		{#if canModerate}
 			<div>

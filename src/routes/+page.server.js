@@ -47,6 +47,8 @@ export async function load() {
 			salesArea: b.sales_area || '',
 			address: b.address || '',
 			city: b.city || '',
+			// מקומות נוספים — המפה מציירת עיגול לכל אחד (ראו serviceArea.js)
+			branches: b.branches || [],
 			website: b.website || '',
 			logo: b.logo || '',
 			rating: Number(b.rating || 0),

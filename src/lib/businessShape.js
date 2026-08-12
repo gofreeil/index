@@ -3,6 +3,8 @@
 // מקור אחד לדומיין המדיה — אותו דומיין מוצהר גם כמורשה בממטב התמונות
 // (ראו mediaConfig.js ו-svelte.config.js), ופיצול ביניהם היה משתיק את המיטוב
 import { MEDIA_BASE } from './mediaConfig.js';
+import { parseBranches } from './branches.js';
+import { parseExtraLinks } from './socialLinks.js';
 
 /** @param {any} m מדיה בודדת של Strapi */
 export function mediaUrl(m) {
@@ -30,6 +32,10 @@ export function toBusiness(b) {
 					.map((s) => s.trim())
 					.filter(Boolean)
 			: [];
+	// טיקטוק, X, לינקדאין וקישור "נוסף" — אין להם עמודה, והם יושבים באותה
+	// עמודת json של הסניפים ואימייל הבעלים (ראו socialLinks.js). כאן הם
+	// עולים לרמה העליונה, כדי שהפרונט יצרוך את כל הקישורים באותה צורה.
+	const links = parseExtraLinks(b.extra_fields?.links);
 	return {
 		documentId: b.documentId,
 		slug: b.slug || b.documentId,
@@ -45,10 +51,18 @@ export function toBusiness(b) {
 		facebook: b.facebook || '',
 		instagram: b.instagram || '',
 		youtube: b.youtube || '',
+		tiktok: links.tiktok || '',
+		x: links.x || '',
+		linkedin: links.linkedin || '',
+		extra: links.extra || '',
 		address: b.address || '',
 		city: b.city || '',
 		neighborhood: b.neighborhood || '',
 		sales_area: b.sales_area || '',
+		// סניפים ומקומות שירות נוספים יושבים ב-extra_fields (אין להם עמודה
+		// משלהם). רק הם נשלפים משם — שאר המפתחות באותה עמודה, ובראשם אימייל
+		// הבעלים, לא נחשפים ללקוח.
+		branches: parseBranches(b.extra_fields?.branches),
 		discount: b.discount || '',
 		accepted_terms: !!b.accepted_terms,
 		logo,

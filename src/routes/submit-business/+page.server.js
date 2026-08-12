@@ -1,6 +1,8 @@
 import { fail } from '@sveltejs/kit';
 import { createBusiness, uploadImage } from '$lib/server/strapi.js';
 import { getCategoryOptions } from '$lib/server/categoryStore.js';
+import { parseBranches } from '$lib/branches.js';
+import { EXTRA_LINK_KEYS, parseExtraLinks } from '$lib/socialLinks.js';
 
 /**
  * רשימת הקטגוריות לתפריט הבחירה — כולל דריסות השם והקטגוריות שהוסיף
@@ -72,11 +74,20 @@ export const actions = {
 			facebook: normUrl(str(fd.get('facebook'))),
 			instagram: normUrl(str(fd.get('instagram'))),
 			youtube: normUrl(str(fd.get('youtube'))),
+			// טיקטוק, X, לינקדאין ו"נוסף" — נשארים ב-values כדי שיחזרו למסך אם
+			// הולידציה נכשלה, ונשלחים ל-extra_fields ולא כעמודות (socialLinks.js).
+			tiktok: normUrl(str(fd.get('tiktok'))),
+			x: normUrl(str(fd.get('x'))),
+			linkedin: normUrl(str(fd.get('linkedin'))),
+			extra: normUrl(str(fd.get('extra'))),
 			address: str(fd.get('address')),
 			city: str(fd.get('city')),
 			neighborhood: str(fd.get('neighborhood')),
 			sales_area: str(fd.get('sales_area')),
-			discount: str(fd.get('discount'))
+			discount: str(fd.get('discount')),
+			// סניפים ומקומות שירות נוספים — נשארים ב-values כדי שיחזרו למסך
+			// אם הולידציה נכשלה, ונשלחים ל-extra_fields ולא כשדה משלהם.
+			branches: parseBranches(fd.get('branches'))
 		};
 		const accepted_terms = fd.get('accepted_terms') === 'on';
 
@@ -92,7 +103,14 @@ export const actions = {
 		if (!values.address) errors.address = 'כתובת מלאה חובה — דרושה להצגת העסק על המפה';
 		if (!values.discount) errors.discount = 'ההטבה הבלעדית לחברי הקהילה חובה';
 		if (!accepted_terms) errors.accepted_terms = 'יש לאשר את תנאי הקהילה';
-		for (const k of ['website', 'whatsapp', 'facebook', 'instagram', 'youtube']) {
+		for (const k of [
+			'website',
+			'whatsapp',
+			'facebook',
+			'instagram',
+			'youtube',
+			...EXTRA_LINK_KEYS
+		]) {
 			const val = /** @type {any} */ (values)[k];
 			if (val && !URL_RE.test(val)) errors[k] = 'קישור לא תקין';
 		}
@@ -143,11 +161,16 @@ export const actions = {
 		// לאוסף idx-business אין עמודת email, ו-Strapi מתעלם בשקט ממפתח לא
 		// מוכר — ולכן אימייל בעל העסק נשמר ב-extra_fields (עמודת json).
 		// זה גם המפתח שבו המערכת מזהה אותו כשהוא נרשם לאתר (ownerMatch.js).
-		const { email, ...fields } = values;
+		const { email, branches, tiktok, x, linkedin, extra, ...fields } = values;
+		const links = parseExtraLinks({ tiktok, x, linkedin, extra });
 		try {
 			await createBusiness({
 				...fields,
-				extra_fields: { owner_email: email.toLowerCase() },
+				extra_fields: {
+					owner_email: email.toLowerCase(),
+					...(branches.length ? { branches } : {}),
+					...(Object.keys(links).length ? { links } : {})
+				},
 				accepted_terms: true,
 				logo: logoId ?? undefined,
 				banners: bannerIds.length ? bannerIds : undefined,

@@ -3,6 +3,8 @@
 	import { enhance } from '$app/forms';
 	import { onMount } from 'svelte';
 	import { CATEGORIES } from '$lib/categories.js';
+	import { MAX_BRANCHES, parseBranches } from '$lib/branches.js';
+	import { LINK_FIELDS } from '$lib/socialLinks.js';
 	import { formDraft, clearDraft, resumeDraft } from '$lib/formDraft';
 
 	/** @type {{ data: any, form: any }} */
@@ -38,6 +40,29 @@
 	// ערכים חוזרים אחרי כישלון ולידציה (כדי לא לאבד מילוי)
 	const v = $derived(form?.values ?? {});
 	const errors = $derived(form?.errors ?? {});
+
+	// ── סניפים ומקומות שירות נוספים ──
+	// שורות שנפתחות בלחיצה. הן נשלחות כ-JSON בשדה מוסתר אחד ולא כשדות
+	// חוזרים (ראו branches.js), ולכן גם הטיוטה וגם חזרה אחרי שגיאת ולידציה
+	// עובדות עליהן בלי טיפול מיוחד. לשדות עצמם אין name — הם רק ממשק.
+	let branches = $state(parseBranches(form?.values?.branches));
+	const branchesJson = $derived(JSON.stringify(branches));
+
+	function addBranch() {
+		if (branches.length >= MAX_BRANCHES) return;
+		branches = [...branches, { city: '', neighborhood: '', address: '' }];
+	}
+
+	/** @param {number} i */
+	function removeBranch(i) {
+		branches = branches.filter((_, idx) => idx !== i);
+	}
+
+	// שחזור הטיוטה כותב ל-input המוסתר ומשגר change — משם השורות חוזרות למסך
+	/** @param {Event & { currentTarget: HTMLInputElement }} e */
+	function syncBranches(e) {
+		branches = parseBranches(e.currentTarget.value);
+	}
 </script>
 
 <Seo
@@ -312,75 +337,84 @@
 					</p>
 					{#if errors.address}<p class="err">{errors.address}</p>{/if}
 				</div>
+
+				<!-- מקומות נוספים: סניף שני, מחסן, קליניקה בעיר אחרת -->
+				<div class="rounded-xl border border-dashed border-gray-700 p-4">
+					<div class="flex flex-wrap items-center justify-between gap-3">
+						<div>
+							<span class="text-sm font-medium text-gray-300">סניפים ומקומות שירות נוספים</span>
+							<p class="mt-0.5 text-xs text-gray-500">
+								יש לכם יותר ממקום אחד? כל מקום שתוסיפו יופיע גם הוא על המפה.
+							</p>
+						</div>
+						<button
+							type="button"
+							onclick={addBranch}
+							disabled={branches.length >= MAX_BRANCHES}
+							class="shrink-0 rounded-full border border-blue-500/40 bg-blue-600/10 px-4 py-1.5 text-sm font-bold text-blue-300 transition hover:bg-blue-600/20 disabled:opacity-40"
+						>
+							＋ הוספת מקום
+						</button>
+					</div>
+
+					{#each branches as branch, i (branch)}
+						<div class="mt-3 rounded-lg border border-gray-700 bg-gray-900/50 p-3">
+							<div class="mb-2 flex items-center justify-between gap-2">
+								<span class="text-xs font-bold text-gray-400">מקום נוסף {i + 1}</span>
+								<button
+									type="button"
+									onclick={() => removeBranch(i)}
+									class="text-xs font-bold text-red-400 transition hover:text-red-300"
+								>
+									הסרה
+								</button>
+							</div>
+							<div class="grid gap-3 sm:grid-cols-3">
+								<input
+									bind:value={branch.city}
+									placeholder="עיר"
+									aria-label="עיר — מקום נוסף {i + 1}"
+									class="field"
+								/>
+								<input
+									bind:value={branch.neighborhood}
+									placeholder="שכונה"
+									aria-label="שכונה — מקום נוסף {i + 1}"
+									class="field"
+								/>
+								<input
+									bind:value={branch.address}
+									placeholder="כתובת מלאה"
+									aria-label="כתובת — מקום נוסף {i + 1}"
+									class="field"
+								/>
+							</div>
+						</div>
+					{/each}
+
+					{#if branches.length >= MAX_BRANCHES}
+						<p class="mt-3 text-xs text-gray-500">
+							הגעתם ל-{MAX_BRANCHES} מקומות — אפשר לפרט את השאר בשדה "אזור מכירה".
+						</p>
+					{/if}
+
+					<input type="hidden" name="branches" value={branchesJson} onchange={syncBranches} />
+				</div>
 			</fieldset>
 
 			<!-- נוכחות דיגיטלית + לוגו -->
 			<fieldset class="space-y-4 rounded-2xl border border-gray-800 bg-gray-900/40 p-5">
 				<legend class="px-2 text-sm font-bold text-blue-400">נוכחות דיגיטלית</legend>
+				<!-- הרשתות והקישורים — הרשימה, התוויות והדוגמאות מגיעות מ-socialLinks.js,
+				     אותו מקור שממנו נבנים טופס העריכה ושורת הלוגואים בכרטיסייה. -->
 				<div class="grid gap-4 sm:grid-cols-2">
-					<div>
-						<label for="website" class="mb-1 block text-sm font-medium text-gray-300">אתר</label>
-						<input
-							id="website"
-							name="website"
-							defaultValue={v.website ?? ''}
-							placeholder="https://"
-							class="field"
-						/>
-						{#if errors.website}<p class="err">{errors.website}</p>{/if}
-					</div>
-					<div>
-						<label for="whatsapp" class="mb-1 block text-sm font-medium text-gray-300"
-							>וואטסאפ</label
-						>
-						<input
-							id="whatsapp"
-							name="whatsapp"
-							defaultValue={v.whatsapp ?? ''}
-							placeholder="https://wa.me/…"
-							class="field"
-						/>
-						{#if errors.whatsapp}<p class="err">{errors.whatsapp}</p>{/if}
-					</div>
-					<div>
-						<label for="facebook" class="mb-1 block text-sm font-medium text-gray-300"
-							>פייסבוק</label
-						>
-						<input
-							id="facebook"
-							name="facebook"
-							defaultValue={v.facebook ?? ''}
-							placeholder="https://"
-							class="field"
-						/>
-						{#if errors.facebook}<p class="err">{errors.facebook}</p>{/if}
-					</div>
-					<div>
-						<label for="instagram" class="mb-1 block text-sm font-medium text-gray-300"
-							>אינסטגרם</label
-						>
-						<input
-							id="instagram"
-							name="instagram"
-							defaultValue={v.instagram ?? ''}
-							placeholder="https://"
-							class="field"
-						/>
-						{#if errors.instagram}<p class="err">{errors.instagram}</p>{/if}
-					</div>
-				</div>
-				<div>
-					<label for="youtube" class="mb-1 block text-sm font-medium text-gray-300"
-						>סרטון יוטיוב</label
-					>
-					<input
-						id="youtube"
-						name="youtube"
-						defaultValue={v.youtube ?? ''}
-						placeholder="https://youtube.com/…"
-						class="field"
-					/>
-					{#if errors.youtube}<p class="err">{errors.youtube}</p>{/if}
+					{#each LINK_FIELDS as [k, lbl, ph] (k)}
+						<div>
+							<label for={k} class="mb-1 block text-sm font-medium text-gray-300">{lbl}</label>
+							<input id={k} name={k} defaultValue={v[k] ?? ''} placeholder={ph} class="field" />
+							{#if errors[k]}<p class="err">{errors[k]}</p>{/if}
+						</div>
+					{/each}
 				</div>
 				<div>
 					<label for="logo" class="mb-1 block text-sm font-medium text-gray-300"

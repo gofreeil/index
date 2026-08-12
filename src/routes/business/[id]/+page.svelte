@@ -7,6 +7,9 @@
 	import JsonLd from '$lib/components/JsonLd.svelte';
 	import Seo from '$lib/components/Seo.svelte';
 	import SmartShare from '$lib/components/SmartShare.svelte';
+	import { branchLine } from '$lib/branches.js';
+	import { sameAsLinks } from '$lib/socialLinks.js';
+	import SocialLinks from '$lib/components/SocialLinks.svelte';
 	import { SITE_NAME, DEFAULT_OG_IMAGE, professionalSchema, breadcrumbSchema } from '$lib/seo';
 
 	/** @type {{ data: any, form: any }} */
@@ -267,7 +270,7 @@
 			lng: business.lng,
 			rating: avgRating,
 			ratingCount: ratingCount,
-			sameAs: [business.facebook, business.instagram, business.youtube].filter(Boolean)
+			sameAs: sameAsLinks(business)
 		}),
 		breadcrumbSchema([
 			{ name: 'אינדקס בעלי מקצוע', path: '/' },
@@ -394,6 +397,10 @@
 			</a>
 		{/if}
 	</div>
+
+	<!-- הרשתות של העסק — לוגו לכל רשת שהוא מילא. האתר לא כאן: הוא כבר
+	     כפתור מילולי בשורת הפעולות שמעל. -->
+	<SocialLinks {business} />
 
 	{#if business.discount}
 		<p class="mt-4 text-sm text-emerald-400">
@@ -526,7 +533,7 @@
 	</section>
 
 	<!-- ── פרטי קשר ומיקום ─────────────────────────────────── -->
-	{#if business.address || business.sales_area || mapSrc}
+	{#if business.address || business.sales_area || business.branches?.length || mapSrc}
 		<section class="mt-10 border-t border-white/[0.08] pt-8">
 			<h2 class="text-sm font-semibold text-gray-400">{t.contactInfo}</h2>
 
@@ -541,6 +548,16 @@
 					<div>
 						<dt class="text-xs text-gray-500">{t.serviceBorders}</dt>
 						<dd class="mt-0.5 text-gray-300">{business.sales_area}</dd>
+					</div>
+				{/if}
+				{#if business.branches?.length}
+					<div class="sm:col-span-2">
+						<dt class="text-xs text-gray-500">{t.moreLocations}</dt>
+						<dd class="mt-0.5 space-y-0.5 text-gray-300">
+							{#each business.branches as branch, i (i)}
+								<p>{branchLine(branch)}</p>
+							{/each}
+						</dd>
 					</div>
 				{/if}
 			</dl>

@@ -14,6 +14,8 @@
 // כאן טבלת קואורדינטות לצורכי ציור. שתיהן מתעדכנות בנפרד ובכוונה.
 // ============================================================
 
+import { branchesGeoText } from './branches.js';
+
 /** מרכזי יישובים לציור. */
 export const CITY_LATLNG = /** @type {Record<string, [number, number]>} */ ({
 	ירושלים: [31.7683, 35.2137],
@@ -214,10 +216,13 @@ function scanGeo(text) {
  * נפילה לכתובת/עיר. הנפילה היא שמצילה את מי שכתב "קליניקה" אבל מילא כתובת.
  *
  * kind: city | cities | region | country | global | none
- * @param {{ salesArea?: string, sales_area?: string, address?: string, city?: string }} b
+ * @param {{ salesArea?: string, sales_area?: string, address?: string, city?: string,
+ *           branches?: {city?: string, address?: string}[] }} b
  */
 export function resolveServiceArea(b) {
 	const raw = clean(b.salesArea ?? b.sales_area);
+	// סניפים ומקומות שירות נוספים הם מיקומים פיזיים מוצהרים, לא ניסוח חופשי
+	const branchText = clean(branchesGeoText(b.branches));
 	const base = { cities: /** @type {string[]} */ ([]), regions: /** @type {string[]} */ ([]) };
 
 	let { cities, regions } = scanGeo(raw);
@@ -226,8 +231,13 @@ export function resolveServiceArea(b) {
 	if (!cities.length && !regions.length) {
 		if (GLOBAL_RE.test(raw)) return { ...base, kind: 'global', label: 'כל הארץ והעולם' };
 		if (COUNTRY_RE.test(raw)) return { ...base, kind: 'country', label: 'כל הארץ' };
-		({ cities, regions } = scanGeo(clean([b.city, b.address].filter(Boolean).join(' '))));
+		({ cities, regions } = scanGeo(
+			clean([b.city, b.address, branchText].filter(Boolean).join(' '))
+		));
 		fromAddress = cities.length > 0 || regions.length > 0;
+	} else if (branchText) {
+		// "אזור מכירה" שכבר תיאר גיאוגרפיה לא מבטל סניף שנרשם בנפרד
+		for (const c of findCities(branchText)) if (!cities.includes(c)) cities.push(c);
 	}
 
 	if (!cities.length && !regions.length) return { ...base, kind: 'none', label: '' };
