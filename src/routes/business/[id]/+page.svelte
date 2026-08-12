@@ -317,14 +317,14 @@
 <main class="mx-auto max-w-3xl px-4 py-6 sm:px-6">
 	{#if justSaved}
 		<p
-			class="mb-4 rounded-xl border border-green-500/30 bg-green-900/20 px-4 py-2 text-sm text-green-300"
+			class="mb-4 rounded-xl border border-green-500/30 bg-green-900/20 px-4 py-2 text-base text-green-300"
 		>
 			✓ {t.cardSaved}
 		</p>
 	{/if}
 
 	<div class="flex items-center justify-between gap-3">
-		<a href="/" class="text-xs text-gray-500 transition hover:text-gray-300"
+		<a href="/" class="text-sm text-gray-500 transition hover:text-gray-300"
 			>→ {t.backToDirectory}</a
 		>
 		<!-- כפתור "ערוך" — לאדמין על כל כרטיסייה, ולבעל הכרטיסייה על שלו בלבד.
@@ -332,7 +332,7 @@
 		{#if data.canEdit}
 			<a
 				href="/business/{business.documentId}/edit"
-				class="rounded-lg border border-white/15 px-3 py-1 text-xs font-medium text-gray-300 transition hover:border-white/30 hover:text-white"
+				class="rounded-lg border border-white/15 px-3 py-1 text-sm font-medium text-gray-300 transition hover:border-white/30 hover:text-white"
 			>
 				✏️ {t.editCard}
 			</a>
@@ -374,11 +374,11 @@
 		</div>
 
 		<div class="min-w-0 flex-1">
-			<h1 class="text-2xl leading-tight font-semibold text-gray-50 sm:text-3xl">{business.name}</h1>
+			<h1 class="text-3xl leading-tight font-semibold text-gray-50 sm:text-4xl">{business.name}</h1>
 			{#if metaLine}
-				<p class="mt-1 text-sm text-gray-400">{metaLine}</p>
+				<p class="mt-1 text-base text-gray-400">{metaLine}</p>
 			{/if}
-			<p class="mt-1.5 text-xs">
+			<p class="mt-1.5 text-sm">
 				{#if ratingCount > 0}
 					<span
 						class="text-gray-400"
@@ -404,7 +404,7 @@
 				href={business.website}
 				target="_blank"
 				rel="noopener"
-				class="rounded-lg border border-white/15 px-4 py-2 text-sm font-medium text-gray-300 transition hover:border-white/30 hover:text-white"
+				class="rounded-lg border border-white/15 px-4 py-2 text-base font-medium text-gray-300 transition hover:border-white/30 hover:text-white"
 			>
 				{t.businessSite}
 			</a>
@@ -412,7 +412,7 @@
 	{/if}
 
 	{#if business.discount}
-		<p class="mt-3 text-sm text-emerald-400">
+		<p class="mt-3 text-base text-emerald-400">
 			<span class="text-gray-500">{t.exclusiveBenefit}:</span>
 			{business.discount}
 		</p>
@@ -437,25 +437,25 @@
 				: 'border-white/10 bg-white/[0.03]'}"
 		>
 			{#if claimSent}
-				<p class="text-sm text-emerald-400">
+				<p class="text-base text-emerald-400">
 					✓ {claim.transfer ? t.claimPendingTransfer : t.claimPending}
 				</p>
 			{:else if !claim.loggedIn}
-				<p class="text-sm text-gray-400">
+				<p class="text-base text-gray-400">
 					{t.claimLogin}
 					<a href="/auth/login" class="font-medium text-blue-400 hover:text-blue-300">{t.login}</a>
 				</p>
 			{:else if claim.status === 'rejected'}
-				<p class="text-sm text-gray-400">{t.claimRejected}</p>
+				<p class="text-base text-gray-400">{t.claimRejected}</p>
 			{:else}
-				<h2 class="text-sm font-semibold text-gray-200">
+				<h2 class="text-base font-semibold text-gray-200">
 					{claim.transfer
 						? t.claimTitleTransfer
 						: claim.matchedBy
 							? t.claimTitleMatched
 							: t.claimTitle}
 				</h2>
-				<p class="mt-1 text-sm leading-6 text-gray-400">
+				<p class="mt-1 text-base leading-7 text-gray-400">
 					{claim.transfer
 						? t.claimBodyTransfer
 						: claim.matchedBy
@@ -464,7 +464,7 @@
 				</p>
 
 				{#if form?.claimError}
-					<p class="mt-2 text-xs text-red-400">{form.claimError}</p>
+					<p class="mt-2 text-sm text-red-400">{form.claimError}</p>
 				{/if}
 
 				{#if claimOpen}
@@ -481,18 +481,18 @@
 						}}
 						class="mt-3"
 					>
-						<label for="claim-note" class="block text-xs text-gray-500">{t.claimNoteLabel}</label>
+						<label for="claim-note" class="block text-sm text-gray-500">{t.claimNoteLabel}</label>
 						<textarea
 							id="claim-note"
 							name="note"
 							rows="2"
 							maxlength="500"
-							class="mt-1 w-full resize-none rounded-lg border border-white/10 bg-transparent px-3 py-2 text-sm text-gray-100 outline-none placeholder:text-gray-600 focus:border-white/30"
+							class="mt-1 w-full resize-none rounded-lg border border-white/10 bg-transparent px-3 py-2 text-base text-gray-100 outline-none placeholder:text-gray-600 focus:border-white/30"
 							placeholder={claim.transfer ? t.claimNotePlaceholderTransfer : t.claimNotePlaceholder}
 						></textarea>
 						<button
 							disabled={claimSending}
-							class="mt-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:opacity-40"
+							class="mt-2 rounded-lg bg-blue-600 px-4 py-2 text-base font-semibold text-white transition hover:bg-blue-500 disabled:opacity-40"
 						>
 							{claimSending ? '…' : t.claimSend}
 						</button>
@@ -500,7 +500,7 @@
 				{:else}
 					<button
 						onclick={() => (claimOpen = true)}
-						class="mt-3 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500"
+						class="mt-3 rounded-lg bg-blue-600 px-4 py-2 text-base font-semibold text-white transition hover:bg-blue-500"
 					>
 						{claim.transfer ? t.claimBtnTransfer : t.claimBtn}
 					</button>
@@ -586,29 +586,29 @@
 	<section class="mt-6 border-t border-white/[0.08] pt-5">
 		<div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
 			<div class="min-w-0 flex-1">
-				<h2 class="text-sm font-semibold text-gray-400">{t.aboutBusiness}</h2>
-				<p class="mt-2 leading-6 whitespace-pre-line text-gray-300">
+				<h2 class="text-base font-semibold text-gray-400">{t.aboutBusiness}</h2>
+				<p class="mt-2 text-lg leading-7 whitespace-pre-line text-gray-300">
 					{business.description || t.noDescription}
 				</p>
 
 				{#if business.address || business.sales_area || business.branches?.length}
-					<h2 class="mt-5 text-sm font-semibold text-gray-400">{t.contactInfo}</h2>
-					<dl class="mt-2 space-y-2 text-sm">
+					<h2 class="mt-5 text-base font-semibold text-gray-400">{t.contactInfo}</h2>
+					<dl class="mt-2 space-y-2 text-base">
 						{#if business.address}
 							<div>
-								<dt class="text-xs text-gray-500">{t.addressLabel}</dt>
+								<dt class="text-sm text-gray-500">{t.addressLabel}</dt>
 								<dd class="mt-0.5 text-gray-300">{business.address}</dd>
 							</div>
 						{/if}
 						{#if business.sales_area}
 							<div>
-								<dt class="text-xs text-gray-500">{t.serviceBorders}</dt>
+								<dt class="text-sm text-gray-500">{t.serviceBorders}</dt>
 								<dd class="mt-0.5 text-gray-300">{business.sales_area}</dd>
 							</div>
 						{/if}
 						{#if business.branches?.length}
 							<div>
-								<dt class="text-xs text-gray-500">{t.moreLocations}</dt>
+								<dt class="text-sm text-gray-500">{t.moreLocations}</dt>
 								<dd class="mt-0.5 space-y-0.5 text-gray-300">
 									{#each business.branches as branch, i (i)}
 										<p>{branchLine(branch)}</p>
@@ -641,7 +641,7 @@
 	<!-- ── סרטון תדמית ─────────────────────────────────────── -->
 	{#if ytEmbed || data.canSmartShare}
 		<section class="mt-6 border-t border-white/[0.08] pt-5">
-			<h2 class="text-sm font-semibold text-gray-400">{t.businessVideo}</h2>
+			<h2 class="text-base font-semibold text-gray-400">{t.businessVideo}</h2>
 			{#if ytEmbed}
 				<div class="mt-2 aspect-video overflow-hidden rounded-xl bg-white/5">
 					<iframe
@@ -655,7 +655,7 @@
 				</div>
 			{:else}
 				<!-- ריק רק לבעל הכרטיסייה/אדמין: מבקר רגיל לא רואה מדור ריק. -->
-				<p class="mt-2 text-sm text-gray-500">
+				<p class="mt-2 text-base text-gray-500">
 					{t.businessVideoEmpty}
 					{#if data.canEdit}
 						<a
@@ -676,37 +676,37 @@
 	<!-- ── חוות דעת ────────────────────────────────────────── -->
 	<section class="mt-6 border-t border-white/[0.08] pt-5">
 		<div class="flex items-center justify-between gap-4">
-			<h2 class="text-sm font-semibold text-gray-400">{t.reviews}</h2>
+			<h2 class="text-base font-semibold text-gray-400">{t.reviews}</h2>
 			<button
 				onclick={() => (showReviewForm = !showReviewForm)}
-				class="text-xs font-medium text-blue-400 transition hover:text-blue-300"
+				class="text-sm font-medium text-blue-400 transition hover:text-blue-300"
 			>
 				{showReviewForm ? t.cancel : t.addReview}
 			</button>
 		</div>
 
 		{#if reviewSubmitted}
-			<p class="mt-3 text-sm text-emerald-400">{t.reviewThanks}</p>
+			<p class="mt-3 text-base text-emerald-400">{t.reviewThanks}</p>
 		{/if}
 
 		{#if showReviewForm}
 			<div transition:slide={{ duration: 200 }} class="mt-3 rounded-xl bg-white/[0.03] p-4">
 				{#if !user}
-					<p class="text-sm text-gray-400">{t.loginToReview}</p>
+					<p class="text-base text-gray-400">{t.loginToReview}</p>
 					<div class="mt-3 flex gap-2">
 						<a
 							href="/auth/login"
-							class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500"
+							class="rounded-lg bg-blue-600 px-4 py-2 text-base font-semibold text-white transition hover:bg-blue-500"
 							>{t.login}</a
 						>
 						<a
 							href="/auth/register"
-							class="rounded-lg border border-white/15 px-4 py-2 text-sm font-medium text-gray-300 transition hover:border-white/30 hover:text-white"
+							class="rounded-lg border border-white/15 px-4 py-2 text-base font-medium text-gray-300 transition hover:border-white/30 hover:text-white"
 							>{t.register}</a
 						>
 					</div>
 				{:else}
-					<p class="text-sm text-gray-400">
+					<p class="text-base text-gray-400">
 						{t.whatDoYouThink}
 						<span class="text-gray-500">· {user.name}</span>
 					</p>
@@ -714,7 +714,7 @@
 						<select
 							bind:value={newReview.rating}
 							aria-label={t.reviews}
-							class="w-full rounded-lg border border-white/10 bg-transparent px-3 py-2 text-sm text-gray-100 outline-none focus:border-white/30"
+							class="w-full rounded-lg border border-white/10 bg-transparent px-3 py-2 text-base text-gray-100 outline-none focus:border-white/30"
 						>
 							<option value={5}>5 ★</option>
 							<option value={4}>4 ★</option>
@@ -725,12 +725,12 @@
 						<textarea
 							bind:value={newReview.comment}
 							placeholder={t.reviewPlaceholder}
-							class="h-24 w-full resize-none rounded-lg border border-white/10 bg-transparent px-3 py-2 text-sm text-gray-100 outline-none placeholder:text-gray-600 focus:border-white/30"
+							class="h-24 w-full resize-none rounded-lg border border-white/10 bg-transparent px-3 py-2 text-base text-gray-100 outline-none placeholder:text-gray-600 focus:border-white/30"
 						></textarea>
-						{#if reviewError}<p class="text-xs text-red-400">{reviewError}</p>{/if}
+						{#if reviewError}<p class="text-sm text-red-400">{reviewError}</p>{/if}
 						<button
 							onclick={submitReview}
-							class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500"
+							class="rounded-lg bg-blue-600 px-4 py-2 text-base font-semibold text-white transition hover:bg-blue-500"
 							>{t.submitReview}</button
 						>
 					</div>
@@ -739,17 +739,17 @@
 		{/if}
 
 		{#if reviews.length === 0}
-			<p class="mt-3 text-sm text-gray-500">{t.noReviews}</p>
+			<p class="mt-3 text-base text-gray-500">{t.noReviews}</p>
 		{:else}
 			<ul class="mt-1 divide-y divide-white/[0.08]">
 				{#each reviews as review}
 					<li class="py-3">
 						<div class="flex items-baseline justify-between gap-3">
-							<span class="text-sm font-medium text-gray-200">{review.author_name}</span>
-							<span class="text-xs text-gray-600">{review.date}</span>
+							<span class="text-base font-medium text-gray-200">{review.author_name}</span>
+							<span class="text-sm text-gray-600">{review.date}</span>
 						</div>
 						<div
-							class="mt-1 flex gap-0.5 text-xs"
+							class="mt-1 flex gap-0.5 text-sm"
 							dir="ltr"
 							aria-label={t.ratingOutOf5.replace('{rating}', String(review.rating))}
 						>
@@ -761,10 +761,10 @@
 								>
 							{/each}
 						</div>
-						{#if review.title}<p class="mt-2 text-sm font-medium text-gray-200">
+						{#if review.title}<p class="mt-2 text-base font-medium text-gray-200">
 								{review.title}
 							</p>{/if}
-						<p class="mt-1 text-sm leading-6 text-gray-400">{review.body}</p>
+						<p class="mt-1 text-base leading-7 text-gray-400">{review.body}</p>
 					</li>
 				{/each}
 			</ul>
@@ -776,19 +776,19 @@
 	     החשיפה עדיין נספרת בלחיצה (reveal_phone), כמו קודם. -->
 	{#if business.phone}
 		<section class="mt-6 border-t border-white/[0.08] pt-5">
-			<h2 class="text-sm font-semibold text-gray-400">{t.callNow}</h2>
+			<h2 class="text-base font-semibold text-gray-400">{t.callNow}</h2>
 			<div class="mt-2">
 				{#if isPhoneRevealed}
 					<a
 						href="tel:{business.phone}"
-						class="inline-block rounded-lg bg-blue-600 px-5 py-2.5 text-base font-semibold text-white transition hover:bg-blue-500"
+						class="inline-block rounded-lg bg-blue-600 px-5 py-2.5 text-lg font-semibold text-white transition hover:bg-blue-500"
 					>
 						<span dir="ltr">{business.phone}</span>
 					</a>
 				{:else}
 					<button
 						onclick={revealPhoneAndLog}
-						class="rounded-lg bg-blue-600 px-5 py-2.5 text-base font-semibold text-white transition hover:bg-blue-500"
+						class="rounded-lg bg-blue-600 px-5 py-2.5 text-lg font-semibold text-white transition hover:bg-blue-500"
 					>
 						{t.revealPhone}
 					</button>
