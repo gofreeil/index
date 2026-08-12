@@ -131,12 +131,12 @@
 					title={t.homeTooltip}
 					aria-label={t.homeTooltip}
 				>
-					<!-- הלוגו גדל מעט בריחוף מעל הקישור כולו (group-hover), כדי שגם מי
+					<!-- הלוגו גדל בריחוף מעל הקישור כולו (group-hover), כדי שגם מי
 					     שהעכבר שלו מתקרב מכיוון הכותרת יקבל את הרמז שזה קישור לדף הבית. -->
 					<img
 						src="/logo-professionals.png?v=4"
 						alt="לוגו בעלי מקצוע כשירים — סדר בכל עניין"
-						class="h-8 w-auto rounded-lg object-contain shadow-sm transition-transform duration-300 ease-out group-hover:scale-110 sm:h-14"
+						class="h-8 w-auto rounded-lg object-contain shadow-sm transition-transform duration-300 ease-out group-hover:scale-125 sm:h-14"
 					/>
 					<div class="flex flex-col text-right transition-opacity group-hover:opacity-80">
 						<!-- שם המותג בכותרת הוא <p> ולא <h1>: ה-h1 שייך לכותרת הייחודית של כל דף
