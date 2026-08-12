@@ -203,56 +203,11 @@
 	const bizArea = $derived(placeOrEmpty(business.city) || placeOrEmpty(business.sales_area));
 
 	/* ═══════════ מפה ═══════════
-	   המפה הייתה תלויה ב-address בלבד — שדה שרק 21 מ-92 העסקים מילאו, וגם אז
-	   בטקסט חופשי שאינו כתובת ("אינטרנטי כל הארץ", "רמת גן /מכשור לשימוש ביתי").
-	   התוצאה: אצל רוב העסקים לא הופיעה מפה כלל, ואצל חלק נפתחה מפת עולם אקראית.
-	   כאן נבחר מקור המיקום הטוב ביותר שקיים, ואם אף אחד לא נראה כמו מקום —
-	   מוצג אזור השירות כטקסט בלבד, בלי מפה שבורה. */
-	const GENERIC_PLACE = /^(בית|משרד|קליניקה|חנות|חנות פיזית|מחסן|מפעל|נגיש|אחר|פרטי)$/;
-	const NON_PLACE =
-		/אונליין|און ליין|אינטרנט|אנטרנט|בזום|זום|טלפון|פייסבוק|וואטסאפ|משלוח|ארצי|כל הארץ|כל העולם|בעולם|מרחוק|בהערות|שירות|טכנאי|ספציפי/;
-
-	/**
-	 * ניקוי מחרוזת מיקום לשאילתת מפה, או '' אם היא לא נראית כמו מקום.
-	 * @param {string} raw
-	 */
-	function placeQuery(raw) {
-		let v = String(raw || '')
-			.split('/')[0] // "רמת גן /מכשור לשימוש ביתי" → "רמת גן"
-			.replace(/\s+/g, ' ')
-			.trim()
-			.replace(/\s*(והסביבה|וסביבתה|והאזור|והסביבות|וכל הסביבה|והסביבת)$/, '')
-			.trim();
-		if (!v || v.length > 40) return '';
-		if (GENERIC_PLACE.test(v) || NON_PLACE.test(v)) return '';
-		// שם יישוב הוא מילה-שתיים ("פתח תקווה", "גוש עציון"); בלי מספר בית,
-		// מחרוזת ארוכה יותר היא כמעט תמיד תיאור ולא מקום.
-		if (!/\d/.test(v) && v.split(' ').length > 3) return '';
-		return v;
-	}
-
-	const mapQuery = $derived.by(() => {
-		if (typeof business.lat === 'number' && typeof business.lng === 'number')
-			return `${business.lat},${business.lng}`;
-		// כתובת עם מספר בית היא הכי מדויקת; בלי מספר עדיפה העיר על פני
-		// צירוף יישובים ("אשקלון אשדוד והסביבה") שגוגל לא יודע למקם.
-		const addr = placeQuery(business.address);
-		const city = placeQuery(business.city);
-		const ordered = /\d/.test(addr)
-			? // "התאנה 18" בלי יישוב הוא רחוב אנונימי — מצרפים את העיר כשיש.
-				[city && !addr.includes(city) ? `${addr}, ${city}` : addr, city, business.sales_area]
-			: [city, addr, business.sales_area];
-		for (const c of ordered) {
-			const v = placeQuery(c);
-			if (v) return /ישראל|israel/i.test(v) ? v : `${v}, ישראל`;
-		}
-		return '';
-	});
-	const mapSrc = $derived(
-		mapQuery
-			? `https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=&z=13&ie=UTF8&iwloc=&output=embed`
-			: ''
-	);
+	   הכרטיסייה הציגה עד כאן מפת גוגל של נקודת הכתובת, שנבנתה מניחוש הטוב
+	   ביותר מתוך טקסט חופשי (address / city / sales_area). היא הוחלפה
+	   ב-ServiceAreaMap: אזור השירות עונה על מה שהמחפש בא לברר — "האם הוא
+	   מגיע אליי" — ואת נקודת הכתובת ממילא מראה המפה שבדף הבית.
+	   placeOrEmpty נשאר: הוא משרת את הכותרת ואת ה-JSON-LD, לא את המפה. */
 
 	const pageTitle = $derived(
 		[business.name, business.category, bizArea ? `ב${bizArea}` : ''].filter(Boolean).join(' — ') +
@@ -621,34 +576,17 @@
 				{/if}
 			</div>
 
-			{#if mapSrc}
-				<div
-					class="w-full flex-shrink-0 overflow-hidden rounded-xl border border-white/10 sm:w-1/2"
-				>
-					<iframe
-						title="{t.serviceZones} — {business.name}"
-						class="block h-72 w-full sm:h-[26rem]"
-						style="border:0"
-						loading="lazy"
-						allowfullscreen
-						referrerpolicy="no-referrer-when-downgrade"
-						src={mapSrc}
-					></iframe>
+			<!-- מפה אחת בכרטיסייה, והיא של אזורי השירות. מפת גוגל שישבה כאן
+			     הראתה את נקודת הכתובת בלבד — תפקיד שהמפה של דף הבית ממלאת —
+			     ואל תוך iframe של גוגל אי אפשר לצייר את האזורים מבחוץ. -->
+			<div class="w-full flex-shrink-0 sm:w-1/2">
+				<div class="overflow-hidden rounded-xl border border-white/10">
+					<ServiceAreaMap {business} height="h-72 sm:h-[26rem]" />
 				</div>
-			{/if}
-		</div>
-
-		<!-- מפת גוגל שלמעלה עונה על "איפה העסק"; זו עונה על "לאן הוא מגיע".
-		     היא לא מחליפה אותה: iframe של גוגל אינו ניתן לציור מבחוץ, וגם
-		     מוצא כתובת רחוב מטקסט חופשי — יכולת שאין ל-Leaflet בלי קואורדינטות. -->
-		<div class="mt-5">
-			<h3 class="mb-2 text-sm font-semibold text-gray-400">{t.serviceZones}</h3>
-			<div class="overflow-hidden rounded-xl border border-white/10">
-				<ServiceAreaMap {business} height="h-56 sm:h-72" />
+				<p class="mt-1.5 text-center text-[11px] leading-4 text-gray-500">
+					אזור עבודה מקורב לפי הכרטיסייה, לא גבול מדויק. מי שלא ציין אזור מסומן ככל הארץ.
+				</p>
 			</div>
-			<p class="mt-1.5 text-center text-[11px] leading-4 text-gray-500">
-				אזור עבודה מקורב לפי הכרטיסייה, לא גבול מדויק. מי שלא ציין אזור מסומן ככל הארץ.
-			</p>
 		</div>
 	</section>
 
