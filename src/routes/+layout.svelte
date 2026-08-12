@@ -120,7 +120,7 @@
 				<!-- Title & Logo Section -->
 				<a
 					href="/"
-					class="group flex min-w-0 flex-1 items-center gap-1 sm:gap-3"
+					class="group -ms-2 flex min-w-0 flex-1 items-center gap-1 sm:ms-0 sm:gap-3"
 					title={t.homeTooltip}
 					aria-label={t.homeTooltip}
 				>
@@ -129,7 +129,7 @@
 					<img
 						src="/logo-professionals.png?v=4"
 						alt="לוגו בעלי מקצוע כשירים — סדר בכל עניין"
-						class="h-16 w-auto rounded-lg object-contain shadow-sm transition-transform duration-300 ease-out group-hover:scale-125 sm:h-18"
+						class="h-14 w-auto rounded-lg object-contain shadow-sm transition-transform duration-300 ease-out group-hover:scale-125 sm:h-18"
 					/>
 					<div class="flex flex-col text-right transition-opacity group-hover:opacity-80">
 						<!-- שם המותג בכותרת הוא <p> ולא <h1>: ה-h1 שייך לכותרת הייחודית של כל דף
