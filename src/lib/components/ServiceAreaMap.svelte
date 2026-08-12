@@ -10,7 +10,7 @@
 	// מתחת לקיפול, ואין סיבה לשלם עליה בטעינה הראשונה.
 	// ============================================================
 	import { onDestroy } from 'svelte';
-	import { resolveServiceArea, serviceShapes } from '$lib/serviceArea.js';
+	import { cityLabels, resolveServiceArea, serviceShapes } from '$lib/serviceArea.js';
 	import 'leaflet/dist/leaflet.css';
 
 	/** @type {{ business: any, height?: string }} */
@@ -64,6 +64,35 @@
 					maxZoom: 20
 				}
 			).addTo(map);
+
+			/* שמות היישובים בעברית, מצוירים על ידינו מעל בסיס חסר הכיתוב.
+			   pane נפרד מתחת ל-overlayPane (400), כדי שהתוויות לא יכסו את
+			   העיגולים ואת הפין, ולא ייקחו לחיצות. הרשימה תלוית זום. */
+			map.createPane('cityLabels');
+			map.getPane('cityLabels').style.zIndex = '350';
+			map.getPane('cityLabels').style.pointerEvents = 'none';
+			const labels = L.layerGroup().addTo(map);
+			const drawLabels = () => {
+				labels.clearLayers();
+				for (const c of cityLabels(map.getZoom())) {
+					const el = document.createElement('span');
+					el.textContent = c.name;
+					L.marker([c.lat, c.lng], {
+						icon: L.divIcon({
+							html: el,
+							className: 'city-label',
+							iconSize: [90, 14],
+							iconAnchor: [45, -3]
+						}),
+						pane: 'cityLabels',
+						interactive: false,
+						keyboard: false
+					}).addTo(labels);
+				}
+			};
+			map.on('zoomend', drawLabels);
+			drawLabels();
+
 			const layer = L.featureGroup().addTo(map);
 
 			for (const s of shapes) {
@@ -120,5 +149,28 @@
 		background: none;
 		border: none;
 		filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.45));
+	}
+
+	/* משוכפל מ-BusinessesMap: לדף העסק נטענת רק המפה הזאת, וסגנון של רכיב
+	   אחר אינו נטען איתה. Leaflet קובע גופן משלו על המכל, וההילה הלבנה היא
+	   מה שמפריד את השם מהרקע שמתחתיו. */
+	:global(.leaflet-container) {
+		font-family: inherit;
+	}
+
+	:global(.city-label) {
+		background: none;
+		border: none;
+		overflow: visible;
+		white-space: nowrap;
+		text-align: center;
+		font-size: 11px;
+		font-weight: 700;
+		line-height: 14px;
+		color: #1f2937;
+		text-shadow:
+			0 0 3px #fff,
+			0 0 3px #fff,
+			0 0 2px #fff;
 	}
 </style>

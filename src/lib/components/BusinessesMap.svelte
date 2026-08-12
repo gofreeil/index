@@ -1,7 +1,7 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { resolveServiceArea, serviceShapes } from '$lib/serviceArea.js';
+	import { cityLabels, resolveServiceArea, serviceShapes } from '$lib/serviceArea.js';
 	import 'leaflet/dist/leaflet.css';
 
 	/** @type {{ businesses: any[] }} */
@@ -13,6 +13,8 @@
 	let map;
 	/** @type {any} */
 	let markersLayer;
+	/** @type {any} */
+	let labelsLayer;
 	/** @type {any} */
 	let L;
 	/** @type {any} */
@@ -123,6 +125,32 @@
 		return box;
 	}
 
+	/* שמות היישובים, בעברית, מצוירים על ידינו — ראו cityLabels ב-serviceArea.
+	   הרשימה נגזרת מהזום ולכן היא נבנית מחדש בכל zoomend: בתצוגת כל הארץ
+	   נשארים חמישה עוגנים, ובזום קרוב נפתחת הרשימה כולה. */
+	function renderLabels() {
+		if (!map || !L || !labelsLayer) return;
+		labelsLayer.clearLayers();
+		for (const c of cityLabels(map.getZoom())) {
+			const el = document.createElement('span');
+			el.textContent = c.name;
+			L.marker([c.lat, c.lng], {
+				// iconAnchor שלילי בציר Y מוריד את התווית אל מתחת לנקודה, שלא
+				// תשב על הפין; הקופסה רחבה והטקסט ממורכז בה, ולכן שם ארוך
+				// גולש לשני הצדדים במידה שווה ונשאר ממורכז על היישוב.
+				icon: L.divIcon({
+					html: el,
+					className: 'city-label',
+					iconSize: [90, 14],
+					iconAnchor: [45, -3]
+				}),
+				pane: 'cityLabels',
+				interactive: false,
+				keyboard: false
+			}).addTo(labelsLayer);
+		}
+	}
+
 	function render() {
 		if (!map || !L || !markersLayer) return;
 		markersLayer.clearLayers();
@@ -186,8 +214,8 @@
 			map = L.map(mapEl, { scrollWheelZoom: false }).setView([31.7, 35.0], 7);
 			// אריחי OSM הרגילים צורבים את השמות אל תוך התמונה, ובאזור שלנו הם
 			// מגיעים בערבית לצד העברית — אין דרך לסנן שפה מאריח PNG מוכן. לכן
-			// בסיס בלי שום כיתוב (Voyager no-labels): המראה נשאר, הטקסט נעלם,
-			// והשמות שכן צריך נמסרים בעברית בתיאורי העיגולים והפינים.
+			// בסיס בלי שום כיתוב (Voyager no-labels), והשמות נכתבים מעליו
+			// בעברית ב-renderLabels.
 			L.tileLayer(
 				'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png',
 				{
@@ -196,6 +224,14 @@
 					maxZoom: 20
 				}
 			).addTo(map);
+			// שכבה משלה לשמות היישובים, מתחת לעיגולים ולפינים (overlayPane הוא
+			// 400): כך התוויות לא מכסות סימון של עסק, והן שקופות לעכבר לגמרי.
+			map.createPane('cityLabels');
+			map.getPane('cityLabels').style.zIndex = '350';
+			map.getPane('cityLabels').style.pointerEvents = 'none';
+			labelsLayer = L.layerGroup().addTo(map);
+			map.on('zoomend', renderLabels);
+			renderLabels();
 			// featureGroup ולא layerGroup: רק לו יש getBounds, שממסגר גם עיגולים
 			markersLayer = L.featureGroup().addTo(map);
 			render();
@@ -242,5 +278,29 @@
 		background: none;
 		border: none;
 		filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.45));
+	}
+
+	/* Leaflet קובע font-family משלו על המכל, ולכן כל טקסט במפה — תוויות,
+	   תיאורים ופופאפים — נפל לגופן ברירת המחדל במקום ל-Heebo של האתר */
+	:global(.leaflet-container) {
+		font-family: inherit;
+	}
+
+	/* שם היישוב יושב ישירות על צילום הרקע, ובלי הילה לבנה הוא נבלע בכביש
+	   או בשטח בנוי. text-shadow משוכפל כדי לעבות אותה. */
+	:global(.city-label) {
+		background: none;
+		border: none;
+		overflow: visible;
+		white-space: nowrap;
+		text-align: center;
+		font-size: 11px;
+		font-weight: 700;
+		line-height: 14px;
+		color: #1f2937;
+		text-shadow:
+			0 0 3px #fff,
+			0 0 3px #fff,
+			0 0 2px #fff;
 	}
 </style>
