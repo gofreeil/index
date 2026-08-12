@@ -1,17 +1,18 @@
 <script>
-	// דף המידע — שתי לשוניות מעל אותו תוכן: "אודות" ו"תנאי הקהילה".
+	// דף המידע — שלוש לשוניות מעל אותו תוכן: "אודות", "תנאי הקהילה" ו"תו התקן".
 	// עד כאן הרכיב הוצג בשני מצבים (עמוד /policy וחלון צף שנפתח מהכותרת);
 	// החלון הצף בוטל, והמידע חי בעמוד מלא אחד בלבד.
 	//
-	// שני הפאנלים נמצאים תמיד ב-DOM והלא-פעיל מוסתר ב-CSS ולא ב-{#if}: כך
-	// גם התנאים וגם האודות מגיעים לגוגל ב-HTML הראשון של /policy, ולא רק
-	// הלשונית שנפתחת כברירת מחדל.
+	// כל הפאנלים נמצאים תמיד ב-DOM והלא-פעיל מוסתר ב-CSS ולא ב-{#if}: כך
+	// כל התוכן מגיע לגוגל ב-HTML הראשון של /policy, ולא רק הלשונית שנפתחת
+	// כברירת מחדל.
 	import { onMount } from 'svelte';
 	import { lang, translations } from '$lib/i18n';
 	import AboutContent from './AboutContent.svelte';
 	import PolicyContent from './PolicyContent.svelte';
+	import StandardMarkContent from './StandardMarkContent.svelte';
 
-	/** @typedef {'about' | 'terms'} TabId */
+	/** @typedef {'about' | 'terms' | 'standard'} TabId */
 
 	let currentLang = $state('he');
 	lang.subscribe((v) => (currentLang = v));
@@ -26,13 +27,14 @@
 	/** @type {{ id: TabId, label: string, icon: string }[]} */
 	const tabs = $derived([
 		{ id: /** @type {TabId} */ ('about'), label: t.aboutTab, icon: 'ℹ️' },
-		{ id: /** @type {TabId} */ ('terms'), label: t.termsTab, icon: '📋' }
+		{ id: /** @type {TabId} */ ('terms'), label: t.termsTab, icon: '📋' },
+		{ id: /** @type {TabId} */ ('standard'), label: t.standardTab, icon: '🏅' }
 	]);
 
 	// ה-hash הוא קישור-עומק ללשונית (/policy#terms), וגם משמר אותה ברענון.
 	onMount(() => {
 		const hash = window.location.hash.slice(1);
-		if (hash === 'about' || hash === 'terms') active = hash;
+		if (hash === 'about' || hash === 'terms' || hash === 'standard') active = hash;
 	});
 
 	/** @param {TabId} id */
@@ -100,5 +102,24 @@
 			</p>
 		</header>
 		<PolicyContent />
+	</div>
+
+	<div
+		id="info-panel-standard"
+		role="tabpanel"
+		aria-labelledby="info-tab-standard"
+		class:hidden={active !== 'standard'}
+	>
+		<header class="mb-10 border-b border-white/10 pb-8">
+			<h1
+				class="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-3xl leading-tight font-black text-transparent sm:text-5xl"
+			>
+				תו התקן של יוצאים לחירות
+			</h1>
+			<p class="mt-6 text-xl leading-relaxed text-gray-300">
+				הסימון הגבוה ביותר באינדקס — מוענק לעסקים שקיבלו 5 כוכבים מהקהילה ועמדו בפרמטרים שלהלן.
+			</p>
+		</header>
+		<StandardMarkContent />
 	</div>
 </div>

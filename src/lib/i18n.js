@@ -14,9 +14,10 @@ export const translations = {
 		// הכותרת צפופה במובייל, וכותרת המסמך עצמו (communityPolicyTitle) ממילא
 		// מסבירה במה מדובר ברגע שהוא נפתח.
 		info: 'מידע',
-		// שתי הלשוניות שבדף המידע
+		// הלשוניות שבדף המידע
 		aboutTab: 'אודות',
 		termsTab: 'תנאי הקהילה',
+		standardTab: 'תו התקן',
 		search: 'חיפוש עסקים...',
 		totalBusinesses: 'סה"כ {count} עסקים באינדקס',
 		foundResults: 'נמצאו {count} תוצאות',
@@ -301,6 +302,7 @@ export const translations = {
 		info: 'Info',
 		aboutTab: 'About',
 		termsTab: 'Community Terms',
+		standardTab: 'Quality Mark',
 		search: 'Search businesses...',
 		totalBusinesses: 'Total {count} businesses in index',
 		foundResults: '{count} results found',
@@ -588,6 +590,7 @@ export const translations = {
 		info: 'Информация',
 		aboutTab: 'О сайте',
 		termsTab: 'Условия сообщества',
+		standardTab: 'Знак качества',
 		search: 'Поиск бизнеса...',
 		totalBusinesses: 'Всего {count} бизнеса в индексе',
 		foundResults: 'Найдено {count} результатов',
