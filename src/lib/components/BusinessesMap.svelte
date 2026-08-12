@@ -127,6 +127,11 @@
 		if (!map || !L || !markersLayer) return;
 		markersLayer.clearLayers();
 
+		// המסגור נבנה מהמקומות האמיתיים בלבד. עיגול "כל הארץ" הוא סימון ולא
+		// מיקום, וברדיוס 225 ק"מ הוא היה מכריח את המפה — גבוהה 190px — לזום
+		// שמראה את קפריסין ועיראק במקום את הארץ.
+		const fit = L.latLngBounds([]);
+
 		for (const g of shapes) {
 			// עיגול "כל הארץ" שוכב מתחת לכולם וכמעט שקוף, אחרת העיגולים
 			// המקומיים היו נבלעים בתוכו
@@ -147,6 +152,7 @@
 				shape.setStyle({ fillOpacity: faint ? 0.1 : 0.22, opacity: 0.85 })
 			);
 			shape.on('mouseout', () => shape.setStyle(base));
+			if (!faint) fit.extend(shape.getBounds());
 		}
 
 		for (const b of mapped) {
@@ -155,10 +161,10 @@
 			);
 			marker.bindPopup(markerPopup(b));
 			marker.bindTooltip(b.name || '', { direction: 'top' });
+			fit.extend(marker.getLatLng());
 		}
 
-		const bounds = markersLayer.getBounds();
-		if (bounds?.isValid()) map.fitBounds(bounds, { padding: [30, 30], maxZoom: 12 });
+		if (fit.isValid()) map.fitBounds(fit, { padding: [24, 24], maxZoom: 12 });
 	}
 
 	onMount(() => {
@@ -174,7 +180,8 @@
 				popupAnchor: [0, -30],
 				tooltipAnchor: [0, -30]
 			});
-			map = L.map(mapEl, { scrollWheelZoom: false }).setView([31.5, 35.0], 8);
+			// תצוגת פתיחה על הארץ, למקרה שאין ולו עסק אחד עם מיקום למסגר לפיו
+			map = L.map(mapEl, { scrollWheelZoom: false }).setView([31.7, 35.0], 7);
 			L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 				attribution: '&copy; OpenStreetMap',
 				maxZoom: 18
