@@ -10,7 +10,7 @@
 	import SmartShare from '$lib/components/SmartShare.svelte';
 	import { branchLine } from '$lib/branches.js';
 	import { adImgFit } from '$lib/adImageFit';
-	import { parseFit, isDefaultFit } from '$lib/mediaFit.js';
+	import { parseFit, isDefaultFit, logoShapeClass } from '$lib/mediaFit.js';
 	import { sameAsLinks } from '$lib/socialLinks.js';
 	import SocialLinks from '$lib/components/SocialLinks.svelte';
 	import { SITE_NAME, DEFAULT_OG_IMAGE, professionalSchema, breadcrumbSchema } from '$lib/seo';
@@ -68,9 +68,17 @@
 	/** @param {number} i */
 	const bannerFit = (i) => parseFit(business.banner_fits?.[i]);
 
+	// גלריית התמונות מדפדפת רק ביד: התמונה הראשית (הראשונה) נשארת על המסך
+	// עד שהמבקר לוחץ על חץ. גלריה שמתחלפת מעצמה החליפה לו את התמונה באמצע
+	// הצפייה, והמיקום והזום שבעל העסק כיוון לכל תמונה נבלעו בהחלפה.
 	let currentImageIndex = $state(0);
-	/** @type {any} */
-	let interval;
+
+	/** @param {number} delta */
+	function stepImage(delta) {
+		const n = business.banners.length;
+		if (n < 2) return;
+		currentImageIndex = (currentImageIndex + delta + n) % n;
+	}
 
 	/** @type {any[]} */
 	let reviews = $state([]);
@@ -104,13 +112,6 @@
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ documentId: business.documentId, action: 'view' })
 		}).catch(() => {});
-
-		if (business.banners.length > 1) {
-			interval = setInterval(() => {
-				currentImageIndex = (currentImageIndex + 1) % business.banners.length;
-			}, 5000);
-		}
-		return () => clearInterval(interval);
 	});
 
 	let isPhoneRevealed = $state(false);
@@ -339,8 +340,11 @@
 
 	<!-- ── כותרת ───────────────────────────────────────────── -->
 	<header class="mt-4 flex items-start gap-4">
+		<!-- מסגרת הלוגו — ריבוע מעוגל או עיגול, לבחירת בעל העסק (mediaFit.js) -->
 		<div
-			class="h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl bg-white/5 sm:h-16 sm:w-16"
+			class="h-14 w-14 flex-shrink-0 overflow-hidden bg-white/5 sm:h-16 sm:w-16 {logoShapeClass(
+				business.logo_shape
+			)}"
 			aria-hidden={!business.logo}
 		>
 			{#if business.logo}
@@ -391,26 +395,10 @@
 		</div>
 	</header>
 
-	<!-- ── פעולות ──────────────────────────────────────────── -->
-	<div class="mt-4 flex flex-wrap items-center gap-2">
-		{#if business.phone}
-			{#if isPhoneRevealed}
-				<a
-					href="tel:{business.phone}"
-					class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500"
-				>
-					<span dir="ltr">{business.phone}</span>
-				</a>
-			{:else}
-				<button
-					onclick={revealPhoneAndLog}
-					class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500"
-				>
-					{t.revealPhone}
-				</button>
-			{/if}
-		{/if}
-		{#if business.website}
+	<!-- ── פעולות ──────────────────────────────────────────
+	     הטלפון ירד לסוף הדף (מדור משלו למטה); כאן נשאר האתר בלבד. -->
+	{#if business.website}
+		<div class="mt-4 flex flex-wrap items-center gap-2">
 			<a
 				href={business.website}
 				target="_blank"
@@ -419,8 +407,8 @@
 			>
 				{t.businessSite}
 			</a>
-		{/if}
-	</div>
+		</div>
+	{/if}
 
 	<!-- הרשתות של העסק — לוגו לכל רשת שהוא מילא. האתר לא כאן: הוא כבר
 	     כפתור מילולי בשורת הפעולות שמעל. -->
@@ -530,8 +518,8 @@
 			{#each business.banners as banner, i}
 				{#if i === currentImageIndex}
 					<img
-						in:fade={{ duration: 400 }}
-						out:fade={{ duration: 400 }}
+						in:fade={{ duration: 200 }}
+						out:fade={{ duration: 200 }}
 						src={banner}
 						alt="{business.name} {i + 1}"
 						class="absolute inset-0 h-full w-full object-cover"
@@ -540,9 +528,47 @@
 				{/if}
 			{/each}
 			{#if business.banners.length > 1}
+				<!-- החצים יושבים בקצוות הלוגיים (start/end), ולכן בעברית "הקודמת"
+				     היא מימין — ובממשק האנגלי/רוסי הגלריה מתהפכת מעצמה. -->
+				<button
+					type="button"
+					onclick={() => stepImage(-1)}
+					aria-label="התמונה הקודמת"
+					class="absolute start-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-black/45 text-white backdrop-blur-sm transition hover:bg-black/70"
+				>
+					<svg
+						class="h-5 w-5 rtl:rotate-180"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						viewBox="0 0 24 24"
+						aria-hidden="true"
+					>
+						<path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+					</svg>
+				</button>
+				<button
+					type="button"
+					onclick={() => stepImage(1)}
+					aria-label="התמונה הבאה"
+					class="absolute end-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-black/45 text-white backdrop-blur-sm transition hover:bg-black/70"
+				>
+					<svg
+						class="h-5 w-5 rtl:rotate-180"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						viewBox="0 0 24 24"
+						aria-hidden="true"
+					>
+						<path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+					</svg>
+				</button>
+
 				<div class="absolute inset-x-0 bottom-3 flex justify-center gap-1.5">
 					{#each business.banners as _, i}
 						<button
+							type="button"
 							onclick={() => (currentImageIndex = i)}
 							aria-label="תמונה {i + 1}"
 							class="h-1 rounded-full transition-all {i === currentImageIndex
@@ -555,16 +581,36 @@
 		</div>
 	{/if}
 
-	<!-- ── על העסק ─────────────────────────────────────────── -->
+	<!-- ── על העסק והמפה ───────────────────────────────────
+	     המפה עלתה לכאן ועומדת לאורך על חצי מסך לצד התיאור — בעברית בצד
+	     שמאל, ובממשק האנגלי/הרוסי היא מתהפכת עם כיוון הקריאה. במסך צר
+	     השתיים נערמות, התיאור ראשון. -->
 	<section class="mt-6 border-t border-white/[0.08] pt-5">
 		<h2 class="text-sm font-semibold text-gray-400">{t.aboutBusiness}</h2>
-		<p class="mt-2 leading-6 whitespace-pre-line text-gray-300">
-			{business.description || t.noDescription}
-		</p>
+		<div class="mt-2 flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
+			<p class="min-w-0 flex-1 leading-6 whitespace-pre-line text-gray-300">
+				{business.description || t.noDescription}
+			</p>
+			{#if mapSrc}
+				<div
+					class="w-full flex-shrink-0 overflow-hidden rounded-xl border border-white/10 sm:w-1/2"
+				>
+					<iframe
+						title="{t.serviceZones} — {business.name}"
+						class="block h-72 w-full sm:h-[26rem]"
+						style="border:0"
+						loading="lazy"
+						allowfullscreen
+						referrerpolicy="no-referrer-when-downgrade"
+						src={mapSrc}
+					></iframe>
+				</div>
+			{/if}
+		</div>
 	</section>
 
 	<!-- ── פרטי קשר ומיקום ─────────────────────────────────── -->
-	{#if business.address || business.sales_area || business.branches?.length || mapSrc}
+	{#if business.address || business.sales_area || business.branches?.length}
 		<section class="mt-6 border-t border-white/[0.08] pt-5">
 			<h2 class="text-sm font-semibold text-gray-400">{t.contactInfo}</h2>
 
@@ -592,20 +638,6 @@
 					</div>
 				{/if}
 			</dl>
-
-			{#if mapSrc}
-				<div class="mt-4 overflow-hidden rounded-xl border border-white/10">
-					<iframe
-						title="{t.serviceZones} — {business.name}"
-						class="block h-44 w-full sm:h-56"
-						style="border:0"
-						loading="lazy"
-						allowfullscreen
-						referrerpolicy="no-referrer-when-downgrade"
-						src={mapSrc}
-					></iframe>
-				</div>
-			{/if}
 		</section>
 	{/if}
 
@@ -736,4 +768,30 @@
 			</ul>
 		{/if}
 	</section>
+
+	<!-- ── טלפון ───────────────────────────────────────────
+	     סוף הכרטיסייה: המספר נחשף אחרי שהמבקר קרא את העסק וראה חוות דעת.
+	     החשיפה עדיין נספרת בלחיצה (reveal_phone), כמו קודם. -->
+	{#if business.phone}
+		<section class="mt-6 border-t border-white/[0.08] pt-5">
+			<h2 class="text-sm font-semibold text-gray-400">{t.callNow}</h2>
+			<div class="mt-2">
+				{#if isPhoneRevealed}
+					<a
+						href="tel:{business.phone}"
+						class="inline-block rounded-lg bg-blue-600 px-5 py-2.5 text-base font-semibold text-white transition hover:bg-blue-500"
+					>
+						<span dir="ltr">{business.phone}</span>
+					</a>
+				{:else}
+					<button
+						onclick={revealPhoneAndLog}
+						class="rounded-lg bg-blue-600 px-5 py-2.5 text-base font-semibold text-white transition hover:bg-blue-500"
+					>
+						{t.revealPhone}
+					</button>
+				{/if}
+			</div>
+		</section>
+	{/if}
 </main>

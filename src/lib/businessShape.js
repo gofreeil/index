@@ -5,7 +5,7 @@
 import { MEDIA_BASE } from './mediaConfig.js';
 import { parseBranches } from './branches.js';
 import { parseExtraLinks } from './socialLinks.js';
-import { parseFit, parseFitList } from './mediaFit.js';
+import { parseFit, parseFitList, parseLogoShape } from './mediaFit.js';
 
 /** @param {any} m מדיה בודדת של Strapi */
 export function mediaUrl(m) {
@@ -75,6 +75,8 @@ export function toBusiness(b) {
 		// ואז התצוגה לא נוגעת ב-CSS המקורי בכלל (ראו mediaFit.js)
 		logo_fit: parseFit(b.extra_fields?.media_fit?.logo),
 		banner_fits: parseFitList(b.extra_fields?.media_fit?.banners),
+		// מסגרת הלוגו בכרטיסייה: ריבוע מעוגל (ברירת מחדל) או עיגול
+		logo_shape: parseLogoShape(b.extra_fields?.media_fit?.logo_shape),
 		lat: typeof b.lat === 'number' ? b.lat : null,
 		lng: typeof b.lng === 'number' ? b.lng : null,
 		rating: Number(b.rating_avg || 0),

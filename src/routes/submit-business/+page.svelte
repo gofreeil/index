@@ -7,7 +7,7 @@
 	import { LINK_FIELDS } from '$lib/socialLinks.js';
 	import ImageDropField from '$lib/components/ImageDropField.svelte';
 	import ImageFitEditor from '$lib/components/ImageFitEditor.svelte';
-	import { parseFit, parseFitList, DEFAULT_FIT } from '$lib/mediaFit.js';
+	import { parseFit, parseFitList, parseLogoShape, DEFAULT_FIT } from '$lib/mediaFit.js';
 	import { formDraft, clearDraft, resumeDraft } from '$lib/formDraft';
 
 	/** @type {{ data: any, form: any }} */
@@ -71,6 +71,8 @@
 	// העורך עובד על התמונה שנבחרה עכשיו, ונשלח כ-JSON בשדה מוסתר אחד.
 	let logoFit = $state(parseFit(null));
 	let bannerFits = $state(parseFitList([]));
+	// מסגרת הלוגו בכרטיסייה — ריבוע מעוגל (ברירת מחדל) או עיגול
+	let logoShape = $state(parseLogoShape(null));
 	/** @type {{name: string, url: string}[]} */
 	let logoPicked = $state([]);
 	/** @type {{name: string, url: string}[]} */
@@ -83,7 +85,11 @@
 	});
 
 	const mediaFitJson = $derived(
-		JSON.stringify({ logo: logoFit, banners: bannerFits.slice(0, bannersPicked.length) })
+		JSON.stringify({
+			logo: logoFit,
+			banners: bannerFits.slice(0, bannersPicked.length),
+			logo_shape: logoShape
+		})
 	);
 </script>
 
@@ -438,6 +444,22 @@
 						bind:previews={logoPicked}
 					/>
 					{#if logoPicked[0]}
+						<!-- מסגרת הלוגו: הבחירה משנה מיד את התצוגה המקדימה -->
+						<div class="mt-3 flex items-center gap-2 text-xs">
+							<span class="text-gray-400">מסגרת הלוגו:</span>
+							{#each [['square', 'מרובע'], ['circle', 'עגול']] as [value, label] (value)}
+								<button
+									type="button"
+									onclick={() => (logoShape = /** @type {any} */ (value))}
+									aria-pressed={logoShape === value}
+									class="rounded-lg border px-3 py-1 font-bold transition {logoShape === value
+										? 'border-blue-500/60 bg-blue-500/10 text-blue-300'
+										: 'border-gray-700 text-gray-400 hover:border-gray-500'}"
+								>
+									{label}
+								</button>
+							{/each}
+						</div>
 						<div class="mt-3">
 							<ImageFitEditor
 								src={logoPicked[0].url}
@@ -445,6 +467,7 @@
 								aspect="square"
 								mode="contain"
 								label="לוגו"
+								round={logoShape === 'circle'}
 							/>
 						</div>
 					{/if}

@@ -34,11 +34,30 @@ export function parseFitList(raw) {
 export const isDefaultFit = (f) =>
 	!f || (f.x === DEFAULT_FIT.x && f.y === DEFAULT_FIT.y && f.z === DEFAULT_FIT.z);
 
+/* ── מסגרת הלוגו ──────────────────────────────────────────────
+   לוגו עגול או ריבוע מעוגל, לבחירת בעל העסק. ברירת המחדל היא הריבוע
+   המעוגל — המראה שכל הכרטיסיות הקיימות כבר מציגות. */
+
+/** @typedef {'square' | 'circle'} LogoShape */
+
+/** @type {LogoShape} */
+export const DEFAULT_LOGO_SHAPE = 'square';
+
+/** @param {unknown} raw @returns {LogoShape} */
+export function parseLogoShape(raw) {
+	return raw === 'circle' ? 'circle' : DEFAULT_LOGO_SHAPE;
+}
+
+/** ה-class של המסגרת — מקור אחד לכרטיסייה ולעורך, שלא ייפרדו.
+ * @param {unknown} raw */
+export const logoShapeClass = (raw) =>
+	parseLogoShape(raw) === 'circle' ? 'rounded-full' : 'rounded-xl';
+
 /**
  * קורא את השדה המוסתר של הטופס ומחזיר את מה ששווה לשמור. ברירות מחדל
  * מושמטות, ורשימת תמונות שכולה ברירת מחדל לא נשמרת כלל.
  * @param {unknown} raw
- * @returns {{logo?: Fit, banners?: Fit[]} | null}
+ * @returns {{logo?: Fit, banners?: Fit[], logo_shape?: LogoShape} | null}
  */
 export function parseMediaFit(raw) {
 	/** @type {any} */
@@ -52,13 +71,17 @@ export function parseMediaFit(raw) {
 	}
 	if (!obj || typeof obj !== 'object') return null;
 
-	/** @type {{logo?: Fit, banners?: Fit[]}} */
+	/** @type {{logo?: Fit, banners?: Fit[], logo_shape?: LogoShape}} */
 	const out = {};
 	const logo = parseFit(obj.logo);
 	if (!isDefaultFit(logo)) out.logo = logo;
 
 	const banners = parseFitList(obj.banners);
 	if (banners.some((f) => !isDefaultFit(f))) out.banners = banners;
+
+	// מסגרת הלוגו נשמרת רק כשהיא לא ברירת המחדל, כמו המיקום והזום
+	const shape = parseLogoShape(obj.logo_shape);
+	if (shape !== DEFAULT_LOGO_SHAPE) out.logo_shape = shape;
 
 	return Object.keys(out).length ? out : null;
 }

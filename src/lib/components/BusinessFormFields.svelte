@@ -11,7 +11,7 @@
 	import { LINK_FIELDS, parseExtraLinks } from '$lib/socialLinks.js';
 	import ImageDropField from '$lib/components/ImageDropField.svelte';
 	import ImageFitEditor from '$lib/components/ImageFitEditor.svelte';
-	import { parseFit, parseFitList, DEFAULT_FIT } from '$lib/mediaFit.js';
+	import { parseFit, parseFitList, parseLogoShape, DEFAULT_FIT } from '$lib/mediaFit.js';
 
 	/** @type {{ biz: any, errors?: Record<string,string>, canModerate?: boolean, categories?: Array<{value:string,label:string}> | null }} */
 	let { biz, errors = {}, canModerate = false, categories = null } = $props();
@@ -58,6 +58,8 @@
 	// הערכים נוסעים כ-JSON בשדה מוסתר אחד ונשמרים ב-extra_fields.media_fit.
 	let logoFit = $state(parseFit(biz.extra_fields?.media_fit?.logo));
 	let bannerFits = $state(parseFitList(biz.extra_fields?.media_fit?.banners));
+	// מסגרת הלוגו בכרטיסייה — ריבוע מעוגל או עיגול, נוסע באותו json
+	let logoShape = $state(parseLogoShape(biz.extra_fields?.media_fit?.logo_shape));
 	/** @type {{name: string, url: string}[]} */
 	let logoPicked = $state([]);
 	/** @type {{name: string, url: string}[]} */
@@ -79,7 +81,11 @@
 	});
 
 	const mediaFitJson = $derived(
-		JSON.stringify({ logo: logoFit, banners: bannerFits.slice(0, bannerPreviews.length) })
+		JSON.stringify({
+			logo: logoFit,
+			banners: bannerFits.slice(0, bannerPreviews.length),
+			logo_shape: logoShape
+		})
 	);
 
 	const INPUT =
@@ -275,6 +281,23 @@
 				hint="קובץ תמונה עד 3MB"
 				bind:previews={logoPicked}
 			/>
+			<!-- מסגרת הלוגו: הבחירה משנה מיד את התצוגה המקדימה שמעליה, כדי
+			     שהבחירה תיעשה על מה שרואים ולא על תיאור -->
+			<div class="mt-3 flex items-center gap-2 text-xs">
+				<span class="text-gray-400">מסגרת הלוגו:</span>
+				{#each [['square', 'מרובע'], ['circle', 'עגול']] as [value, label] (value)}
+					<button
+						type="button"
+						onclick={() => (logoShape = /** @type {any} */ (value))}
+						aria-pressed={logoShape === value}
+						class="rounded-lg border px-3 py-1 font-bold transition {logoShape === value
+							? 'border-blue-500/60 bg-blue-500/10 text-blue-300'
+							: 'border-gray-700 text-gray-400 hover:border-gray-500'}"
+					>
+						{label}
+					</button>
+				{/each}
+			</div>
 			{#if logoPreview}
 				<div class="mt-3">
 					<ImageFitEditor
@@ -283,6 +306,7 @@
 						aspect="square"
 						mode="contain"
 						label="לוגו"
+						round={logoShape === 'circle'}
 					/>
 				</div>
 			{/if}

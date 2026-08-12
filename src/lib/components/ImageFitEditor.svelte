@@ -17,10 +17,18 @@
 	 *   fit: {x: number, y: number, z: number},
 	 *   aspect?: 'square' | 'wide',
 	 *   mode?: 'cover' | 'contain',
-	 *   label?: string
+	 *   label?: string,
+	 *   round?: boolean
 	 * }}
 	 */
-	let { src, fit = $bindable(), aspect = 'wide', mode = 'cover', label = '' } = $props();
+	let {
+		src,
+		fit = $bindable(),
+		aspect = 'wide',
+		mode = 'cover',
+		label = '',
+		round = false
+	} = $props();
 
 	const ZOOM_FACTOR = 1.15;
 
@@ -89,10 +97,9 @@
 <div class="flex flex-wrap items-center gap-3">
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
-		class="relative flex-shrink-0 cursor-move touch-none overflow-hidden rounded-xl border border-gray-600 bg-gray-950/80 shadow-inner {aspect ===
-		'square'
-			? 'h-24 w-24'
-			: 'h-24 w-40'}"
+		class="relative flex-shrink-0 cursor-move touch-none overflow-hidden border border-gray-600 bg-gray-950/80 shadow-inner {round
+			? 'rounded-full'
+			: 'rounded-xl'} {aspect === 'square' ? 'h-24 w-24' : 'h-24 w-40'}"
 		title="גררו את התמונה כדי למקם אותה"
 		onpointerdown={panDown}
 		onpointermove={panMove}
