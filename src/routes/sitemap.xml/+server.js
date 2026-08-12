@@ -33,8 +33,9 @@ export async function GET({ setHeaders }) {
 		{ loc: `${SITE_URL}/`, changefreq: 'daily', priority: '1.0' },
 		{ loc: `${SITE_URL}/submit-business`, changefreq: 'monthly', priority: '0.7' },
 		{ loc: `${SITE_URL}/about/advertise`, changefreq: 'monthly', priority: '0.5' },
-		{ loc: `${SITE_URL}/about/legal`, changefreq: 'yearly', priority: '0.2' },
-		{ loc: `${SITE_URL}/privacy`, changefreq: 'yearly', priority: '0.2' }
+		// /privacy הוסר: הוא מפנה מחדש (301) ללשונית הפרטיות שבדף המשפטי,
+		// וכתובת שמפנה מחדש לא אמורה להופיע במפת האתר.
+		{ loc: `${SITE_URL}/about/legal`, changefreq: 'yearly', priority: '0.2' }
 	];
 
 	const bizUrls = businesses.map((b) => ({

@@ -442,6 +442,20 @@
 						מידע על קטינים ייאסף רק באישור הורה. האתר אינו מוכר מידע מזהה על קטינים. מידע אנונימי
 						עשוי להישמר לצרכים סטטיסטיים בלבד.
 					</p>
+
+					<h4 class="sub-title">2.5 מידע במדריך העסקים</h4>
+					<ul class="bullet-list">
+						<li>
+							<strong>בעלי עסקים</strong> - שם העסק, פרטי התקשרות, תמונות, מיקום, אזור שירות ותיאור השירות.
+							פרטים אלה מוצגים בכרטיסיית העסק ומיועדים מלכתחילה לפרסום פומבי.
+						</li>
+						<li>
+							<strong>ביקורות ודירוגים</strong> - תוכן שמשתמשים בוחרים לפרסם על עסקים, לצד שם המפרסם.
+						</li>
+						<li>
+							<strong>מידע טכני</strong> - כתובת IP ונתוני שימוש אנונימיים, לצורך תפעול המדריך ושיפורו.
+						</li>
+					</ul>
 				</section>
 
 				<section class="sec">
@@ -528,11 +542,15 @@
 
 				<section class="sec contact-sec">
 					<h3 class="sec-title">10. יצירת קשר</h3>
-					<p>לכל שאלה או בקשה בנוגע למדיניות:</p>
+					<p>לכל שאלה או בקשה בנוגע למדיניות, לרבות עיון, תיקון או מחיקה של מידע אישי:</p>
 					<div class="contact-grid">
 						<a href="mailto:freedomhasbegun@gmail.com" class="contact-item">
 							<span class="contact-icon">✉️</span>
 							<span>freedomhasbegun@gmail.com</span>
+						</a>
+						<a href="mailto:support@melecshop.com" class="contact-item">
+							<span class="contact-icon">✉️</span>
+							<span>support@melecshop.com</span>
 						</a>
 						<a href="tel:0508750632" class="contact-item">
 							<span class="contact-icon">📞</span>
