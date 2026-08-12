@@ -203,44 +203,35 @@
 </script>
 
 <!-- כלי של בעל העסק בראש דף הכרטיסייה. במצב סגור זה כפתור אחד ותו לא —
-     גלולה ירוקה ברוחב התוכן, ולא שורה שנמתחת על כל הדף עם כותרת ותווית
+     גלולה כתומה מלאה בקצה השורה, ולא שורה שנמתחת על כל הדף עם כותרת ותווית
      לצידה. המסגרת והכותרת מופיעות רק כשהפאנל נפתח, כשיש בהן טעם. -->
 <section dir={t.dir} class="mt-4">
 	{#if !open}
-		<button
-			type="button"
-			onclick={() => (open = true)}
-			aria-expanded={false}
-			aria-controls="smart-share-panel"
-			class="group inline-flex items-center gap-2.5 rounded-full border border-emerald-400/30 bg-emerald-500/10 py-2 ps-3.5 pe-4 text-sm font-semibold text-emerald-300 shadow-[0_0_0_0_rgba(16,185,129,0)] transition hover:border-emerald-400/60 hover:bg-emerald-500/15 hover:text-emerald-200 hover:shadow-[0_0_18px_-4px_rgba(16,185,129,0.55)]"
-		>
-			<!-- מטוס־נייר: שליחה, ולא "שיתוף" גנרי -->
-			<svg
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="1.8"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-				aria-hidden="true"
-				class="h-4 w-4 shrink-0 transition group-hover:-translate-y-px"
+		<div class="flex justify-end">
+			<button
+				type="button"
+				onclick={() => (open = true)}
+				aria-expanded={false}
+				aria-controls="smart-share-panel"
+				class="group inline-flex items-center gap-2.5 rounded-full bg-orange-500 py-2 ps-3.5 pe-4 text-sm font-semibold text-white shadow-[0_0_20px_-6px_rgba(249,115,22,0.75)] transition hover:bg-orange-400 hover:shadow-[0_0_26px_-4px_rgba(249,115,22,0.95)]"
 			>
-				<path d="M21.5 2.5 11 13" />
-				<path d="M21.5 2.5 15 21.5l-4-8.5-8.5-4z" />
-			</svg>
-			{t.smartShareOpenBtn}
-			<!-- "גלוי רק לך" נשאר כתו קטן על הכפתור עצמו, לא כמשפט לצידו. -->
-			<span
-				class="ms-0.5 hidden items-center gap-1 rounded-full bg-emerald-400/10 px-2 py-0.5 text-[11px] font-normal text-emerald-400/70 sm:inline-flex"
-			>
-				<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" class="h-3 w-3">
-					<path
-						d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5m0 2a3 3 0 0 1 3 3v3H9V7a3 3 0 0 1 3-3"
-					/>
+				<!-- מטוס־נייר: שליחה, ולא "שיתוף" גנרי -->
+				<svg
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="1.8"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+					class="h-4 w-4 shrink-0 transition group-hover:-translate-y-px"
+				>
+					<path d="M21.5 2.5 11 13" />
+					<path d="M21.5 2.5 15 21.5l-4-8.5-8.5-4z" />
 				</svg>
-				{t.smartShareBadge}
-			</span>
-		</button>
+				{t.smartShareOpenBtn}
+			</button>
+		</div>
 	{:else}
 		<div class="rounded-xl border border-white/[0.08] px-4 py-3">
 			<div class="flex items-center justify-between gap-3">

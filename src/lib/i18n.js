@@ -66,6 +66,7 @@ export const translations = {
 		revealPhone: 'הצג מספר טלפון',
 		businessSite: 'לאתר העסק',
 		exclusiveBenefit: 'הטבה בלעדית',
+		exclusiveBenefitMembers: 'הטבה בלעדית רק לחברי יוצאים לחירות',
 		deliveries: 'משלוחים',
 		serviceZones: 'מיקום ואזורי שירות',
 		businessLocationLabel: 'מיקום העסק:',
@@ -241,7 +242,6 @@ export const translations = {
 		statsRevealsShort: 'חשיפות טלפון',
 		// שיתוף חכם — פאנל שליחת כרטיס העסק לטלפון, גלוי רק לבעל הכרטיסייה
 		smartShare: 'שיתוף חכם',
-		smartShareBadge: 'גלוי רק לך',
 		smartShareLead:
 			'שלחו את כרטיס העסק ישירות לוואטסאפ של מכר — בלי להעתיק קישורים ובלי לחשוב מה לכתוב.',
 		smartShareOpenBtn: 'שליחת כרטיס העסק לטלפון',
@@ -347,6 +347,7 @@ export const translations = {
 		revealPhone: 'Show Phone Number',
 		businessSite: 'Visit Website',
 		exclusiveBenefit: 'Exclusive Benefit',
+		exclusiveBenefitMembers: 'Exclusive benefit for Out to Freedom members only',
 		deliveries: 'Deliveries',
 		serviceZones: 'Location & Service Areas',
 		businessLocationLabel: 'Location:',
@@ -525,7 +526,6 @@ export const translations = {
 		statsRevealsShort: 'phone reveals',
 		// Smart Share — owner-only panel that sends the business card to a phone
 		smartShare: 'Smart Share',
-		smartShareBadge: 'Visible only to you',
 		smartShareLead:
 			"Send your business card straight to a friend's WhatsApp — no copying links, no wondering what to write.",
 		smartShareOpenBtn: 'Send my business card to a phone',
@@ -631,6 +631,7 @@ export const translations = {
 		revealPhone: 'Показать номер',
 		businessSite: 'Перейти на сайт',
 		exclusiveBenefit: 'Эксклюзивная выгода',
+		exclusiveBenefitMembers: 'Эксклюзивная выгода только для членов «Навстречу свободе»',
 		deliveries: 'Доставка',
 		serviceZones: 'Местоположение и обслуживание',
 		businessLocationLabel: 'Адрес:',
@@ -807,7 +808,6 @@ export const translations = {
 		statsRevealsShort: 'показов телефона',
 		// Умный обмен — панель отправки карточки бизнеса на телефон (только для владельца)
 		smartShare: 'Умный обмен',
-		smartShareBadge: 'Видно только вам',
 		smartShareLead:
 			'Отправьте карточку бизнеса прямо в WhatsApp знакомому — без копирования ссылок.',
 		smartShareOpenBtn: 'Отправить карточку бизнеса на телефон',
