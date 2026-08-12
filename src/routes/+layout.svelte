@@ -355,15 +355,8 @@
 </div>
 
 <style>
-	:global(body) {
-		/* 'Hebrew Sans Guard' לפני Segoe UI: משפחה וירטואלית (layout.css)
-		   שתופסת את הטווח העברי בלבד וממפה משקלים כבדים ל-Segoe UI Bold —
-		   בלעדיה עברית ב-font-extrabold/black נפלה ל-Times New Roman הסריפי
-		   על Windows. 'Noto Sans Hebrew' — הרשת העברית של אנדרואיד. */
-		font-family:
-			-apple-system, BlinkMacSystemFont, 'Hebrew Sans Guard', 'Segoe UI', 'Noto Sans Hebrew', Arial,
-			Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-	}
+	/* גופן האתר מוגדר ב-layout.css (Heebo ואחריו רשת הביטחון), כדי שהוא
+	   יחול גם על תוכן שאינו יורש מ-body של הרכיב הזה. */
 
 	/* פריסת התוכן עם שני מסילות פרסום (מפורט מקהילה) */
 	.layout-container {

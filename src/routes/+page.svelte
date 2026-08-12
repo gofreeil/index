@@ -7,6 +7,7 @@
 	import JsonLd from '$lib/components/JsonLd.svelte';
 	import Seo from '$lib/components/Seo.svelte';
 	import { categoryIcon, OTHER } from '$lib/categories.js';
+	import { businessCities } from '$lib/cities.js';
 	import { favorites } from '$lib/favorites.js';
 	import {
 		SITE_NAME,
@@ -127,9 +128,14 @@
 		if (key) scrollToResults();
 	}
 
-	// ערים מהדאטה
+	/* ═══════════ ערים ═══════════
+	   הבורר נבנה מכל עיר שנרשמה על כרטיסייה — שדה "עיר" של הטופס, ובנוסף
+	   מה שנסרק מהכתובת ומאזור השירות ($lib/cities.js). נגזר פעם אחת לכל
+	   כרטיסייה ונשמר במפה: הסינון קורא ממנה בכל הקלדה בחיפוש, וסריקה
+	   חוזרת של כל הכתובות בכל תו הייתה מיותרת. */
+	const cityIndex = $derived(new Map(businesses.map((b) => [b.id, businessCities(b)])));
 	const cities = $derived(
-		[...new Set(businesses.map((b) => b.city).filter(Boolean))].sort((a, b) =>
+		[...new Set([...cityIndex.values()].flatMap((s) => [...s]))].sort((a, b) =>
 			a.localeCompare(b, 'he')
 		)
 	);
@@ -151,11 +157,8 @@
 	const filteredBusinesses = $derived(
 		businesses.filter((b) => {
 			const okCat = selectedCategory === 'all' || b.category === selectedCategory;
-			const okLoc =
-				selectedLocation === 'all' ||
-				b.city === selectedLocation ||
-				String(b.address).includes(selectedLocation) ||
-				String(b.salesArea).includes(selectedLocation);
+			// אותו מקור בדיוק שממנו נבנה הבורר ⇒ עיר שאפשר לבחור תמיד מחזירה תוצאות
+			const okLoc = selectedLocation === 'all' || !!cityIndex.get(b.id)?.has(selectedLocation);
 			return matchesSearch(b) && okCat && okLoc;
 		})
 	);
@@ -290,9 +293,8 @@
 <JsonLd data={schemas} />
 
 <div class="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
-	<!-- H1 — הכותרת הראשית של הדף. עד כאן לא היה בדף אף h1, וגוגל לא ידע במה הדף עוסק.
-	     font-heebo — ניסוי גופן, על הכותרת הזו בלבד (ראו layout.css). -->
-	<h1 class="font-heebo mb-5 text-center text-2xl font-extrabold text-gray-100 sm:mb-8 sm:text-4xl">
+	<!-- H1 — הכותרת הראשית של הדף. עד כאן לא היה בדף אף h1, וגוגל לא ידע במה הדף עוסק. -->
+	<h1 class="mb-5 text-center text-2xl font-extrabold text-gray-100 sm:mb-8 sm:text-4xl">
 		בעלי מקצוע כשירים — מומלצים, מדורגים ובהטבה לחברי הקהילה
 	</h1>
 
