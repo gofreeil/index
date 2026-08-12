@@ -3,7 +3,7 @@
 	// ולפאנל הניהול (/admin/business/[id]). הרכיב מרנדר שדות בלבד, בלי
 	// <form> ובלי כפתור שמירה: כל מסך עוטף אותו ב-action משלו.
 	//
-	// canModerate מוסיף את שדות הניהול (סטטוס, קואורדינטות). הוא רק מסתיר
+	// canModerate מוסיף את שדות הניהול (סטטוס). הוא רק מסתיר
 	// אותם — האכיפה עצמה בשרת (ראו $lib/server/businessEdit.js).
 	import { mediaUrl } from '$lib/businessShape.js';
 	import { CATEGORIES } from '$lib/categories.js';
@@ -217,18 +217,6 @@
 
 			<input type="hidden" name="branches" value={branchesJson} />
 		</div>
-		{#if canModerate}
-			<div>
-				<label class={LABEL} for="f-lat">קו רוחב (lat)</label>
-				<input id="f-lat" name="lat" dir="ltr" value={biz.lat ?? ''} class={INPUT} />
-				{#if err('lat')}<p class="mt-1 text-xs text-red-400">{err('lat')}</p>{/if}
-			</div>
-			<div>
-				<label class={LABEL} for="f-lng">קו אורך (lng)</label>
-				<input id="f-lng" name="lng" dir="ltr" value={biz.lng ?? ''} class={INPUT} />
-				{#if err('lng')}<p class="mt-1 text-xs text-red-400">{err('lng')}</p>{/if}
-			</div>
-		{/if}
 	</div>
 </section>
 

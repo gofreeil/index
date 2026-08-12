@@ -7,9 +7,9 @@
 // השדות עצמם מוצגים ברכיב משותף ($lib/components/BusinessFormFields.svelte),
 // כך שתוספת שדה נעשית בשני קבצים בלבד ולא בארבעה.
 //
-// canModerate מפריד בין השניים: סטטוס וקואורדינטות הם כלי ניהול, ובעל
-// עסק לא משנה אותם (ובוודאי לא מאשר את עצמו). מה שנשלח בלעדיו — נדחה
-// בשקט בשרת, גם אם מישהו יזייף את הטופס.
+// canModerate מפריד בין השניים: הסטטוס הוא כלי ניהול, ובעל עסק לא משנה
+// אותו (ובוודאי לא מאשר את עצמו). מה שנשלח בלעדיו — נדחה בשקט בשרת, גם
+// אם מישהו יזייף את הטופס.
 //
 // אימייל הבעלים נשמר ב-extra_fields.owner_email ולא בעמודה משלו —
 // לאוסף idx-business אין עמודת email, ו-Strapi מתעלם בשקט ממפתח לא מוכר
@@ -110,22 +110,12 @@ export async function parseBusinessForm(fd, { canModerate, current }) {
 	}
 	values.extra_fields = mergeExtra(current, extraPatch);
 
-	// ── שדות ניהול: סטטוס וקואורדינטות ──
+	// ── שדות ניהול: סטטוס ──
+	// קואורדינטות אינן נערכות כאן. הן לא נקראות מהטופס וגם לא נכתבות, ולכן
+	// שמירה מהמסך משאירה את הנקודה שעל המפה כמו שהיא.
 	if (canModerate) {
 		values.status = str(fd.get('status'));
 		if (!STATUSES.includes(values.status)) errors.status = 'סטטוס לא תקין';
-
-		// ריק מוחק את הנקודה מהמפה, מספר מעדכן אותה
-		for (const k of ['lat', 'lng']) {
-			const raw = str(fd.get(k));
-			if (!raw) {
-				values[k] = null;
-			} else {
-				const n = Number(raw);
-				if (!Number.isFinite(n)) errors[k] = 'מספר לא תקין';
-				else values[k] = n;
-			}
-		}
 	}
 
 	if (Object.keys(errors).length) return { values, errors };
