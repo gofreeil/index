@@ -14,6 +14,7 @@
 	import { parseFit, isDefaultFit, logoShapeClass } from '$lib/mediaFit.js';
 	import { sameAsLinks } from '$lib/socialLinks.js';
 	import SocialLinks from '$lib/components/SocialLinks.svelte';
+	import StarRating from '$lib/components/StarRating.svelte';
 	import { SITE_NAME, DEFAULT_OG_IMAGE, professionalSchema, breadcrumbSchema } from '$lib/seo';
 
 	/** @type {{ data: any, form: any }} */
@@ -96,6 +97,22 @@
 	// דירוג הכותרת: הממוצע המחושב בבאקאנד (rating_avg/rating_count).
 	const avgRating = $derived(business.rating || 0);
 	const ratingCount = $derived(business.rating_count || 0);
+
+	/**
+	 * לחיצה על כוכב בכותרת = תחילת דירוג. הכוכבים בראש הדף הם מה שהעין רואה
+	 * ראשון, ולכן הם הכניסה לטופס ולא רק תצוגה: הלחיצה קובעת את הציון, פותחת
+	 * את הטופס וגוללת אליו — כדי שהמדרג לא יישאר עם כוכב שהודלק ובלי לדעת
+	 * שנשאר לו להשלים ולשלוח. השליחה עצמה נשארת במקום אחד (submitReview).
+	 * @param {number} n
+	 */
+	function startRating(n) {
+		newReview.rating = n;
+		showReviewForm = true;
+		// אחרי שהטופס נפתח בפועל, אחרת הגלילה מכוונת לגובה הישן של המדור.
+		requestAnimationFrame(() =>
+			document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+		);
+	}
 
 	async function fetchReviews() {
 		try {
@@ -334,21 +351,26 @@
 			{#if metaLine}
 				<p class="mt-1 text-base text-gray-400">{metaLine}</p>
 			{/if}
-			<p class="mt-1.5 text-sm">
+			<!-- חמשת הכוכבים: תמיד מוצגים, גם כשאין דירוג — אז הם כבויים ומזמינים
+			     ללחיצה. הלחיצה עצמה היא הדירוג (startRating), ולכן הכוכבים כאן
+			     אינטראקטיביים ולא קישוט. -->
+			<div class="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+				<StarRating
+					value={ratingCount > 0 ? avgRating : 0}
+					interactive
+					label={t.rateThisBusiness}
+					starLabel={(/** @type {number} */ n) => t.rateNStars.replace('{n}', String(n))}
+					onrate={startRating}
+				/>
 				{#if ratingCount > 0}
-					<span
-						class="text-gray-400"
-						role="img"
-						aria-label={t.ratingOutOf5.replace('{rating}', String(avgRating))}
-					>
-						<span class="text-yellow-400" aria-hidden="true">★</span>
+					<span class="text-gray-400">
 						<span class="font-medium text-gray-200">{avgRating}</span>
 						<span class="text-gray-500">· {ratingCount} {t.reviews}</span>
 					</span>
 				{:else}
 					<span class="text-gray-500">{t.noReviews}</span>
 				{/if}
-			</p>
+			</div>
 		</div>
 	</header>
 
@@ -619,7 +641,7 @@
 	<SocialLinks {business} />
 
 	<!-- ── חוות דעת ────────────────────────────────────────── -->
-	<section class="mt-6 border-t border-white/[0.08] pt-5">
+	<section id="reviews" class="mt-6 scroll-mt-4 border-t border-white/[0.08] pt-5">
 		<div class="flex items-center justify-between gap-4">
 			<h2 class="text-base font-semibold text-gray-400">{t.reviews}</h2>
 			<button
@@ -656,17 +678,19 @@
 						<span class="text-gray-500">· {user.name}</span>
 					</p>
 					<div class="mt-3 space-y-3">
-						<select
-							bind:value={newReview.rating}
-							aria-label={t.reviews}
-							class="w-full rounded-lg border border-white/10 bg-transparent px-3 py-2 text-base text-gray-100 outline-none focus:border-white/30"
-						>
-							<option value={5}>5 ★</option>
-							<option value={4}>4 ★</option>
-							<option value={3}>3 ★</option>
-							<option value={2}>2 ★</option>
-							<option value={1}>1 ★</option>
-						</select>
+						<!-- אותם כוכבים כמו בכותרת, ולא רשימה נפתחת: הדירוג שנבחר למעלה
+						     נראה כאן כמו שהוא, וניתן לתקן אותו באותה תנועה. -->
+						<div class="flex items-center gap-2">
+							<span class="text-sm text-gray-500">{t.yourRating}</span>
+							<StarRating
+								value={newReview.rating}
+								size="lg"
+								interactive
+								label={t.rateThisBusiness}
+								starLabel={(/** @type {number} */ n) => t.rateNStars.replace('{n}', String(n))}
+								onrate={(/** @type {number} */ n) => (newReview.rating = n)}
+							/>
+						</div>
 						<textarea
 							bind:value={newReview.comment}
 							placeholder={t.reviewPlaceholder}
@@ -693,18 +717,12 @@
 							<span class="text-base font-medium text-gray-200">{review.author_name}</span>
 							<span class="text-sm text-gray-600">{review.date}</span>
 						</div>
-						<div
-							class="mt-1 flex gap-0.5 text-sm"
-							dir="ltr"
-							aria-label={t.ratingOutOf5.replace('{rating}', String(review.rating))}
-						>
-							{#each Array(5) as _, i}
-								<span
-									aria-hidden="true"
-									class={i < Math.round(review.rating) ? 'text-yellow-400' : 'text-gray-700'}
-									>★</span
-								>
-							{/each}
+						<div class="mt-1">
+							<StarRating
+								value={review.rating}
+								size="sm"
+								label={t.ratingOutOf5.replace('{rating}', String(review.rating))}
+							/>
 						</div>
 						{#if review.title}<p class="mt-2 text-base font-medium text-gray-200">
 								{review.title}
