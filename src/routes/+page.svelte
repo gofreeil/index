@@ -32,8 +32,10 @@
 	let selectedCategory = $state('all');
 	let selectedLocation = $state('all');
 
-	/* המפה בנייד מקופלת מאחורי כפתור: במסך צר היא דחפה את מסילת התחומים —
-	   המסנן הראשי — אל מתחת לקיפול. בדסקטופ היא מוצגת תמיד, לצד החיפוש. */
+	/* המפה בנייד מקופלת מאחורי כפתור שיושב בשורת החיפוש: במסך צר המפה דחפה
+	   את מסילת התחומים — המסנן הראשי — אל מתחת לקיפול. הכפתור צמוד לחיפוש
+	   ולבורר העיר כי שלושתם מסננים את אותה רשימה, והמפה נפתחת מיד מתחתיהם.
+	   בדסקטופ המפה מוצגת תמיד, לצד החיפוש. */
 	let showMobileMap = $state(false);
 
 	// Pagination
@@ -312,9 +314,9 @@
 		<div class="mb-5 grid items-start gap-4 md:mb-8 md:grid-cols-2 md:items-center md:gap-6">
 			<!-- Filters -->
 			<div class="space-y-3">
-				<!-- החיפוש ובורר העיר באותה שורה: שניהם מצמצמים את אותה רשימה,
-				     והפרדתם לשתי שורות הרחיקה את המסנן הגיאוגרפי מהשדה שהוא
-				     משלים. השדה נמתח, הבורר ברוחב תוכנו. -->
+				<!-- החיפוש, בורר העיר וכפתור המפה באותה שורה: שלושתם מצמצמים או
+				     מציגים את אותה רשימה, והפרדתם לשורות שונות הרחיקה את המסננים
+				     זה מזה. השדה נמתח, והשניים האחרים ברוחב תוכנם. -->
 				<div class="flex items-center gap-2">
 					<div class="relative flex-1">
 						<input
@@ -352,7 +354,34 @@
 							{/each}
 						</select>
 					{/if}
+
+					<!-- כפתור המפה בנייד — כאן, צמוד לחיפוש ולעיר, ולא מתחת למסילה:
+					     שם הוא היה מרוחק מהמסננים שהמפה משרתת. אייקון בלבד מפני
+					     ששלושה שדות בשורה אחת במסך צר מוחצים את שדה החיפוש; שם
+					     הכפתור נמסר ב-aria-label. -->
+					<button
+						type="button"
+						onclick={() => (showMobileMap = !showMobileMap)}
+						aria-expanded={showMobileMap}
+						aria-controls="mobile-map"
+						aria-label={showMobileMap ? 'הסתרת המפה' : 'הצגת העסקים על המפה'}
+						title={showMobileMap ? 'הסתרת המפה' : 'הצגת העסקים על המפה'}
+						class="flex-shrink-0 rounded-xl border px-3 py-3 text-xl leading-6 transition md:hidden {showMobileMap
+							? 'border-blue-500 bg-blue-900/40'
+							: 'border-gray-700 bg-gray-800 hover:border-blue-500'}"
+					>
+						<span aria-hidden="true">🗺️</span>
+					</button>
 				</div>
+
+				<!-- המפה בנייד נפתחת כאן, מיד מתחת לכפתור שפתח אותה. Leaflet לא
+				     נטען בכלל עד הפתיחה (LazyMap נכנס ל-DOM רק אז), ולכן מסילת
+				     התחומים — המסנן הראשי — נשארת גבוה בדף לכל מי שלא ביקש מפה. -->
+				{#if showMobileMap}
+					<div id="mobile-map" class="md:hidden">
+						<LazyMap businesses={filteredBusinesses} />
+					</div>
+				{/if}
 
 				<div class="flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-sm text-gray-400">
 					<span>{t.totalBusinesses.replace('{count}', businesses.length.toString())}</span>
@@ -372,8 +401,8 @@
 			</div>
 
 			<!-- מפה — מציגה תמיד את התוצאות המסוננות, ולכן חיפוש או בחירת תחום
-			     מצטיירים גם עליה. בנייד היא מקופלת מאחורי כפתור מתחת למסילה
-			     (ראו למטה): במסך צר היא דחפה את מסילת התחומים אל מתחת לקיפול. -->
+			     מצטיירים גם עליה. בנייד היא מקופלת מאחורי כפתור המפה שבשורת
+			     החיפוש: במסך צר היא דחפה את מסילת התחומים אל מתחת לקיפול. -->
 			<div class="hidden md:block">
 				<h2 class="mb-2 text-center text-sm font-bold text-gray-300 sm:text-base">
 					{t.mapTitle}
@@ -391,26 +420,6 @@
 				onselect={pickCategory}
 			/>
 		{/if}
-
-		<!-- המפה בנייד — נפתחת רק למי שמבקש: כפתור צנוע מתחת למסילה, ו-Leaflet
-		     לא נטען בכלל עד הפתיחה (LazyMap נכנס ל-DOM רק אז). -->
-		<div class="mb-6 md:hidden">
-			<button
-				type="button"
-				onclick={() => (showMobileMap = !showMobileMap)}
-				aria-expanded={showMobileMap}
-				class="mx-auto flex items-center gap-2 rounded-full border border-gray-700 px-5 py-2.5 text-sm font-semibold text-blue-400 transition hover:border-blue-500 hover:text-blue-300"
-			>
-				<span aria-hidden="true">🗺️</span>
-				{showMobileMap ? 'הסתרת המפה' : 'הצגת העסקים על המפה'}
-				<span class="text-xs" aria-hidden="true">{showMobileMap ? '▲' : '▼'}</span>
-			</button>
-			{#if showMobileMap}
-				<div class="mt-3">
-					<LazyMap businesses={filteredBusinesses} />
-				</div>
-			{/if}
-		</div>
 
 		<!-- גוף רשימת התוצאות — מוגדר פעם אחת ומרונדר במקום אחד בכל רגע:
 		     מיד מתחת למסילה כשיש סינון פעיל (עם displayedBusinesses), ובתחתית
