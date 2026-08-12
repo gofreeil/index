@@ -13,7 +13,7 @@
 </script>
 
 {#if items.length}
-	<div class="mt-4 flex flex-wrap items-center gap-2">
+	<div class="mt-3 flex flex-wrap items-center gap-2">
 		{#each items as s (s.key)}
 			<a
 				href={s.url}

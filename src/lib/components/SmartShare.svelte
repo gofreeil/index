@@ -202,9 +202,9 @@
 	]);
 </script>
 
-<!-- כלי של בעל העסק בסוף דף הכרטיסייה: במצב סגור הוא שורה אחת שקטה, כדי
+<!-- כלי של בעל העסק בראש דף הכרטיסייה: במצב סגור הוא שורה אחת שקטה, כדי
      שלא יתחרה בתוכן שהמבקר בא בשבילו. כל המשקל הוויזואלי נשמר לכפתור אחד. -->
-<section dir={t.dir} class="mt-10 border-t border-white/[0.08] pt-8">
+<section dir={t.dir} class="mt-4 rounded-xl border border-white/[0.08] px-4 py-3">
 	<div class="flex items-center justify-between gap-3">
 		<h2 class="shrink-0 text-sm font-semibold text-gray-400">
 			{t.smartShare}
@@ -225,10 +225,10 @@
 	</div>
 
 	{#if open}
-		<div id="smart-share-panel" transition:slide={{ duration: 200 }} class="mt-5 max-w-xl">
+		<div id="smart-share-panel" transition:slide={{ duration: 200 }} class="mt-4 max-w-xl">
 			<p class="text-sm leading-6 text-gray-500">{t.smartShareLead}</p>
 
-			<div class="mt-5 space-y-4">
+			<div class="mt-4 space-y-4">
 				<div>
 					<label for="ss-phone" class="block text-xs text-gray-500">
 						{t.smartSharePhoneLabel}
