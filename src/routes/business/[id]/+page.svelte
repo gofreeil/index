@@ -367,13 +367,6 @@
 		</div>
 	{/if}
 
-	{#if business.discount}
-		<p class="mt-3 text-base text-emerald-400">
-			<span class="text-gray-500">{t.exclusiveBenefit}:</span>
-			{business.discount}
-		</p>
-	{/if}
-
 	<!-- ── שיתוף חכם — בראש הדף, בהישג יד של בעל העסק ולא בסוף הגלילה.
 	     כלי שלו בלבד; השרת מכריע מי רואה אותו. -->
 	{#if data.canSmartShare}
@@ -722,6 +715,21 @@
 			</ul>
 		{/if}
 	</section>
+
+	<!-- ── ההטבה הבלעדית ───────────────────────────────────
+	     צמודה לטלפון, בדיוק לפני הלחיצה: המבקר רואה מה הוא מרוויח כחבר
+	     ברגע שהוא מחליט להתקשר. שלט מלא-צבע ולא שורת טקסט — זו הסיבה
+	     שהמדריך קיים, והיא לא צריכה להיבלע בין הפרטים. -->
+	{#if business.discount}
+		<div class="mt-6">
+			<p
+				class="inline-block rounded-xl bg-emerald-500 px-5 py-3 text-lg font-bold text-emerald-950 shadow-lg shadow-emerald-500/25"
+			>
+				🎁 {t.exclusiveBenefitMembers}
+				<span class="whitespace-nowrap">{business.discount}</span>
+			</p>
+		</div>
+	{/if}
 
 	<!-- ── טלפון ───────────────────────────────────────────
 	     סוף הכרטיסייה: המספר נחשף אחרי שהמבקר קרא את העסק וראה חוות דעת.
