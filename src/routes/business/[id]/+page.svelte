@@ -85,6 +85,9 @@
 
 	/** @type {any[]} */
 	let reviews = $state([]);
+	// הרשימה סגורה עד שהמבקר לוחץ עליה. ברירת המחדל היא כרטיסייה שנגמרת
+	// בטלפון, ולא בקיר של חוות דעת שאיש לא ביקש לקרוא.
+	let showReviews = $state(false);
 	let showReviewForm = $state(false);
 	let newReview = $state({ rating: 5, comment: '' });
 	let reviewSubmitted = $state(false);
@@ -605,33 +608,22 @@
 		</div>
 	</section>
 
-	<!-- ── סרטון תדמית ─────────────────────────────────────── -->
-	{#if ytEmbed || data.canSmartShare}
+	<!-- ── סרטון תדמית ───────────────────────────────────────
+	     אין סרטון = אין מדור בכלל. גם לבעל הכרטיסייה ולאדמין: הבטחה
+	     ש"כשיהיה סרטון הוא יופיע כאן" היא טקסט ריק בדף של מבקר. -->
+	{#if ytEmbed}
 		<section class="mt-6 border-t border-white/[0.08] pt-5">
 			<h2 class="text-base font-semibold text-gray-400">{t.businessVideo}</h2>
-			{#if ytEmbed}
-				<div class="mt-2 aspect-video overflow-hidden rounded-xl bg-white/5">
-					<iframe
-						src={ytEmbed}
-						title={business.name}
-						class="h-full w-full border-0"
-						loading="lazy"
-						allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-						allowfullscreen
-					></iframe>
-				</div>
-			{:else}
-				<!-- ריק רק לבעל הכרטיסייה/אדמין: מבקר רגיל לא רואה מדור ריק. -->
-				<p class="mt-2 text-base text-gray-500">
-					{t.businessVideoEmpty}
-					{#if data.canEdit}
-						<a
-							href="/business/{business.documentId}/edit"
-							class="text-blue-400 transition hover:text-blue-300">{t.businessVideoEdit} →</a
-						>
-					{/if}
-				</p>
-			{/if}
+			<div class="mt-2 aspect-video overflow-hidden rounded-xl bg-white/5">
+				<iframe
+					src={ytEmbed}
+					title={business.name}
+					class="h-full w-full border-0"
+					loading="lazy"
+					allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+					allowfullscreen
+				></iframe>
+			</div>
 		</section>
 	{/if}
 
@@ -640,10 +632,78 @@
 	     האתר לא כאן: הוא כפתור מילולי בשורת הפעולות שבראש הדף. -->
 	<SocialLinks {business} />
 
-	<!-- ── חוות דעת ────────────────────────────────────────── -->
+	<!-- ── ההטבה הבלעדית ───────────────────────────────────
+	     צמודה לטלפון, בדיוק לפני הלחיצה: המבקר רואה מה הוא מרוויח כחבר
+	     ברגע שהוא מחליט להתקשר. שלט מלא-צבע ולא שורת טקסט — זו הסיבה
+	     שהמדריך קיים, והיא לא צריכה להיבלע בין הפרטים. -->
+	{#if business.discount}
+		<div class="mt-6 text-center">
+			<p
+				class="inline-block rounded-xl bg-emerald-500 px-5 py-3 text-lg font-bold text-emerald-950 shadow-lg shadow-emerald-500/25"
+			>
+				🎁 {t.exclusiveBenefitMembers}
+				<span class="whitespace-nowrap">{business.discount}</span>
+			</p>
+		</div>
+	{/if}
+
+	<!-- ── טלפון ───────────────────────────────────────────
+	     שיא הכרטיסייה, ולכן במרכז: המספר נחשף אחרי שהמבקר קרא את העסק.
+	     חוות הדעת יורדות מתחתיו — הן קריאה נוספת, לא תנאי להתקשרות.
+	     החשיפה עדיין נספרת בלחיצה (reveal_phone), כמו קודם. -->
+	{#if business.phone}
+		<section class="mt-6 border-t border-white/[0.08] pt-5 text-center">
+			<h2 class="text-base font-semibold text-gray-400">{t.callNow}</h2>
+			<div class="mt-2">
+				{#if isPhoneRevealed}
+					<a
+						href="tel:{business.phone}"
+						class="inline-block rounded-lg bg-blue-600 px-5 py-2.5 text-lg font-semibold text-white transition hover:bg-blue-500"
+					>
+						<span dir="ltr">{business.phone}</span>
+					</a>
+				{:else}
+					<button
+						onclick={revealPhoneAndLog}
+						class="rounded-lg bg-blue-600 px-5 py-2.5 text-lg font-semibold text-white transition hover:bg-blue-500"
+					>
+						{t.revealPhone}
+					</button>
+				{/if}
+			</div>
+		</section>
+	{/if}
+
+	<!-- ── חוות דעת ────────────────────────────────────────
+	     בתחתית הכרטיסייה וסגורות: הרשימה נפתחת רק בלחיצה של המבקר, כדי
+	     שדף העסק לא ייגמר בגלילה ארוכה של טקסט של אנשים אחרים. -->
 	<section id="reviews" class="mt-6 scroll-mt-4 border-t border-white/[0.08] pt-5">
 		<div class="flex items-center justify-between gap-4">
-			<h2 class="text-base font-semibold text-gray-400">{t.reviews}</h2>
+			{#if reviews.length}
+				<button
+					onclick={() => (showReviews = !showReviews)}
+					aria-expanded={showReviews}
+					aria-controls="reviews-list"
+					class="flex items-center gap-2 text-base font-semibold text-gray-400 transition hover:text-gray-200"
+				>
+					<span>{t.reviews}</span>
+					<span class="text-sm font-medium text-gray-500">({reviews.length})</span>
+					<svg
+						class="h-4 w-4 transition-transform {showReviews ? 'rotate-180' : ''}"
+						viewBox="0 0 20 20"
+						fill="currentColor"
+						aria-hidden="true"
+					>
+						<path
+							fill-rule="evenodd"
+							d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+							clip-rule="evenodd"
+						/>
+					</svg>
+				</button>
+			{:else}
+				<h2 class="text-base font-semibold text-gray-400">{t.reviews}</h2>
+			{/if}
 			<button
 				onclick={() => (showReviewForm = !showReviewForm)}
 				class="text-sm font-medium text-blue-400 transition hover:text-blue-300"
@@ -709,8 +769,12 @@
 
 		{#if reviews.length === 0}
 			<p class="mt-3 text-base text-gray-500">{t.noReviews}</p>
-		{:else}
-			<ul class="mt-1 divide-y divide-white/[0.08]">
+		{:else if showReviews}
+			<ul
+				id="reviews-list"
+				transition:slide={{ duration: 200 }}
+				class="mt-1 divide-y divide-white/[0.08]"
+			>
 				{#each reviews as review}
 					<li class="py-3">
 						<div class="flex items-baseline justify-between gap-3">
@@ -733,45 +797,4 @@
 			</ul>
 		{/if}
 	</section>
-
-	<!-- ── ההטבה הבלעדית ───────────────────────────────────
-	     צמודה לטלפון, בדיוק לפני הלחיצה: המבקר רואה מה הוא מרוויח כחבר
-	     ברגע שהוא מחליט להתקשר. שלט מלא-צבע ולא שורת טקסט — זו הסיבה
-	     שהמדריך קיים, והיא לא צריכה להיבלע בין הפרטים. -->
-	{#if business.discount}
-		<div class="mt-6">
-			<p
-				class="inline-block rounded-xl bg-emerald-500 px-5 py-3 text-lg font-bold text-emerald-950 shadow-lg shadow-emerald-500/25"
-			>
-				🎁 {t.exclusiveBenefitMembers}
-				<span class="whitespace-nowrap">{business.discount}</span>
-			</p>
-		</div>
-	{/if}
-
-	<!-- ── טלפון ───────────────────────────────────────────
-	     סוף הכרטיסייה: המספר נחשף אחרי שהמבקר קרא את העסק וראה חוות דעת.
-	     החשיפה עדיין נספרת בלחיצה (reveal_phone), כמו קודם. -->
-	{#if business.phone}
-		<section class="mt-6 border-t border-white/[0.08] pt-5">
-			<h2 class="text-base font-semibold text-gray-400">{t.callNow}</h2>
-			<div class="mt-2">
-				{#if isPhoneRevealed}
-					<a
-						href="tel:{business.phone}"
-						class="inline-block rounded-lg bg-blue-600 px-5 py-2.5 text-lg font-semibold text-white transition hover:bg-blue-500"
-					>
-						<span dir="ltr">{business.phone}</span>
-					</a>
-				{:else}
-					<button
-						onclick={revealPhoneAndLog}
-						class="rounded-lg bg-blue-600 px-5 py-2.5 text-lg font-semibold text-white transition hover:bg-blue-500"
-					>
-						{t.revealPhone}
-					</button>
-				{/if}
-			</div>
-		</section>
-	{/if}
 </main>
