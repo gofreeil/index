@@ -1,7 +1,7 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { resolveServiceArea, serviceShapes, ISRAEL_OUTLINE } from '$lib/serviceArea.js';
+	import { resolveServiceArea, serviceShapes } from '$lib/serviceArea.js';
 	import 'leaflet/dist/leaflet.css';
 
 	/** @type {{ businesses: any[] }} */
@@ -128,26 +128,23 @@
 		markersLayer.clearLayers();
 
 		for (const g of shapes) {
-			// מתאר המדינה שוכב מתחת לכולם ובעדינות רבה יותר, אחרת העיגולים
+			// עיגול "כל הארץ" שוכב מתחת לכולם וכמעט שקוף, אחרת העיגולים
 			// המקומיים היו נבלעים בתוכו
 			const faint = g.type === 'country';
 			const base = {
 				color: '#2563eb',
 				weight: faint ? 1 : 1.5,
-				opacity: faint ? 0.35 : 0.5,
+				opacity: faint ? 0.3 : 0.5,
 				fillColor: '#3b82f6',
-				fillOpacity: faint ? 0.05 : 0.1,
+				fillOpacity: faint ? 0.04 : 0.1,
 				dashArray: faint ? '6 5' : undefined
 			};
-			const shape =
-				g.type === 'country'
-					? L.polygon(ISRAEL_OUTLINE, base)
-					: L.circle([g.lat, g.lng], { ...base, radius: g.radius });
+			const shape = L.circle([g.lat, g.lng], { ...base, radius: g.radius });
 			shape.addTo(markersLayer);
 			shape.bindPopup(areaPopup(g));
 			shape.bindTooltip(`${g.label} · ${g.items.length} עסקים`, { direction: 'top' });
 			shape.on('mouseover', () =>
-				shape.setStyle({ fillOpacity: faint ? 0.12 : 0.22, opacity: 0.85 })
+				shape.setStyle({ fillOpacity: faint ? 0.1 : 0.22, opacity: 0.85 })
 			);
 			shape.on('mouseout', () => shape.setStyle(base));
 		}

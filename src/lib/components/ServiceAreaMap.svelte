@@ -10,7 +10,7 @@
 	// מתחת לקיפול, ואין סיבה לשלם עליה בטעינה הראשונה.
 	// ============================================================
 	import { onDestroy } from 'svelte';
-	import { resolveServiceArea, serviceShapes, ISRAEL_OUTLINE } from '$lib/serviceArea.js';
+	import { resolveServiceArea, serviceShapes } from '$lib/serviceArea.js';
 	import 'leaflet/dist/leaflet.css';
 
 	/** @type {{ business: any, height?: string }} */
@@ -65,17 +65,14 @@
 				const style = {
 					color: '#2563eb',
 					weight: faint ? 1 : 2,
-					opacity: faint ? 0.4 : 0.7,
+					opacity: faint ? 0.35 : 0.7,
 					fillColor: '#3b82f6',
-					fillOpacity: faint ? 0.07 : 0.15,
+					fillOpacity: faint ? 0.05 : 0.15,
 					dashArray: faint ? '6 5' : undefined
 				};
-				const shape =
-					s.type === 'country'
-						? L.polygon(ISRAEL_OUTLINE, style)
-						: L.circle([s.lat, s.lng], { ...style, radius: s.radius });
-				shape.addTo(layer);
-				shape.bindTooltip(s.label, { direction: 'top' });
+				L.circle([s.lat, s.lng], { ...style, radius: s.radius })
+					.addTo(layer)
+					.bindTooltip(s.label, { direction: 'top' });
 			}
 
 			if (hasPin) {

@@ -261,37 +261,15 @@ const CITY_RADIUS = 8000;
 const WIDE_RADIUS = 20000;
 const MULTI_RADIUS = 14000;
 
-/** קו המתאר של ישראל, מפושט — הצורה של "כל הארץ". */
-export const ISRAEL_OUTLINE = /** @type {[number, number][]} */ ([
-	[33.09, 35.1],
-	[33.28, 35.57],
-	[33.1, 35.66],
-	[32.9, 35.9],
-	[32.71, 35.57],
-	[32.5, 35.52],
-	[32.2, 35.57],
-	[31.85, 35.55],
-	[31.55, 35.5],
-	[31.36, 35.47],
-	[31.1, 35.47],
-	[30.95, 35.4],
-	[30.5, 35.15],
-	[30.15, 35.05],
-	[29.55, 34.97],
-	[29.49, 34.92],
-	[30.4, 34.42],
-	[30.9, 34.35],
-	[31.22, 34.27],
-	[31.35, 34.3],
-	[31.6, 34.5],
-	[32.0, 34.75],
-	[32.4, 34.85],
-	[32.83, 34.95]
-]);
+/* "כל הארץ" — עיגול שמכיל את המדינה כולה, ולא מתאר גבולות. המרכז בערך
+   באמצע הארץ והרדיוס מגיע גם לראש הגליל וגם לאילת (כ-215 ק"מ לכל כיוון),
+   ולכן הוא גולש אל הים ואל המדינות השכנות. זה מכוון: הצורה מסמנת "בכל
+   מקום", והיא נצבעת שקופה כמעט לגמרי כדי שתיקרא כרקע. */
+const COUNTRY_CIRCLE = { lat: 31.4, lng: 34.95, radius: 225000 };
 
 /**
- * @typedef {{type: 'country', key: string, label: string}
- *   | {type: 'circle', key: string, lat: number, lng: number, radius: number, label: string}} Shape
+ * @typedef {{type: 'country' | 'circle', key: string, lat: number, lng: number,
+ *   radius: number, label: string}} Shape
  */
 
 /**
@@ -312,7 +290,7 @@ export function serviceShapes(area) {
 	// כמדינה שלמה. כל אלה חולקים צורה אחת (key זהה), ולכן היא מצוירת פעם
 	// אחת עם פופאפ שמונה את כולם, ולא 62 מתארים זה על גבי זה.
 	if (area.kind === 'country' || area.kind === 'global' || area.kind === 'none') {
-		out.push({ type: 'country', key: 'country', label: 'כל הארץ' });
+		out.push({ type: 'country', key: 'country', label: 'כל הארץ', ...COUNTRY_CIRCLE });
 	}
 
 	const radius = area.cities.length > 1 ? MULTI_RADIUS : area.wide ? WIDE_RADIUS : CITY_RADIUS;
