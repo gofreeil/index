@@ -55,6 +55,8 @@ export function toBusiness(b) {
 		x: links.x || '',
 		linkedin: links.linkedin || '',
 		extra: links.extra || '',
+		// סרטון התדמית — שדה נפרד מערוץ היוטיוב (ראו socialLinks.js)
+		video: links.video || '',
 		address: b.address || '',
 		city: b.city || '',
 		neighborhood: b.neighborhood || '',

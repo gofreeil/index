@@ -73,7 +73,8 @@ export const translations = {
 		serviceMap: 'מפת אזורי שירות',
 		noDescription: 'אין תיאור זמין לעסק זה.',
 		businessVideo: 'סרטון תדמית',
-		businessVideoEmpty: 'אין עדיין סרטון תדמית. קישור יוטיוב בפרטי העסק יופיע כאן אוטומטית.',
+		businessVideoEmpty:
+			'אין עדיין סרטון תדמית. הקישור שיוקלד בשדה "סרטון תדמית" יופיע כאן אוטומטית.',
 		businessVideoEdit: 'עריכת הכרטיסייה',
 		addressLabel: 'כתובת',
 		moreLocations: 'סניפים ומקומות שירות נוספים',
@@ -352,7 +353,8 @@ export const translations = {
 		serviceMap: 'Service Area Map',
 		noDescription: 'No description available for this business.',
 		businessVideo: 'Business Video',
-		businessVideoEmpty: 'No video yet. A YouTube link on the business record will show up here.',
+		businessVideoEmpty:
+			'No video yet. A YouTube link in the "promo video" field will show up here.',
 		businessVideoEdit: 'Edit this listing',
 		addressLabel: 'Address',
 		moreLocations: 'Additional branches & service locations',
@@ -634,7 +636,7 @@ export const translations = {
 		serviceMap: 'Карта зон обслуживания',
 		noDescription: 'Описание для этого бизнеса отсутствует.',
 		businessVideo: 'Видео о бизнесе',
-		businessVideoEmpty: 'Видео пока нет. Ссылка на YouTube в данных бизнеса появится здесь.',
+		businessVideoEmpty: 'Видео пока нет. Ссылка в поле «Видео о бизнесе» появится здесь.',
 		businessVideoEdit: 'Редактировать карточку',
 		addressLabel: 'Адрес',
 		moreLocations: 'Дополнительные филиалы и адреса обслуживания',

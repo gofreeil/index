@@ -74,12 +74,14 @@ export const actions = {
 			facebook: normUrl(str(fd.get('facebook'))),
 			instagram: normUrl(str(fd.get('instagram'))),
 			youtube: normUrl(str(fd.get('youtube'))),
-			// טיקטוק, X, לינקדאין ו"נוסף" — נשארים ב-values כדי שיחזרו למסך אם
-			// הולידציה נכשלה, ונשלחים ל-extra_fields ולא כעמודות (socialLinks.js).
+			// טיקטוק, X, לינקדאין, "נוסף" וסרטון התדמית — נשארים ב-values כדי
+			// שיחזרו למסך אם הולידציה נכשלה, ונשלחים ל-extra_fields ולא
+			// כעמודות (socialLinks.js). youtube למעלה הוא הערוץ, לא הסרטון.
 			tiktok: normUrl(str(fd.get('tiktok'))),
 			x: normUrl(str(fd.get('x'))),
 			linkedin: normUrl(str(fd.get('linkedin'))),
 			extra: normUrl(str(fd.get('extra'))),
+			video: normUrl(str(fd.get('video'))),
 			address: str(fd.get('address')),
 			city: str(fd.get('city')),
 			neighborhood: str(fd.get('neighborhood')),
@@ -161,8 +163,8 @@ export const actions = {
 		// לאוסף idx-business אין עמודת email, ו-Strapi מתעלם בשקט ממפתח לא
 		// מוכר — ולכן אימייל בעל העסק נשמר ב-extra_fields (עמודת json).
 		// זה גם המפתח שבו המערכת מזהה אותו כשהוא נרשם לאתר (ownerMatch.js).
-		const { email, branches, tiktok, x, linkedin, extra, ...fields } = values;
-		const links = parseExtraLinks({ tiktok, x, linkedin, extra });
+		const { email, branches, tiktok, x, linkedin, extra, video, ...fields } = values;
+		const links = parseExtraLinks({ tiktok, x, linkedin, extra, video });
 		try {
 			await createBusiness({
 				...fields,

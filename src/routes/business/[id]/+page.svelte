@@ -51,7 +51,10 @@
 		}
 		return '';
 	}
-	const ytEmbed = $derived(youtubeEmbed(business.youtube));
+	// הסרטון הוא שדה משלו (video); הנפילה ל-youtube היא בשביל כרטיסיות ותיקות
+	// שבהן הסרטון הוקלד בשדה היוטיוב, לפני שהופרד מערוץ היוטיוב.
+	// כתובת ערוץ לא מייצרת embed בכל מקרה — YT_PATTERNS דורש מזהה סרטון.
+	const ytEmbed = $derived(youtubeEmbed(business.video || business.youtube));
 
 	let currentImageIndex = $state(0);
 	/** @type {any} */

@@ -405,7 +405,7 @@
 
 			<!-- תמונות — מיד אחרי השם, הטלפון והכתובת: זה מה שרואים בכרטיסייה -->
 			<fieldset class="space-y-4 rounded-2xl border border-gray-800 bg-gray-900/40 p-5">
-				<legend class="px-2 text-sm font-bold text-blue-400">תמונות העסק</legend>
+				<legend class="px-2 text-sm font-bold text-blue-400">תמונות וסרטון</legend>
 				<div>
 					<span id="lbl-logo" class="mb-1 block text-sm font-medium text-gray-300"
 						>לוגו העסק (תמונה עד 3MB)</span
@@ -425,6 +425,22 @@
 						hint="אפשר לגרור כמה תמונות יחד, או אחת בכל פעם"
 					/>
 					{#if errors.banners}<p class="err">{errors.banners}</p>{/if}
+				</div>
+				<!-- סרטון התדמית הוא נגן מוטמע בכרטיסייה, ולכן שדה משלו ולא
+				     שורה ברשימת הקישורים — שם יושב ערוץ היוטיוב -->
+				<div>
+					<label for="video" class="mb-1 block text-sm font-medium text-gray-300"
+						>סרטון תדמית (קישור ליוטיוב)</label
+					>
+					<input
+						id="video"
+						name="video"
+						defaultValue={v.video ?? ''}
+						placeholder="https://youtube.com/watch?v=…"
+						class="field"
+					/>
+					<p class="mt-1 text-xs text-gray-500">הסרטון יוטמע בכרטיסייה ויוצג לגולשים.</p>
+					{#if errors.video}<p class="err">{errors.video}</p>{/if}
 				</div>
 			</fieldset>
 

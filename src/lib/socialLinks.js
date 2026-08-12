@@ -16,10 +16,14 @@
 // ============================================================
 
 /** הקישורים שאין להם עמודה ב-Strapi ולכן נשמרים ב-extra_fields.links */
-export const EXTRA_LINK_KEYS = ['tiktok', 'x', 'linkedin', 'extra'];
+export const EXTRA_LINK_KEYS = ['tiktok', 'x', 'linkedin', 'extra', 'video'];
 
 /**
  * שדות הקישורים בטפסים, לפי הסדר שבו הם מוצגים.
+ *
+ * `youtube` הוא **ערוץ** היוטיוב של העסק — לוגו בשורת הרשתות ככל רשת אחרת.
+ * סרטון התדמית אינו כאן: הוא `video`, שדה משלו במקטע המדיה, כי הוא לא קישור
+ * שלוחצים עליו אלא נגן שמוטמע בכרטיסייה.
  * @type {Array<[key: string, label: string, placeholder: string]>}
  */
 export const LINK_FIELDS = [
@@ -30,7 +34,7 @@ export const LINK_FIELDS = [
 	['tiktok', 'טיקטוק', 'https://tiktok.com/@…'],
 	['x', 'X (טוויטר)', 'https://x.com/…'],
 	['linkedin', 'לינקדאין', 'https://linkedin.com/company/…'],
-	['youtube', 'יוטיוב (סרטון תדמית)', 'https://youtube.com/…'],
+	['youtube', 'יוטיוב (ערוץ)', 'https://youtube.com/@…'],
 	['extra', 'נוסף', 'https://']
 ];
 
@@ -124,7 +128,8 @@ export const SOCIAL_ICONS = {
 
 /**
  * סדר הלוגואים בכרטיסייה. האתר לא ברשימה — הוא כבר כפתור מילולי משלו
- * בשורת הפעולות, ולוגו נוסף לצידו היה כפילות.
+ * בשורת הפעולות, ולוגו נוסף לצידו היה כפילות. גם `video` לא כאן: סרטון
+ * התדמית מוצג כנגן מוטמע ולא כאייקון.
  */
 export const SOCIAL_ORDER = [
 	'whatsapp',

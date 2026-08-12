@@ -276,6 +276,21 @@
 			/>
 			{#if err('banners')}<p class="mt-1 text-xs text-red-400">{err('banners')}</p>{/if}
 		</div>
+		<!-- סרטון התדמית הוא נגן מוטמע בכרטיסייה, ולכן שדה משלו ולא שורה
+		     ברשימת הקישורים — שם יושב ערוץ היוטיוב -->
+		<div class="sm:col-span-2">
+			<label class={LABEL} for="f-video">סרטון תדמית (קישור ליוטיוב)</label>
+			<input
+				id="f-video"
+				name="video"
+				dir="ltr"
+				placeholder="https://youtube.com/watch?v=…"
+				value={linkValue('video')}
+				class={INPUT}
+			/>
+			<p class="mt-1 text-xs text-gray-500">מוטמע כנגן בכרטיסייה. ערוץ היוטיוב הוא שדה נפרד.</p>
+			{#if err('video')}<p class="mt-1 text-xs text-red-400">{err('video')}</p>{/if}
+		</div>
 	</div>
 </section>
 
