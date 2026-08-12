@@ -94,8 +94,8 @@
 </script>
 
 <svelte:head>
-	<link rel="icon" type="image/png" href="/favicon.png?v=3" />
-	<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=3" />
+	<link rel="icon" type="image/png" href="/favicon.png?v=4" />
+	<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=4" />
 	<!-- כותרת גיבוי בלבד: כל דף ציבורי דורס אותה דרך <Seo> ($lib/components/Seo.svelte) -->
 	<title>{t.title} - יוצאים לחירות</title>
 	<!-- תגי ה-Open Graph / Twitter מוגדרים פר-דף ברכיב <Seo>. תג גלובלי כאן היה
@@ -134,7 +134,7 @@
 					<!-- הלוגו גדל מעט בריחוף מעל הקישור כולו (group-hover), כדי שגם מי
 					     שהעכבר שלו מתקרב מכיוון הכותרת יקבל את הרמז שזה קישור לדף הבית. -->
 					<img
-						src="/logo-professionals.png?v=3"
+						src="/logo-professionals.png?v=4"
 						alt="לוגו בעלי מקצוע כשירים — סדר בכל עניין"
 						class="h-8 w-auto rounded-lg object-contain shadow-sm transition-transform duration-300 ease-out group-hover:scale-110 sm:h-14"
 					/>

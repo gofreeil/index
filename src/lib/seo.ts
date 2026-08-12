@@ -10,9 +10,9 @@ export const SITE_NAME = 'בעלי מקצוע כשירים';
 export const SITE_TAGLINE = 'בהנחות והטבות ייחודיות לחברי יוצאים לחירות';
 export const SITE_DESCRIPTION =
 	'אינדקס בעלי מקצוע כשירים — חשמלאים, אינסטלטורים, שיפוצניקים, מזגנים, הובלות, מחשבים, עורכי דין, יופי וטיפוח, אוכל ואירועים. כל בעל מקצוע חתם על אמנת הקהילה, מדורג בידי הלקוחות ומעניק הנחה לחברי הקהילה. חיפוש לפי תחום ולפי עיר — חינם.';
-/** ?v=3 — מכריח את פייסבוק/וואטסאפ לגרד מחדש אחרי החלפת הלוגו; הם ממטמנים לפי כתובת */
-export const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png?v=3`;
-export const SITE_LOGO = `${SITE_URL}/og-image.png?v=3`;
+/** ?v=4 — מכריח את פייסבוק/וואטסאפ לגרד מחדש אחרי החלפת הלוגו; הם ממטמנים לפי כתובת */
+export const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png?v=4`;
+export const SITE_LOGO = `${SITE_URL}/og-image.png?v=4`;
 export const CONTACT_EMAIL = 'freedomhasbegun@gmail.com';
 
 /** בונה URL מוחלט קנוני מנתיב יחסי. */
