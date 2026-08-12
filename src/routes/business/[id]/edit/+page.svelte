@@ -42,13 +42,7 @@
 		</p>
 	{/if}
 
-	{#if form?.saved}
-		<div
-			class="mb-4 rounded-xl border border-green-500/30 bg-green-900/20 p-3 text-center text-green-300"
-		>
-			✓ הפרטים נשמרו
-		</div>
-	{/if}
+	<!-- אין כאן הודעת "נשמר": שמירה מוצלחת מעבירה לדף הכרטיסייה, והאישור מוצג שם. -->
 	{#if form?.error}
 		<div
 			class="mb-4 rounded-xl border border-red-500/30 bg-red-900/20 p-3 text-center text-red-300"

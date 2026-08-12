@@ -177,6 +177,7 @@ export const translations = {
 		googleSignInFailed: 'ההתחברות עם Google נכשלה',
 		// עריכת כרטיסייה ובעלות עליה — הכפתור בדף העסק ומדור "זה העסק שלי"
 		editCard: 'ערוך',
+		cardSaved: 'הפרטים נשמרו — זה מה שהגולשים רואים עכשיו',
 		claimTitle: 'זה העסק שלך?',
 		claimTitleMatched: 'זיהינו שהעסק הזה שלך',
 		claimBody:
@@ -457,6 +458,7 @@ export const translations = {
 		googleSignInFailed: 'Google Sign-In failed',
 		// Editing a listing and claiming ownership of it
 		editCard: 'Edit',
+		cardSaved: 'Saved — this is what visitors see now',
 		claimTitle: 'Is this your business?',
 		claimTitleMatched: 'We think this business is yours',
 		claimBody:
@@ -739,6 +741,7 @@ export const translations = {
 		googleSignInFailed: 'Не удалось войти через Google',
 		// Редактирование карточки и права владельца
 		editCard: 'Редактировать',
+		cardSaved: 'Сохранено — именно это видят посетители',
 		claimTitle: 'Это ваш бизнес?',
 		claimTitleMatched: 'Похоже, этот бизнес — ваш',
 		claimBody:

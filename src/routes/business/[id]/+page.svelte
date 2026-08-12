@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { fade, slide } from 'svelte/transition';
 	import { enhance } from '$app/forms';
+	import { page } from '$app/state';
 	import { lang, translations } from '$lib/i18n';
 	import { authUser } from '$lib/auth';
 	import JsonLd from '$lib/components/JsonLd.svelte';
@@ -17,6 +18,9 @@
 	/** @type {{ data: any, form: any }} */
 	let { data, form } = $props();
 	const business = $derived(data.business);
+
+	// הגעה ממסך העריכה אחרי שמירה (?saved=1) — אישור קצר בראש הכרטיסייה.
+	const justSaved = $derived(page.url.searchParams.get('saved') === '1');
 
 	/* ═══════════ בעלות על הכרטיסייה ═══════════
 	   השרת מכריע (data.claim): כרטיסייה בלי בעלים אפשר לדרוש, בקשה שנשלחה
@@ -309,6 +313,14 @@
 <JsonLd data={schemas} />
 
 <main class="mx-auto max-w-3xl px-4 py-6 sm:px-6">
+	{#if justSaved}
+		<p
+			class="mb-4 rounded-xl border border-green-500/30 bg-green-900/20 px-4 py-2 text-sm text-green-300"
+		>
+			✓ {t.cardSaved}
+		</p>
+	{/if}
+
 	<div class="flex items-center justify-between gap-3">
 		<a href="/" class="text-xs text-gray-500 transition hover:text-gray-300"
 			>→ {t.backToDirectory}</a
