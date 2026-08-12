@@ -110,10 +110,26 @@
 		}
 	}
 
+	/**
+	 * השרת מחזיר code יציב ולא טקסט, והניסוח נבחר כאן — אחרת הודעת השגיאה
+	 * הייתה מגיעה בעברית גם לממשק האנגלי והרוסי.
+	 * @param {string} [code]
+	 */
+	const reviewErrText = (code) =>
+		code === 'auth'
+			? t.reviewErrAuth
+			: code === 'duplicate'
+				? t.reviewErrDuplicate
+				: code === 'rate'
+					? t.reviewErrTooMany
+					: t.reviewErrGeneric;
+
 	async function submitReview() {
 		if (!user) return;
 		reviewError = '';
 		try {
+			// שם המחבר לא נשלח: השרת לוקח אותו מה-session, כדי שאי אפשר יהיה
+			// לחתום חוות דעת בשם של מישהו אחר.
 			const res = await fetch('/api/reviews', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
@@ -121,20 +137,19 @@
 					businessId: business.documentId,
 					businessSlug: business.slug,
 					rating: newReview.rating,
-					comment: newReview.comment,
-					authorName: user.name
+					comment: newReview.comment
 				})
 			});
-			const result = await res.json();
-			if (result.success) {
+			const result = await res.json().catch(() => null);
+			if (result?.success) {
 				reviewSubmitted = true;
 				showReviewForm = false;
 				newReview = { rating: 5, comment: '' };
 			} else {
-				reviewError = result.error || 'שגיאה בשליחת חוות הדעת';
+				reviewError = reviewErrText(result?.code);
 			}
 		} catch (e) {
-			reviewError = 'שגיאה בשליחת חוות הדעת';
+			reviewError = t.reviewErrGeneric;
 		}
 	}
 
@@ -333,7 +348,11 @@
 			{/if}
 			<p class="mt-1.5 text-xs">
 				{#if ratingCount > 0}
-					<span class="text-gray-400" role="img" aria-label="{avgRating} מתוך 5">
+					<span
+						class="text-gray-400"
+						role="img"
+						aria-label={t.ratingOutOf5.replace('{rating}', String(avgRating))}
+					>
 						<span class="text-yellow-400" aria-hidden="true">★</span>
 						<span class="font-medium text-gray-200">{avgRating}</span>
 						<span class="text-gray-500">· {ratingCount} {t.reviews}</span>
@@ -585,7 +604,7 @@
 		</div>
 
 		{#if reviewSubmitted}
-			<p class="mt-4 text-sm text-emerald-400">תודה! חוות הדעת נשלחה ותפורסם לאחר אישור.</p>
+			<p class="mt-4 text-sm text-emerald-400">{t.reviewThanks}</p>
 		{/if}
 
 		{#if showReviewForm}
@@ -647,7 +666,11 @@
 							<span class="text-sm font-medium text-gray-200">{review.author_name}</span>
 							<span class="text-xs text-gray-600">{review.date}</span>
 						</div>
-						<div class="mt-1 flex gap-0.5 text-xs" dir="ltr" aria-label="{review.rating} מתוך 5">
+						<div
+							class="mt-1 flex gap-0.5 text-xs"
+							dir="ltr"
+							aria-label={t.ratingOutOf5.replace('{rating}', String(review.rating))}
+						>
 							{#each Array(5) as _, i}
 								<span
 									aria-hidden="true"

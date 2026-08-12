@@ -105,6 +105,14 @@ export const translations = {
 		register: 'הרשמה',
 		firstTimeRegister: '👋 פעם ראשונה כאן? יש להירשם תחילה — ואז ניתן להישאר מחובר במכשיר זה.',
 		email: 'אימייל',
+		// תשובות השרת על שליחת חוות דעת. השרת מחזיר code ולא טקסט, כדי שההודעה
+		// תוצג בשפת המבקר ולא בעברית קשיחה.
+		reviewThanks: 'תודה! חוות הדעת נשלחה ותפורסם לאחר אישור.',
+		reviewErrGeneric: 'שגיאה בשליחת חוות הדעת',
+		reviewErrAuth: 'יש להתחבר כדי להוסיף חוות דעת',
+		reviewErrDuplicate: 'כבר כתבת חוות דעת על העסק הזה',
+		reviewErrTooMany: 'נשלחו יותר מדי חוות דעת. נסו שוב מאוחר יותר.',
+		ratingOutOf5: '{rating} מתוך 5',
 		password: 'סיסמה',
 		fullName: 'שם מלא',
 		alreadyHaveAccount: 'כבר יש לך חשבון? התחבר',
@@ -350,6 +358,15 @@ export const translations = {
 		password: 'Password',
 		fullName: 'Full Name',
 		alreadyHaveAccount: 'Already have an account? Login',
+		reviewPlaceholder: 'Write your review here...',
+		submitReview: 'Submit review',
+		writtenReviews: 'Written reviews',
+		reviewThanks: 'Thank you! Your review was sent and will appear once approved.',
+		reviewErrGeneric: 'Could not send the review',
+		reviewErrAuth: 'Please login to add a review',
+		reviewErrDuplicate: 'You have already reviewed this business',
+		reviewErrTooMany: 'Too many reviews sent. Please try again later.',
+		ratingOutOf5: '{rating} out of 5',
 		dontHaveAccount: "Don't have an account? Register",
 		logout: 'Logout',
 		myArea: 'My Account',
@@ -362,11 +379,33 @@ export const translations = {
 		loadMore: 'Load {count} more businesses',
 		loginWithGoogle: 'Sign in with Google',
 		visitorCount: 'Website visitor count: ',
+		favorites: 'Favorites',
+		noFavorites: 'No favorite businesses yet',
+		saveToFavorites: 'Save to favorites',
+		removeFromFavorites: 'Remove from favorites',
+		darkMode: 'Dark mode',
+		lightMode: 'Light mode',
+		manageBusiness: 'Manage and update business details',
+		updateBusiness: 'Update details',
+		share: 'Share',
+		communityPolicyTitle: 'Community policy for business owners – Yotzim LaHerut',
+		policyBack: 'Back to the business directory',
+		policyIntro:
+			'Welcome to the Yotzim LaHerut business directory. The directory connects business owners with members of the social movement in every neighborhood, strengthens the local economy, and encourages cooperation built on freedom, trust and mutual responsibility.',
+		policyPromise:
+			'To keep this a fair, trustworthy and empowering business space, the owners listed in the directory commit to the following policy:',
 		// Ads rails, Footer & Register (ported from community)
+		policySection1Text: 'Based on the Seven Noahide Laws. Read here: ',
+		policySection1LinkName: 'The Global Ethical Code',
+		policyCashTitle: '2. The right to pay in cash',
+		policyCashText:
+			'I commit to letting customers of my business pay in cash under any circumstances, even if the government tries to outlaw cash. In doing so I join the effort to strengthen residents’ property rights and privacy.',
 		adsPartnersAria: 'Yotzim LaHerut network sites',
 		adsSidebarHeader: 'Advancing toward a better, independent society',
 		opensNewWindowSuffix: ' (opens in a new window)',
 		marketingContent: 'Sponsored content',
+		policySummary:
+			'This policy exists to keep the directory a trustworthy and fair space that empowers small businesses and community members alike, and advances the Yotzim LaHerut vision of a just and free society.',
 		thisAdSpace: 'This ad space',
 		couldBeYours: '- could be yours',
 		adDetails: 'Details',
@@ -600,6 +639,15 @@ export const translations = {
 		logout: 'Выйти',
 		myArea: 'Личный кабинет',
 		profileHello: 'Здравствуйте',
+		reviewPlaceholder: 'Напишите здесь свой отзыв...',
+		submitReview: 'Отправить отзыв',
+		writtenReviews: 'Письменные отзывы',
+		reviewThanks: 'Спасибо! Отзыв отправлен и появится после проверки.',
+		reviewErrGeneric: 'Не удалось отправить отзыв',
+		reviewErrAuth: 'Пожалуйста, войдите, чтобы добавить отзыв',
+		reviewErrDuplicate: 'Вы уже оставили отзыв об этом бизнесе',
+		reviewErrTooMany: 'Отправлено слишком много отзывов. Попробуйте позже.',
+		ratingOutOf5: '{rating} из 5',
 		policySection1: '1. Принятие Всемирного этического кодекса',
 		policySection2: '3. Реальная выгода для членов сообщества',
 		policySection3: '4. Использование судов примирения',
@@ -612,11 +660,33 @@ export const translations = {
 		adsPartnersAria: 'Сайты сети «Йоцим ла-Херут»',
 		adsSidebarHeader: 'Движемся к обновлённому и независимому обществу',
 		opensNewWindowSuffix: ' (открывается в новом окне)',
+		favorites: 'Избранное',
+		noFavorites: 'В избранном пока нет бизнесов',
+		saveToFavorites: 'Добавить в избранное',
+		removeFromFavorites: 'Убрать из избранного',
+		darkMode: 'Тёмная тема',
+		lightMode: 'Светлая тема',
+		manageBusiness: 'Управление и обновление данных бизнеса',
+		updateBusiness: 'Обновить данные',
+		share: 'Поделиться',
+		communityPolicyTitle: 'Политика сообщества для владельцев бизнеса – «Йоцим ла-Херут»',
+		policyBack: 'Назад в справочник бизнесов',
+		policyIntro:
+			'Добро пожаловать в справочник бизнесов «Йоцим ла-Херут». Справочник связывает владельцев бизнеса с членами общественного движения во всех районах, укрепляет местную экономику и поощряет сотрудничество, основанное на свободе, доверии и взаимной ответственности.',
+		policyPromise:
+			'Чтобы сохранить честное, надёжное и укрепляющее деловое пространство, владельцы бизнесов в справочнике обязуются соблюдать следующую политику:',
 		marketingContent: 'Рекламный контент',
+		policySection1Text: 'Основан на семи заповедях потомков Ноя. Читать здесь: ',
+		policySection1LinkName: 'Всемирный этический кодекс',
+		policyCashTitle: '2. Право на оплату наличными',
+		policyCashText:
+			'Я обязуюсь при любых условиях позволять клиентам моего бизнеса платить наличными, даже если власти попытаются запретить наличные. Тем самым я поддерживаю право жителей на собственность и частную жизнь.',
 		thisAdSpace: 'Это рекламное место',
 		couldBeYours: '- может быть вашим',
 		adDetails: 'Подробнее',
 		freedomMovement: 'Навстречу свободе',
+		policySummary:
+			'Эта политика призвана сохранить справочник надёжным и честным пространством, которое укрепляет как малый бизнес, так и членов сообщества, и продвигает видение «Йоцим ла-Херут» — справедливое и свободное общество.',
 		freedomTagline: 'Вся деятельность общественного движения',
 		freedomLinkAria:
 			'Навстречу свободе – вся деятельность общественного движения (откроется в новом окне)',
@@ -766,3 +836,22 @@ export const translations = {
 		shareMsgFooter: 'Из справочника кошерных специалистов — «Навстречу свободе»'
 	}
 };
+
+// ─────────────────────────────────────────────────────────────
+// רשת ביטחון: מפתח שקיים בעברית וחסר בשפה אחרת נופל לעברית.
+//
+// בלי זה `t.submitReview` חסר מוחזר undefined, ו-Svelte מרנדר אותו כמחרוזת
+// ריקה — כלומר כפתור כחול בלי כיתוב, שנראה כמו באג ולא כמו תרגום חסר. גם
+// placeholder ו-aria-label נמחקים לגמרי, כי תכונה עם ערך nullish לא נכתבת.
+// עדיף טקסט עברי גלוי, שאפשר לראות ולתרגם, מאשר אלמנט ריק שקוף.
+//
+// הבחירה ב-fallback לעברית ולא באנגלית: עברית היא שפת המקור של האתר, ומדד
+// השלמות היחיד — כל שפה אחרת נמדדת מולה.
+// ─────────────────────────────────────────────────────────────
+const dict = /** @type {Record<string, Record<string, string>>} */ (translations);
+for (const code of Object.keys(dict)) {
+	if (code === 'he') continue;
+	for (const [key, value] of Object.entries(dict.he)) {
+		if (!(key in dict[code])) dict[code][key] = value;
+	}
+}

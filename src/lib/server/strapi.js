@@ -421,6 +421,28 @@ export async function createReview(data, jwt) {
 	});
 }
 
+/**
+ * הביקורת שהמשתמש כבר כתב על העסק, בכל סטטוס — כולל pending ו-rejected.
+ * מכאן שאדם לא יכול להגיש שוב בזמן שהראשונה ממתינה לאישור, ולא יכול לנסות
+ * שוב אחרי דחייה. השאילתה על user_id (מחרוזת) ולא על ה-relation, כי זה השדה
+ * שה-controller ממלא מ-ctx.state.user.
+ *
+ * הערה: user_id מתמלא רק כשהבקשה יוצאת עם ה-JWT של המשתמש, כלומר רק אחרי
+ * ש-'api::idx-review.idx-review.create' נוסף לתפקיד authenticated בבאקאנד
+ * (community-backend/src/index.ts). עד אז השדה ריק בכל השורות והבדיקה כאן
+ * לא תתפוס דבר — היא לא שוברת כלום, פשוט עדיין לא חוסמת.
+ * @param {string} businessDocId @param {string} userId @returns {Promise<any|null>}
+ */
+export async function findUserReview(businessDocId, userId) {
+	if (!businessDocId || !userId) return null;
+	const qs =
+		`filters[business][documentId][$eq]=${encodeURIComponent(businessDocId)}` +
+		`&filters[user_id][$eq]=${encodeURIComponent(userId)}` +
+		`&fields[0]=status&pagination[pageSize]=1`;
+	const data = await apiJson(`/api/idx-reviews?${qs}`);
+	return Array.isArray(data?.data) && data.data.length ? data.data[0] : null;
+}
+
 // ── Reports (idx-report) ─────────────────────────────────────
 
 /** דיווח על עסק המפר את מדיניות הקהילה (token-only, לא ציבורי). @param {Record<string,any>} data */

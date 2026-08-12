@@ -1,5 +1,6 @@
 import { json } from '@sveltejs/kit';
-import { listReviews, createReview } from '$lib/server/strapi.js';
+import { listReviews, createReview, findUserReview } from '$lib/server/strapi.js';
+import { SESSION_COOKIE, SHARED_SSO_COOKIE } from '$lib/server/session.js';
 
 // ביקורות על עסקי האינדקס — מגובות ב-idx-review ב-Strapi (מודרציה אמיתית).
 // GET מחזיר רק ביקורות מאושרות של העסק (לפי documentId).
@@ -12,7 +13,6 @@ export async function GET({ url }) {
 			rows.map((/** @type {any} */ r) => ({
 				id: r.documentId,
 				author_name: r.author_name || 'אנונימי',
-				author_city: r.author_city || '',
 				rating: Number(r.rating || 0),
 				title: r.title || '',
 				body: r.body || '',
@@ -25,28 +25,92 @@ export async function GET({ url }) {
 	}
 }
 
-// POST — יצירת ביקורת (status=pending נכפה בבאקאנד). אם המשתמש מחובר, מצורף כבעלים
-// דרך ה-session (locals). כתיבה עוברת עם STRAPI_TOKEN, לא ישירות מהדפדפן ל-Strapi.
-export async function POST({ request, locals }) {
+// ── הגבלת קצב ────────────────────────────────────────────────
+// דלי לפי מזהה משתמש ולא לפי IP: הכתיבה דורשת התחברות ממילא, וחשבון הוא
+// המחסום האמיתי — החלפת IP לא עוקפת אותו. הזיכרון הוא של התהליך; אחרי דיפלוי
+// הדלי מתאפס, וזה מקובל כאן כי הבלימה האמיתית היא בדיקת הכפילות שמתחתיה.
+/** @type {Map<string, {count:number, resetAt:number}>} */
+const buckets = new Map();
+const WINDOW_MS = 60 * 60 * 1000;
+const MAX_PER_WINDOW = 5;
+
+/** @param {string} userId */
+function rateLimited(userId) {
+	const now = Date.now();
+	const b = buckets.get(userId);
+	if (!b || now > b.resetAt) {
+		buckets.set(userId, { count: 1, resetAt: now + WINDOW_MS });
+		return false;
+	}
+	if (b.count >= MAX_PER_WINDOW) return true;
+	b.count += 1;
+	return false;
+}
+
+/** @param {unknown} e */
+const isAuthError = (e) => /→ 40[13] /.test(e instanceof Error ? e.message : '');
+
+// POST — יצירת ביקורת (status=pending נכפה בבאקאנד). מחייב התחברות: בלי זה
+// אפשר היה להציף את תור המודרציה ולחתום בשם של אדם אחר, שכן שם המחבר הגיע
+// מגוף הבקשה. עכשיו השם נלקח מה-session בלבד, וגוף הבקשה לא נשאל.
+//
+// הבקשה יוצאת עם ה-JWT של המשתמש, כדי שה-controller בבאקאנד יצמיד את הזהות
+// (user/user_id) מ-ctx.state.user. אם ההרשאה טרם נפרסה שם — נופלים ל-STRAPI_TOKEN
+// של השרת, כי עדיף ביקורת בלי זהות מוצמדת מאשר טופס שבור. Strapi נשאר ה-gatekeeper:
+// הכתיבה לעולם לא יוצאת מהדפדפן ישירות.
+export async function POST({ request, locals, cookies }) {
+	if (!locals.user) {
+		return json(
+			{ success: false, code: 'auth', error: 'יש להתחבר כדי להוסיף חוות דעת' },
+			{ status: 401 }
+		);
+	}
 	try {
-		const { businessId, businessSlug, rating, comment, title, authorName, authorCity } =
-			await request.json();
+		const { businessId, businessSlug, rating, comment, title } = await request.json();
 		const r = Math.max(1, Math.min(5, Number(rating) || 0));
 		if (!businessId || !r) {
-			return json({ success: false, error: 'חסרים פרטים' }, { status: 400 });
+			return json({ success: false, code: 'invalid', error: 'חסרים פרטים' }, { status: 400 });
 		}
-		await createReview({
+
+		if (rateLimited(locals.user.id)) {
+			return json(
+				{ success: false, code: 'rate', error: 'נשלחו יותר מדי חוות דעת. נסו שוב מאוחר יותר.' },
+				{ status: 429 }
+			);
+		}
+
+		// חוות דעת אחת לאדם לעסק. כשל בבדיקה עצמה לא חוסם את ההגשה — עדיף
+		// כפילות נדירה שהמנהל ידחה, מאשר טופס שנופל בגלל תקלת רשת רגעית.
+		const existing = await findUserReview(businessId, locals.user.id).catch(() => null);
+		if (existing) {
+			return json(
+				{ success: false, code: 'duplicate', error: 'כבר כתבת חוות דעת על העסק הזה' },
+				{ status: 409 }
+			);
+		}
+
+		const payload = {
 			business: businessId,
 			business_slug: businessSlug || '',
 			rating: r,
 			title: (title || '').slice(0, 120),
 			body: (comment || '').slice(0, 2000),
-			author_name: (authorName || locals.user?.name || 'אנונימי').slice(0, 80),
-			author_city: (authorCity || '').slice(0, 80)
-		});
+			author_name: locals.user.name || 'אנונימי'
+		};
+		const jwt = cookies.get(SESSION_COOKIE) || cookies.get(SHARED_SSO_COOKIE);
+		try {
+			await createReview(payload, jwt);
+		} catch (e) {
+			if (!jwt || !isAuthError(e)) throw e;
+			console.warn('reviews POST: JWT rejected by Strapi, falling back to server token');
+			await createReview(payload);
+		}
 		return json({ success: true });
 	} catch (e) {
 		console.error('reviews POST error:', e);
-		return json({ success: false, error: 'שליחת חוות הדעת נכשלה' }, { status: 502 });
+		return json(
+			{ success: false, code: 'server', error: 'שליחת חוות הדעת נכשלה' },
+			{ status: 502 }
+		);
 	}
 }

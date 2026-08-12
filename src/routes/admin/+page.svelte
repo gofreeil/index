@@ -351,9 +351,7 @@
 								>
 							</div>
 							<p class="mt-1 text-xs text-gray-500">
-								{r.author_name || 'אנונימי'}{r.author_city ? ' · ' + r.author_city : ''} · {fmtDate(
-									r.submitted_at || r.createdAt
-								)}
+								{r.author_name || 'אנונימי'} · {fmtDate(r.submitted_at || r.createdAt)}
 							</p>
 							{#if r.title}<p class="mt-2 font-medium text-gray-200">{r.title}</p>{/if}
 							{#if r.body}<p class="mt-1 text-sm text-gray-400">{r.body}</p>{/if}
