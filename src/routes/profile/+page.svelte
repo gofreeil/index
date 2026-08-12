@@ -229,13 +229,18 @@
 	{#if matches.length}
 		<section
 			id="claims"
-			class="w-full scroll-mt-24 rounded-2xl border border-indigo-200 bg-indigo-50/60 p-5 dark:border-indigo-500/30 dark:bg-indigo-950/20"
+			class="w-full scroll-mt-24 rounded-2xl border-2 border-amber-400 bg-gradient-to-br from-amber-50 to-yellow-100/70 p-5 shadow-lg ring-4 shadow-amber-500/20 ring-amber-400/15 dark:border-amber-400/60 dark:from-amber-950/40 dark:to-yellow-900/20 dark:shadow-amber-500/10"
 		>
-			<h2 class="flex items-center gap-2 text-lg font-extrabold text-gray-900 dark:text-gray-100">
+			<h2 class="flex items-center gap-2 text-lg font-extrabold text-amber-900 dark:text-amber-100">
 				🪪 {t.matchesTitle}
-				<span class="text-sm font-bold text-gray-400">({matches.length})</span>
+				<span
+					class="rounded-full bg-amber-400/30 px-2 py-0.5 text-sm font-bold text-amber-800 dark:bg-amber-400/20 dark:text-amber-200"
+					>{matches.length}</span
+				>
 			</h2>
-			<p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{t.matchesHint}</p>
+			<p class="mt-1 text-xs font-medium text-amber-800/90 dark:text-amber-200/80">
+				{t.matchesHint}
+			</p>
 
 			{#if form?.claimError}
 				<p class="mt-2 text-sm font-bold text-red-600 dark:text-red-400">{form.claimError}</p>
@@ -244,7 +249,7 @@
 			<ul class="mt-4 space-y-2">
 				{#each matches as m (m.documentId)}
 					<li
-						class="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-gray-100 bg-white p-3 dark:border-gray-700 dark:bg-gray-800/60"
+						class="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-amber-200/80 bg-white p-3 dark:border-amber-500/20 dark:bg-gray-900/60"
 					>
 						<div class="min-w-0 flex-1">
 							<div class="flex flex-wrap items-center gap-2">
@@ -264,7 +269,7 @@
 
 						<a
 							href="/business/{m.documentId}"
-							class="text-xs font-bold text-blue-600 hover:underline dark:text-blue-400"
+							class="text-xs font-bold text-amber-700 hover:underline dark:text-amber-300"
 						>
 							{t.matchesOpenPage}
 						</a>
@@ -290,7 +295,7 @@
 								<input type="hidden" name="documentId" value={m.documentId} />
 								<button
 									disabled={busyClaim === m.documentId}
-									class="rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-1.5 text-xs font-bold text-white transition hover:scale-[1.02] disabled:opacity-40"
+									class="rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 px-4 py-1.5 text-xs font-extrabold text-amber-950 shadow-sm shadow-amber-500/40 transition hover:scale-[1.02] disabled:opacity-40"
 								>
 									{busyClaim === m.documentId ? '…' : t.matchesClaim}
 								</button>
