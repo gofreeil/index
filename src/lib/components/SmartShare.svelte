@@ -205,10 +205,13 @@
 <!-- כלי של בעל העסק בסוף דף הכרטיסייה: במצב סגור הוא שורה אחת שקטה, כדי
      שלא יתחרה בתוכן שהמבקר בא בשבילו. כל המשקל הוויזואלי נשמר לכפתור אחד. -->
 <section dir={t.dir} class="mt-10 border-t border-white/[0.08] pt-8">
-	<div class="flex flex-wrap items-center justify-between gap-3">
-		<h2 class="text-sm font-semibold text-gray-400">
+	<div class="flex items-center justify-between gap-3">
+		<h2 class="shrink-0 text-sm font-semibold text-gray-400">
 			{t.smartShare}
-			<span class="mr-2 text-xs font-normal text-gray-600">{t.smartShareBadge}</span>
+			<!-- התווית נופלת ראשונה כשצר: הכפתור והכותרת נשארים באותה שורה. -->
+			<span class="mr-2 hidden text-xs font-normal text-gray-600 sm:inline">
+				{t.smartShareBadge}
+			</span>
 		</h2>
 		<button
 			type="button"
