@@ -4,7 +4,8 @@
 	import JsonLd from '$lib/components/JsonLd.svelte';
 	import { faqSchema } from '$lib/seo';
 	import { FAQS } from '$lib/faqs';
-	// אותן שתי לשוניות שמוצגות בחלון המידע שבכותרת — מקור אחד לשניהם.
+	// שתי הלשוניות — אודות ותנאי הקהילה — הן גוף העמוד. כפתור "מידע" שבכותרת
+	// מוביל לכאן; עד כה הוא פתח את אותו תוכן בחלון צף מעל הדף.
 	import InfoTabs from '$lib/components/InfoTabs.svelte';
 
 	let currentLang = $state('he');
@@ -22,11 +23,15 @@
      וגוגל דורש שהסכימה תשקף טקסט שגלוי בפועל באותו עמוד. -->
 <JsonLd data={[faqSchema(FAQS)]} />
 
-<div class="px-4 py-12 sm:px-6 lg:px-8" dir={t.dir}>
-	<div class="mx-auto max-w-4xl rounded-3xl border border-gray-100 bg-white p-8 shadow-2xl sm:p-16">
+<!-- כרטיס כהה על רקע האתר, כמו דף המסמכים המשפטיים (/about/legal): הכרטיס
+     הלבן שישב כאן היה שריד מהחלון הצף, וזרח כמלבן לבן בתוך אתר כהה. -->
+<div class="px-4 py-8 sm:px-6 sm:py-12 lg:px-8" dir={t.dir}>
+	<div
+		class="mx-auto max-w-4xl rounded-3xl border border-purple-500/25 bg-gray-900/70 p-6 shadow-2xl backdrop-blur-sm sm:p-12"
+	>
 		<a
 			href="/"
-			class="group mb-12 inline-flex items-center gap-2 font-bold text-blue-600 transition-colors hover:text-blue-800"
+			class="group mb-10 inline-flex items-center gap-2 font-bold text-blue-400 transition-colors hover:text-blue-300"
 		>
 			<svg
 				class="h-5 w-5 {t.dir === 'rtl'
@@ -47,6 +52,6 @@
 			{t.policyBack}
 		</a>
 
-		<InfoTabs variant="page" />
+		<InfoTabs />
 	</div>
 </div>

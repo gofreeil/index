@@ -1,13 +1,11 @@
 <script>
-	// גוף מדיניות הקהילה — מקור אחד לשני מקומות תצוגה:
-	// 1. עמוד /policy (עמוד מלא, לאינדוקס בגוגל ולקישורים ישירים).
-	// 2. כפתור המידע בכותרת, שפותח את אותו תוכן בחלון קופץ בלי לעזוב את הדף.
-	// הכותרת הראשית לא נמצאת כאן בכוונה: בעמוד היא <h1> ובחלון הקופץ <h2>,
-	// ו-h1 כפול בכל דף היה מבלבל את גוגל לגבי נושא הדף.
+	// גוף מדיניות הקהילה — לשונית "תנאי הקהילה" שבעמוד /policy.
+	// הכותרת הראשית לא נמצאת כאן בכוונה: היא ה-<h1> של הלשונית, ו-h1 כפול
+	// באותו עמוד היה מבלבל את גוגל לגבי נושא הדף.
 	import { lang, translations } from '$lib/i18n';
 
-	// רמת הכותרות של הסעיפים: h2 בעמוד המלא (מתחת ל-h1 שלו), h3 בחלון המידע
-	// (מתחת ל-h2 של כותרת החלון). כך היררכיית הכותרות נשארת רציפה בשני המקומות.
+	// רמת הכותרות של הסעיפים — h2, מתחת ל-h1 של הלשונית, כך שהיררכיית
+	// הכותרות נשארת רציפה.
 	/** @type {{ headingTag?: 'h2' | 'h3' }} */
 	let { headingTag = 'h2' } = $props();
 
@@ -18,10 +16,10 @@
 </script>
 
 <div
-	class="space-y-10 leading-relaxed text-gray-700 {t.dir === 'rtl' ? 'text-right' : 'text-left'}"
+	class="space-y-10 leading-relaxed text-gray-300 {t.dir === 'rtl' ? 'text-right' : 'text-left'}"
 >
 	<p
-		class="rounded-xl border-blue-500 bg-blue-50 p-4 text-lg font-medium text-blue-900 {t.dir ===
+		class="rounded-xl border-blue-400 bg-blue-500/10 p-4 text-lg font-medium text-blue-100 {t.dir ===
 		'rtl'
 			? 'border-r-4'
 			: 'border-l-4'}"
@@ -32,9 +30,9 @@
 	<section class="space-y-4">
 		<svelte:element
 			this={headingTag}
-			class="flex items-center gap-3 text-2xl font-bold text-gray-900"
+			class="flex items-center gap-3 text-2xl font-bold text-gray-100"
 		>
-			<span class="text-blue-600">🟦</span>
+			<span class="text-blue-400">🟦</span>
 			{t.policySection1}
 		</svelte:element>
 		<p class="{t.dir === 'rtl' ? 'pr-9' : 'pl-9'} text-lg">
@@ -44,7 +42,7 @@
 					href="https://www.melecshop.com/page/uecc"
 					target="_blank"
 					rel="noopener noreferrer"
-					class="text-blue-600 underline decoration-blue-300 underline-offset-4 transition-colors hover:text-blue-800 hover:decoration-blue-500"
+					class="text-blue-400 underline decoration-blue-500/60 underline-offset-4 transition-colors hover:text-blue-300 hover:decoration-blue-400"
 				>
 					{t.policySection1LinkName}
 				</a>
@@ -57,9 +55,9 @@
 	<section class="space-y-4">
 		<svelte:element
 			this={headingTag}
-			class="flex items-center gap-3 text-2xl font-bold text-gray-900"
+			class="flex items-center gap-3 text-2xl font-bold text-gray-100"
 		>
-			<span class="text-blue-600">🟦</span>
+			<span class="text-blue-400">🟦</span>
 			{t.policyCashTitle}
 		</svelte:element>
 		<p class="{t.dir === 'rtl' ? 'pr-9' : 'pl-9'} text-lg">
@@ -70,9 +68,9 @@
 	<section class="space-y-4">
 		<svelte:element
 			this={headingTag}
-			class="flex items-center gap-3 text-2xl font-bold text-gray-900"
+			class="flex items-center gap-3 text-2xl font-bold text-gray-100"
 		>
-			<span class="text-blue-600">🟦</span>
+			<span class="text-blue-400">🟦</span>
 			{t.policySection2}
 		</svelte:element>
 		{#if currentLang === 'he'}
@@ -91,9 +89,9 @@
 	<section class="space-y-4">
 		<svelte:element
 			this={headingTag}
-			class="flex items-center gap-3 text-2xl font-bold text-gray-900"
+			class="flex items-center gap-3 text-2xl font-bold text-gray-100"
 		>
-			<span class="text-blue-600">🟦</span>
+			<span class="text-blue-400">🟦</span>
 			{t.policySection3}
 		</svelte:element>
 		<p class="{t.dir === 'rtl' ? 'pr-9' : 'pl-9'} text-lg">
@@ -104,7 +102,7 @@
 					href="https://chachmim.gofreeil.com/"
 					target="_blank"
 					rel="noopener noreferrer"
-					class="text-blue-600 underline decoration-blue-300 underline-offset-4 transition-colors hover:text-blue-800 hover:decoration-blue-500"
+					class="text-blue-400 underline decoration-blue-500/60 underline-offset-4 transition-colors hover:text-blue-300 hover:decoration-blue-400"
 				>
 					בתי הפיוס
 				</a>
@@ -117,13 +115,13 @@
 	<section class="space-y-4">
 		<svelte:element
 			this={headingTag}
-			class="flex items-center gap-3 text-2xl font-bold text-gray-900"
+			class="flex items-center gap-3 text-2xl font-bold text-gray-100"
 		>
-			<span class="text-blue-600">🟦</span>
+			<span class="text-blue-400">🟦</span>
 			{t.policySection4}
 		</svelte:element>
 		<p
-			class="mb-4 text-lg font-bold underline decoration-blue-200 underline-offset-4 {t.dir ===
+			class="mb-4 text-lg font-bold underline decoration-blue-400/50 underline-offset-4 {t.dir ===
 			'rtl'
 				? 'pr-9'
 				: 'pl-9'}"
@@ -153,9 +151,9 @@
 			</ul>
 		{/if}
 		<p
-			class="mt-4 rounded-lg border border-red-100 bg-red-50 p-3 {t.dir === 'rtl'
+			class="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 p-3 {t.dir === 'rtl'
 				? 'pr-9'
-				: 'pl-9'} font-bold text-red-600"
+				: 'pl-9'} font-bold text-red-300"
 		>
 			{#if currentLang === 'he'}
 				עסק הפועל בניגוד לערכים אלו עשוי להיות מוסר מהמאגר ופרטי הפרתו יפורסמו באתר לתמיד.
@@ -166,12 +164,12 @@
 		</p>
 	</section>
 
-	<section class="space-y-4 border-b border-gray-100 pb-8">
+	<section class="space-y-4 border-b border-white/10 pb-8">
 		<svelte:element
 			this={headingTag}
-			class="flex items-center gap-3 text-2xl font-bold text-gray-900"
+			class="flex items-center gap-3 text-2xl font-bold text-gray-100"
 		>
-			<span class="text-blue-600">🟦</span>
+			<span class="text-blue-400">🟦</span>
 			{t.policySection5}
 		</svelte:element>
 		<p class="mb-2 text-lg {t.dir === 'rtl' ? 'pr-9' : 'pl-9'}">
@@ -202,7 +200,7 @@
 				<li>Refusal to engage in mediation/arbitration by Yotzim L'cherut courts</li>
 			</ul>
 		{/if}
-		<p class="mt-4 {t.dir === 'rtl' ? 'pr-9' : 'pl-9'} font-bold text-gray-900">
+		<p class="mt-4 {t.dir === 'rtl' ? 'pr-9' : 'pl-9'} font-bold text-gray-100">
 			{#if currentLang === 'he'}
 				הסרה תתבצע כמובן לאחר בירור הוגן ושקוף.
 			{:else}
@@ -212,10 +210,10 @@
 	</section>
 
 	<footer class="pt-8">
-		<h3 class="mb-4 text-2xl font-black text-blue-700">
+		<h3 class="mb-4 text-2xl font-black text-blue-300">
 			✨ {currentLang === 'he' ? 'לסיכום' : 'In Summary'}
 		</h3>
-		<p class="text-xl font-medium text-gray-800 italic">
+		<p class="text-xl font-medium text-gray-200 italic">
 			{t.policySummary}
 		</p>
 	</footer>

@@ -8,7 +8,6 @@
 	import Footer from '$lib/components/Footer.svelte';
 	import WelcomeScreen from '$lib/components/WelcomeScreen.svelte';
 	import Flag from '$lib/components/Flag.svelte';
-	import PolicyModal from '$lib/components/PolicyModal.svelte';
 	import { authUser, hydrateAuth } from '$lib/auth';
 	import { onMount } from 'svelte';
 
@@ -88,9 +87,6 @@
 		en: 'gb',
 		ru: 'ru'
 	};
-
-	// חלון המידע של מדיניות הקהילה, שנפתח מכפתור המידע שבכותרת.
-	let isPolicyOpen = $state(false);
 </script>
 
 <svelte:head>
@@ -115,9 +111,6 @@
 <WelcomeScreen userName={user?.name || ''} />
 
 <MobileAdsDrawer />
-
-<!-- חלון המידע של מדיניות הקהילה — גלובלי, נפתח מכפתור המידע שבכותרת -->
-<PolicyModal bind:open={isPolicyOpen} />
 
 <div class="relative min-h-screen bg-gray-950 text-gray-100" dir={t.dir}>
 	<!-- Header -->
@@ -228,21 +221,13 @@
 						{/if}
 					</div>
 
-					<!-- כפתור "מידע" — מדיניות הקהילה ותנאיה.
-					     קליק רגיל פותח את המדיניות בחלון מידע על גבי הדף הנוכחי, אבל
-					     האלמנט נשאר <a> אמיתי אל /policy: כך פתיחה בלשונית חדשה
-					     (ctrl+קליק), שמירת הקישור וסריקה של גוגל ממשיכות לעבוד. -->
+					<!-- כפתור "מידע" — האודות ותנאי הקהילה, בדף מלא (/policy) ולא
+					     בחלון צף: החלון הצף כיסה את הדף, נעל את הגלילה שמאחוריו
+					     ולא נשמר בהיסטוריה — כפתור "אחורה" יצא ממנו מהאתר כולו. -->
 					<a
 						href="/policy"
-						onclick={(e) => {
-							// דילוג על פתיחת החלון כשהגולש ביקש במפורש לשונית/חלון אחר
-							if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
-							e.preventDefault();
-							isPolicyOpen = true;
-						}}
 						class="flex items-center gap-2 rounded-full bg-gradient-to-r from-yellow-200 to-yellow-400 px-2 py-1.5 text-sm font-bold text-yellow-900 shadow-sm transition-all hover:scale-105 hover:shadow-md active:scale-95 sm:px-4 sm:py-2.5"
 						title={t.communityPolicyTitle}
-						aria-haspopup="dialog"
 					>
 						<!-- אייקון "מידע" (i בעיגול) ולא אייקון מסמך: הכפתור נקרא "מידע",
 						     והצמד אייקון+כיתוב צריך לספר את אותו סיפור. -->
