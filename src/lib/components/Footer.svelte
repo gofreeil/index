@@ -1,6 +1,5 @@
 <script>
 	import { lang, translations } from '$lib/i18n';
-	import { OTHER_NETWORK_SITES } from '$lib/seo';
 
 	let currentLang = $state('he');
 	lang.subscribe((v) => (currentLang = v));
@@ -11,37 +10,6 @@
 
 <footer class="mt-1 border-t border-white/10 bg-[#0d1117] py-0 md:mt-0 md:py-2">
 	<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-		<!-- רשת "יוצאים לחירות": קישורי טקסט אמיתיים לכל אתרי הרשת.
-		     זה מה שמאפשר לגוגל ולמנועי ה-AI לזהות את כל האתרים כמותג אחד
-		     ולחלק ביניהם את האמון (entity consolidation), ובמקביל שולח גם
-		     מבקרים אנושיים בין האתרים. -->
-		<nav aria-labelledby="network-links-title" class="border-b border-white/10 py-3">
-			<h2
-				id="network-links-title"
-				class="mb-1.5 text-xs font-black tracking-wide text-yellow-400/90"
-			>
-				רשת יוצאים לחירות
-			</h2>
-			<ul
-				class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-semibold text-gray-400 md:text-xs"
-			>
-				{#each OTHER_NETWORK_SITES as site (site.url)}
-					<li>
-						<!-- לשונית חדשה, כמו כל קישור-חוץ באתר — הביקור כאן לא נקטע -->
-						<a
-							href={site.url}
-							title={site.description}
-							target="_blank"
-							rel="noopener noreferrer"
-							class="transition-colors hover:text-white"
-						>
-							{site.name}
-						</a>
-					</li>
-				{/each}
-			</ul>
-		</nav>
-
 		<div class="flex flex-col items-center justify-between gap-0 md:flex-row md:gap-6">
 			<!-- ימין: תמונת המותג + טקסט -->
 			<a
@@ -83,31 +51,37 @@
 			</a>
 
 			<!-- מרכז: קישורים -->
-			<!-- בנייד הקישורים ב-text-sm ובלי מפרידי | — בגודל דסקטופ הקישור
-			     הארוך ("דווח על עסק...") גלש אל מחוץ למסך ונחתך ע"י
-			     overflow-x: clip, ומפריד | נשאר יתום בסוף שורה. -->
+			<!-- בנייד: רשת של שתי עמודות עם קווים מפרידים בין השורות ובין
+			     שני הקישורים שבכל שורה — במקום מפרידי "|" של הדסקטופ, שבגלישה
+			     היו נשארים יתומים בסוף שורה. הקווים לוגיים (border-s) כדי
+			     שיישבו נכון גם ב-RTL וגם ב-LTR. בדסקטופ חוזרים לשורה אחת עם "|". -->
 			<nav
 				aria-label={t.footerNavAria}
-				class="flex max-w-full flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-sm font-bold text-gray-300 md:text-lg"
+				class="grid w-full max-w-full grid-cols-2 text-sm font-bold text-gray-300 md:flex md:w-auto md:flex-wrap md:items-center md:justify-center md:gap-x-4 md:gap-y-1.5 md:text-lg"
 			>
-				<a href="/about/legal" class="text-center transition-colors hover:text-white">
+				<a
+					href="/about/legal"
+					class="border-b border-white/10 py-2 text-center transition-colors hover:text-white md:border-0 md:py-0"
+				>
 					<span class="block md:hidden">{t.legalLinksL1} {t.legalLinksL2}</span>
 					<span class="hidden whitespace-nowrap md:inline-block">{t.legalLinks}</span>
 				</a>
 				<span class="hidden font-black text-gray-600 md:inline" aria-hidden="true">|</span>
-				<a href="/privacy" class="transition-colors hover:text-white">{t.privacy}</a>
-				<span class="hidden font-black text-gray-600 md:inline" aria-hidden="true">|</span>
 				<a
 					href="mailto:support@melecshop.com"
-					class="transition-colors hover:text-white"
+					class="border-s border-b border-white/10 py-2 text-center transition-colors hover:text-white md:border-0 md:py-0"
 					aria-label={t.contactEmailAria}>{t.contact}</a
 				>
 				<span class="hidden font-black text-gray-600 md:inline" aria-hidden="true">|</span>
-				<a href="/about/advertise" class="transition-colors hover:text-white">{t.advertise}</a>
+				<a
+					href="/about/advertise"
+					class="col-span-2 border-b border-white/10 py-2 text-center transition-colors hover:text-white md:col-span-1 md:border-0 md:py-0"
+					>{t.advertise}</a
+				>
 				<span class="hidden font-black text-gray-600 md:inline" aria-hidden="true">|</span>
 				<a
 					href="/report"
-					class="max-w-full text-center text-red-500 transition-colors hover:text-red-300"
+					class="col-span-2 max-w-full py-2 text-center text-red-500 transition-colors hover:text-red-300 md:py-0"
 					>{t.reportViolation}</a
 				>
 			</nav>
@@ -117,11 +91,6 @@
 				&copy; {year}
 				{t.allRightsReserved}
 			</p>
-		</div>
-
-		<!-- הקדשה (ייחודי ל-index) -->
-		<div class="border-t border-white/5 py-2 text-center">
-			<p class="text-xs text-gray-400">{t.dedication}</p>
 		</div>
 	</div>
 </footer>

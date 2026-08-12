@@ -136,7 +136,7 @@
 					<img
 						src="/logo-professionals.png?v=4"
 						alt="לוגו בעלי מקצוע כשירים — סדר בכל עניין"
-						class="h-12 w-auto rounded-lg object-contain shadow-sm transition-transform duration-300 ease-out group-hover:scale-125 sm:h-14"
+						class="h-16 w-auto rounded-lg object-contain shadow-sm transition-transform duration-300 ease-out group-hover:scale-125 sm:h-18"
 					/>
 					<div class="flex flex-col text-right transition-opacity group-hover:opacity-80">
 						<!-- שם המותג בכותרת הוא <p> ולא <h1>: ה-h1 שייך לכותרת הייחודית של כל דף
@@ -336,7 +336,7 @@
 	     שורה שלמה מכל מסך. ההדר הדביק נשאר שורה אחת. בדסקטופ היא ממשיכה
 	     לשבת בתוך ההדר, לצד הלוגו. -->
 	<p
-		class="border-b border-gray-800 bg-gray-900 px-4 py-1.5 text-right text-[11px] font-semibold text-blue-300 sm:hidden"
+		class="border-b border-gray-800 bg-gray-900 px-4 py-1.5 text-center text-[11px] font-semibold text-blue-300 sm:hidden"
 	>
 		{t.subtitle}
 	</p>
