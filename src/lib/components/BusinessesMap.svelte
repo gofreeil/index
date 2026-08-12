@@ -1,6 +1,7 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { resolveServiceArea, serviceCircles } from '$lib/serviceArea.js';
 	import 'leaflet/dist/leaflet.css';
 
 	/** @type {{ businesses: any[] }} */
@@ -29,53 +30,132 @@
 		businesses.filter((b) => typeof b.lat === 'number' && typeof b.lng === 'number')
 	);
 
+	// אזור העבודה נגזר מ"אזור מכירה" — טקסט חופשי — ולכן מצויר כעיגול מקורב
+	// ולא כגבול. עסק ארצי לא מקבל עיגול (הוא היה מכסה את המפה כולה) אלא נספר
+	// בשורת ההסבר שמתחתיה.
+	const areas = $derived(businesses.map((b) => ({ b, area: resolveServiceArea(b) })));
+	const nationwide = $derived(
+		areas.filter(({ area }) => area.kind === 'country' || area.kind === 'global').length
+	);
+
+	/* כמה עסקים באותו יישוב = אותו עיגול בדיוק. מיזוג למעגל אחד מונע ערימת
+	   שכבות שמכהה את המפה, ומאפשר פופאפ שמונה את כולם במקום להסתיר את התחתונים. */
+	const circles = $derived.by(() => {
+		/** @type {Record<string, {lat:number, lng:number, radius:number, items:any[]}>} */
+		const groups = {};
+		for (const { b, area } of areas) {
+			for (const c of serviceCircles(area)) {
+				const key = `${c.lat.toFixed(3)}|${c.lng.toFixed(3)}|${c.radius}`;
+				groups[key] ??= { ...c, items: [] };
+				groups[key].items.push({ ...b, areaLabel: area.label });
+			}
+		}
+		// הגדולים נכנסים ראשונים, כדי שעיגול קטן שיושב בתוכם יישאר לחיץ
+		return Object.values(groups).sort((a, b) => b.radius - a.radius);
+	});
+
+	const drawn = $derived(mapped.length > 0 || circles.length > 0);
+
+	/** קישור לעסק — DOM node עם textContent, לא string concat (חסין XSS). @param {any} b */
+	function bizLink(b) {
+		const a = document.createElement('a');
+		a.textContent = b.name || 'ללא שם';
+		a.href = `/business/${b.documentId}`;
+		a.addEventListener('click', (e) => {
+			e.preventDefault();
+			goto(a.getAttribute('href') || '/');
+		});
+		return a;
+	}
+
+	/** @param {any} b */
+	function markerPopup(b) {
+		const box = document.createElement('div');
+		box.setAttribute('dir', 'rtl');
+		box.style.textAlign = 'right';
+		box.style.minWidth = '180px';
+		const h = document.createElement('h3');
+		h.textContent = b.name || '';
+		h.style.cssText = 'margin:0 0 6px;font-size:15px;font-weight:700;color:#111';
+		box.appendChild(h);
+		if (b.category) {
+			const c = document.createElement('span');
+			c.textContent = b.category;
+			c.style.cssText =
+				'display:inline-block;background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:12px;font-size:11px';
+			box.appendChild(c);
+		}
+		if (b.discount) {
+			const d = document.createElement('p');
+			d.textContent = '🎁 ' + b.discount;
+			d.style.cssText = 'margin:6px 0 0;font-size:12px;color:#059669;font-weight:600';
+			box.appendChild(d);
+		}
+		const a = bizLink(b);
+		a.textContent = 'מעבר לעסק »';
+		a.style.cssText =
+			'display:inline-block;margin-top:8px;padding:5px 12px;background:#2563eb;color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none';
+		box.appendChild(a);
+		return box;
+	}
+
+	/** @param {{items:any[]}} group */
+	function circlePopup(group) {
+		const box = document.createElement('div');
+		box.setAttribute('dir', 'rtl');
+		box.style.cssText = 'text-align:right;min-width:190px;max-height:220px;overflow:auto';
+		const h = document.createElement('h3');
+		h.textContent = group.items[0].areaLabel || 'אזור עבודה';
+		h.style.cssText = 'margin:0 0 2px;font-size:14px;font-weight:700;color:#111';
+		box.appendChild(h);
+		const sub = document.createElement('p');
+		sub.textContent = `${group.items.length} עסקים · אזור מקורב`;
+		sub.style.cssText = 'margin:0 0 6px;font-size:11px;color:#6b7280';
+		box.appendChild(sub);
+		const ul = document.createElement('ul');
+		ul.style.cssText = 'margin:0;padding:0;list-style:none;display:grid;gap:4px';
+		for (const b of group.items) {
+			const li = document.createElement('li');
+			const a = bizLink(b);
+			a.style.cssText = 'font-size:12px;color:#1d4ed8;text-decoration:none;font-weight:600';
+			li.appendChild(a);
+			ul.appendChild(li);
+		}
+		box.appendChild(ul);
+		return box;
+	}
+
 	function render() {
 		if (!map || !L || !markersLayer) return;
 		markersLayer.clearLayers();
-		const bounds = [];
+
+		for (const g of circles) {
+			const circle = L.circle([g.lat, g.lng], {
+				radius: g.radius,
+				color: '#2563eb',
+				weight: 1.5,
+				opacity: 0.5,
+				fillColor: '#3b82f6',
+				fillOpacity: 0.1
+			}).addTo(markersLayer);
+			circle.bindPopup(circlePopup(g));
+			circle.bindTooltip(`${g.items[0].areaLabel} · ${g.items.length} עסקים`, {
+				direction: 'top'
+			});
+			circle.on('mouseover', () => circle.setStyle({ fillOpacity: 0.22, opacity: 0.85 }));
+			circle.on('mouseout', () => circle.setStyle({ fillOpacity: 0.1, opacity: 0.5 }));
+		}
+
 		for (const b of mapped) {
 			const marker = L.marker([b.lat, b.lng], { icon: pinIcon, riseOnHover: true }).addTo(
 				markersLayer
 			);
-
-			// popup נבנה מ-DOM nodes עם textContent — לא string concat (חסין XSS).
-			const box = document.createElement('div');
-			box.setAttribute('dir', 'rtl');
-			box.style.textAlign = 'right';
-			box.style.minWidth = '180px';
-			const h = document.createElement('h3');
-			h.textContent = b.name || '';
-			h.style.cssText = 'margin:0 0 6px;font-size:15px;font-weight:700;color:#111';
-			box.appendChild(h);
-			if (b.category) {
-				const c = document.createElement('span');
-				c.textContent = b.category;
-				c.style.cssText =
-					'display:inline-block;background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:12px;font-size:11px';
-				box.appendChild(c);
-			}
-			if (b.discount) {
-				const d = document.createElement('p');
-				d.textContent = '🎁 ' + b.discount;
-				d.style.cssText = 'margin:6px 0 0;font-size:12px;color:#059669;font-weight:600';
-				box.appendChild(d);
-			}
-			const a = document.createElement('a');
-			a.textContent = 'מעבר לעסק »';
-			a.href = `/business/${b.documentId}`;
-			a.style.cssText =
-				'display:inline-block;margin-top:8px;padding:5px 12px;background:#2563eb;color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none';
-			a.addEventListener('click', (e) => {
-				e.preventDefault();
-				goto(a.getAttribute('href') || '/');
-			});
-			box.appendChild(a);
-
-			marker.bindPopup(box);
+			marker.bindPopup(markerPopup(b));
 			marker.bindTooltip(b.name || '', { direction: 'top' });
-			bounds.push([b.lat, b.lng]);
 		}
-		if (bounds.length) map.fitBounds(bounds, { padding: [40, 40], maxZoom: 13 });
+
+		const bounds = markersLayer.getBounds();
+		if (bounds?.isValid()) map.fitBounds(bounds, { padding: [30, 30], maxZoom: 12 });
 	}
 
 	onMount(() => {
@@ -96,7 +176,8 @@
 				attribution: '&copy; OpenStreetMap',
 				maxZoom: 18
 			}).addTo(map);
-			markersLayer = L.layerGroup().addTo(map);
+			// featureGroup ולא layerGroup: רק לו יש getBounds, שממסגר גם עיגולים
+			markersLayer = L.featureGroup().addTo(map);
 			render();
 		})();
 	});
@@ -112,7 +193,7 @@
 <div class="relative isolate">
 	<!-- הגובה חייב להתאים לשלד ב-LazyMap, אחרת הדף קופץ כשהמפה נטענת -->
 	<div bind:this={mapEl} class="h-[190px] w-full rounded-xl sm:h-[240px]"></div>
-	{#if mapped.length === 0}
+	{#if !drawn}
 		<div
 			class="pointer-events-none absolute inset-0 flex items-center justify-center rounded-xl bg-gray-900/60 text-center text-xs text-gray-300"
 		>
@@ -122,6 +203,17 @@
 		</div>
 	{/if}
 </div>
+
+<!-- הגובה קבוע (שתי שורות בנייד, אחת מ-sm) ומשוכפל בשלד של LazyMap, אחרת
+     הדף קופץ כשהמפה מחליפה את השלד. לכן הפסקה מרונדרת תמיד, גם כשריקה. -->
+<p class="mt-1.5 h-8 px-1 text-center text-[11px] leading-4 text-gray-500 sm:h-4">
+	{#if drawn}
+		אזור עבודה מקורב לפי הכרטיסייה, לא גבול מדויק.
+		{#if nationwide}
+			<span class="text-gray-400">ועוד {nationwide} עסקים ארציים.</span>
+		{/if}
+	{/if}
+</p>
 
 <style>
 	:global(.leaflet-popup-content) {
