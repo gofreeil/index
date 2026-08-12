@@ -62,8 +62,23 @@
 	// ── מיקום וזום של הלוגו והתמונות ──
 	// העורך עובד על מה שרואים: קובץ חדש שנבחר גובר על התמונה השמורה.
 	// הערכים נוסעים כ-JSON בשדה מוסתר אחד ונשמרים ב-extra_fields.media_fit.
+
+	/** רשימת fit באורך שמכסה את כל התמונות שיוצגו.
+	 * @param {{x:number,y:number,z:number}[]} list @param {number} n */
+	function padFits(list, n) {
+		return Array.from(
+			{ length: Math.max(n, list.length) },
+			(_, i) => list[i] ?? { ...DEFAULT_FIT }
+		);
+	}
+
 	let logoFit = $state(parseFit(biz.extra_fields?.media_fit?.logo));
-	let bannerFits = $state(parseFitList(biz.extra_fields?.media_fit?.banners));
+	// תמונה שאין לה עדיין fit שמור מקבלת ברירת מחדל כבר כאן, ולא ב-$effect
+	// בלבד: אפקטים אינם רצים ב-SSR, וכרטיסייה עם תמונות שמעולם לא מוקמו
+	// הגיעה לעורך עם fit=undefined והפילה את הדף (500) לפני ההידרציה.
+	let bannerFits = $state(
+		padFits(parseFitList(biz.extra_fields?.media_fit?.banners), banners.length)
+	);
 	// מסגרת הלוגו בכרטיסייה — ריבוע מעוגל או עיגול, נוסע באותו json
 	let logoShape = $state(parseLogoShape(biz.extra_fields?.media_fit?.logo_shape));
 	// התמונה הראשית — הבאנר של האריח בדף הבית ופתיחת הגלריה בכרטיסייה
@@ -81,10 +96,10 @@
 			: banners.map((/** @type {any} */ b) => mediaUrl(b)).filter(Boolean)
 	);
 
-	// תמונה שאין לה עדיין fit מקבלת ברירת מחדל, כדי שהעורך לא יקרוס על undefined
+	// ובצד הלקוח — בחירת קבצים חדשים מוסיפה תצוגות מקדימות מעבר לרשימה
 	$effect(() => {
 		if (bannerPreviews.length > bannerFits.length) {
-			bannerFits = bannerPreviews.map((_, i) => bannerFits[i] ?? { ...DEFAULT_FIT });
+			bannerFits = padFits(bannerFits, bannerPreviews.length);
 		}
 	});
 
