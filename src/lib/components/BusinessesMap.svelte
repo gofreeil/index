@@ -4,8 +4,11 @@
 	import { cityLabels, resolveServiceArea, serviceShapes } from '$lib/serviceArea.js';
 	import 'leaflet/dist/leaflet.css';
 
-	/** @type {{ businesses: any[] }} */
-	let { businesses = [] } = $props();
+	/** full — המופע שבתוך שכבת המסך המלא (ראו LazyMap): הוא ממלא את הגובה
+	   שנותנים לו, וכל מחוות הזום פתוחות בו. המופע הקטן שבדף הבית הוא תצוגה
+	   מקדימה: גלגלת ולחיצה כפולה אינן מזיזות אותו — הן פותחות את הגדול.
+	   @type {{ businesses: any[], full?: boolean, onexpand?: () => void }} */
+	let { businesses = [], full = false, onexpand = undefined } = $props();
 
 	/** @type {HTMLDivElement} */
 	let mapEl;
@@ -264,7 +267,15 @@
 			// אוויר מסביבה. בעשיריות רמה המסגור נעצר צמוד לקופסה: רבע רמה
 			// הוא כבר קפיצה של ~19% ואי אפשר לכוון בו עדין מזה (כפתורי
 			// ה-+/− של Leaflet קופצים רמה שלמה — פי 2).
-			map = L.map(mapEl, { scrollWheelZoom: false, zoomSnap: 0.1 }).setView([31.7, 35.0], 7);
+			map = L.map(mapEl, {
+				scrollWheelZoom: full,
+				// בתצוגה המקדימה לחיצה כפולה פותחת את המפה הגדולה במקום לזום:
+				// במלבן של 165px זום פנימי כמעט ואינו קריא, והמסך המלא הוא
+				// התשובה הנכונה לרצון "לראות מקרוב".
+				doubleClickZoom: full,
+				zoomSnap: 0.1
+			}).setView([31.7, 35.0], 7);
+			if (!full && onexpand) map.on('dblclick', () => onexpand());
 			// "Leaflet | 🇺🇦" — הקרדיט לספריית המפה עצמה — אינו נדרש ברישיון, והוא
 			// היה שני שלישים משורת הכיתוב. הקרדיט לנתונים (OSM ו-CARTO) כן נדרש,
 			// ולכן הוא נשאר — מקוצר לשמות בלבד, עם קישור לנוסח המלא של כל אחד.
@@ -308,12 +319,15 @@
 </script>
 
 <!-- isolate: כולא את ה-z-index הגבוהים של Leaflet (400–1000) בתוך stacking context משלו, שלא יצוירו מעל ההדר (z-50) -->
-<div class="relative isolate">
+<div class="relative isolate {full ? 'h-full' : 'map-preview'}">
 	<!-- מסגרת לאורך, בערך ביחס של הארץ עצמה: היא ארוכה מצפון לדרום וצרה
 	     ממערב למזרח, ובמלבן רחב נותרו פסי ים ומדבר משני הצדדים בזמן שהיישובים
 	     הצטופפו לפס דק באמצע. הגובה חייב להתאים לשלד ב-LazyMap, אחרת הדף קופץ
-	     כשהמפה נטענת. -->
-	<div bind:this={mapEl} class="h-[215px] w-full rounded-xl md:h-[430px]"></div>
+	     כשהמפה נטענת. במסך מלא הגובה מגיע מהשכבה שעוטפת. -->
+	<div
+		bind:this={mapEl}
+		class="w-full rounded-xl {full ? 'h-full' : 'h-[215px] md:h-[430px]'}"
+	></div>
 	{#if !drawn}
 		<div
 			class="pointer-events-none absolute inset-0 flex items-center justify-center rounded-xl bg-gray-900/60 text-center text-xs text-gray-300"
@@ -322,6 +336,46 @@
 				>רוב העסקים ארציים / אונליין ואינם ממוקמים על המפה. חפשו אותם ברשימה למעלה.</span
 			>
 		</div>
+	{/if}
+
+	{#if !full && onexpand}
+		<!-- z מעל 1000: הבקרים של Leaflet יושבים על 800–1000, ו-.leaflet-container
+		     אינו stacking context משלו — ולכן z נמוך מזה היה נופל מתחתיהם. -->
+		<button
+			type="button"
+			onclick={() => onexpand?.()}
+			class="absolute top-2 right-2 z-[1200] rounded-lg border border-gray-300 bg-white/90 p-1.5 text-gray-700 shadow-md transition hover:bg-white"
+			aria-label="הגדלת המפה למסך מלא"
+			title="הגדלת המפה למסך מלא"
+		>
+			<svg
+				class="h-4 w-4"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2.2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				aria-hidden="true"
+			>
+				<path d="M9 3H3v6M15 3h6v6M9 21H3v-6M15 21h6v-6" />
+			</svg>
+		</button>
+
+		<!-- ה"זכוכית": שכבה שקופה מעל המפה בנייד. Leaflet קובע touch-action:none
+		     על המכל שלו כדי לתפוס גרירה באצבע — וכך אצבע שנחתה על המפה בדרך
+		     מטה בדף הזיזה את המפה במקום לגלול את האתר. הכפתור הזה הוא אלמנט
+		     רגיל, ולכן הגלילה עליו היא גלילת הדף; והקשה עליו פותחת את המפה
+		     במסך מלא, ששם הגרירה באצבע היא באמת מה שרוצים.
+		     aria-hidden + tabindex=-1: אותה פעולה בדיוק כבר נמסרת בכפתור
+		     ההגדלה שמעליו, ואין טעם למסור אותה פעמיים. -->
+		<button
+			type="button"
+			onclick={() => onexpand?.()}
+			class="absolute inset-0 z-[1100] cursor-pointer md:hidden"
+			aria-hidden="true"
+			tabindex="-1"
+		></button>
 	{/if}
 	<!-- אין כאן הסתייגות "אזור משוער": מרגע שאין מעגלים אין גם אזור שצריך
 	     לסייג, ונקודה על מרכז יישוב נקראת ממילא כמה שהיא. ההסתייגות המלאה
@@ -349,6 +403,14 @@
 	/* שורת הקרדיט בגודל ברירת המחדל (11px, ריפוד 3×5) נשברה לשתי שורות
 	   במפה הצרה ותפסה פינה שלמה. הכיתוב נשאר קריא ולחיץ, אבל בגודל של
 	   הערת שוליים ובלבן שקוף למחצה — כמו שהוא נראה בשאר המפות ברשת. */
+	/* כפתורי ה-+/− בתצוגה המקדימה בנייד: הזכוכית שמעליהם חוסמת אותם ממילא,
+	   והם גזלו פינה מתוך מלבן של 165px. במסך המלא הם חוזרים. */
+	@media (max-width: 767px) {
+		.map-preview :global(.leaflet-control-zoom) {
+			display: none;
+		}
+	}
+
 	:global(.leaflet-control-attribution) {
 		padding: 0 4px;
 		background: rgb(255 255 255 / 0.65);
