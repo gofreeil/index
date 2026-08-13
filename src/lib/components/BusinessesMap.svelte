@@ -26,35 +26,42 @@
 	// מסך, ובצבע של הכפתור בפופאפ.
 	const PIN_SVG = `<svg viewBox="0 0 24 34" width="22" height="31" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 .9C6 .9 1.1 5.8 1.1 11.8c0 8.3 9.9 20.4 10.3 20.9a.8.8 0 0 0 1.2 0c.4-.5 10.3-12.6 10.3-20.9C22.9 5.8 18 .9 12 .9Z" fill="#2563eb" stroke="#fff" stroke-width="1.7"/><circle cx="12" cy="11.9" r="4.1" fill="#fff"/></svg>`;
 
-	// רק עסקים עם קואורדינטות אמיתיות (lat/lng) מקבלים פין. עסקים ארציים/אונליין
-	// בלי מיקום — לא מוצגים על המפה (סוף הפינים המזויפים מ-Math.random).
-	const mapped = $derived(
-		businesses.filter((b) => typeof b.lat === 'number' && typeof b.lng === 'number')
+	/* מפת הבית מציגה נקודות בלבד — בלי מעגלי אזור. המעגל עונה על שאלה ("עד
+	   לאן מגיע העסק הזה") ששייכת לכרטיסייה בודדת; בתצוגה של כל העסקים יחד
+	   הם נערמו לערפל כחול ומתחו את המסגור מהגליל ועד אילת. מפת העסק הבודד
+	   (ServiceAreaMap) ממשיכה לצייר אזור — שם זו התשובה הנכונה. */
+
+	/** @param {any} b */
+	const hasCoords = (b) => typeof b.lat === 'number' && typeof b.lng === 'number';
+
+	// עסק עם קואורדינטות אמיתיות (lat/lng) מקבל פין במקומו המדויק
+	const mapped = $derived(businesses.filter(hasCoords));
+
+	// לשאר, המקום נגזר מ"אזור מכירה" — טקסט חופשי — ולכן הפין יושב על מרכז
+	// היישוב או האזור, כקירוב. עסק ארצי/אונליין אינו מקובע לשום נקודה.
+	const areas = $derived(
+		businesses.filter((b) => !hasCoords(b)).map((b) => ({ b, area: resolveServiceArea(b) }))
 	);
 
-	// אזור העבודה נגזר מ"אזור מכירה" — טקסט חופשי — ולכן מצויר כעיגול מקורב
-	// ולא כגבול. עסק ארצי, וגם מי שלא ניתן היה לגזור ממנו מקום, מסומן ככל
-	// הארץ; כולם חולקים מתאר אחד ולא נערמים זה על זה.
-	const areas = $derived(businesses.map((b) => ({ b, area: resolveServiceArea(b) })));
-
-	/* כמה עסקים באותו יישוב = אותה צורה בדיוק. מיזוג לצורה אחת מונע ערימת
-	   שכבות שמכהה את המפה, ומאפשר פופאפ שמונה את כולם במקום להסתיר את התחתונים. */
-	const shapes = $derived.by(() => {
-		/** @type {Record<string, any>} */
+	/* כמה עסקים באותו מקום = נקודה אחת, עם פופאפ שמונה את כולם במקום להסתיר
+	   את התחתונים. המיזוג לפי התווית ולא לפי המפתח: serviceShapes נותן לאותו
+	   יישוב מפתחות שונים לפי הרדיוס ("והסביבה"), ולאזור מוארך כמה עיגולים
+	   לאורכו — וכנקודה כל אלה הם מקום אחד. */
+	const points = $derived.by(() => {
+		/** @type {Record<string, {label: string, lat: number, lng: number, items: any[]}>} */
 		const groups = {};
 		for (const { b, area } of areas) {
 			for (const s of serviceShapes(area)) {
-				groups[s.key] ??= { ...s, items: [] };
-				groups[s.key].items.push(b);
+				// "כל הארץ" אינו מקום, ואין נקודה שמייצגת אותו בלי לשקר
+				if (s.type !== 'circle') continue;
+				const g = (groups[s.label] ??= { label: s.label, lat: s.lat, lng: s.lng, items: [] });
+				if (!g.items.includes(b)) g.items.push(b);
 			}
 		}
-		// הגדולים נכנסים ראשונים, כדי שצורה קטנה שיושבת בתוכם תישאר לחיצה
-		const size = (/** @type {any} */ s) =>
-			s.type === 'country' ? Number.MAX_SAFE_INTEGER : s.radius;
-		return Object.values(groups).sort((a, b) => size(b) - size(a));
+		return Object.values(groups);
 	});
 
-	const drawn = $derived(mapped.length > 0 || shapes.length > 0);
+	const drawn = $derived(mapped.length > 0 || points.length > 0);
 
 	/** קישור לעסק — DOM node עם textContent, לא string concat (חסין XSS). @param {any} b */
 	function bizLink(b) {
@@ -109,7 +116,7 @@
 		h.style.cssText = 'margin:0 0 2px;font-size:14px;font-weight:700;color:#111';
 		box.appendChild(h);
 		const sub = document.createElement('p');
-		sub.textContent = `${group.items.length} עסקים · אזור מקורב`;
+		sub.textContent = `${group.items.length} עסקים · מיקום מקורב`;
 		sub.style.cssText = 'margin:0 0 6px;font-size:11px;color:#6b7280';
 		box.appendChild(sub);
 		const ul = document.createElement('ul');
@@ -126,23 +133,19 @@
 	}
 
 	/* שמות היישובים, בעברית, מצוירים על ידינו — ראו cityLabels ב-serviceArea.
-	   הרשימה נגזרת מהזום ומהעיגולים שעל המפה, ולכן היא נבנית מחדש בכל
+	   הרשימה נגזרת מהזום ומהנקודות שעל המפה, ולכן היא נבנית מחדש בכל
 	   zoomend ובכל שינוי סינון: בתצוגת כל הארץ נשארים חמישה עוגנים ועוד
 	   היישובים שיש בהם עסק, ובזום קרוב נפתחת הרשימה כולה. */
 	function renderLabels() {
 		if (!map || !L || !labelsLayer) return;
 		labelsLayer.clearLayers();
 
-		// היישוב שבמרכז העיגול הוא התשובה שהמפה נשאלה עליה, ולכן הוא נכתב
-		// גדול יותר ובכחול של העיגול. "כל הארץ" ואזורים אינם יישובים ואין
-		// להם רשומה בטבלת הקואורדינטות, ולכן הם נושרים מאליהם.
-		const featured = new Set(
-			shapes
-				.filter((/** @type {any} */ s) => s.type === 'circle')
-				.map((/** @type {any} */ s) => s.label)
-		);
+		// היישוב שיש עליו נקודה הוא התשובה שהמפה נשאלה עליה, ולכן הוא נכתב
+		// גדול יותר ובכחול. "כל הארץ" ואזורים אינם יישובים ואין להם רשומה
+		// בטבלת הקואורדינטות, ולכן הם נושרים מאליהם.
+		const featured = new Set(points.map((p) => p.label));
 
-		/* דחיסה: 111 שמות בזום קרוב, או עשרים עיגולים בגוש דן, נדפסים זה על
+		/* דחיסה: 111 שמות בזום קרוב, או עשרים נקודות בגוש דן, נדפסים זה על
 		   גבי זה. לכן כל תווית נבחנת מול אלה שכבר הונחו, ומי שמתנגשת נושרת.
 		   הרוחב מוערך מאורך השם — מדידה אמיתית דורשת רינדור של כל תווית. */
 		/** @type {{x1: number, x2: number, y1: number, y2: number}[]} */
@@ -179,32 +182,17 @@
 		if (!map || !L || !markersLayer) return;
 		markersLayer.clearLayers();
 
-		// המסגור נבנה מהמקומות האמיתיים בלבד. עיגול "כל הארץ" הוא סימון ולא
-		// מיקום, וברדיוס 225 ק"מ הוא היה מכריח את המפה — גבוהה 190px — לזום
-		// שמראה את קפריסין ועיראק במקום את הארץ.
+		// המסגור נבנה מהנקודות עצמן. בלי מעגלי האזור הוא כבר לא נמתח על פני
+		// הנגב בגלל עסק אחד שכתב "דרום".
 		const fit = L.latLngBounds([]);
 
-		for (const g of shapes) {
-			// עיגול "כל הארץ" שוכב מתחת לכולם וכמעט שקוף, אחרת העיגולים
-			// המקומיים היו נבלעים בתוכו
-			const faint = g.type === 'country';
-			const base = {
-				color: '#2563eb',
-				weight: faint ? 1 : 1.5,
-				opacity: faint ? 0.3 : 0.5,
-				fillColor: '#3b82f6',
-				fillOpacity: faint ? 0.04 : 0.1,
-				dashArray: faint ? '6 5' : undefined
-			};
-			const shape = L.circle([g.lat, g.lng], { ...base, radius: g.radius });
-			shape.addTo(markersLayer);
-			shape.bindPopup(areaPopup(g));
-			shape.bindTooltip(`${g.label} · ${g.items.length} עסקים`, { direction: 'top' });
-			shape.on('mouseover', () =>
-				shape.setStyle({ fillOpacity: faint ? 0.1 : 0.22, opacity: 0.85 })
+		for (const g of points) {
+			const marker = L.marker([g.lat, g.lng], { icon: pinIcon, riseOnHover: true }).addTo(
+				markersLayer
 			);
-			shape.on('mouseout', () => shape.setStyle(base));
-			if (!faint) fit.extend(shape.getBounds());
+			marker.bindPopup(areaPopup(g));
+			marker.bindTooltip(`${g.label} · ${g.items.length} עסקים`, { direction: 'top' });
+			fit.extend(marker.getLatLng());
 		}
 
 		for (const b of mapped) {
@@ -216,9 +204,19 @@
 			fit.extend(marker.getLatLng());
 		}
 
-		// שוליים צרים: ב-24 פיקסלים לכל צד רבע מגובה המפה הלך על אוויר, והארץ
-		// יצאה קטנה באמצע. 8 מספיקים כדי שעיגול בקצה לא ייחתך.
-		if (fit.isValid()) map.fitBounds(fit, { padding: [8, 8], maxZoom: 13 });
+		// הפין מצויר כלפי מעלה מהקואורדינטה, ולכן השוליים העליונים גדולים
+		// יותר — אחרת ראש הפין הצפוני נחתך. הצדדיים צרים: כל פיקסל שוליים
+		// במסגרת צרה עולה ברמת זום.
+		if (fit.isValid()) {
+			map.fitBounds(fit, {
+				paddingTopLeft: [4, 34],
+				paddingBottomRight: [4, 6],
+				maxZoom: 14
+			});
+			// ועוד רבע רמה: fitBounds מעגל כלפי מטה ומשאיר שוליים גם אחרי
+			// ה-padding, וברבעי רמות אפשר לגזול אותם בלי לחתוך פין.
+			map.setZoom(Math.min(map.getZoom() + 0.25, 14), { animate: false });
+		}
 	}
 
 	onMount(() => {
@@ -278,8 +276,11 @@
 
 <!-- isolate: כולא את ה-z-index הגבוהים של Leaflet (400–1000) בתוך stacking context משלו, שלא יצוירו מעל ההדר (z-50) -->
 <div class="relative isolate">
-	<!-- הגובה חייב להתאים לשלד ב-LazyMap, אחרת הדף קופץ כשהמפה נטענת -->
-	<div bind:this={mapEl} class="h-[240px] w-full rounded-xl sm:h-[300px]"></div>
+	<!-- מסגרת לאורך, בערך ביחס של הארץ עצמה: היא ארוכה מצפון לדרום וצרה
+	     ממערב למזרח, ובמלבן רחב נותרו פסי ים ומדבר משני הצדדים בזמן שהיישובים
+	     הצטופפו לפס דק באמצע. הגובה חייב להתאים לשלד ב-LazyMap, אחרת הדף קופץ
+	     כשהמפה נטענת. -->
+	<div bind:this={mapEl} class="h-[380px] w-full rounded-xl sm:h-[430px]"></div>
 	{#if !drawn}
 		<div
 			class="pointer-events-none absolute inset-0 flex items-center justify-center rounded-xl bg-gray-900/60 text-center text-xs text-gray-300"
@@ -289,17 +290,9 @@
 			>
 		</div>
 	{/if}
-	<!-- ההסתייגות יושבת בתוך המפה ולא מתחתיה: שורת טקסט מתחת גוזלת גובה
-	     ומכריחה שלד תואם ב-LazyMap. צמודה לפינה הימנית התחתונה ואטומה, כדי
-	     שתכסה את שורת הייחוס של Leaflet שנפתחת שם (הדף RTL, ולכן "Leaflet"
-	     והדגל יושבים בקצה הימני). z גבוה מפקדי Leaflet (800). -->
-	{#if drawn}
-		<div
-			class="pointer-events-none absolute bottom-0 right-0 z-[1000] rounded-br-xl rounded-tl bg-gray-900 px-1.5 py-0.5 text-[10px] leading-4 text-gray-200"
-		>
-			אזור משוער בלבד
-		</div>
-	{/if}
+	<!-- אין כאן הסתייגות "אזור משוער": מרגע שאין מעגלים אין גם אזור שצריך
+	     לסייג, ונקודה על מרכז יישוב נקראת ממילא כמה שהיא. ההסתייגות המלאה
+	     נשארת במפת העסק הבודד, שם באמת מצויר אזור. -->
 </div>
 
 <style>
