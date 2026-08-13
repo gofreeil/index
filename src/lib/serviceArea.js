@@ -328,13 +328,13 @@ export function resolveServiceArea(b) {
 	};
 }
 
-/* "והסביבה"/"אזור" מרחיב ל-20 ק"מ; כמה יישובים = פעילות פרושה, ולכן כל
-   אחד מקבל עיגול בינוני שנפגש עם שכניו. שניהם אומרים במפורש "מעבר לעיר",
-   ולכן הם נשארים מידה אחידה ואינם תלויים בגודל היישוב. */
-const WIDE_RADIUS = 20000;
-const MULTI_RADIUS = 14000;
+/* רק "והסביבה"/"אזור" מותח את העיגול מעבר לגבול היישוב, ולכן רק הוא מוסיף
+   מרחק. כמה יישובים ברשימה אינם "אזור אחד גדול" אלא כמה מקומות, וכל אחד
+   מהם נשאר בגודלו — מידה אחידה של 14 ק"מ לכולם החזירה בדיוק את הבעיה
+   שהטבלה שמתחת באה לפתור: חולון בגודל ירושלים. */
+const WIDE_EXTRA = 12000;
 
-/* יישוב בודד — רדיוס לפי גודלו בפועל.
+/* גודל היישוב — רדיוס לפי גודלו בפועל.
    מידה אחידה של 8 ק"מ לכולם עשתה עוול לשני הכיוונים: חולון קיבלה עיגול
    שבולע את תל אביב, את בת ים ואת ראשון לציון, ובאר שבע נראתה כמו עיירה.
    המספרים כאן הם קירוב לרדיוס השטח הבנוי — שורש השטח המוניציפלי חלקי
@@ -443,8 +443,9 @@ export function serviceShapes(area) {
 		out.push({ type: 'country', key: 'country', label: 'כל הארץ', ...COUNTRY_CIRCLE });
 	}
 
-	// רדיוס אחיד רק כשהאזור המוצהר גדול מיישוב; יישוב בודד נמדד לפי גודלו
-	const spread = area.cities.length > 1 ? MULTI_RADIUS : area.wide ? WIDE_RADIUS : 0;
+	// כל יישוב נמדד לפי גודלו, בין שהוא לבדו ובין שהוא אחד מכמה; רק
+	// "והסביבה" מוסיף לו מרחק, וגם אז ההפרש בין הערים נשמר
+	const extra = area.wide ? WIDE_EXTRA : 0;
 	for (const key of area.regions)
 		for (const [lat, lng, r] of REGIONS[key].circles)
 			out.push({
@@ -458,7 +459,7 @@ export function serviceShapes(area) {
 	for (const name of area.cities) {
 		const ll = CITY_LATLNG[name];
 		if (!ll) continue;
-		const radius = spread || CITY_SPAN[name] || DEFAULT_CITY_SPAN;
+		const radius = (CITY_SPAN[name] || DEFAULT_CITY_SPAN) + extra;
 		out.push({
 			type: 'circle',
 			key: `${ll[0]}|${ll[1]}|${radius}`,
