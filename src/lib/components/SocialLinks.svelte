@@ -5,15 +5,23 @@
 	// כל לוגו נצבע בצבע המותג שלו (currentColor), והעיגול מסביבו נייטרלי:
 	// שמונה עיגולים צבעוניים מלאים היו מושכים יותר תשומת לב מהעסק עצמו.
 	import { socialsOf } from '$lib/socialLinks.js';
+	import { lang, translations } from '$lib/i18n';
 
 	/** @type {{ business: any }} */
 	let { business } = $props();
+
+	let currentLang = $state('he');
+	lang.subscribe((v) => (currentLang = v));
+	const t = $derived(/** @type {any} */ (translations)[currentLang] || translations.he);
 
 	const items = $derived(socialsOf(business));
 </script>
 
 {#if items.length}
 	<div class="mt-3 flex flex-wrap items-center gap-2">
+		<!-- כותרת בשורה עצמה ולא מעליה: שורת עיגולים בלי מילה מסבירה נראית
+		     כמו קישוט, וכאן היא מזמינה מעקב. -->
+		<span class="text-base font-semibold text-gray-400">{t.socialNetworks}</span>
 		{#each items as s (s.key)}
 			<a
 				href={s.url}
