@@ -38,6 +38,13 @@
 	lang.subscribe((v) => (currentLang = v));
 	const t = $derived(/** @type {any} */ (translations)[currentLang] || translations.he);
 
+	/* כותרת מדור אחת לכל אורך הכרטיסייה. הכותרות היו חיוורות וקטנות מהטקסט
+	   שמתחתיהן (gray-400/text-base מול gray-300/text-lg), ולכן העין נחתה על
+	   התוכן בלי לעבור קודם על השם של המדור. עכשיו הן בהירות ומודגשות, ופס
+	   הצבע פותח את השורה — border-s ולא border-l, כדי שהפס יעבור לצד השני
+	   יחד עם כיוון הקריאה בממשק האנגלי והרוסי. */
+	const H2 = 'border-s-[3px] border-blue-500/80 ps-3 text-lg font-bold text-gray-100';
+
 	const PLACEHOLDER_IMG =
 		'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGNsYXNzPSJoLTYgdy02IiBmaWxsPSJub25lIiBzdHJva2U9IiM5Q0EzQUYiIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2Utd2lkdGg9IjIiIGQ9Ik0xOSAyMVY1YTIgMiAwIDAwLTItMkg3YTIgMiAwIDAwLTIgMnYxNm0xNCAwaDJtLTIgMGgtNW0tOSAweDNtMiAwaDVNOSA3aDFtLTEgNGgxbTQtNGgxbS0xIDRoMW0tNSAxMHYtNWExIDEgMCAwMTEtMWgyYTEgMSAwIDAxMSAxdjVtLTQgMGg0IiAvPjwvc3ZnPg==';
 
@@ -597,33 +604,38 @@
 	<section class="mt-6 border-t border-white/[0.08] pt-5">
 		<div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
 			<div class="min-w-0 flex-1">
-				<h2 class="text-base font-semibold text-gray-400">{t.aboutBusiness}</h2>
+				<h2 class={H2}>{t.aboutBusiness}</h2>
 				<!-- "תיאור מורחב" (unique_content) הוא הטקסט שבעל העסק עורך היום;
 				     description הוא שריד השדה "תיאור קצר" שנמחק מהטופס, ונשאר
 				     כנפילה אחורה לכרטיסיות שטרם מוזגו. -->
-				<p class="mt-2 text-lg leading-7 whitespace-pre-line text-gray-300">
+				<p class="mt-2.5 text-lg leading-7 whitespace-pre-line text-gray-200">
 					{business.unique_content || business.description || t.noDescription}
 				</p>
 
+				<!-- פרטי הקשר בלוח משלהם: התווית קטנה ועמומה, והפרט עצמו — הכתובת,
+				     הסניף — הוא הטקסט הבולט בשורה. קודם השניים נראו כמעט אותו דבר,
+				     והעין חיפשה את הכתובת בתוך רשימה אפורה אחידה. -->
 				{#if business.address || business.sales_area || business.branches?.length}
-					<h2 class="mt-5 text-base font-semibold text-gray-400">{t.contactInfo}</h2>
-					<dl class="mt-2 space-y-2 text-base">
+					<h2 class="mt-5 {H2}">{t.contactInfo}</h2>
+					<dl
+						class="mt-2.5 space-y-3 rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-3.5"
+					>
 						{#if business.address}
 							<div>
-								<dt class="text-sm text-gray-500">{t.addressLabel}</dt>
-								<dd class="mt-0.5 text-gray-300">{business.address}</dd>
+								<dt class="text-xs font-medium text-gray-500">{t.addressLabel}</dt>
+								<dd class="mt-1 text-base font-semibold text-gray-100">{business.address}</dd>
 							</div>
 						{/if}
 						{#if business.sales_area}
 							<div>
-								<dt class="text-sm text-gray-500">{t.serviceBorders}</dt>
-								<dd class="mt-0.5 text-gray-300">{business.sales_area}</dd>
+								<dt class="text-xs font-medium text-gray-500">{t.serviceBorders}</dt>
+								<dd class="mt-1 text-base font-semibold text-gray-100">{business.sales_area}</dd>
 							</div>
 						{/if}
 						{#if business.branches?.length}
 							<div>
-								<dt class="text-sm text-gray-500">{t.moreLocations}</dt>
-								<dd class="mt-0.5 space-y-0.5 text-gray-300">
+								<dt class="text-xs font-medium text-gray-500">{t.moreLocations}</dt>
+								<dd class="mt-1 space-y-1 text-base font-semibold text-gray-100">
 									{#each business.branches as branch, i (i)}
 										<p>{branchLine(branch)}</p>
 									{/each}
@@ -650,8 +662,8 @@
 	     ש"כשיהיה סרטון הוא יופיע כאן" היא טקסט ריק בדף של מבקר. -->
 	{#if ytEmbed}
 		<section class="mt-6 border-t border-white/[0.08] pt-5">
-			<h2 class="text-base font-semibold text-gray-400">{t.businessVideo}</h2>
-			<div class="mt-2 aspect-video overflow-hidden rounded-xl bg-white/5">
+			<h2 class={H2}>{t.businessVideo}</h2>
+			<div class="mt-2.5 aspect-video overflow-hidden rounded-xl bg-white/5">
 				<iframe
 					src={ytEmbed}
 					title={business.name}
@@ -690,8 +702,10 @@
 	     החשיפה עדיין נספרת בלחיצה (reveal_phone), כמו קודם. -->
 	{#if business.phone}
 		<section class="mt-6 border-t border-white/[0.08] pt-5 text-center">
-			<h2 class="text-base font-semibold text-gray-400">{t.callNow}</h2>
-			<div class="mt-2">
+			<!-- הכותרת היחידה שממורכזת (המדור כולו ממורכז), ולכן inline-block:
+			     בלעדיו פס הצבע נשאר בקצה השורה והכותרת מרחפת לבדה במרכז. -->
+			<h2 class="{H2} inline-block">{t.callNow}</h2>
+			<div class="mt-2.5">
 				{#if isPhoneRevealed}
 					<a
 						href="tel:{business.phone}"
@@ -721,7 +735,7 @@
 					onclick={() => (showReviews = !showReviews)}
 					aria-expanded={showReviews}
 					aria-controls="reviews-list"
-					class="flex items-center gap-2 text-base font-semibold text-gray-400 transition hover:text-gray-200"
+					class="{H2} flex items-center gap-2 transition hover:text-white"
 				>
 					<span>{t.reviews}</span>
 					<span class="text-sm font-medium text-gray-500">({reviews.length})</span>
@@ -739,7 +753,7 @@
 					</svg>
 				</button>
 			{:else}
-				<h2 class="text-base font-semibold text-gray-400">{t.reviews}</h2>
+				<h2 class={H2}>{t.reviews}</h2>
 			{/if}
 			<button
 				onclick={() => (showReviewForm = !showReviewForm)}
