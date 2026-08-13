@@ -32,12 +32,6 @@
 	let selectedCategory = $state('all');
 	let selectedLocation = $state('all');
 
-	/* המפה בנייד מקופלת מאחורי כפתור שיושב בשורת החיפוש: במסך צר המפה דחפה
-	   את מסילת התחומים — המסנן הראשי — אל מתחת לקיפול. הכפתור צמוד לחיפוש
-	   ולבורר העיר כי שלושתם מסננים את אותה רשימה, והמפה נפתחת מיד מתחתיהם.
-	   בדסקטופ המפה מוצגת תמיד, לצד החיפוש. */
-	let showMobileMap = $state(false);
-
 	// Pagination
 	let visibleCount = $state(9);
 	let incrementBy = $state(21);
@@ -295,9 +289,11 @@
 <JsonLd data={schemas} />
 
 <div class="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
-	<!-- H1 — הכותרת הראשית של הדף. עד כאן לא היה בדף אף h1, וגוגל לא ידע במה הדף עוסק. -->
-	<h1 class="mb-5 text-center text-2xl font-extrabold text-gray-100 sm:mb-8 sm:text-4xl">
-		בעלי מקצוע כשירים — מומלצים, מדורגים ובהטבה לחברי יוצאים לחירות
+	<!-- H1 — הכותרת הראשית של הדף. עד כאן לא היה בדף אף h1, וגוגל לא ידע במה הדף עוסק.
+	     בנייד הכותרת קטנה: מתחתיה יושבים החיפוש והמפה זה לצד זה, וכותרת בשלוש
+	     שורות דחפה אותם למטה. -->
+	<h1 class="mb-3 text-center text-lg font-extrabold text-gray-100 sm:mb-8 sm:text-4xl">
+		בעלי מקצוע כשירים ומומלצים בהטבות והנחות בלעדיות לחברי יוצאים לחירות
 	</h1>
 
 	{#if error}
@@ -308,26 +304,28 @@
 		<!-- ═══ שורת הפתיחה: חיפוש ומפה זה לצד זה ═══
 		     המפה עלתה לכאן מלמטה (עד כאן ישבה מתחת למסילת התחומים) ותופסת חצי
 		     רוחב בלבד — כך גם החיפוש אינו נמתח לכל רוחב המסך, ושניהם נראים יחד
-		     בלי גלילה. בנייד הם נערמים: חיפוש למעלה, מפה מתחתיו.
-		     items-center בדסקטופ: המפה גבוהה מבלוק החיפוש, וכשהחיפוש נצמד
-		     לראש השורה נפער מתחתיו חלל ריק — מרכוז אנכי מיישר אותו למפה. -->
-		<div class="mb-5 grid items-start gap-4 md:mb-8 md:grid-cols-2 md:items-center md:gap-6">
+		     בלי גלילה. הפריסה הזאת נשמרת גם בנייד — חיפוש מימין, מפה משמאל —
+		     במקום קיפול מאחורי כפתור: שתי עמודות צרות עולות פחות גובה מאשר
+		     שני בלוקים ברוחב מלא זה מעל זה, והמפה נראית בלי לחיצה.
+		     items-center: המפה גבוהה מבלוק החיפוש, וכשהחיפוש נצמד לראש השורה
+		     נפער מתחתיו חלל ריק — מרכוז אנכי מיישר אותו לאמצע המפה. -->
+		<div class="mb-2 grid grid-cols-2 items-center gap-3 md:mb-8 md:gap-6">
 			<!-- Filters -->
-			<div class="space-y-3">
-				<!-- החיפוש, בורר העיר וכפתור המפה באותה שורה: שלושתם מצמצמים או
-				     מציגים את אותה רשימה, והפרדתם לשורות שונות הרחיקה את המסננים
-				     זה מזה. השדה נמתח, והשניים האחרים ברוחב תוכנם. -->
-				<div class="flex items-center gap-2">
+			<div class="space-y-2 md:space-y-3">
+				<!-- החיפוש ובורר העיר: שניהם מצמצמים את אותה רשימה, ולכן הם צמודים.
+				     בדסקטופ באותה שורה — השדה נמתח והבורר ברוחב תוכנו; בנייד, בתוך
+				     חצי רוחב מסך, שורה אחת הייתה מוחצת את שדה החיפוש, ולכן הם נערמים. -->
+				<div class="flex flex-col gap-2 md:flex-row md:items-center">
 					<div class="relative flex-1">
 						<input
 							type="text"
 							bind:value={searchTerm}
 							placeholder={t.search}
 							aria-label={t.search}
-							class="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 pr-12 text-gray-100 transition outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-900/30"
+							class="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 pr-9 text-sm text-gray-100 transition outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-900/30 md:px-4 md:py-3 md:pr-12 md:text-base"
 						/>
 						<svg
-							class="absolute top-3.5 right-4 h-5 w-5 text-gray-400"
+							class="absolute top-3 right-3 h-4 w-4 text-gray-400 md:top-3.5 md:right-4 md:h-5 md:w-5"
 							fill="none"
 							stroke="currentColor"
 							viewBox="0 0 24 24"
@@ -346,7 +344,7 @@
 						<select
 							bind:value={selectedLocation}
 							aria-label="עיר"
-							class="max-w-[45%] flex-shrink-0 rounded-xl border border-gray-700 bg-purple-600 px-3 py-3 text-sm font-bold text-white outline-none sm:px-4"
+							class="w-full flex-shrink-0 rounded-xl border border-gray-700 bg-purple-600 px-3 py-2.5 text-sm font-bold text-white outline-none md:w-auto md:max-w-[45%] md:px-4 md:py-3"
 						>
 							<option value="all">כל הארץ</option>
 							{#each cities as city}
@@ -354,36 +352,11 @@
 							{/each}
 						</select>
 					{/if}
-
-					<!-- כפתור המפה בנייד — כאן, צמוד לחיפוש ולעיר, ולא מתחת למסילה:
-					     שם הוא היה מרוחק מהמסננים שהמפה משרתת. אייקון בלבד מפני
-					     ששלושה שדות בשורה אחת במסך צר מוחצים את שדה החיפוש; שם
-					     הכפתור נמסר ב-aria-label. -->
-					<button
-						type="button"
-						onclick={() => (showMobileMap = !showMobileMap)}
-						aria-expanded={showMobileMap}
-						aria-controls="mobile-map"
-						aria-label={showMobileMap ? 'הסתרת המפה' : 'הצגת העסקים על המפה'}
-						title={showMobileMap ? 'הסתרת המפה' : 'הצגת העסקים על המפה'}
-						class="flex-shrink-0 rounded-xl border px-3 py-3 text-xl leading-6 transition md:hidden {showMobileMap
-							? 'border-blue-500 bg-blue-900/40'
-							: 'border-gray-700 bg-gray-800 hover:border-blue-500'}"
-					>
-						<span aria-hidden="true">🗺️</span>
-					</button>
 				</div>
 
-				<!-- המפה בנייד נפתחת כאן, מיד מתחת לכפתור שפתח אותה. Leaflet לא
-				     נטען בכלל עד הפתיחה (LazyMap נכנס ל-DOM רק אז), ולכן מסילת
-				     התחומים — המסנן הראשי — נשארת גבוה בדף לכל מי שלא ביקש מפה. -->
-				{#if showMobileMap}
-					<div id="mobile-map" class="md:hidden">
-						<LazyMap businesses={filteredBusinesses} />
-					</div>
-				{/if}
-
-				<div class="flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-sm text-gray-400">
+				<div
+					class="flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-xs text-gray-400 md:text-sm"
+				>
 					<span>{t.totalBusinesses.replace('{count}', businesses.length.toString())}</span>
 					{#if searchTerm || selectedCategory !== 'all' || selectedLocation !== 'all'}
 						<span class="text-gray-700">|</span>
@@ -401,12 +374,8 @@
 			</div>
 
 			<!-- מפה — מציגה תמיד את התוצאות המסוננות, ולכן חיפוש או בחירת תחום
-			     מצטיירים גם עליה. בנייד היא מקופלת מאחורי כפתור המפה שבשורת
-			     החיפוש: במסך צר היא דחפה את מסילת התחומים אל מתחת לקיפול. -->
-			<div class="hidden md:block">
-				<h2 class="mb-2 text-center text-sm font-bold text-gray-300 sm:text-base">
-					{t.mapTitle}
-				</h2>
+			     מצטיירים גם עליה. גם בנייד היא פרוסה כאן, בעמודה שמשמאל לחיפוש. -->
+			<div>
 				<LazyMap businesses={filteredBusinesses} />
 			</div>
 		</div>

@@ -30,11 +30,11 @@
      והיישובים הצטופפו לפס דק באמצע.
      גובה השלד חייב להתאים לגובה המפה ב-BusinessesMap, אחרת יש קפיצה. -->
 <div bind:this={container} class="mx-auto max-w-[290px]">
-	<div class="rounded-2xl border border-gray-800 bg-gray-900/40 p-2 shadow-lg">
+	<div class="rounded-2xl border border-gray-800 bg-gray-900/40 p-1.5 shadow-lg md:p-2">
 		{#if show}
 			<BusinessesMap {businesses} />
 		{:else}
-			<div class="h-[380px] w-full animate-pulse rounded-xl bg-gray-800 sm:h-[430px]"></div>
+			<div class="h-[215px] w-full animate-pulse rounded-xl bg-gray-800 md:h-[430px]"></div>
 		{/if}
 	</div>
 </div>

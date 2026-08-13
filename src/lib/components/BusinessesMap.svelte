@@ -24,7 +24,9 @@
 	// שהוא מנחש מה-CSS — נתיב ש-Vite לא מגיש, ולכן במקום פינים הופיעו ריבועי
 	// "תמונה שבורה". פין SVG inline מבטל את התלות: אפס בקשות רשת, חד בכל צפיפות
 	// מסך, ובצבע של הכפתור בפופאפ.
-	const PIN_SVG = `<svg viewBox="0 0 24 34" width="22" height="31" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 .9C6 .9 1.1 5.8 1.1 11.8c0 8.3 9.9 20.4 10.3 20.9a.8.8 0 0 0 1.2 0c.4-.5 10.3-12.6 10.3-20.9C22.9 5.8 18 .9 12 .9Z" fill="#2563eb" stroke="#fff" stroke-width="1.7"/><circle cx="12" cy="11.9" r="4.1" fill="#fff"/></svg>`;
+	// 15×21 ולא 22×31: המפה יושבת בחצי רוחב מסך (ובנייד בפחות מזה), ובגודל
+	// הקודם שני פינים שכנים בגוש דן נגעו זה בזה והכתימו את האזור בכחול.
+	const PIN_SVG = `<svg viewBox="0 0 24 34" width="15" height="21" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 .9C6 .9 1.1 5.8 1.1 11.8c0 8.3 9.9 20.4 10.3 20.9a.8.8 0 0 0 1.2 0c.4-.5 10.3-12.6 10.3-20.9C22.9 5.8 18 .9 12 .9Z" fill="#2563eb" stroke="#fff" stroke-width="1.7"/><circle cx="12" cy="11.9" r="4.1" fill="#fff"/></svg>`;
 
 	/* הרצפה של המסגור: מה שנראה תמיד על המפה, גם כשכל הנקודות מצטופפות
 	   בגוש דן. גובה הקופסה (2.8°) הוא שקובע את רמת הזום — המסגרת גבוהה
@@ -233,7 +235,7 @@
 		// במסגרת צרה עולה ברמת זום.
 		// הקופסה תמיד חוקית (COUNTRY_BOUNDS), ולכן אין כאן בדיקת isValid.
 		map.fitBounds(fit, {
-			paddingTopLeft: [4, 34],
+			paddingTopLeft: [4, 24],
 			paddingBottomRight: [4, 6],
 			maxZoom: 14
 		});
@@ -251,10 +253,10 @@
 			pinIcon = L.divIcon({
 				html: PIN_SVG,
 				className: 'biz-pin',
-				iconSize: [22, 31],
-				iconAnchor: [11, 31],
-				popupAnchor: [0, -30],
-				tooltipAnchor: [0, -30]
+				iconSize: [15, 21],
+				iconAnchor: [7, 21],
+				popupAnchor: [0, -20],
+				tooltipAnchor: [0, -20]
 			});
 			// תצוגת פתיחה על הארץ, עד ש-render ממסגר לפי COUNTRY_BOUNDS.
 			// zoomSnap ברירת המחדל הוא 1, ולכן fitBounds מעגל תמיד כלפי מטה
@@ -263,6 +265,10 @@
 			// הוא כבר קפיצה של ~19% ואי אפשר לכוון בו עדין מזה (כפתורי
 			// ה-+/− של Leaflet קופצים רמה שלמה — פי 2).
 			map = L.map(mapEl, { scrollWheelZoom: false, zoomSnap: 0.1 }).setView([31.7, 35.0], 7);
+			// "Leaflet | 🇺🇦" — הקרדיט לספריית המפה עצמה — אינו נדרש ברישיון, והוא
+			// היה שני שלישים משורת הכיתוב. הקרדיט לנתונים (OSM ו-CARTO) כן נדרש,
+			// ולכן הוא נשאר — מקוצר לשמות בלבד, עם קישור לנוסח המלא של כל אחד.
+			map.attributionControl.setPrefix(false);
 			// אריחי OSM הרגילים צורבים את השמות אל תוך התמונה, ובאזור שלנו הם
 			// מגיעים בערבית לצד העברית — אין דרך לסנן שפה מאריח PNG מוכן. לכן
 			// בסיס בלי שום כיתוב (Voyager no-labels), והשמות נכתבים מעליו
@@ -270,7 +276,8 @@
 			L.tileLayer(
 				'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png',
 				{
-					attribution: '&copy; OpenStreetMap &copy; CARTO',
+					attribution:
+						'<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OSM</a> · <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>',
 					subdomains: 'abcd',
 					maxZoom: 20
 				}
@@ -306,7 +313,7 @@
 	     ממערב למזרח, ובמלבן רחב נותרו פסי ים ומדבר משני הצדדים בזמן שהיישובים
 	     הצטופפו לפס דק באמצע. הגובה חייב להתאים לשלד ב-LazyMap, אחרת הדף קופץ
 	     כשהמפה נטענת. -->
-	<div bind:this={mapEl} class="h-[380px] w-full rounded-xl sm:h-[430px]"></div>
+	<div bind:this={mapEl} class="h-[215px] w-full rounded-xl md:h-[430px]"></div>
 	{#if !drawn}
 		<div
 			class="pointer-events-none absolute inset-0 flex items-center justify-center rounded-xl bg-gray-900/60 text-center text-xs text-gray-300"
@@ -337,6 +344,17 @@
 	   תיאורים ופופאפים — נפל לגופן ברירת המחדל במקום ל-Heebo של האתר */
 	:global(.leaflet-container) {
 		font-family: inherit;
+	}
+
+	/* שורת הקרדיט בגודל ברירת המחדל (11px, ריפוד 3×5) נשברה לשתי שורות
+	   במפה הצרה ותפסה פינה שלמה. הכיתוב נשאר קריא ולחיץ, אבל בגודל של
+	   הערת שוליים ובלבן שקוף למחצה — כמו שהוא נראה בשאר המפות ברשת. */
+	:global(.leaflet-control-attribution) {
+		padding: 0 4px;
+		background: rgb(255 255 255 / 0.65);
+		font-size: 9px;
+		line-height: 14px;
+		white-space: nowrap;
 	}
 
 	/* שם היישוב יושב ישירות על צילום הרקע, ובלי הילה לבנה הוא נבלע בכביש

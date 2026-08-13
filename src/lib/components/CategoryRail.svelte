@@ -391,8 +391,17 @@
 		<!-- הכותרת לבדה, ממורכזת. תת-הכותרת ("בחרו תחום — או גררו...") הוסרה:
 		     אותה הוראה בדיוק חוזרת בשורת הבקרים שמתחת למסילה, והיא גזלה שורה
 		     שלמה מהמסך הראשון בנייד. -->
-		<div class="mb-2 px-1 text-center">
-			<h2 id="cat-rail-title" class="text-xl font-extrabold text-gray-100">{title}</h2>
+		<!-- בנייד נוסח קצר יותר ובכתב קטן: הכותרת יושבת בין המפה למסילה,
+		     ובגודל של הדסקטופ היא גזלה שורה שלמה מהמסך הראשון. שני spans
+		     ולא שני h2: ה-section מצביע על ה-h2 ב-aria-labelledby, ובחישוב
+		     השם הנגיש צאצא מוסתר נושר — ולכן נמסר תמיד רק הנוסח הנראה. -->
+		<!-- בנייד בלי מרווח תחתון כלל: ל-.cat-rail יש ממילא 1.5rem ריפוד עליון
+		     (מקום לתג הכמות שמרחף מעל האריח), וכל מרווח כאן מצטבר עליו. -->
+		<div class="px-1 text-center md:mb-2">
+			<h2 id="cat-rail-title" class="text-sm font-extrabold text-gray-100 md:text-xl">
+				<span class="md:hidden">תחומים לאיתור מהיר</span>
+				<span class="hidden md:inline">{title}</span>
+			</h2>
 		</div>
 
 		<p id="cat-rail-help" class="sr-only">
