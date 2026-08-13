@@ -41,10 +41,9 @@
 
 	/* כותרת מדור אחת לכל אורך הכרטיסייה. הכותרות היו חיוורות וקטנות מהטקסט
 	   שמתחתיהן (gray-400/text-base מול gray-300/text-lg), ולכן העין נחתה על
-	   התוכן בלי לעבור קודם על השם של המדור. עכשיו הן בהירות ומודגשות, ופס
-	   הצבע פותח את השורה — border-s ולא border-l, כדי שהפס יעבור לצד השני
-	   יחד עם כיוון הקריאה בממשק האנגלי והרוסי. */
-	const H2 = 'border-s-[3px] border-blue-500/80 ps-3 text-lg font-bold text-gray-100';
+	   התוכן בלי לעבור קודם על השם של המדור. מה שמפריד אותן עכשיו הוא הצבע
+	   ולא קישוט לצד השורה: פס צבע בתחילת השורה תפח את גובה הכותרת. */
+	const H2 = 'text-lg font-bold text-blue-300';
 
 	const PLACEHOLDER_IMG =
 		'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGNsYXNzPSJoLTYgdy02IiBmaWxsPSJub25lIiBzdHJva2U9IiM5Q0EzQUYiIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2Utd2lkdGg9IjIiIGQ9Ik0xOSAyMVY1YTIgMiAwIDAwLTItMkg3YTIgMiAwIDAwLTIgMnYxNm0xNCAwaDJtLTIgMGgtNW0tOSAweDNtMiAwaDVNOSA3aDFtLTEgNGgxbTQtNGgxbS0xIDRoMW0tNSAxMHYtNWExIDEgMCAwMTEtMWgyYTEgMSAwIDAxMSAxdjVtLTQgMGg0IiAvPjwvc3ZnPg==';
@@ -613,14 +612,13 @@
 					{business.unique_content || business.description || t.noDescription}
 				</p>
 
-				<!-- פרטי הקשר בלוח משלהם: התווית קטנה ועמומה, והפרט עצמו — הכתובת,
-				     הסניף — הוא הטקסט הבולט בשורה. קודם השניים נראו כמעט אותו דבר,
-				     והעין חיפשה את הכתובת בתוך רשימה אפורה אחידה. -->
+				<!-- ההפרדה בין התווית לפרט היא בגודל ובבהירות ולא במסגרת סביבם:
+				     התווית קטנה ועמומה, והפרט עצמו — הכתובת, הסניף — הוא הטקסט
+				     הבולט בשורה. קודם השניים נראו כמעט אותו דבר, והעין חיפשה את
+				     הכתובת בתוך רשימה אפורה אחידה. -->
 				{#if business.address || business.sales_area || business.branches?.length}
 					<h2 class="mt-5 {H2}">{t.contactInfo}</h2>
-					<dl
-						class="mt-2.5 space-y-3 rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-3.5"
-					>
+					<dl class="mt-2.5 space-y-3">
 						{#if business.address}
 							<div>
 								<dt class="text-xs font-medium text-gray-500">{t.addressLabel}</dt>
@@ -709,9 +707,7 @@
 	     החשיפה עדיין נספרת בלחיצה (reveal_phone), כמו קודם. -->
 	{#if business.phone}
 		<section class="mt-6 border-t border-white/[0.08] pt-5 text-center">
-			<!-- הכותרת היחידה שממורכזת (המדור כולו ממורכז), ולכן inline-block:
-			     בלעדיו פס הצבע נשאר בקצה השורה והכותרת מרחפת לבדה במרכז. -->
-			<h2 class="{H2} inline-block">{t.callNow}</h2>
+			<h2 class={H2}>{t.callNow}</h2>
 			<div class="mt-2.5">
 				{#if isPhoneRevealed}
 					<a
