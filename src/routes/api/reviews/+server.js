@@ -47,17 +47,13 @@ function rateLimited(userId) {
 	return false;
 }
 
-/** @param {unknown} e */
-const isAuthError = (e) => /→ 40[13] /.test(e instanceof Error ? e.message : '');
-
 // POST — יצירת ביקורת (status=pending נכפה בבאקאנד). מחייב התחברות: בלי זה
 // אפשר היה להציף את תור המודרציה ולחתום בשם של אדם אחר, שכן שם המחבר הגיע
 // מגוף הבקשה. עכשיו השם נלקח מה-session בלבד, וגוף הבקשה לא נשאל.
 //
 // הבקשה יוצאת עם ה-JWT של המשתמש, כדי שה-controller בבאקאנד יצמיד את הזהות
-// (user/user_id) מ-ctx.state.user. אם ההרשאה טרם נפרסה שם — נופלים ל-STRAPI_TOKEN
-// של השרת, כי עדיף ביקורת בלי זהות מוצמדת מאשר טופס שבור. Strapi נשאר ה-gatekeeper:
-// הכתיבה לעולם לא יוצאת מהדפדפן ישירות.
+// (user/user_id) מ-ctx.state.user. Strapi נשאר ה-gatekeeper: הכתיבה לעולם לא
+// יוצאת מהדפדפן ישירות.
 export async function POST({ request, locals, cookies }) {
 	if (!locals.user) {
 		return json(
@@ -97,14 +93,23 @@ export async function POST({ request, locals, cookies }) {
 			body: (comment || '').slice(0, 2000),
 			author_name: locals.user.name || 'אנונימי'
 		};
+		// מסלול ה-JWT הוא best-effort בלבד: הצמדת הזהות שווה ניסיון, אבל לא במחיר
+		// טופס שבור. כל כישלון שלו — ולא רק 401/403 — נופל לטוקן השרת, שהוא המסלול
+		// שתמיד מורשה לכתוב. הצמצום הקודם ל-40[13] הוא מה ששבר את הטופס בפועל:
+		// Strapi החזיר על הבקשה עם ה-JWT סטטוס אחר, השגיאה נזרקה הלאה, והמשתמש
+		// קיבל "שגיאה בשליחת חוות הדעת" למרות ששליחה בטוקן השרת עוברת.
 		const jwt = cookies.get(SESSION_COOKIE) || cookies.get(SHARED_SSO_COOKIE);
-		try {
-			await createReview(payload, jwt);
-		} catch (e) {
-			if (!jwt || !isAuthError(e)) throw e;
-			console.warn('reviews POST: JWT rejected by Strapi, falling back to server token');
-			await createReview(payload);
+		let created = false;
+		if (jwt) {
+			try {
+				await createReview(payload, jwt);
+				created = true;
+			} catch (e) {
+				// הסטטוס נשמר בלוג — בלעדיו אי אפשר לדעת למה הזהות לא הוצמדה.
+				console.warn('reviews POST: JWT path failed, falling back to server token:', e);
+			}
 		}
+		if (!created) await createReview(payload);
 		return json({ success: true });
 	} catch (e) {
 		console.error('reviews POST error:', e);
