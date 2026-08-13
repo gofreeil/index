@@ -54,6 +54,11 @@
 			if (dead) return;
 			L = mod;
 			map = L.map(mapEl, { scrollWheelZoom: false }).setView([31.5, 35.0], 7);
+			// הקרדיט לספריית Leaflet אינו נדרש ברישיון והוא תפס את רוב השורה;
+			// הקרדיט לנתונים נשאר. השורה עוברת לפינה השמאלית, מפַנה את הימנית
+			// להסתייגות.
+			map.attributionControl.setPrefix(false);
+			map.attributionControl.setPosition('bottomleft');
 			// בסיס בלי כיתוב, כמו במפה הראשית: אריחי OSM הרגילים צורבים לתוך
 			// התמונה שמות בערבית לצד העברית, ואי אפשר לסנן שפה מ-PNG מוכן.
 			L.tileLayer(
@@ -151,13 +156,14 @@
 <div bind:this={holder} class="relative isolate">
 	{#if show}
 		<div bind:this={mapEl} class="w-full rounded-xl {height}"></div>
-		<!-- ההסתייגות בתוך המפה ולא מתחתיה, שלא תגזול שורה בכרטיסייה. צמודה
-		     לפינה הימנית התחתונה ואטומה, כדי שתכסה את שורת הייחוס של Leaflet
-		     ("Leaflet" והדגל יושבים בקצה הימני בדף RTL). z גבוה מפקדי Leaflet. -->
+		<!-- ההסתייגות בתוך המפה ולא מתחתיה, שלא תגזול שורה בכרטיסייה. בכחול
+		     של העיגולים ולא בשחור, ובריחוק מהפינה כדי שלא תיראה מודבקת לשוליים.
+		     שורת הייחוס יורדת לפינה השמאלית כדי שהשתיים לא ייפגשו.
+		     z גבוה מפקדי Leaflet. -->
 		<div
-			class="pointer-events-none absolute bottom-0 right-0 z-[1000] rounded-br-xl rounded-tl bg-gray-900 px-1.5 py-0.5 text-[10px] leading-4 text-gray-200"
+			class="pointer-events-none absolute bottom-2 right-2 z-[1000] rounded bg-blue-600/90 px-2 py-0.5 text-[10px] font-medium leading-4 text-white"
 		>
-			אזור משוער בלבד
+			אזורי השירות להמחשה בלבד
 		</div>
 	{:else}
 		<div class="w-full animate-pulse rounded-xl bg-gray-800 {height}"></div>
