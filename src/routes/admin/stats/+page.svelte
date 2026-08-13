@@ -126,6 +126,28 @@
 		(dir?.cities ?? []).map((/** @type {any} */ c) => ({ label: c.key, count: c.count }))
 	);
 
+	// ── מה חיפשו באתר (searchStats) ──
+	// שתי רשימות מאותו מקור, ושתיהן ניתנות לפעולה: הראשונה אומרת מה מבוקש,
+	// והשנייה — מה מבוקש ואין לנו. השנייה היא רשימת הגיוס.
+	const search = $derived(data.search);
+	const searchRows = $derived(
+		(search?.top ?? []).map((/** @type {any} */ r) => ({
+			label: r.q,
+			sub: r.zero ? `${fmt.format(r.zero)} מהם חזרו ריקים` : '',
+			count: r.count
+		}))
+	);
+	const gapRows = $derived(
+		(search?.gaps ?? []).map((/** @type {any} */ r) => ({ label: r.q, count: r.count }))
+	);
+	// גרף היומיים-שבועיים האחרונים: חיפושים מול לחיצות טלפון
+	const searchDays = $derived(search?.days ?? []);
+	const maxSearchDay = $derived(
+		Math.max(1, ...searchDays.map((/** @type {any} */ d) => d.searches))
+	);
+	/** "2026-08-13" → "13/8" @param {string} iso */
+	const dayShort = (iso) => `${Number(iso.slice(8, 10))}/${Number(iso.slice(5, 7))}`;
+
 	// ── שורות מ-Google Analytics ──
 	const gaPageRows = $derived(
 		(data.topPages ?? []).map((/** @type {any} */ b) => ({
@@ -340,6 +362,105 @@
 	{:else}
 		<div class="rounded-xl border border-red-500/30 bg-red-900/20 px-4 py-2.5 text-sm text-red-300">
 			לא הצלחנו לטעון את נתוני המאגר כרגע — נסו לרענן בעוד רגע.
+		</div>
+	{/if}
+
+	<!-- ── הביקוש: מה חיפשו כאן ──
+	     המדד היחיד שמגיע מהגולש עצמו במילים שלו, ולא מספירה של מה שכבר יש
+	     לנו. לכן הוא יושב מיד אחרי נתוני המאגר ולפני כל השאר. -->
+	<h2 class="pt-2 text-xl font-extrabold text-gray-100">🔎 מה מחפשים אצלנו</h2>
+
+	{#if search}
+		<div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+			{@render statTile('חיפושים', search.totals.searches, 'text-gray-100', 'מאז שהמדידה נדלקה')}
+			{@render statTile(
+				'ביטויים שונים',
+				search.totals.terms,
+				'text-purple-400',
+				'כמה ניסוחים שונים הוקלדו'
+			)}
+			{@render statTile(
+				'חיפושים ללא תוצאה',
+				search.totals.zero,
+				'text-amber-400',
+				'כאן חסרים לנו בעלי מקצוע'
+			)}
+			{@render statTile(
+				'לחיצות טלפון',
+				search.totals.phone,
+				'text-green-400',
+				search.totals.calls
+					? `${fmt.format(search.totals.calls)} מהן חייגו בפועל`
+					: 'לחיצות "הצג מספר"'
+			)}
+		</div>
+
+		<div class="grid items-start gap-3 lg:grid-cols-2">
+			{@render rankCard(
+				'🔥 הביטויים המבוקשים',
+				'מה הגולשים הקלידו בשורת החיפוש — במילים שלהם, לא בקטגוריות שלנו',
+				searchRows
+			)}
+			{@render rankCard(
+				'🕳️ חיפושים שהחזירו דף ריק',
+				'ביטויים מבוקשים שאין להם אף עסק במאגר — זו רשימת הגיוס',
+				gapRows
+			)}
+		</div>
+
+		<!-- הקו לאורך זמן: חיפושים מול לחיצות טלפון. אותה שפה ויזואלית של
+		     גרף גידול המאגר שמעליו. -->
+		{#if searchDays.length}
+			<div class="space-y-3 rounded-2xl border border-gray-800 bg-gray-900/40 p-4">
+				<div>
+					<h3 class="font-bold text-gray-100">📅 חיפושים ולחיצות טלפון, לפי יום</h3>
+					<p class="mt-0.5 text-xs text-gray-400">
+						העמודה היא החיפושים באותו יום; הפס הירוק מתחתיה הוא לחיצות הטלפון. יחס גבוה בין השניים
+						אומר שהגולשים מוצאים את מה שחיפשו.
+					</p>
+				</div>
+				<div class="flex items-stretch justify-center gap-1.5">
+					{#each searchDays as d (d.date)}
+						<div
+							class="flex max-w-16 min-w-0 flex-1 flex-col items-center"
+							title="{d.date}: {fmt.format(d.searches)} חיפושים, {fmt.format(d.phone)} לחיצות טלפון"
+						>
+							<div class="mb-1 text-[10px] font-bold text-gray-300 tabular-nums">
+								{fmt.format(d.searches)}
+							</div>
+							<div class="flex h-20 w-full items-end">
+								<div
+									class="w-full rounded-t-md transition-all {d.searches > 0
+										? 'bg-gradient-to-t from-blue-600 to-purple-500'
+										: 'bg-white/10'}"
+									style="height: {d.searches > 0
+										? Math.max(6, Math.round((d.searches / maxSearchDay) * 100))
+										: 4}%"
+								></div>
+							</div>
+							<div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-gray-800">
+								<div
+									class="h-full rounded-full bg-green-500"
+									style="width: {d.phone > 0
+										? Math.max(8, Math.round((d.phone / maxSearchDay) * 100))
+										: 0}%"
+								></div>
+							</div>
+							<div class="mt-1 text-[10px] whitespace-nowrap text-gray-400">
+								{dayShort(d.date)}
+							</div>
+						</div>
+					{/each}
+				</div>
+			</div>
+		{/if}
+	{:else}
+		<div class="rounded-2xl border border-gray-800 bg-gray-900/40 p-4 text-sm text-gray-300">
+			<p class="font-bold text-gray-100">עדיין אין נתוני חיפוש</p>
+			<p class="mt-1 text-xs text-gray-400">
+				המדידה נאספת מרגע שגולש מקליד בשורת החיפוש שבדף הבית. הנתונים נשמרים ללא כתובת IP וללא מזהה
+				משתמש — הביטוי, הספירה והתאריך בלבד.
+			</p>
 		</div>
 	{/if}
 

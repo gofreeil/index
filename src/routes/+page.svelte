@@ -8,6 +8,7 @@
 	import Seo from '$lib/components/Seo.svelte';
 	import { categoryIcon, OTHER } from '$lib/categories.js';
 	import { suggestForQuery } from '$lib/searchSuggest.js';
+	import { trackSearch } from '$lib/searchTrack.js';
 	import { businessCities } from '$lib/cities.js';
 	import { favorites } from '$lib/favorites.js';
 	import {
@@ -139,25 +140,26 @@
 
 	// חיפוש על שדות רלוונטיים בלבד (לא על כל אובייקט כולל URL של תמונות).
 	// subcategory ("תת-קטגוריה / פירוט") הוא בדיוק המקום שבו עסק כותב את שם
-	// המקצוע שלו במילים של הגולש, ולכן הוא חלק מהחיפוש.
+	// המקצוע שלו במילים של הגולש, ולכן הוא חלק מהחיפוש. tags הן המילים
+	// הנוספות שהוא רשם בדיוק למטרה הזאת (ראו $lib/tags.js).
 	const SEARCH_FIELDS = [
 		'name',
 		'category',
 		'subcategory',
+		'tags',
 		'description',
 		'discount',
 		'address',
 		'salesArea'
 	];
+	/** ערך שדה כטקסט — התגיות מגיעות כמערך, ורווח מפריד ביניהן ולא פסיק:
+	 *  אחרת ביטוי חיפוש היה נופל על התפר שבין שתי תגיות. @param {unknown} v */
+	const fieldText = (v) => (Array.isArray(v) ? v.join(' ') : String(v || ''));
 	/** @param {any} b */
 	function matchesSearch(b) {
 		if (!searchTerm) return true;
 		const q = searchTerm.toLowerCase();
-		return SEARCH_FIELDS.some((f) =>
-			String(b[f] || '')
-				.toLowerCase()
-				.includes(q)
-		);
+		return SEARCH_FIELDS.some((f) => fieldText(b[f]).toLowerCase().includes(q));
 	}
 
 	// ה-API כבר מחזיר מהחדש לישן (createdAt:desc) — אין צורך להפוך (ה-reverse היה שריד מ-Google Sheets)
@@ -188,6 +190,16 @@
 		});
 		const near = suggestForQuery(searchTerm, inFilters);
 		return near.length ? near : suggestForQuery(searchTerm, businesses);
+	});
+
+	/* ═══════════ מה חיפשו כאן ═══════════
+	   שורת החיפוש היא המקום היחיד שבו הגולש אומר במילים שלו מה הוא רוצה,
+	   וכל הקלדה שם נזרקה עד היום. הרישום מושהה ונשלח פעם אחת לכל חיפוש
+	   (ראו $lib/searchTrack), ומצורף אליו מספר התוצאות: ביטוי מבוקש שחוזר
+	   עם דף ריק הוא רשימת בעלי המקצוע שכדאי לגייס.
+	   $effect רץ בדפדפן בלבד, ולכן אין כאן רישום מצד השרת. */
+	$effect(() => {
+		trackSearch(searchTerm, filteredBusinesses.length);
 	});
 
 	/* סינון פעיל (מסילת התחומים / חיפוש / עיר) הופך את הדף למצב "תוצאות":

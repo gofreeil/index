@@ -11,6 +11,9 @@
 	import { LINK_FIELDS, parseExtraLinks } from '$lib/socialLinks.js';
 	import ImageDropField from '$lib/components/ImageDropField.svelte';
 	import ImageFitEditor from '$lib/components/ImageFitEditor.svelte';
+	import TagsField from '$lib/components/TagsField.svelte';
+	import { parseTags } from '$lib/tags.js';
+	import { suggestTags } from '$lib/tagSuggest.js';
 	import {
 		parseFit,
 		parseFitList,
@@ -20,8 +23,25 @@
 		MAX_BANNERS
 	} from '$lib/mediaFit.js';
 
-	/** @type {{ biz: any, errors?: Record<string,string>, canModerate?: boolean, categories?: Array<{value:string,label:string}> | null }} */
-	let { biz, errors = {}, canModerate = false, categories = null } = $props();
+	/** @type {{
+	 *   biz: any,
+	 *   errors?: Record<string,string>,
+	 *   canModerate?: boolean,
+	 *   categories?: Array<{value:string,label:string}> | null,
+	 *   tagQueries?: string[],
+	 *   tagPool?: string[]
+	 * }} */
+	let {
+		biz,
+		errors = {},
+		canModerate = false,
+		categories = null,
+		// מה שגולשים חיפשו באתר ומה שכבר רשום על כרטיסיות אחרות — מזינים את
+		// הצעת התגיות. אופציונליים: בלעדיהם ההצעות עדיין נבנות מהכרטיסייה,
+		// מהטקסונומיה ומהנרדפות.
+		tagQueries = [],
+		tagPool = []
+	} = $props();
 
 	// הרשימה מהשרת כוללת את דריסות הסופר-אדמין (שמות וקטגוריות שנוספו);
 	// בלי פרופ נופלים לרשימה הסטטית. קטגוריה ישנה שאינה ברשימה עדיין
@@ -62,6 +82,27 @@
 	function removeBranch(i) {
 		branches = branches.filter((_, idx) => idx !== i);
 	}
+
+	// תגיות — המילים שבהן מחפשים את העסק, באותה עמודת json ובאותו דפוס של
+	// שדה מוסתר יחיד (ראו tags.js). ההצעות נגזרות מהכרטיסייה עצמה, ולכן גם
+	// כרטיסייה ותיקה שנערכת מקבלת את המילים שחסרות לה.
+	let tags = $state(parseTags(biz.extra_fields?.tags));
+	const tagSuggestions = $derived(
+		suggestTags(
+			{
+				name: biz.name,
+				category: biz.category,
+				subcategory: biz.subcategory,
+				description: biz.unique_content || biz.description,
+				discount: biz.discount,
+				city: biz.city,
+				neighborhood: biz.neighborhood,
+				salesArea: biz.sales_area,
+				branches
+			},
+			{ chosen: tags, queries: tagQueries, popular: tagPool }
+		)
+	);
 
 	// ── מיקום וזום של הלוגו והתמונות ──
 	// העורך עובד על מה שרואים: קובץ חדש שנבחר גובר על התמונה השמורה.
@@ -192,18 +233,11 @@
 			<label class={LABEL} for="f-subcategory">תת-קטגוריה / פירוט</label>
 			<input id="f-subcategory" name="subcategory" value={biz.subcategory ?? ''} class={INPUT} />
 		</div>
+		<!-- אין שדה "תיאור קצר": הסלוגן הוא המשפט הקצר של הכרטיסייה, וכל הטקסט
+		     הארוך יושב ב"תיאור מורחב". שדה שלישי לאותו תפקיד רק פיצל את מה
+		     שבעל העסק כותב בין שתי תיבות; הטקסטים שנכתבו בו מוזגו לכאן. -->
 		<div class="sm:col-span-2">
-			<label class={LABEL} for="f-description">תיאור קצר</label>
-			<textarea
-				id="f-description"
-				name="description"
-				rows="3"
-				class={INPUT}
-				value={biz.description ?? ''}
-			></textarea>
-		</div>
-		<div class="sm:col-span-2">
-			<label class={LABEL} for="f-unique">תוכן ייחודי (מוצג בעמוד העסק)</label>
+			<label class={LABEL} for="f-unique">תיאור מורחב (מוצג בעמוד העסק)</label>
 			<textarea
 				id="f-unique"
 				name="unique_content"
@@ -215,6 +249,9 @@
 		<div class="sm:col-span-2">
 			<label class={LABEL} for="f-discount">🎁 ההטבה הבלעדית לחברי הקהילה</label>
 			<input id="f-discount" name="discount" value={biz.discount ?? ''} class={INPUT} />
+		</div>
+		<div class="sm:col-span-2">
+			<TagsField bind:tags suggestions={tagSuggestions} inputClass={INPUT} labelClass={LABEL} />
 		</div>
 	</div>
 </section>

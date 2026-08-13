@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
 	import { mediaUrl, STATUS_HE } from '$lib/businessShape.js';
+	import { parseTags } from '$lib/tags.js';
 
 	/** @type {{ data: any, form: any }} */
 	let { data, form } = $props();
@@ -229,6 +230,18 @@
 									{#if b.website || b.address || b.sales_area}
 										<p class="mt-2 text-xs text-gray-500">
 											{b.address || b.sales_area || ''}{b.website ? ' · ' + b.website : ''}
+										</p>
+									{/if}
+									<!-- התגיות שהמגיש רשם: הן ייכנסו למנוע החיפוש עם האישור,
+									     ולכן זה המקום שבו רואים אם מישהו דחס לשם ספאם -->
+									{#if parseTags(b.extra_fields?.tags).length}
+										<p class="mt-2 flex flex-wrap gap-1.5">
+											{#each parseTags(b.extra_fields?.tags) as tag (tag)}
+												<span
+													class="rounded-full border border-blue-500/30 bg-blue-500/10 px-2 py-0.5 text-[11px] font-bold text-blue-300"
+													>#{tag}</span
+												>
+											{/each}
 										</p>
 									{/if}
 								</div>

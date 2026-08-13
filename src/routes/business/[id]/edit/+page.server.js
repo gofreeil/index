@@ -3,6 +3,8 @@ import { getBusinessAdmin, updateBusiness, isPrivileged } from '$lib/server/stra
 import { getCategoryOptions, liveCategory } from '$lib/server/categoryStore.js';
 import { canEditBusiness, isBusinessOwner, invalidateMatches } from '$lib/server/ownerMatch.js';
 import { parseBusinessForm } from '$lib/server/businessEdit.js';
+import { getTopQueries } from '$lib/server/searchStats.js';
+import { getPopularTags } from '$lib/server/tagPool.js';
 
 /**
  * עריכת כרטיסייה בידי בעליה. הבעלות נקבעת בשרת בלבד (שיוך שנכתב על
@@ -20,17 +22,22 @@ export async function load({ params, locals }) {
 	if (!canEditBusiness(biz, locals.user)) {
 		throw error(403, 'רק בעל הכרטיסייה (או אדמין) רשאי לערוך אותה');
 	}
-	const [categoryOptions, category] = await Promise.all([
+	// שני האחרונים מזינים את הצעת התגיות (ראו $lib/tagSuggest) ונכשלים בשקט
+	const [categoryOptions, category, topQueries, popularTags] = await Promise.all([
 		getCategoryOptions().catch(() => []),
 		// תווית של קטגוריה שנמחקה ממסך הניהול כבר לא קיימת — הטופס מציג את
 		// הסיווג החי (מה שהאתר מראה) כדי לא לשמור אותה שוב
-		liveCategory(biz).catch(() => biz.category ?? '')
+		liveCategory(biz).catch(() => biz.category ?? ''),
+		getTopQueries().catch(() => []),
+		getPopularTags().catch(() => [])
 	]);
 	return {
 		biz: { ...biz, category },
 		isAdmin: isPrivileged(locals.user),
 		isOwner: isBusinessOwner(biz, locals.user),
-		categoryOptions
+		categoryOptions,
+		topQueries,
+		popularTags
 	};
 }
 

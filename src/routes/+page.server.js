@@ -43,6 +43,9 @@ export async function load() {
 			// "תת-קטגוריה / פירוט" — שם המקצוע במילים של העסק עצמו. הוא מזין
 			// את החיפוש ואת ההצעות הקרובות ($lib/searchSuggest)
 			subcategory: b.subcategory || '',
+			// התגיות שבעל העסק רשם — המילים שבהן יחפשו אותו. הן נבדקות
+			// בחיפוש כמעט כמו שם העסק (ראו matchesSearch ו-searchSuggest).
+			tags: b.tags || [],
 			banners: b.banners || [],
 			banner: b.banner || '',
 			// מיקום וזום של הלוגו והתמונה באריח (ראו mediaFit.js)

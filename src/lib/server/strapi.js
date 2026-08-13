@@ -603,6 +603,19 @@ export async function listBusinessesForStats() {
 }
 
 /**
+ * עמודת ה-json של כל הכרטיסיות המאושרות — ומשם התגיות בלבד. בלי שם, בלי
+ * מדיה ובלי תיאורים: הקורא היחיד הוא מאגר ההצעות של שדה התגיות
+ * (ראו tagPool.js), והוא צריך רשימת מילים ולא כרטיסיות.
+ * @returns {Promise<any[]>}
+ */
+export async function listBusinessExtraFields() {
+	const data = await apiJson(
+		'/api/idx-businesses?filters[status][$eq]=approved&fields[0]=extra_fields&pagination[pageSize]=1000'
+	);
+	return Array.isArray(data?.data) ? data.data : [];
+}
+
+/**
  * הביקורות עם השדות הדרושים לסטטיסטיקה (דירוג, סטטוס, תאריך).
  * @returns {Promise<any[]>}
  */

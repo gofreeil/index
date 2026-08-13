@@ -4,8 +4,10 @@
 // (ראו mediaConfig.js ו-svelte.config.js), ופיצול ביניהם היה משתיק את המיטוב
 import { MEDIA_BASE } from './mediaConfig.js';
 import { parseBranches } from './branches.js';
+import { parseTags } from './tags.js';
 import { parseExtraLinks } from './socialLinks.js';
 import { parseFit, parseFitList, parseLogoShape, parseMainIndex } from './mediaFit.js';
+import { tenureStartFrom } from './tenure.js';
 
 /** @param {any} m מדיה בודדת של Strapi */
 export function mediaUrl(m) {
@@ -72,6 +74,9 @@ export function toBusiness(b) {
 		// משלהם). רק הם נשלפים משם — שאר המפתחות באותה עמודה, ובראשם אימייל
 		// הבעלים, לא נחשפים ללקוח.
 		branches: parseBranches(b.extra_fields?.branches),
+		// תגיות — באותה עמודת json (ראו tags.js). הן מזינות את החיפוש בדף
+		// הבית ואת ההצעות הקרובות, ומוצגות גם בעמוד העסק.
+		tags: parseTags(b.extra_fields?.tags),
 		discount: b.discount || '',
 		accepted_terms: !!b.accepted_terms,
 		logo,
@@ -92,7 +97,13 @@ export function toBusiness(b) {
 		// כמה פעמים נלחץ "הצג מספר טלפון" — המדד הישיר ביותר לפניות,
 		// מוצג לבעל הכרטיסייה באזור האישי ולאדמין ב-/admin/stats
 		phone_reveal_count: Number(b.phone_reveal_count || 0),
-		created_at: b.createdAt || ''
+		created_at: b.createdAt || '',
+		// תחילת הוותק באתר (ראו tenure.js): מועד היצירה של הרשומה, ולכל מה
+		// שכבר היה במאגר — היום שבו נפתחה המנייה, כי חותמת הייבוא זהה ב-90
+		// כרטיסיות ואינה ותק. חותמת מפורשת ב-extra_fields.joined_at גוברת על
+		// שתיהן, וכך אפשר להחזיר לעסק ותיק את תאריך ההגשה המקורי שלו בלי לגעת
+		// בקוד (mergeExtra שומר מפתחות לא מוכרים בעריכה).
+		joined_at: b.extra_fields?.joined_at || tenureStartFrom(b.createdAt)
 	};
 }
 

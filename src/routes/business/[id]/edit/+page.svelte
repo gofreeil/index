@@ -69,6 +69,8 @@
 			errors={form?.errors ?? {}}
 			canModerate={data.isAdmin}
 			categories={data.categoryOptions}
+			tagQueries={data.topQueries ?? []}
+			tagPool={data.popularTags ?? []}
 		/>
 
 		<div class="flex flex-wrap items-center gap-3">

@@ -193,6 +193,8 @@
 			errors={form?.errors ?? {}}
 			canModerate
 			categories={data.categoryOptions}
+			tagQueries={data.topQueries ?? []}
+			tagPool={data.popularTags ?? []}
 		/>
 
 		<div class="flex items-center gap-3">

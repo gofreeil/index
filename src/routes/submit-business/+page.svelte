@@ -7,6 +7,9 @@
 	import { LINK_FIELDS } from '$lib/socialLinks.js';
 	import ImageDropField from '$lib/components/ImageDropField.svelte';
 	import ImageFitEditor from '$lib/components/ImageFitEditor.svelte';
+	import TagsField from '$lib/components/TagsField.svelte';
+	import { parseTags } from '$lib/tags.js';
+	import { suggestTags } from '$lib/tagSuggest.js';
 	import {
 		parseFit,
 		parseFitList,
@@ -73,6 +76,41 @@
 	function syncBranches(e) {
 		branches = parseBranches(e.currentTarget.value);
 	}
+
+	// ── תגיות ──
+	// המילים שבהן יחפשו את העסק. נשמרות כמו הסניפים — JSON בשדה מוסתר אחד,
+	// ומשם ל-extra_fields (ראו tags.js).
+	let tags = $state(parseTags(form?.values?.tags));
+
+	/* ההצעות נגזרות ממה שכבר מולא בטופס, ולכן הן משתנות תוך כדי ההקלדה.
+	   השדות עצמם אינם bind:value אלא defaultValue (כך עובד שחזור הטיוטה),
+	   ולכן הערכים נקראים מאירועי הטופס עצמו: מאזין אחד על ה-form, במקום
+	   לשנות עשרה שדות קיימים. שחזור הטיוטה משגר input/change בעצמו
+	   (ראו applyToForm ב-formDraft.ts), ולכן גם הוא נקלט כאן. */
+	let live = $state({ ...(form?.values ?? {}) });
+
+	/** @param {Event} e */
+	function readField(e) {
+		const el = /** @type {any} */ (e.target);
+		if (el?.name && typeof el.value === 'string') live = { ...live, [el.name]: el.value };
+	}
+
+	const tagSuggestions = $derived(
+		suggestTags(
+			{
+				name: live.name,
+				category: live.category,
+				subcategory: live.subcategory,
+				description: live.unique_content,
+				discount: live.discount,
+				city: live.city,
+				neighborhood: live.neighborhood,
+				salesArea: live.sales_area,
+				branches
+			},
+			{ chosen: tags, queries: data?.topQueries ?? [], popular: data?.popularTags ?? [] }
+		)
+	);
 
 	// ── מיקום וזום של הלוגו והתמונות ──
 	// העורך עובד על התמונה שנבחרה עכשיו, ונשלח כ-JSON בשדה מוסתר אחד.
@@ -179,6 +217,8 @@
 				exclude: DRAFT_EXCLUDE,
 				onRestore: () => (draftRestored = true)
 			}}
+			oninput={readField}
+			onchange={readField}
 			use:enhance={() => {
 				submitting = true;
 				return async ({ result, update }) => {
@@ -239,24 +279,31 @@
 					</div>
 				</div>
 
-				<div>
-					<label for="description" class="mb-1 block text-sm font-medium text-gray-300"
-						>תיאור קצר *</label
-					>
-					<textarea id="description" name="description" required rows="3" class="field"
-						>{v.description ?? ''}</textarea
-					>
-					{#if errors.description}<p class="err">{errors.description}</p>{/if}
-				</div>
-
+				<!-- תיבת טקסט אחת ולא שתיים ("תיאור קצר" + "מה מייחד אתכם?"): שתיהן
+				     נכתבו לאותו מקום בכרטיסייה, וההפרדה רק פיצלה את מה שנכתב. -->
 				<div>
 					<label for="unique_content" class="mb-1 block text-sm font-medium text-gray-300"
-						>מה מייחד אתכם?</label
+						>תיאור מורחב *</label
 					>
-					<textarea id="unique_content" name="unique_content" rows="2" class="field"
-						>{v.unique_content ?? ''}</textarea
+					<textarea
+						id="unique_content"
+						name="unique_content"
+						required
+						rows="4"
+						placeholder="מה אתם עושים, למי, ומה מייחד אתכם"
+						class="field">{v.unique_content ?? ''}</textarea
 					>
+					{#if errors.unique_content}<p class="err">{errors.unique_content}</p>{/if}
 				</div>
+
+				<!-- תגיות — אחרי התיאור בכוונה: ההצעות נבנות ממה שכבר נכתב
+				     למעלה, ולכן בשלב הזה הן כבר יודעות על מה מדובר. -->
+				<TagsField
+					bind:tags
+					suggestions={tagSuggestions}
+					inputClass="w-full rounded-[0.6rem] border border-gray-700 bg-gray-800 px-3 py-2 text-gray-100 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-900/30"
+					labelClass="mb-1 block text-sm font-medium text-gray-300"
+				/>
 			</fieldset>
 
 			<!-- הטבה + תנאים (חובה, load-bearing) -->

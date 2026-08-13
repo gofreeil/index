@@ -7,6 +7,7 @@ import {
 } from '$lib/server/visitorStats.js';
 import { getDirectoryStats, resolveBusinessPages } from '$lib/server/siteStats.js';
 import { getAdStatsTotals } from '$lib/server/adStats.js';
+import { getSearchStats } from '$lib/server/searchStats.js';
 
 /**
  * מסך הסטטיסטיקה — פתוח לכל אדמין. שני מקורות נתונים:
@@ -14,17 +15,20 @@ import { getAdStatsTotals } from '$lib/server/adStats.js';
  *     דורש הגדרה; בלעדיה המסך מציג את מה שכן יש ומסביר מה חסר.
  *   • המאגר עצמו (siteStats) — גידול, כרטיסיות נצפות, חשיפות טלפון, דירוגים.
  *     עובד תמיד, בלי הגדרות.
+ *   • הביקוש (searchStats) — מה גולשים הקלידו בשורת החיפוש, מה מתוכו חזר
+ *     ריק, וכמה לחיצות טלפון היו לפי יום. גם הוא עובד בלי הגדרות.
  * כל מקור נכשל בנפרד ולא מפיל את המסך.
  * @type {import('./$types').PageServerLoad}
  */
 export async function load({ locals }) {
 	if (!isPrivileged(locals.user)) throw redirect(302, '/admin');
 
-	const [monthly, insights, directory, adTotals] = await Promise.all([
+	const [monthly, insights, directory, adTotals, search] = await Promise.all([
 		getMonthlyVisitorStats().catch(() => null),
 		getYearlyInsights().catch(() => null),
 		getDirectoryStats().catch(() => null),
-		getAdStatsTotals().catch(() => null)
+		getAdStatsTotals().catch(() => null),
+		getSearchStats({ days: 14 }).catch(() => null)
 	]);
 
 	// נתיבי /business/{id} מ-GA → שמות כרטיסיות
@@ -40,6 +44,7 @@ export async function load({ locals }) {
 		devices: insights?.data.devices ?? [],
 		channels: insights?.data.channels ?? [],
 		directory,
-		adTotals
+		adTotals,
+		search
 	};
 }

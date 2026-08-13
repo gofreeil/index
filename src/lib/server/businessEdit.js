@@ -19,6 +19,7 @@
 
 import { uploadImage } from './strapi.js';
 import { parseBranches } from '../branches.js';
+import { parseTags } from '../tags.js';
 import { parseMediaFit, MAX_BANNERS } from '../mediaFit.js';
 import { EXTRA_LINK_KEYS } from '../socialLinks.js';
 
@@ -28,12 +29,14 @@ const URL_RE = /^https?:\/\/.+/i;
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const MAX_IMAGE_BYTES = 3_000_000;
 
-/** שדות טקסט חופשי — נשמרים כמו שהוקלדו. */
+/** שדות טקסט חופשי — נשמרים כמו שהוקלדו.
+ * description אינו ברשימה: אין לו יותר שדה בטופס (הסלוגן ו"תיאור מורחב"
+ * תפסו את מקומו), ושדה שאינו נשלח היה נקרא כמחרוזת ריקה ומוחק בשמירה את
+ * הטקסט שכבר יושב בעמודה. כך הוא נשאר כמו שהוא. */
 const TEXT_FIELDS = [
 	'name',
 	'category',
 	'subcategory',
-	'description',
 	'unique_content',
 	'contact_name',
 	'phone',
@@ -117,6 +120,10 @@ export async function parseBusinessForm(fd, { canModerate, current }) {
 	// לסלוגן אין עמודה באוסף (Strapi היה מתעלם ממנו בשקט), ולכן הוא נשמר
 	// באותו json. שדה שנשלח ריק מוחק את מה שהיה.
 	if (fd.has('slogan')) extraPatch.slogan = str(fd.get('slogan'));
+
+	// תגיות — באותה עמודה (ראו tags.js). כמו הסניפים: רק טופס ששלח את השדה
+	// נוגע בהן, כדי שטופס ישן שאינו מכיר אותן לא ימחק רשימה קיימת.
+	if (fd.has('tags')) extraPatch.tags = parseTags(fd.get('tags'));
 
 	// מיקום וזום של הלוגו והתמונות. גם כאן רק טופס ששלח את השדה נוגע בהם,
 	// ומיקום שחזר לברירת המחדל מוחק את המפתח במקום לשמור אותו סתם.

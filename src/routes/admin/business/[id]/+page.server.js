@@ -14,16 +14,21 @@ import { parseBusinessForm } from '$lib/server/businessEdit.js';
 import { businessOwnerId, invalidateMatches } from '$lib/server/ownerMatch.js';
 import { createClaim, decideClaim, invalidateClaims } from '$lib/server/claimsStore.js';
 import { invalidatePendingCounts } from '$lib/server/pendingCounts.js';
+import { getTopQueries } from '$lib/server/searchStats.js';
+import { getPopularTags } from '$lib/server/tagPool.js';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ params, locals }) {
 	if (!isPrivileged(locals.user)) throw redirect(302, '/admin');
-	const [biz, users, categoryOptions] = await Promise.all([
+	const [biz, users, categoryOptions, topQueries, popularTags] = await Promise.all([
 		getBusinessAdmin(params.id),
 		// רשימת המשתמשים לבורר הבעלות. כישלון שלה לא מפיל את מסך העריכה —
 		// פשוט לא תוצג אפשרות לשייך ידנית.
 		listUsersSlim().catch(() => []),
-		getCategoryOptions().catch(() => [])
+		getCategoryOptions().catch(() => []),
+		// מזינים את הצעת התגיות (ראו $lib/tagSuggest); נכשלים בשקט
+		getTopQueries().catch(() => []),
+		getPopularTags().catch(() => [])
 	]);
 	if (!biz) throw error(404, 'העסק לא נמצא');
 	// תווית של קטגוריה שנמחקה ממסך הניהול כבר לא קיימת — הטופס מציג את
@@ -32,6 +37,8 @@ export async function load({ params, locals }) {
 	return {
 		biz: { ...biz, category },
 		categoryOptions,
+		topQueries,
+		popularTags,
 		superAdmin: isSuperAdmin(locals.user),
 		users: users
 			.map((u) => ({ id: u.id, email: u.email, name: u.name, phone: u.phone }))

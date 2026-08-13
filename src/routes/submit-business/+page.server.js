@@ -2,16 +2,29 @@ import { fail } from '@sveltejs/kit';
 import { createBusiness, uploadImage } from '$lib/server/strapi.js';
 import { getCategoryOptions } from '$lib/server/categoryStore.js';
 import { parseBranches } from '$lib/branches.js';
+import { parseTags } from '$lib/tags.js';
+import { getTopQueries } from '$lib/server/searchStats.js';
+import { getPopularTags } from '$lib/server/tagPool.js';
 import { EXTRA_LINK_KEYS, parseExtraLinks } from '$lib/socialLinks.js';
 import { parseMediaFit, MAX_BANNERS } from '$lib/mediaFit.js';
 
 /**
  * רשימת הקטגוריות לתפריט הבחירה — כולל דריסות השם והקטגוריות שהוסיף
  * הסופר-אדמין במסך ניהול הקטגוריות.
+ *
+ * בנוסף שני מקורות להצעת התגיות (ראו $lib/tagSuggest): הביטויים שגולשים
+ * באמת חיפשו כאן, והתגיות שכבר בשימוש במאגר. שניהם נכשלים בשקט ומוחזרים
+ * ריקים — הצעת התגיות עובדת גם בלעדיהם, ותקלה ב-Strapi לא תשבור את הטופס
+ * הציבורי.
  * @type {import('./$types').PageServerLoad}
  */
 export async function load() {
-	return { categoryOptions: await getCategoryOptions().catch(() => []) };
+	const [categoryOptions, topQueries, popularTags] = await Promise.all([
+		getCategoryOptions().catch(() => []),
+		getTopQueries().catch(() => []),
+		getPopularTags().catch(() => [])
+	]);
+	return { categoryOptions, topQueries, popularTags };
 }
 
 // ── Anti-spam: rate-limit per-IP (token bucket בזיכרון) ──────────
@@ -65,7 +78,8 @@ export const actions = {
 			name: str(fd.get('name')),
 			category: str(fd.get('category')),
 			subcategory: str(fd.get('subcategory')),
-			description: str(fd.get('description')),
+			// אין יותר description: הטקסט של העסק נכתב כולו ל"תיאור מורחב", והעמודה
+			// הישנה רוקנה במיגרציה (scripts/merge-description-into-content.mjs).
 			unique_content: str(fd.get('unique_content')),
 			contact_name: str(fd.get('contact_name')),
 			phone: str(fd.get('phone')),
@@ -90,7 +104,9 @@ export const actions = {
 			discount: str(fd.get('discount')),
 			// סניפים ומקומות שירות נוספים — נשארים ב-values כדי שיחזרו למסך
 			// אם הולידציה נכשלה, ונשלחים ל-extra_fields ולא כשדה משלהם.
-			branches: parseBranches(fd.get('branches'))
+			branches: parseBranches(fd.get('branches')),
+			// תגיות — אותו דין בדיוק (ראו tags.js)
+			tags: parseTags(fd.get('tags'))
 		};
 		const accepted_terms = fd.get('accepted_terms') === 'on';
 
@@ -99,7 +115,7 @@ export const actions = {
 		const errors = {};
 		if (!values.name) errors.name = 'שם העסק חובה';
 		if (!values.category) errors.category = 'יש לבחור קטגוריה';
-		if (!values.description) errors.description = 'תיאור קצר חובה';
+		if (!values.unique_content) errors.unique_content = 'תיאור מורחב חובה';
 		if (!values.contact_name) errors.contact_name = 'שם איש קשר חובה';
 		if (!PHONE_RE.test(values.phone)) errors.phone = 'מספר טלפון לא תקין';
 		if (!EMAIL_RE.test(values.email)) errors.email = 'אימייל לא תקין (משמש לעריכה עתידית של העסק)';
@@ -164,7 +180,7 @@ export const actions = {
 		// לאוסף idx-business אין עמודת email, ו-Strapi מתעלם בשקט ממפתח לא
 		// מוכר — ולכן אימייל בעל העסק נשמר ב-extra_fields (עמודת json).
 		// זה גם המפתח שבו המערכת מזהה אותו כשהוא נרשם לאתר (ownerMatch.js).
-		const { email, branches, tiktok, x, linkedin, extra, video, ...fields } = values;
+		const { email, branches, tags, tiktok, x, linkedin, extra, video, ...fields } = values;
 		const links = parseExtraLinks({ tiktok, x, linkedin, extra, video });
 		// מיקום וזום של הלוגו והתמונות — null כשלא נגעו בהם, וכך הוא לא נשמר
 		const mediaFit = parseMediaFit(fd.get('media_fit'));
@@ -174,6 +190,7 @@ export const actions = {
 				extra_fields: {
 					owner_email: email.toLowerCase(),
 					...(branches.length ? { branches } : {}),
+					...(tags.length ? { tags } : {}),
 					...(Object.keys(links).length ? { links } : {}),
 					...(mediaFit ? { media_fit: mediaFit } : {})
 				},

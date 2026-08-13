@@ -17,6 +17,7 @@
 	import SocialLinks from '$lib/components/SocialLinks.svelte';
 	import StarRating from '$lib/components/StarRating.svelte';
 	import ShareButton from '$lib/components/ShareButton.svelte';
+	import TenureBadge from '$lib/components/TenureBadge.svelte';
 	import { SITE_NAME, DEFAULT_OG_IMAGE, professionalSchema, breadcrumbSchema } from '$lib/seo';
 
 	/** @type {{ data: any, form: any }} */
@@ -160,6 +161,18 @@
 		} catch (e) {
 			console.error('reveal failed:', e);
 		}
+	}
+
+	/* לחיצה על המספר החשוף — החיוג עצמו. החשיפה כבר נספרה, אבל היא רק
+	   "הצצה"; ההפרש בין השתיים הוא כמה מהמציצים באמת התקשרו, וזה המדד
+	   שבעל העסק והאדמין מחפשים. בלי await: הניווט אל האפליקציה לא ממתין. */
+	function logPhoneCall() {
+		fetch('/api/stats', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ documentId: business.documentId, action: 'phone_click' }),
+			keepalive: true
+		}).catch(() => {});
 	}
 
 	/**
@@ -379,7 +392,9 @@
 			{/if}
 			<!-- חמשת הכוכבים: תמיד מוצגים, גם כשאין דירוג — אז הם כבויים ומזמינים
 			     ללחיצה. הלחיצה עצמה היא הדירוג (startRating), ולכן הכוכבים כאן
-			     אינטראקטיביים ולא קישוט. -->
+			     אינטראקטיביים ולא קישוט.
+			     תג הוותק חולק איתם את השורה: שניהם אותו סוג סימן — כמה אפשר
+			     לסמוך על העסק — ושורה משלו הייתה מרחיקה את התוכן מטה. -->
 			<div class="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
 				<StarRating
 					value={ratingCount > 0 ? avgRating : 0}
@@ -396,6 +411,7 @@
 				{:else}
 					<span class="text-gray-500">{t.noReviews}</span>
 				{/if}
+				<TenureBadge since={business.joined_at} />
 			</div>
 		</div>
 
@@ -615,6 +631,25 @@
 					{business.unique_content || business.description || t.noDescription}
 				</p>
 
+				<!-- התגיות שבעל העסק רשם על עצמו: המילים שבהן גולש מחפש אותו,
+				     ולא בהכרח אלה שבהן הוא מתאר את עצמו בתיאור. מוצגות ולא
+				     מוסתרות — הן מספרות למבקר מה בדיוק העסק עושה, והן גם
+				     הטקסט שסורק מנוע חיצוני קורא. אין תגיות = אין בלוק. -->
+				{#if business.tags?.length}
+					<div class="mt-3.5">
+						<span class="text-xs font-medium text-gray-500">{t.alsoSearchedAs}</span>
+						<ul class="mt-1.5 flex flex-wrap gap-1.5">
+							{#each business.tags as tag (tag)}
+								<li
+									class="rounded-full border border-blue-500/30 bg-blue-500/10 px-2.5 py-0.5 text-xs font-bold text-blue-300"
+								>
+									#{tag}
+								</li>
+							{/each}
+						</ul>
+					</div>
+				{/if}
+
 				<!-- ההפרדה בין התווית לפרט היא בגודל ובבהירות ולא במסגרת סביבם:
 				     התווית קטנה ועמומה, והפרט עצמו — הכתובת, הסניף — הוא הטקסט
 				     הבולט בשורה. קודם השניים נראו כמעט אותו דבר, והעין חיפשה את
@@ -722,6 +757,7 @@
 				{#if isPhoneRevealed}
 					<a
 						href="tel:{business.phone}"
+						onclick={logPhoneCall}
 						class="inline-block rounded-lg bg-blue-600 px-5 py-2.5 text-lg font-semibold text-white transition hover:bg-blue-500"
 					>
 						<span dir="ltr">{business.phone}</span>
