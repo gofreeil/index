@@ -124,9 +124,6 @@
 			>
 				{business.name}
 			</h3>
-			<p class="mt-0.5 line-clamp-1 text-xs text-gray-400">
-				{business.category}
-			</p>
 
 			{#if ratingCount > 0}
 				<div class="mt-1 flex items-center gap-1.5">
@@ -174,6 +171,15 @@
 				</svg>
 				<span class="line-clamp-1">{business.address || business.salesArea}</span>
 			</div>
+
+			<!-- הקטגוריות בתחתית: הן סיווג, לא כותרת משנה — למעלה הן דחפו את
+			     מה שמוכר את העסק (דירוג, סלוגן, הטבה) מטה. ה-pl-9 שומר מרחק
+			     מכפתור השיתוף שיושב בפינה. -->
+			{#if business.category}
+				<p class="mt-0.5 line-clamp-1 pl-9 text-xs text-gray-500">
+					{business.category}
+				</p>
+			{/if}
 		</div>
 	</a>
 </div>
