@@ -40,6 +40,9 @@ export async function load() {
 			name: b.name || 'ללא שם',
 			phone: b.phone || '',
 			category: displayName(resolveCategory(b, retired)),
+			// "תת-קטגוריה / פירוט" — שם המקצוע במילים של העסק עצמו. הוא מזין
+			// את החיפוש ואת ההצעות הקרובות ($lib/searchSuggest)
+			subcategory: b.subcategory || '',
 			banners: b.banners || [],
 			banner: b.banner || '',
 			// מיקום וזום של הלוגו והתמונה באריח (ראו mediaFit.js)
@@ -47,7 +50,10 @@ export async function load() {
 			banner_fits: b.banner_fits,
 			// איזו מהתמונות היא הראשית — הבאנר של האריח (ראו mediaFit.js)
 			main_index: b.main_index,
-			description: b.description || '',
+			// הטקסט של העסק — "תיאור מורחב" (unique_content). description הוא שריד
+			// "תיאור קצר" שנמחק מהטופס, ונשאר כנפילה אחורה לכרטיסיות שטרם מוזגו.
+			// משמש את החיפוש בדף הבית.
+			description: b.unique_content || b.description || '',
 			// הסלוגן מוצג בכרטיסייה עצמה, ולא רק בעמוד העסק
 			slogan: b.slogan || '',
 			discount: b.discount || '',

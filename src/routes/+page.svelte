@@ -7,6 +7,7 @@
 	import JsonLd from '$lib/components/JsonLd.svelte';
 	import Seo from '$lib/components/Seo.svelte';
 	import { categoryIcon, OTHER } from '$lib/categories.js';
+	import { suggestForQuery } from '$lib/searchSuggest.js';
 	import { businessCities } from '$lib/cities.js';
 	import { favorites } from '$lib/favorites.js';
 	import {
@@ -136,8 +137,18 @@
 		)
 	);
 
-	// חיפוש על שדות רלוונטיים בלבד (לא על כל אובייקט כולל URL של תמונות)
-	const SEARCH_FIELDS = ['name', 'category', 'description', 'discount', 'address', 'salesArea'];
+	// חיפוש על שדות רלוונטיים בלבד (לא על כל אובייקט כולל URL של תמונות).
+	// subcategory ("תת-קטגוריה / פירוט") הוא בדיוק המקום שבו עסק כותב את שם
+	// המקצוע שלו במילים של הגולש, ולכן הוא חלק מהחיפוש.
+	const SEARCH_FIELDS = [
+		'name',
+		'category',
+		'subcategory',
+		'description',
+		'discount',
+		'address',
+		'salesArea'
+	];
 	/** @param {any} b */
 	function matchesSearch(b) {
 		if (!searchTerm) return true;
@@ -160,6 +171,24 @@
 	);
 
 	const displayedBusinesses = $derived(filteredBusinesses.slice(0, visibleCount));
+
+	/* ═══════════ "לא נמצא — אבל אלה הקרובים" ═══════════
+	   חיפוש שהחזיר אפס תוצאות מקבל את העסקים הקרובים ביותר לתחום שהוקלד
+	   (ראו $lib/searchSuggest): התאמת שורש למילת החיפוש, ובנוסף התחום שאליו
+	   היא שייכת לפי מילות המפתח של הטקסונומיה — כך ש"שרברב" מחזיר את אנשי
+	   הבית והתחזוקה גם כשאף כרטיסייה לא כתבה את המילה הזאת.
+	   קודם בתוך הסינון שהגולש בחר (תחום/עיר), כדי לא לסתור אותו; רק אם שם
+	   אין אף מועמד — מכל האינדקס, כי הצעה רחוקה עדיפה על דף ריק. */
+	const suggestedBusinesses = $derived.by(() => {
+		if (!searchTerm.trim() || filteredBusinesses.length > 0) return [];
+		const inFilters = businesses.filter((b) => {
+			const okCat = selectedCategory === 'all' || b.category === selectedCategory;
+			const okLoc = selectedLocation === 'all' || !!cityIndex.get(b.id)?.has(selectedLocation);
+			return okCat && okLoc;
+		});
+		const near = suggestForQuery(searchTerm, inFilters);
+		return near.length ? near : suggestForQuery(searchTerm, businesses);
+	});
 
 	/* סינון פעיל (מסילת התחומים / חיפוש / עיר) הופך את הדף למצב "תוצאות":
 	   הקומות הקבועות מתחלפות ברשימת העסקים הרלוונטיים, מיד מתחת למסילה. */
@@ -413,6 +442,28 @@
 							>הוסיפו אותו לאינדקס</a
 						>
 					</p>
+				{:else if suggestedBusinesses.length > 0}
+					<!-- דף ריק הוא סוף הביקור. מי שחיפש מקצוע שאין לו התאמה מדויקת
+					     מקבל כאן את העסקים הקרובים לתחום שביקש, ולא רק הודעת "לא נמצא". -->
+					<div class="mt-8">
+						<p class="text-center text-base font-bold text-gray-200">
+							לא מצאנו עסק שתואם בדיוק ל"{searchTerm}"
+						</p>
+						<p class="mt-1 text-center text-sm text-gray-400">
+							אלה העסקים הקרובים ביותר לתחום שחיפשתם:
+						</p>
+						<div class="cards-grid mt-6">
+							{#each suggestedBusinesses as business (business.id)}
+								<BusinessCard {business} />
+							{/each}
+						</div>
+						<p class="mt-6 text-center text-sm text-gray-400">
+							לא זה מה שחיפשתם? יש לכם עסק בתחום?
+							<a href="/submit-business" class="font-semibold text-blue-400 hover:text-blue-300"
+								>הוסיפו אותו לאינדקס</a
+							>
+						</p>
+					</div>
 				{:else}
 					<p class="mt-8 text-center text-gray-400">לא נמצאו עסקים התואמים לחיפוש.</p>
 				{/if}
