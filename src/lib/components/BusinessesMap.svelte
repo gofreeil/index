@@ -287,11 +287,12 @@
 		</div>
 	{/if}
 	<!-- ההסתייגות יושבת בתוך המפה ולא מתחתיה: שורת טקסט מתחת גוזלת גובה
-	     ומכריחה שלד תואם ב-LazyMap. z גבוה מפקדי Leaflet (800), ומשמאל
-	     כדי לא להתנגש בייחוס שבפינה הימנית התחתונה. -->
+	     ומכריחה שלד תואם ב-LazyMap. צמודה לפינה הימנית התחתונה ואטומה, כדי
+	     שתכסה את שורת הייחוס של Leaflet שנפתחת שם (הדף RTL, ולכן "Leaflet"
+	     והדגל יושבים בקצה הימני). z גבוה מפקדי Leaflet (800). -->
 	{#if drawn}
 		<div
-			class="pointer-events-none absolute bottom-1.5 left-1.5 z-[1000] rounded bg-gray-900/70 px-1.5 py-0.5 text-[10px] leading-4 text-gray-200"
+			class="pointer-events-none absolute bottom-0 right-0 z-[1000] rounded-br-xl rounded-tl bg-gray-900 px-1.5 py-0.5 text-[10px] leading-4 text-gray-200"
 		>
 			אזור משוער בלבד
 		</div>
