@@ -40,9 +40,7 @@
 	// לאוסף אין עמודת email — אימייל הבעלים יושב ב-extra_fields
 	const ownerEmail = $derived(biz.extra_fields?.owner_email ?? '');
 
-	// כותרת וסלוגן — גם להם אין עמודה משלהם באוסף, והם יושבים באותה עמודת
-	// json (ראו businessEdit.js). הכותרת מוצגת בכרטיסייה בפונט גדול.
-	const headline = $derived(biz.extra_fields?.headline ?? '');
+	// לסלוגן אין עמודה משלו באוסף, והוא יושב בעמודת ה-json (ראו businessEdit.js).
 	const slogan = $derived(biz.extra_fields?.slogan ?? '');
 
 	// טיקטוק, X, לינקדאין ו"נוסף" יושבים ב-extra_fields.links ולא בעמודה
@@ -169,19 +167,8 @@
 				{#if err('status')}<p class="mt-1 text-xs text-red-400">{err('status')}</p>{/if}
 			</div>
 		{/if}
-		<!-- col-start-1 פותח שורה חדשה: בלעדיו הכותרת הייתה נדחפת לצד שם העסק
-		     במסך של בעל העסק (שאין בו סטטוס), והזוג כותרת+סלוגן היה נשבר. -->
-		<div class="sm:col-start-1">
-			<label class={LABEL} for="f-headline">כותרת</label>
-			<input
-				id="f-headline"
-				name="headline"
-				value={headline}
-				placeholder="המשפט הגדול בראש הכרטיסייה"
-				class={INPUT}
-			/>
-			<p class="mt-1 text-xs text-gray-500">מוצגת בכרטיסייה בפונט גדול, מתחת לשם העסק.</p>
-		</div>
+		<!-- אין שדה "כותרת" נפרד: הכותרת שבראש הכרטיסייה היא שם העסק עצמו.
+		     שני שדות לאותו משפט רק גרמו לבעל העסק לכתוב אותו פעמיים. -->
 		<div>
 			<label class={LABEL} for="f-slogan">סלוגן</label>
 			<input

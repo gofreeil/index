@@ -15,6 +15,7 @@
 	import { sameAsLinks } from '$lib/socialLinks.js';
 	import SocialLinks from '$lib/components/SocialLinks.svelte';
 	import StarRating from '$lib/components/StarRating.svelte';
+	import ShareButton from '$lib/components/ShareButton.svelte';
 	import { SITE_NAME, DEFAULT_OG_IMAGE, professionalSchema, breadcrumbSchema } from '$lib/seo';
 
 	/** @type {{ data: any, form: any }} */
@@ -385,23 +386,24 @@
 				{/if}
 			</div>
 		</div>
+
+		<!-- שיתוף הכרטיסייה — פתוח לכל מבקר, ולא רק לבעל העסק (SmartShare) -->
+		<div class="flex-shrink-0">
+			<ShareButton
+				variant="page"
+				path="/business/{business.documentId}"
+				title={business.name}
+				text={business.slogan || business.category || business.name}
+			/>
+		</div>
 	</header>
 
-	<!-- ── כותרת וסלוגן ─────────────────────────────────────
-	     המשפט שבעל העסק בחר שייקרא ראשון, ולכן מיד מתחת לשם ובפונט גדול.
-	     ברוחב מלא ולא בתוך העמודה של הכותרת: שם ארוך היה דוחס אותו לצד
-	     הלוגו. אין כותרת ואין סלוגן = אין מדור בכלל. -->
-	{#if business.headline || business.slogan}
-		<div class="mt-4">
-			{#if business.headline}
-				<p class="text-2xl leading-snug font-bold text-gray-100 sm:text-3xl">
-					{business.headline}
-				</p>
-			{/if}
-			{#if business.slogan}
-				<p class="mt-1 text-lg leading-7 text-gray-400">{business.slogan}</p>
-			{/if}
-		</div>
+	<!-- ── סלוגן ────────────────────────────────────────────
+	     הכותרת הגדולה של הכרטיסייה היא שם העסק עצמו (ה-h1 שלמעלה), ולכן אין
+	     כאן משפט נוסף — רק הסלוגן שמלווה אותו. ברוחב מלא ולא בתוך העמודה של
+	     השם: שם ארוך היה דוחס אותו לצד הלוגו. אין סלוגן = אין מדור בכלל. -->
+	{#if business.slogan}
+		<p class="mt-4 text-lg leading-7 text-gray-400">{business.slogan}</p>
 	{/if}
 
 	<!-- ── פעולות ──────────────────────────────────────────

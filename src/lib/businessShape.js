@@ -46,9 +46,8 @@ export function toBusiness(b) {
 		name: b.name || '',
 		category: b.category || '',
 		subcategory: b.subcategory || '',
-		// כותרת וסלוגן — אין להם עמודה משלהם, והם יושבים ב-extra_fields כמו
-		// הסניפים והקישורים (ראו businessEdit.js). כאן הם עולים לרמה העליונה.
-		headline: b.extra_fields?.headline || '',
+		// לסלוגן אין עמודה משלו, והוא יושב ב-extra_fields כמו הסניפים והקישורים
+		// (ראו businessEdit.js). כאן הוא עולה לרמה העליונה.
 		slogan: b.extra_fields?.slogan || '',
 		description: b.description || '',
 		unique_content: b.unique_content || '',
