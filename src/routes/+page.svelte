@@ -297,7 +297,7 @@
 <div class="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
 	<!-- H1 — הכותרת הראשית של הדף. עד כאן לא היה בדף אף h1, וגוגל לא ידע במה הדף עוסק. -->
 	<h1 class="mb-5 text-center text-2xl font-extrabold text-gray-100 sm:mb-8 sm:text-4xl">
-		בעלי מקצוע כשירים — מומלצים, מדורגים ובהטבה לחברי הקהילה
+		בעלי מקצוע כשירים — מומלצים, מדורגים ובהטבה לחברי יוצאים לחירות
 	</h1>
 
 	{#if error}
