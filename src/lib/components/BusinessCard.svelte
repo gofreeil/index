@@ -155,18 +155,18 @@
 			{/if}
 
 			<div class="mt-auto flex items-center gap-1.5 pt-2 pl-9 text-xs text-gray-400 sm:pt-3">
+				<!-- הפין צבעוני ומלא: בקו אפור דק הוא היה עוד סימן חיוור בשורת הכתובת;
+				     מלא ובאדום הוא נקרא כסמל מיקום במבט אחד, כמו 🎁 בשורת ההטבה. -->
 				<svg
-					class="h-3 w-3 flex-shrink-0 sm:h-3.5 sm:w-3.5"
-					fill="none"
-					stroke="currentColor"
+					class="h-3.5 w-3.5 flex-shrink-0 text-rose-400 sm:h-4 sm:w-4"
+					fill="currentColor"
 					viewBox="0 0 24 24"
 					aria-hidden="true"
 				>
 					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+						fill-rule="evenodd"
+						clip-rule="evenodd"
+						d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.683 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z"
 					/>
 				</svg>
 				<span class="line-clamp-1">{business.address || business.salesArea}</span>
