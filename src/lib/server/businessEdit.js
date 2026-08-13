@@ -95,6 +95,10 @@ export async function parseBusinessForm(fd, { canModerate, current }) {
 	// בהם: טופס ישן שאינו מכיר אותו לא ימחק רשימה קיימת.
 	if (fd.has('branches')) extraPatch.branches = parseBranches(fd.get('branches'));
 
+	// כותרת וסלוגן — גם להם אין עמודה באוסף (Strapi היה מתעלם מהם בשקט),
+	// ולכן הם נשמרים באותו json. שדה שנשלח ריק מוחק את מה שהיה.
+	for (const k of ['headline', 'slogan']) if (fd.has(k)) extraPatch[k] = str(fd.get(k));
+
 	// מיקום וזום של הלוגו והתמונות. גם כאן רק טופס ששלח את השדה נוגע בהם,
 	// ומיקום שחזר לברירת המחדל מוחק את המפתח במקום לשמור אותו סתם.
 	// null ולא undefined: מפתח עם undefined נעלם ב-JSON.stringify, והערך הישן

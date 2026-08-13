@@ -377,6 +377,23 @@
 		</div>
 	</header>
 
+	<!-- ── כותרת וסלוגן ─────────────────────────────────────
+	     המשפט שבעל העסק בחר שייקרא ראשון, ולכן מיד מתחת לשם ובפונט גדול.
+	     ברוחב מלא ולא בתוך העמודה של הכותרת: שם ארוך היה דוחס אותו לצד
+	     הלוגו. אין כותרת ואין סלוגן = אין מדור בכלל. -->
+	{#if business.headline || business.slogan}
+		<div class="mt-4">
+			{#if business.headline}
+				<p class="text-2xl leading-snug font-bold text-gray-100 sm:text-3xl">
+					{business.headline}
+				</p>
+			{/if}
+			{#if business.slogan}
+				<p class="mt-1 text-lg leading-7 text-gray-400">{business.slogan}</p>
+			{/if}
+		</div>
+	{/if}
+
 	<!-- ── פעולות ──────────────────────────────────────────
 	     הטלפון ירד לסוף הדף (מדור משלו למטה); כאן נשאר האתר בלבד. -->
 	{#if business.website}

@@ -39,6 +39,11 @@
 	// לאוסף אין עמודת email — אימייל הבעלים יושב ב-extra_fields
 	const ownerEmail = $derived(biz.extra_fields?.owner_email ?? '');
 
+	// כותרת וסלוגן — גם להם אין עמודה משלהם באוסף, והם יושבים באותה עמודת
+	// json (ראו businessEdit.js). הכותרת מוצגת בכרטיסייה בפונט גדול.
+	const headline = $derived(biz.extra_fields?.headline ?? '');
+	const slogan = $derived(biz.extra_fields?.slogan ?? '');
+
 	// טיקטוק, X, לינקדאין ו"נוסף" יושבים ב-extra_fields.links ולא בעמודה
 	// משלהם, ולכן הערך שלהם נשלף משם ולא מ-biz הישר (ראו socialLinks.js).
 	const links = $derived(parseExtraLinks(biz.extra_fields?.links));
@@ -143,6 +148,29 @@
 				{#if err('status')}<p class="mt-1 text-xs text-red-400">{err('status')}</p>{/if}
 			</div>
 		{/if}
+		<!-- col-start-1 פותח שורה חדשה: בלעדיו הכותרת הייתה נדחפת לצד שם העסק
+		     במסך של בעל העסק (שאין בו סטטוס), והזוג כותרת+סלוגן היה נשבר. -->
+		<div class="sm:col-start-1">
+			<label class={LABEL} for="f-headline">כותרת</label>
+			<input
+				id="f-headline"
+				name="headline"
+				value={headline}
+				placeholder="המשפט הגדול בראש הכרטיסייה"
+				class={INPUT}
+			/>
+			<p class="mt-1 text-xs text-gray-500">מוצגת בכרטיסייה בפונט גדול, מתחת לשם העסק.</p>
+		</div>
+		<div>
+			<label class={LABEL} for="f-slogan">סלוגן</label>
+			<input
+				id="f-slogan"
+				name="slogan"
+				value={slogan}
+				placeholder="שורה קצרה שמלווה את הכותרת"
+				class={INPUT}
+			/>
+		</div>
 		<div>
 			<label class={LABEL} for="f-category">קטגוריה</label>
 			<select id="f-category" name="category" value={biz.category ?? ''} class={INPUT}>
