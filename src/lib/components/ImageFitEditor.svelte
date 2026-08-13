@@ -18,7 +18,8 @@
 	 *   aspect?: 'square' | 'wide',
 	 *   mode?: 'cover' | 'contain',
 	 *   label?: string,
-	 *   round?: boolean
+	 *   round?: boolean,
+	 *   highlight?: boolean
 	 * }}
 	 */
 	let {
@@ -27,7 +28,8 @@
 		aspect = 'wide',
 		mode = 'cover',
 		label = '',
-		round = false
+		round = false,
+		highlight = false
 	} = $props();
 
 	const ZOOM_FACTOR = 1.15;
@@ -103,11 +105,16 @@
 </script>
 
 <div class="flex flex-wrap items-center gap-3">
+	<!-- המסגרת הזהובה מסמנת את התמונה הראשית. היא ring ולא border עבה: ring
+	     מצויר מחוץ לתיבה ואינו משנה את מידותיה, ולכן התצוגה המקדימה נשארת
+	     בדיוק באותו יחס שנמדד ב-adImgFit גם כשהסימון עובר תמונה. -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
-		class="relative flex-shrink-0 cursor-move touch-none overflow-hidden border border-gray-600 bg-gray-950/80 shadow-inner {round
-			? 'rounded-full'
-			: 'rounded-xl'} {aspect === 'square' ? 'h-24 w-24' : 'h-24 w-40'}"
+		class="relative flex-shrink-0 cursor-move touch-none overflow-hidden border bg-gray-950/80 shadow-inner {highlight
+			? 'border-amber-400 ring-2 ring-amber-400/70'
+			: 'border-gray-600'} {round ? 'rounded-full' : 'rounded-xl'} {aspect === 'square'
+			? 'h-24 w-24'
+			: 'h-24 w-40'}"
 		title="גררו את התמונה כדי למקם אותה"
 		onpointerdown={panDown}
 		onpointermove={panMove}

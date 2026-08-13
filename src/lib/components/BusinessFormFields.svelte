@@ -436,7 +436,13 @@
 							</button>
 						{/if}
 					</div>
-					<ImageFitEditor src={url} bind:fit={bannerFits[i]} aspect="wide" label="תמונה {i + 1}" />
+					<ImageFitEditor
+						src={url}
+						bind:fit={bannerFits[i]}
+						aspect="wide"
+						label="תמונה {i + 1}"
+						highlight={mainIndex === i}
+					/>
 				</div>
 			{/each}
 			{#if bannerPreviews.length > 1}
