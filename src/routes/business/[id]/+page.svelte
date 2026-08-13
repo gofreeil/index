@@ -10,6 +10,7 @@
 	import SmartShare from '$lib/components/SmartShare.svelte';
 	import { branchLine } from '$lib/branches.js';
 	import ServiceAreaMap from '$lib/components/ServiceAreaMap.svelte';
+	import NavigateButton from '$lib/components/NavigateButton.svelte';
 	import { adImgFit } from '$lib/adImageFit';
 	import { parseFit, isDefaultFit, logoShapeClass } from '$lib/mediaFit.js';
 	import { sameAsLinks } from '$lib/socialLinks.js';
@@ -652,6 +653,12 @@
 			<div class="w-full flex-shrink-0 sm:w-1/2">
 				<div class="overflow-hidden rounded-xl border border-white/10">
 					<ServiceAreaMap {business} height="h-72 sm:h-[26rem]" />
+				</div>
+				<!-- "נווט" מתחת למפה ולא בתוכה: המפה מראה אזור שירות מקורב, והכפתור
+				     מוסר יעד מדויק לאפליקציה שמותקנת אצל הגולש. אין כתובת ואין
+				     נקודה = הרכיב לא מרנדר דבר, ולא נשארת שורה ריקה. -->
+				<div class="mt-2.5">
+					<NavigateButton {business} />
 				</div>
 			</div>
 		</div>
