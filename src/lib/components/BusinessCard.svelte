@@ -125,6 +125,9 @@
 				{business.name}
 			</h3>
 
+			<!-- הציון והכוכבים בלבד. מספר המדרגים ("(1)") ירד מהכרטיס: בעסק שרק
+			     התחיל להיות מדורג הוא קרא כמו הסתייגות מהציון עצמו. הוא נשאר
+			     בדף העסק, לצד חוות הדעת שמאחוריו. -->
 			{#if ratingCount > 0}
 				<div class="mt-1 flex items-center gap-1.5">
 					<StarRating
@@ -132,10 +135,7 @@
 						size="sm"
 						label={t.ratingOutOf5.replace('{rating}', String(rating))}
 					/>
-					<span class="text-xs text-gray-400">
-						<span class="font-medium text-gray-200">{rating}</span>
-						({ratingCount})
-					</span>
+					<span class="text-xs font-medium text-gray-200">{rating}</span>
 				</div>
 			{/if}
 
