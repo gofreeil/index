@@ -286,15 +286,17 @@
 			>
 		</div>
 	{/if}
-</div>
-
-<!-- הגובה קבוע (שתי שורות בנייד, אחת מ-sm) ומשוכפל בשלד של LazyMap, אחרת
-     הדף קופץ כשהמפה מחליפה את השלד. לכן הפסקה מרונדרת תמיד, גם כשריקה. -->
-<p class="mt-1.5 h-8 px-1 text-center text-[11px] leading-4 text-gray-500 sm:h-4">
+	<!-- ההסתייגות יושבת בתוך המפה ולא מתחתיה: שורת טקסט מתחת גוזלת גובה
+	     ומכריחה שלד תואם ב-LazyMap. z גבוה מפקדי Leaflet (800), ומשמאל
+	     כדי לא להתנגש בייחוס שבפינה הימנית התחתונה. -->
 	{#if drawn}
-		אזור עבודה מקורב לפי הכרטיסייה, לא גבול מדויק. מי שלא ציין אזור מסומן ככל הארץ.
+		<div
+			class="pointer-events-none absolute bottom-1.5 left-1.5 z-[1000] rounded bg-gray-900/70 px-1.5 py-0.5 text-[10px] leading-4 text-gray-200"
+		>
+			אזור משוער בלבד
+		</div>
 	{/if}
-</p>
+</div>
 
 <style>
 	:global(.leaflet-popup-content) {

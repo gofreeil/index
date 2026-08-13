@@ -601,9 +601,6 @@
 				<div class="overflow-hidden rounded-xl border border-white/10">
 					<ServiceAreaMap {business} height="h-72 sm:h-[26rem]" />
 				</div>
-				<p class="mt-1.5 text-center text-[11px] leading-4 text-gray-500">
-					אזור עבודה מקורב לפי הכרטיסייה, לא גבול מדויק. מי שלא ציין אזור מסומן ככל הארץ.
-				</p>
 			</div>
 		</div>
 	</section>

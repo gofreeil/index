@@ -34,8 +34,6 @@
 			<BusinessesMap {businesses} />
 		{:else}
 			<div class="h-[240px] w-full animate-pulse rounded-xl bg-gray-800 sm:h-[300px]"></div>
-			<!-- תופס את מקומה של שורת ההסבר שמתחת למפה (BusinessesMap), אחרת הדף קופץ -->
-			<div class="mt-1.5 h-8 sm:h-4"></div>
 		{/if}
 	</div>
 </div>

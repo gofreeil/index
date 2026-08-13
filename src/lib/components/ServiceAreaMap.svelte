@@ -151,6 +151,13 @@
 <div bind:this={holder} class="relative isolate">
 	{#if show}
 		<div bind:this={mapEl} class="w-full rounded-xl {height}"></div>
+		<!-- ההסתייגות בתוך המפה ולא מתחתיה, שלא תגזול שורה בכרטיסייה. z גבוה
+		     מפקדי Leaflet (800), ומשמאל כדי לא להתנגש בייחוס שבפינה הימנית. -->
+		<div
+			class="pointer-events-none absolute bottom-1.5 left-1.5 z-[1000] rounded bg-gray-900/70 px-1.5 py-0.5 text-[10px] leading-4 text-gray-200"
+		>
+			אזור משוער בלבד
+		</div>
 	{:else}
 		<div class="w-full animate-pulse rounded-xl bg-gray-800 {height}"></div>
 	{/if}
