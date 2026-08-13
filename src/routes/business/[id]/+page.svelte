@@ -292,9 +292,12 @@
 		])
 	]);
 
-	// שורת מטא אחת מתחת לשם: תחום · תת-תחום · מקום. בלי כפילויות ובלי ריקים.
-	const metaLine = $derived(
-		[...new Set([business.category, business.subcategory, bizArea].filter(Boolean))].join(' · ')
+	// מתחת לשם נשאר המקום בלבד. הסיווג — תחום ותת-תחום — ירד לתחתית הפרטים,
+	// כמו בכרטיס שבמדריך: הוא מיון ולא כותרת משנה, ולמעלה הוא דחף מטה את מה
+	// שמוכר את העסק (דירוג, סלוגן, הטבה).
+	const metaLine = $derived(bizArea);
+	const catLine = $derived(
+		[...new Set([business.category, business.subcategory].filter(Boolean))].join(' · ')
 	);
 </script>
 
@@ -642,6 +645,13 @@
 							</div>
 						{/if}
 					</dl>
+				{/if}
+
+				<!-- הסיווג בתחתית הפרטים ובגוון עמום: הוא מיון של המדריך, לא פרט
+				     שהמבקר מחפש. מחוץ ל-if של פרטי הקשר בכוונה — עסק בלי כתובת
+				     ובלי אזור שירות עדיין מציג את הסיווג שלו. -->
+				{#if catLine}
+					<p class="mt-4 text-sm text-gray-500">{catLine}</p>
 				{/if}
 			</div>
 
