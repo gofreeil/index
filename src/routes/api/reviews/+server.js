@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { listReviews, createReview, findUserReview } from '$lib/server/strapi.js';
+import { listReviews, createReview, findUserReview, setStatus } from '$lib/server/strapi.js';
 import { SESSION_COOKIE, SHARED_SSO_COOKIE } from '$lib/server/session.js';
 
 // ביקורות על עסקי האינדקס — מגובות ב-idx-review ב-Strapi (מודרציה אמיתית).
@@ -47,7 +47,7 @@ function rateLimited(userId) {
 	return false;
 }
 
-// POST — יצירת ביקורת (status=pending נכפה בבאקאנד). מחייב התחברות: בלי זה
+// POST — יצירת ביקורת ופרסומה מיד, בלי להמתין לאישור. מחייב התחברות: בלי זה
 // אפשר היה להציף את תור המודרציה ולחתום בשם של אדם אחר, שכן שם המחבר הגיע
 // מגוף הבקשה. עכשיו השם נלקח מה-session בלבד, וגוף הבקשה לא נשאל.
 //
@@ -99,18 +99,35 @@ export async function POST({ request, locals, cookies }) {
 		// Strapi החזיר על הבקשה עם ה-JWT סטטוס אחר, השגיאה נזרקה הלאה, והמשתמש
 		// קיבל "שגיאה בשליחת חוות הדעת" למרות ששליחה בטוקן השרת עוברת.
 		const jwt = cookies.get(SESSION_COOKIE) || cookies.get(SHARED_SSO_COOKIE);
-		let created = false;
+		/** @type {any} */
+		let created = null;
 		if (jwt) {
 			try {
-				await createReview(payload, jwt);
-				created = true;
+				created = await createReview(payload, jwt);
 			} catch (e) {
 				// הסטטוס נשמר בלוג — בלעדיו אי אפשר לדעת למה הזהות לא הוצמדה.
 				console.warn('reviews POST: JWT path failed, falling back to server token:', e);
 			}
 		}
-		if (!created) await createReview(payload);
-		return json({ success: true });
+		if (!created) created = await createReview(payload);
+
+		// פרסום מיידי. ה-controller בבאקאנד כופה status=pending על כל הגשה, ולכן
+		// האישור נעשה כאן מיד אחרי היצירה, בטוקן השרת (api-token = מהימן שם).
+		// ה-update בבאקאנד גם מריץ חישוב-מחדש של דירוג העסק, כך שהממוצע והמונה
+		// מתעדכנים באותה פעולה ולא נשארים מאחור.
+		// best-effort: אם האישור נכשל הביקורת נשארת ממתינה לאדמין — עדיף מזה
+		// שהמשתמש יראה "השליחה נכשלה" על חוות דעת שכן נשמרה.
+		const docId = created?.data?.documentId;
+		let published = false;
+		if (docId) {
+			try {
+				await setStatus('review', docId, 'approved');
+				published = true;
+			} catch (e) {
+				console.warn('reviews POST: auto-approve failed, review left pending:', e);
+			}
+		}
+		return json({ success: true, published });
 	} catch (e) {
 		console.error('reviews POST error:', e);
 		return json(

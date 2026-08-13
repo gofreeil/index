@@ -91,6 +91,9 @@
 	let showReviewForm = $state(false);
 	let newReview = $state({ rating: 5, comment: '' });
 	let reviewSubmitted = $state(false);
+	// פורסמה מיד מול נשארה ממתינה (נפילה נדירה של האישור האוטומטי) — ההודעה
+	// לכותב חייבת לומר את מה שקרה בפועל.
+	let reviewPending = $state(false);
 	let reviewError = $state('');
 
 	/** @type {any} */
@@ -186,6 +189,13 @@
 				reviewSubmitted = true;
 				showReviewForm = false;
 				newReview = { rating: 5, comment: '' };
+				// חוות הדעת מתפרסמת מיד, ולכן היא נשלפת מחדש ונפתחת לתצוגה —
+				// כותב שראה "פורסמה" ולא מצא אותה ברשימה היה חושב שמשהו נשבר.
+				reviewPending = !result.published;
+				if (result.published) {
+					showReviews = true;
+					fetchReviews();
+				}
 			} else {
 				reviewError = reviewErrText(result?.code);
 			}
@@ -727,7 +737,9 @@
 		</div>
 
 		{#if reviewSubmitted}
-			<p class="mt-3 text-base text-emerald-400">{t.reviewThanks}</p>
+			<p class="mt-3 text-base text-emerald-400">
+				{reviewPending ? t.reviewThanksPending : t.reviewThanks}
+			</p>
 		{/if}
 
 		{#if showReviewForm}
