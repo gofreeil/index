@@ -62,7 +62,7 @@
 	// ── ההודעה ───────────────────────────────────────────────────
 	const bizArea = $derived(business.address || business.city || business.sales_area || '');
 	const shortDesc = $derived(
-		String(business.description || business.unique_content || '')
+		String(business.unique_content || business.description || '')
 			.replace(/\s+/g, ' ')
 			.trim()
 			.slice(0, 140)
@@ -204,8 +204,12 @@
 
 <!-- כלי של בעל העסק בראש דף הכרטיסייה. במצב סגור זה כפתור אחד ותו לא —
      גלולה כתומה מלאה בקצה השורה, ולא שורה שנמתחת על כל הדף עם כותרת ותווית
-     לצידה. המסגרת והכותרת מופיעות רק כשהפאנל נפתח, כשיש בהן טעם. -->
-<section dir={t.dir} class="mt-4">
+     לצידה. המסגרת והכותרת מופיעות רק כשהפאנל נפתח, כשיש בהן טעם.
+
+     הרכיב יושב בשורת הסלוגן (business/[id]/+page.svelte): סגור הוא נצמד לקצה
+     השורה לצד הסלוגן, ופתוח הוא w-full — וכך נשבר לשורה משלו ומקבל את מלוא
+     הרוחב במקום להידחס לחצי הנותר. ה-‎-mt-1 מיישר את מרכז הגלולה לשורת הטקסט. -->
+<section dir={t.dir} class={open ? 'w-full' : '-mt-1 ms-auto shrink-0'}>
 	{#if !open}
 		<div class="flex justify-end">
 			<button

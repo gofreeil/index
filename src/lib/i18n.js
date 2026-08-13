@@ -253,7 +253,7 @@ export const translations = {
 		smartShare: 'שיתוף חכם',
 		smartShareLead:
 			'שלחו את כרטיס העסק ישירות לוואטסאפ של מכר — בלי להעתיק קישורים ובלי לחשוב מה לכתוב.',
-		smartShareOpenBtn: 'שליחת כרטיס העסק לטלפון',
+		smartShareOpenBtn: 'שיתוף חכם',
 		smartShareCloseBtn: 'סגירה',
 		smartSharePhoneLabel: 'הטלפון של המכר',
 		smartSharePhoneHint: 'כל צורת כתיבה מתאימה — 050-1234567, +972…',
@@ -545,7 +545,7 @@ export const translations = {
 		smartShare: 'Smart Share',
 		smartShareLead:
 			"Send your business card straight to a friend's WhatsApp — no copying links, no wondering what to write.",
-		smartShareOpenBtn: 'Send my business card to a phone',
+		smartShareOpenBtn: 'Smart Share',
 		smartShareCloseBtn: 'Close',
 		smartSharePhoneLabel: "Your contact's phone",
 		smartSharePhoneHint: 'Any format works — 050-1234567, +972…',
@@ -836,7 +836,7 @@ export const translations = {
 		smartShare: 'Умный обмен',
 		smartShareLead:
 			'Отправьте карточку бизнеса прямо в WhatsApp знакомому — без копирования ссылок.',
-		smartShareOpenBtn: 'Отправить карточку бизнеса на телефон',
+		smartShareOpenBtn: 'Умный обмен',
 		smartShareCloseBtn: 'Закрыть',
 		smartSharePhoneLabel: 'Телефон знакомого',
 		smartSharePhoneHint: 'Любой формат — 050-1234567, +972…',

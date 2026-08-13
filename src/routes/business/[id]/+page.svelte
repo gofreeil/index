@@ -244,10 +244,12 @@
 		[business.name, business.category, bizArea ? `ב${bizArea}` : ''].filter(Boolean).join(' — ') +
 			` | ${SITE_NAME}`
 	);
+	// אותו טקסט שמוצג ב"על העסק" — "תיאור מורחב", ורק בכרטיסיות שטרם מוזגו
+	// גם השריד של "תיאור קצר" (ראו הערה שם).
 	const metaDescription = $derived(
 		(
-			business.description ||
 			business.unique_content ||
+			business.description ||
 			`${business.name}${business.category ? ` — ${business.category}` : ''}${bizArea ? ` ב${bizArea}` : ''}. פרטי התקשרות, אזור שירות, דירוגים וחוות דעת של לקוחות.`
 		)
 			.replace(/\s+/g, ' ')
@@ -259,7 +261,7 @@
 	const schemas = $derived([
 		professionalSchema({
 			name: business.name,
-			description: business.description || business.unique_content || undefined,
+			description: business.unique_content || business.description || undefined,
 			path: bizPath,
 			category: business.category || undefined,
 			phone: business.phone || undefined,
@@ -398,12 +400,24 @@
 		</div>
 	</header>
 
-	<!-- ── סלוגן ────────────────────────────────────────────
+	<!-- ── סלוגן ושיתוף חכם ─────────────────────────────────
 	     הכותרת הגדולה של הכרטיסייה היא שם העסק עצמו (ה-h1 שלמעלה), ולכן אין
 	     כאן משפט נוסף — רק הסלוגן שמלווה אותו. ברוחב מלא ולא בתוך העמודה של
-	     השם: שם ארוך היה דוחס אותו לצד הלוגו. אין סלוגן = אין מדור בכלל. -->
-	{#if business.slogan}
-		<p class="mt-4 text-lg leading-7 text-gray-400">{business.slogan}</p>
+	     השם: שם ארוך היה דוחס אותו לצד הלוגו.
+
+	     כפתור השיתוף החכם חולק את השורה הזו במקום לתפוס שורה משלו מתחתיה —
+	     כלי של בעל העסק, בקצה השורה. הסלוגן לוקח את מה שנשאר; אין סלוגן,
+	     והכפתור עדיין נצמד לקצה (ms-auto ברכיב). כשהפאנל נפתח הוא w-full
+	     ולכן נשבר לשורה משלו. אין סלוגן ואין הרשאה = אין מדור בכלל. -->
+	{#if business.slogan || data.canSmartShare}
+		<div class="mt-4 flex flex-wrap items-start gap-x-4 gap-y-4">
+			{#if business.slogan}
+				<p class="min-w-0 flex-1 text-lg leading-7 text-gray-400">{business.slogan}</p>
+			{/if}
+			{#if data.canSmartShare}
+				<SmartShare {business} />
+			{/if}
+		</div>
 	{/if}
 
 	<!-- ── פעולות ──────────────────────────────────────────
@@ -419,12 +433,6 @@
 				{t.businessSite}
 			</a>
 		</div>
-	{/if}
-
-	<!-- ── שיתוף חכם — בראש הדף, בהישג יד של בעל העסק ולא בסוף הגלילה.
-	     כלי שלו בלבד; השרת מכריע מי רואה אותו. -->
-	{#if data.canSmartShare}
-		<SmartShare {business} />
 	{/if}
 
 	<!-- ── דרישת בעלות ──────────────────────────────────────────
@@ -590,8 +598,11 @@
 		<div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
 			<div class="min-w-0 flex-1">
 				<h2 class="text-base font-semibold text-gray-400">{t.aboutBusiness}</h2>
+				<!-- "תיאור מורחב" (unique_content) הוא הטקסט שבעל העסק עורך היום;
+				     description הוא שריד השדה "תיאור קצר" שנמחק מהטופס, ונשאר
+				     כנפילה אחורה לכרטיסיות שטרם מוזגו. -->
 				<p class="mt-2 text-lg leading-7 whitespace-pre-line text-gray-300">
-					{business.description || t.noDescription}
+					{business.unique_content || business.description || t.noDescription}
 				</p>
 
 				{#if business.address || business.sales_area || business.branches?.length}
