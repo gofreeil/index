@@ -67,22 +67,34 @@
 
 			/* שמות היישובים בעברית, מצוירים על ידינו מעל בסיס חסר הכיתוב.
 			   pane נפרד מתחת ל-overlayPane (400), כדי שהתוויות לא יכסו את
-			   העיגולים ואת הפין, ולא ייקחו לחיצות. הרשימה תלוית זום. */
+			   העיגולים ואת הפין, ולא ייקחו לחיצות. הרשימה תלוית זום, ומרכזי
+			   העיגולים — היישובים שהעסק הזה עובד בהם — נכתבים בכל זום ובולט. */
 			map.createPane('cityLabels');
 			map.getPane('cityLabels').style.zIndex = '350';
 			map.getPane('cityLabels').style.pointerEvents = 'none';
 			const labels = L.layerGroup().addTo(map);
+			const featured = new Set(shapes.filter((s) => s.type === 'circle').map((s) => s.label));
 			const drawLabels = () => {
 				labels.clearLayers();
-				for (const c of cityLabels(map.getZoom())) {
+				// הרוחב מוערך מאורך השם, ותווית שמתנגשת באחת שכבר הונחה נושרת
+				/** @type {{x1: number, x2: number, y1: number, y2: number}[]} */
+				const boxes = [];
+				for (const c of cityLabels(map.getZoom(), featured)) {
+					const p = map.latLngToLayerPoint([c.lat, c.lng]);
+					const half = c.name.length * (c.featured ? 3.9 : 3.2) + 4;
+					const box = { x1: p.x - half, x2: p.x + half, y1: p.y + 2, y2: p.y + 18 };
+					if (boxes.some((b) => box.x1 < b.x2 && box.x2 > b.x1 && box.y1 < b.y2 && box.y2 > b.y1))
+						continue;
+					boxes.push(box);
+
 					const el = document.createElement('span');
 					el.textContent = c.name;
 					L.marker([c.lat, c.lng], {
 						icon: L.divIcon({
 							html: el,
-							className: 'city-label',
-							iconSize: [90, 14],
-							iconAnchor: [45, -3]
+							className: c.featured ? 'city-label city-label-key' : 'city-label',
+							iconSize: [120, 16],
+							iconAnchor: [60, -3]
 						}),
 						pane: 'cityLabels',
 						interactive: false,
@@ -166,10 +178,21 @@
 		text-align: center;
 		font-size: 11px;
 		font-weight: 700;
-		line-height: 14px;
+		line-height: 16px;
 		color: #1f2937;
 		text-shadow:
 			0 0 3px #fff,
+			0 0 3px #fff,
+			0 0 2px #fff;
+	}
+
+	/* היישוב שבמרכז העיגול — האזור שהעסק הזה עובד בו, ולא רקע להתמצאות */
+	:global(.city-label-key) {
+		font-size: 13px;
+		font-weight: 800;
+		color: #1d4ed8;
+		text-shadow:
+			0 0 4px #fff,
 			0 0 3px #fff,
 			0 0 2px #fff;
 	}

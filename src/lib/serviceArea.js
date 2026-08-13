@@ -182,16 +182,26 @@ const LABEL_FALLBACK_ZOOM = 11;
 
 /**
  * שמות היישובים שראוי לכתוב על המפה ברמת הזום הנתונה.
+ *
+ * יישוב שיש עליו עיגול הוא הנקודה שבגללה המפה קיימת, ולכן הוא נכתב בכל
+ * זום — גם כשהתור שלו לפי הטבלה עוד לא הגיע — ומסומן featured כדי
+ * שהמפה תבליט אותו ותיתן לו קדימות כשהתוויות נדחסות.
+ *
  * @param {number} zoom
- * @returns {{name: string, lat: number, lng: number}[]}
+ * @param {Iterable<string>} [featured] שמות היישובים שיש עליהם עיגול
+ * @returns {{name: string, lat: number, lng: number, featured: boolean}[]}
  */
-export function cityLabels(zoom) {
-	/** @type {{name: string, lat: number, lng: number}[]} */
+export function cityLabels(zoom, featured = []) {
+	const must = featured instanceof Set ? featured : new Set(featured);
+	/** @type {{name: string, lat: number, lng: number, featured: boolean}[]} */
 	const out = [];
 	for (const [name, [lat, lng]] of Object.entries(CITY_LATLNG)) {
-		if (zoom >= (LABEL_MIN_ZOOM[name] ?? LABEL_FALLBACK_ZOOM)) out.push({ name, lat, lng });
+		const key = must.has(name);
+		if (key || zoom >= (LABEL_MIN_ZOOM[name] ?? LABEL_FALLBACK_ZOOM))
+			out.push({ name, lat, lng, featured: key });
 	}
-	return out;
+	// העיקריים ראשונים: מי שנכתב קודם תופס את המקום, והשאר מוותרים עליו
+	return out.sort((a, b) => Number(b.featured) - Number(a.featured));
 }
 
 /* אזורים גיאוגרפיים מוכרים, כל אחד כאוסף עיגולים.

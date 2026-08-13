@@ -126,12 +126,36 @@
 	}
 
 	/* שמות היישובים, בעברית, מצוירים על ידינו — ראו cityLabels ב-serviceArea.
-	   הרשימה נגזרת מהזום ולכן היא נבנית מחדש בכל zoomend: בתצוגת כל הארץ
-	   נשארים חמישה עוגנים, ובזום קרוב נפתחת הרשימה כולה. */
+	   הרשימה נגזרת מהזום ומהעיגולים שעל המפה, ולכן היא נבנית מחדש בכל
+	   zoomend ובכל שינוי סינון: בתצוגת כל הארץ נשארים חמישה עוגנים ועוד
+	   היישובים שיש בהם עסק, ובזום קרוב נפתחת הרשימה כולה. */
 	function renderLabels() {
 		if (!map || !L || !labelsLayer) return;
 		labelsLayer.clearLayers();
-		for (const c of cityLabels(map.getZoom())) {
+
+		// היישוב שבמרכז העיגול הוא התשובה שהמפה נשאלה עליה, ולכן הוא נכתב
+		// גדול יותר ובכחול של העיגול. "כל הארץ" ואזורים אינם יישובים ואין
+		// להם רשומה בטבלת הקואורדינטות, ולכן הם נושרים מאליהם.
+		const featured = new Set(
+			shapes
+				.filter((/** @type {any} */ s) => s.type === 'circle')
+				.map((/** @type {any} */ s) => s.label)
+		);
+
+		/* דחיסה: 111 שמות בזום קרוב, או עשרים עיגולים בגוש דן, נדפסים זה על
+		   גבי זה. לכן כל תווית נבחנת מול אלה שכבר הונחו, ומי שמתנגשת נושרת.
+		   הרוחב מוערך מאורך השם — מדידה אמיתית דורשת רינדור של כל תווית. */
+		/** @type {{x1: number, x2: number, y1: number, y2: number}[]} */
+		const boxes = [];
+
+		for (const c of cityLabels(map.getZoom(), featured)) {
+			const p = map.latLngToLayerPoint([c.lat, c.lng]);
+			const half = c.name.length * (c.featured ? 3.9 : 3.2) + 4;
+			const box = { x1: p.x - half, x2: p.x + half, y1: p.y + 2, y2: p.y + 18 };
+			if (boxes.some((b) => box.x1 < b.x2 && box.x2 > b.x1 && box.y1 < b.y2 && box.y2 > b.y1))
+				continue;
+			boxes.push(box);
+
 			const el = document.createElement('span');
 			el.textContent = c.name;
 			L.marker([c.lat, c.lng], {
@@ -140,9 +164,9 @@
 				// גולש לשני הצדדים במידה שווה ונשאר ממורכז על היישוב.
 				icon: L.divIcon({
 					html: el,
-					className: 'city-label',
-					iconSize: [90, 14],
-					iconAnchor: [45, -3]
+					className: c.featured ? 'city-label city-label-key' : 'city-label',
+					iconSize: [120, 16],
+					iconAnchor: [60, -3]
 				}),
 				pane: 'cityLabels',
 				interactive: false,
@@ -240,8 +264,12 @@
 
 	onDestroy(() => map?.remove());
 
+	// גם התוויות תלויות בסינון, לא רק בזום: יישוב מפסיק להיות "מרכז עיגול"
+	// ברגע שהעסק שבו סונן החוצה
 	$effect(() => {
-		if (map) render();
+		if (!map) return;
+		render();
+		renderLabels();
 	});
 </script>
 
@@ -296,10 +324,22 @@
 		text-align: center;
 		font-size: 11px;
 		font-weight: 700;
-		line-height: 14px;
+		line-height: 16px;
 		color: #1f2937;
 		text-shadow:
 			0 0 3px #fff,
+			0 0 3px #fff,
+			0 0 2px #fff;
+	}
+
+	/* היישוב שבמרכז העיגול — הוא התשובה, והשאר הם רקע להתמצאות. בכחול של
+	   העיגול עצמו, כדי שהקשר בין השם לצורה ייקרא מיד. */
+	:global(.city-label-key) {
+		font-size: 13px;
+		font-weight: 800;
+		color: #1d4ed8;
+		text-shadow:
+			0 0 4px #fff,
 			0 0 3px #fff,
 			0 0 2px #fff;
 	}
