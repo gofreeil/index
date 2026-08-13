@@ -143,7 +143,7 @@
 	const btnClass = $derived(
 		variant === 'page'
 			? 'rounded-full border border-white/15 p-2 text-gray-300 transition hover:border-white/30 hover:text-white'
-			: 'rounded-full bg-black/30 p-1.5 text-gray-300 backdrop-blur-sm transition before:absolute before:-inset-2 before:content-[""] hover:bg-black/60 hover:text-white'
+			: 'rounded-full border border-white/15 bg-white/[0.06] p-1.5 text-gray-300 transition before:absolute before:-inset-2 before:content-[""] hover:border-white/30 hover:bg-white/15 hover:text-white'
 	);
 	const iconClass = $derived(variant === 'page' ? 'h-5 w-5' : 'h-4 w-4');
 </script>

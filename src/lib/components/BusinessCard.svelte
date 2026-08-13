@@ -76,9 +76,11 @@
 		</svg>
 	</button>
 
-	<!-- קיצור השיתוף, בפינה הנגדית למועדפים: אותו כפתור של דף העסק, בגודל
-	     של הכרטיסייה -->
-	<div class="absolute top-2 right-2 z-30">
+	<!-- קיצור השיתוף — בפינה התחתונה, על הרקע הכהה ולא על התמונה: מעל
+	     התמונה הוא נבלע בה ולא נראה בכלל. הוא יושב מחוץ ל-<a> (כפתור בתוך
+	     קישור הוא HTML לא חוקי), ולכן מוצב אבסולוטית ולא בזרימת הטקסט;
+	     שורת הכתובת שומרת לו מקום ב-pl-9. -->
+	<div class="absolute bottom-2 left-2 z-30">
 		<ShareButton
 			path="/business/{business.id}"
 			title={business.name}
@@ -146,13 +148,16 @@
 				</p>
 			{/if}
 
+			<!-- ההטבה: הערך לבדו ("15%") הוא מספר בלי משמעות, ולכן תמיד עם
+			     הכיתוב שמסביר מה הוא — 🎁 15% הנחה לנו -->
 			{#if business.discount}
-				<p class="mt-2 line-clamp-2 text-xs leading-tight text-emerald-400">
-					{business.discount}
+				<p class="mt-2 line-clamp-2 text-xs leading-tight font-medium text-emerald-400">
+					🎁 {business.discount}
+					{t.benefitShort}
 				</p>
 			{/if}
 
-			<div class="mt-auto flex items-center gap-1.5 pt-2 text-xs text-gray-400 sm:pt-3">
+			<div class="mt-auto flex items-center gap-1.5 pt-2 pl-9 text-xs text-gray-400 sm:pt-3">
 				<svg
 					class="h-3 w-3 flex-shrink-0 sm:h-3.5 sm:w-3.5"
 					fill="none"
