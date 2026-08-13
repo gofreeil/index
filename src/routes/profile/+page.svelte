@@ -6,6 +6,8 @@
 	import { adminTiles } from '$lib/adminNav.js';
 	import { shareLog, clearShareLog } from '$lib/shareLog.js';
 	import VisitorStatsCard from '$lib/components/VisitorStatsCard.svelte';
+	import TenureBadge from '$lib/components/TenureBadge.svelte';
+	import { earliestStamp } from '$lib/tenure.js';
 
 	/** @type {{ data: any, form: any }} */
 	let { data, form } = $props();
@@ -52,6 +54,13 @@
 	const t = $derived(/** @type {any} */ (translations)[currentLang] || translations.he);
 
 	const initial = $derived((user?.name || '?').trim().charAt(0).toUpperCase());
+
+	// הוותק של המשתמש נמדד מהכרטיסייה הוותיקה שלו ולא מיום ההרשמה: הכרטיסייה
+	// קדמה לחשבון (ראו tenure.js). הכרטיסיות שממתינות לאישור נספרות גם הן —
+	// הוותק מתחיל בהעלאה, לא באישור.
+	const tenureSince = $derived(
+		earliestStamp(businesses.map((/** @type {any} */ b) => b.joined_at))
+	);
 
 	const LOCALE = /** @type {Record<string,string>} */ ({ he: 'he-IL', en: 'en-US', ru: 'ru-RU' });
 	/** @param {string} iso */
@@ -159,6 +168,11 @@
 					{user?.name}
 				</h1>
 				<p class="truncate text-xs text-gray-500 dark:text-gray-400" dir="ltr">{user?.email}</p>
+				<!-- הוותק שלי — אותו תג שמוצג למבקרים בכרטיסייה, כאן על המשתמש
+				     עצמו. מי שאין לו כרטיסייה עדיין אין לו ותק, ואין שורה ריקה. -->
+				{#if tenureSince}
+					<div class="mt-1"><TenureBadge since={tenureSince} size="sm" /></div>
+				{/if}
 			</div>
 			<button
 				type="button"
