@@ -16,7 +16,8 @@
 		parseFitList,
 		parseLogoShape,
 		parseMainIndex,
-		DEFAULT_FIT
+		DEFAULT_FIT,
+		MAX_BANNERS
 	} from '$lib/mediaFit.js';
 
 	/** @type {{ biz: any, errors?: Record<string,string>, canModerate?: boolean, categories?: Array<{value:string,label:string}> | null }} */
@@ -94,12 +95,32 @@
 	let bannersPicked = $state([]);
 
 	const logoPreview = $derived(logoPicked[0]?.url || mediaUrl(biz.logo));
-	/** @type {string[]} */
-	const bannerPreviews = $derived(
-		bannersPicked.length
-			? bannersPicked.map((p) => p.url)
-			: banners.map((/** @type {any} */ b) => mediaUrl(b)).filter(Boolean)
+
+	// ── התמונות: הקיימות נשארות, והחדשות מתווספות אחריהן ──
+	// זה בדיוק הסדר שהשרת יכתוב (ראו businessEdit.js), ולכן ה-media_fit
+	// שנוסע לפי אינדקס מתאר את אותן תמונות גם אחרי השמירה.
+	/** @type {number[]} */
+	let removedIds = $state([]);
+	const keptBanners = $derived(
+		banners.filter((/** @type {any} */ b) => b?.id && !removedIds.includes(b.id))
 	);
+	const slotsLeft = $derived(Math.max(0, MAX_BANNERS - keptBanners.length));
+	/** @type {string[]} */
+	const bannerPreviews = $derived([
+		...keptBanners.map((/** @type {any} */ b) => mediaUrl(b)),
+		...bannersPicked.map((p) => p.url)
+	]);
+
+	/** הסרת תמונה קיימת — גם ה-fit שלה יורד, אחרת כל מה שאחריה מוסט.
+	 * @param {number} id */
+	function removeBanner(id) {
+		const i = keptBanners.findIndex((/** @type {any} */ b) => b.id === id);
+		removedIds = [...removedIds, id];
+		if (i < 0) return;
+		bannerFits = bannerFits.filter((_, idx) => idx !== i);
+		if (mainIndex === i) mainIndex = 0;
+		else if (mainIndex > i) mainIndex -= 1;
+	}
 
 	// ובצד הלקוח — בחירת קבצים חדשים מוסיפה תצוגות מקדימות מעבר לרשימה
 	$effect(() => {
@@ -366,31 +387,40 @@
 			{#if err('logo')}<p class="mt-1 text-xs text-red-400">{err('logo')}</p>{/if}
 		</div>
 		<div>
-			<span class={LABEL} id="lbl-banners">תמונות העסק (עד 4 — העלאה חדשה מחליפה את כולן)</span>
-			{#if banners.length}
-				<div class="mb-2 flex flex-wrap gap-2">
-					{#each banners as b, i (b?.id ?? i)}
-						<img src={mediaUrl(b)} alt="" class="h-16 w-24 rounded-lg object-cover" />
-					{/each}
-				</div>
-				<label class="mb-2 flex items-center gap-2 text-xs text-gray-400">
-					<input type="checkbox" name="remove_banners" class="accent-red-500" /> הסר את כל התמונות
-				</label>
+			<span class={LABEL} id="lbl-banners">תמונות העסק (עד {MAX_BANNERS})</span>
+			<!-- התמונות שסומנו להסרה נוסעות כמזהים; השרת מוריד רק אותן -->
+			{#each removedIds as id (id)}
+				<input type="hidden" name="remove_banner_ids" value={id} />
+			{/each}
+			{#if slotsLeft}
+				<ImageDropField
+					name="banners"
+					labelledBy="lbl-banners"
+					multiple
+					max={slotsLeft}
+					hint="אפשר להוסיף עוד {slotsLeft} — כל אחת עד 3MB. התמונות הקיימות נשארות."
+					bind:previews={bannersPicked}
+				/>
 			{:else}
-				<p class="mb-2 text-xs text-gray-600">אין תמונות</p>
+				<p class="rounded-xl border border-gray-800 bg-gray-900/40 p-3 text-xs text-gray-500">
+					יש כאן כבר {MAX_BANNERS} תמונות — הסירו אחת כדי להוסיף חדשה.
+				</p>
 			{/if}
-			<ImageDropField
-				name="banners"
-				labelledBy="lbl-banners"
-				multiple
-				max={4}
-				hint="עד 4 תמונות, כל אחת עד 3MB"
-				bind:previews={bannersPicked}
-			/>
-			{#each bannerPreviews as url, i (url)}
+			{#if !bannerPreviews.length}
+				<p class="mt-2 text-xs text-gray-600">אין תמונות</p>
+			{/if}
+			<!-- המפתח כולל את האינדקס: ה-fit נקשר לפי מקום ברשימה, וכתובת
+			     ריקה של מדיה שבורה הייתה מתנגשת עם עצמה -->
+			{#each bannerPreviews as url, i (`${i}-${url}`)}
 				<div class="mt-3">
 					<div class="mb-1 flex flex-wrap items-center gap-2 text-xs">
 						<span class="font-bold text-gray-400">תמונה {i + 1}</span>
+						{#if i >= keptBanners.length}
+							<span
+								class="rounded-full border border-green-500/40 bg-green-500/10 px-2 py-0.5 font-bold text-green-300"
+								>חדשה</span
+							>
+						{/if}
 						<!-- התמונה הראשית: זו שתופיע כבאנר באריח שבדף הבית, תיפתח
 						     ראשונה בגלריה ותישלח בשיתוף -->
 						{#if mainIndex === i}
@@ -405,6 +435,17 @@
 								class="rounded-full border border-gray-700 px-2 py-0.5 font-bold text-gray-400 transition hover:border-amber-500/50 hover:text-amber-300"
 							>
 								☆ הפוך לראשית
+							</button>
+						{/if}
+						<!-- הסרה נקודתית — רק לתמונה שכבר שמורה. תמונה שנבחרה
+						     עכשיו ויורדת עם "ניקוי הבחירה" שבשדה ההעלאה -->
+						{#if i < keptBanners.length}
+							<button
+								type="button"
+								onclick={() => removeBanner(keptBanners[i].id)}
+								class="rounded-full border border-gray-700 px-2 py-0.5 font-bold text-gray-500 transition hover:border-red-500/50 hover:text-red-300"
+							>
+								✕ הסרה
 							</button>
 						{/if}
 					</div>

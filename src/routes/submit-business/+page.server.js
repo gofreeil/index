@@ -3,7 +3,7 @@ import { createBusiness, uploadImage } from '$lib/server/strapi.js';
 import { getCategoryOptions } from '$lib/server/categoryStore.js';
 import { parseBranches } from '$lib/branches.js';
 import { EXTRA_LINK_KEYS, parseExtraLinks } from '$lib/socialLinks.js';
-import { parseMediaFit } from '$lib/mediaFit.js';
+import { parseMediaFit, MAX_BANNERS } from '$lib/mediaFit.js';
 
 /**
  * רשימת הקטגוריות לתפריט הבחירה — כולל דריסות השם והקטגוריות שהוסיף
@@ -136,14 +136,14 @@ export const actions = {
 			}
 		}
 
-		// ── העלאת תמונות העסק (banners, עד 4) ──
+		// ── העלאת תמונות העסק (banners) ──
 		/** @type {number[]} */
 		const bannerIds = [];
 		const bannerFiles = /** @type {File[]} */ (
 			fd.getAll('banners').filter((f) => f && typeof f !== 'string' && f.size > 0)
 		);
-		if (bannerFiles.length > 4) {
-			return fail(400, { errors: { banners: 'אפשר לצרף עד 4 תמונות' }, values });
+		if (bannerFiles.length > MAX_BANNERS) {
+			return fail(400, { errors: { banners: `אפשר לצרף עד ${MAX_BANNERS} תמונות` }, values });
 		}
 		for (const f of bannerFiles) {
 			if (!f.type.startsWith('image/') || f.size > 3_000_000) {

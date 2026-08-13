@@ -12,7 +12,8 @@
 		parseFitList,
 		parseLogoShape,
 		parseMainIndex,
-		DEFAULT_FIT
+		DEFAULT_FIT,
+		MAX_BANNERS
 	} from '$lib/mediaFit.js';
 	import { formDraft, clearDraft, resumeDraft } from '$lib/formDraft';
 
@@ -485,13 +486,13 @@
 				</div>
 				<div>
 					<span id="lbl-banners" class="mb-1 block text-sm font-medium text-gray-300"
-						>תמונות העסק (עד 4 תמונות, כל אחת עד 3MB)</span
+						>תמונות העסק (עד {MAX_BANNERS} תמונות, כל אחת עד 3MB)</span
 					>
 					<ImageDropField
 						name="banners"
 						labelledBy="lbl-banners"
 						multiple
-						max={4}
+						max={MAX_BANNERS}
 						hint="אפשר לגרור כמה תמונות יחד, או אחת בכל פעם"
 						bind:previews={bannersPicked}
 					/>

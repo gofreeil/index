@@ -16,12 +16,15 @@ import { parseAdImageFit, DEFAULT_AD_FIT } from './adImageFit';
 
 export const DEFAULT_FIT = DEFAULT_AD_FIT;
 
-/** @typedef {{x: number, y: number, z: number}} Fit */
+/** כמה תמונות עסק אפשר לשמור — מקור אחד לטופס, לעורך ולשרת. */
+export const MAX_BANNERS = 6;
+
+/** @typedef {{x: number, y: number, z: number, r: number}} Fit */
 
 /** @param {unknown} raw @returns {Fit} */
 export function parseFit(raw) {
-	const { x, y, z } = parseAdImageFit(raw);
-	return { x, y, z };
+	const { x, y, z, r } = parseAdImageFit(raw);
+	return { x, y, z, r: r ?? 0 };
 }
 
 /** @param {unknown} raw @returns {Fit[]} */
@@ -29,10 +32,12 @@ export function parseFitList(raw) {
 	return Array.isArray(raw) ? raw.slice(0, 8).map(parseFit) : [];
 }
 
-/** תמונה שלא מוקמה — אין טעם לשמור אותה ואין טעם לצייר אותה מחדש.
+/** תמונה שלא מוקמה ולא סובבה — אין טעם לשמור אותה ואין טעם לצייר אותה
+ * מחדש. הסיבוב חייב להיבדק כאן: תמונה שרק סובבה נראית ברירת-מחדל בשאר
+ * השדות, והשמירה הייתה מפילה את הסיבוב בשקט.
  * @param {Fit | null | undefined} f */
 export const isDefaultFit = (f) =>
-	!f || (f.x === DEFAULT_FIT.x && f.y === DEFAULT_FIT.y && f.z === DEFAULT_FIT.z);
+	!f || (f.x === DEFAULT_FIT.x && f.y === DEFAULT_FIT.y && f.z === DEFAULT_FIT.z && !f.r);
 
 /* ── מסגרת הלוגו ──────────────────────────────────────────────
    לוגו עגול או ריבוע מעוגל, לבחירת בעל העסק. ברירת המחדל היא הריבוע
@@ -57,8 +62,8 @@ export const logoShapeClass = (raw) =>
    התמונה שמייצגת את העסק: היא הבאנר של האריח בדף הבית, היא שנפתחת
    ראשונה בגלריה שבכרטיסייה, והיא שנשלחת לרשתות בשיתוף. עד היום זו
    הייתה תמיד התמונה הראשונה שהועלתה, בלי שלבעל העסק תהיה בכך בחירה.
-   נשמר כאינדקס ולא ככתובת: העלאה חדשה מחליפה את כל התמונות, וכתובת
-   שמורה הייתה הופכת לשבורה. */
+   נשמר כאינדקס ולא ככתובת: תמונות נוספות ומוסרות, וכתובת שמורה הייתה
+   הופכת לשבורה. */
 
 /** @param {unknown} raw @param {number} [count] כמה תמונות יש בפועל */
 export function parseMainIndex(raw, count) {

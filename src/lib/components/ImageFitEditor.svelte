@@ -14,7 +14,7 @@
 	/**
 	 * @type {{
 	 *   src: string,
-	 *   fit: {x: number, y: number, z: number},
+	 *   fit: {x: number, y: number, z: number, r?: number},
 	 *   aspect?: 'square' | 'wide',
 	 *   mode?: 'cover' | 'contain',
 	 *   label?: string,
@@ -32,8 +32,14 @@
 
 	const ZOOM_FACTOR = 1.15;
 
+	// "מרכז" מאפס מיקום וזום ומשאיר את הסיבוב: תמונה שהגיעה שכובה מהטלפון
+	// עדיין שכובה, ואיפוס המיקום לא אמור להחזיר אותה לצידה.
 	function center() {
-		fit = { ...DEFAULT_FIT };
+		fit = { ...DEFAULT_FIT, r: fit.r ?? 0 };
+	}
+
+	function rotate() {
+		fit = { ...fit, r: ((fit.r ?? 0) + 90) % 360 };
 	}
 
 	/** @param {'in' | 'out'} dir */
@@ -54,10 +60,12 @@
 		if (!img?.naturalWidth || !img.naturalHeight) return;
 		const W = box.clientWidth;
 		const H = box.clientHeight;
-		const base =
-			mode === 'contain'
-				? Math.min(W / img.naturalWidth, H / img.naturalHeight)
-				: Math.max(W / img.naturalWidth, H / img.naturalHeight);
+		// x/y נשארים בצירי המסך גם כשהתמונה מסובבת, ולכן טווח הגלישה נמדד
+		// על המידות שאחרי הסיבוב — בדיוק כמו ב-adImgFit
+		const swap = fit.r === 90 || fit.r === 270;
+		const nw = swap ? img.naturalHeight : img.naturalWidth;
+		const nh = swap ? img.naturalWidth : img.naturalHeight;
+		const base = mode === 'contain' ? Math.min(W / nw, H / nh) : Math.max(W / nw, H / nh);
 		const k = base * fit.z;
 		pan = {
 			id: e.pointerId,
@@ -65,8 +73,8 @@
 			sy: e.clientY,
 			fx: fit.x,
 			fy: fit.y,
-			rx: img.naturalWidth * k - W,
-			ry: img.naturalHeight * k - H
+			rx: nw * k - W,
+			ry: nh * k - H
 		};
 		box.setPointerCapture(e.pointerId);
 		e.preventDefault();
@@ -111,7 +119,7 @@
 			alt={label || 'תצוגה מקדימה'}
 			draggable="false"
 			class="h-full w-full object-cover"
-			use:adImgFit={{ x: fit.x, y: fit.y, z: fit.z, mode }}
+			use:adImgFit={{ x: fit.x, y: fit.y, z: fit.z, r: fit.r ?? 0, mode }}
 		/>
 	</div>
 
@@ -125,7 +133,13 @@
 			>
 			<span class="w-10 text-center text-gray-500 tabular-nums">{Math.round(fit.z * 100)}%</span>
 		</div>
-		<button type="button" class="fit-btn self-start" onclick={center}>⌖ מרכז</button>
+		<div class="flex items-center gap-1.5">
+			<button type="button" class="fit-btn" onclick={center}>⌖ מרכז</button>
+			<!-- כל לחיצה מסובבת רבע — התיקון לתמונה שהגיעה שכובה מהטלפון -->
+			<button type="button" class="fit-btn" onclick={rotate} aria-label="סובב ב-90 מעלות"
+				>↻ סובב</button
+			>
+		</div>
 		<p class="max-w-44 leading-snug text-gray-600">גררו את התמונה כדי למקם, וזום +/− לקירוב</p>
 	</div>
 </div>

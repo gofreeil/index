@@ -19,7 +19,7 @@
 
 import { uploadImage } from './strapi.js';
 import { parseBranches } from '../branches.js';
-import { parseMediaFit } from '../mediaFit.js';
+import { parseMediaFit, MAX_BANNERS } from '../mediaFit.js';
 import { EXTRA_LINK_KEYS } from '../socialLinks.js';
 
 export const STATUSES = ['pending', 'approved', 'rejected', 'frozen'];
@@ -27,7 +27,6 @@ export const STATUSES = ['pending', 'approved', 'rejected', 'frozen'];
 const URL_RE = /^https?:\/\/.+/i;
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const MAX_IMAGE_BYTES = 3_000_000;
-const MAX_BANNERS = 4;
 
 /** שדות טקסט חופשי — נשמרים כמו שהוקלדו. */
 const TEXT_FIELDS = [
@@ -64,6 +63,26 @@ function mergeExtra(current, patch) {
 	const base =
 		current?.extra_fields && typeof current.extra_fields === 'object' ? current.extra_fields : {};
 	return { ...base, ...patch };
+}
+
+/**
+ * מזהי התמונות השמורות של הכרטיסייה, לפי סדרן.
+ * @param {any} current @returns {number[]}
+ */
+function currentBannerIds(current) {
+	return (Array.isArray(current?.banners) ? current.banners : [])
+		.map((/** @type {any} */ b) => Number(b?.id))
+		.filter((/** @type {number} */ id) => Number.isFinite(id));
+}
+
+/**
+ * אותה רשימה בלי התמונות שסומנו להסרה בטופס — הסדר נשמר, ולכן גם
+ * ה-media_fit שנוסע לפי אינדקס ממשיך להתאים.
+ * @param {any} current @param {FormDataEntryValue[]} removed
+ */
+function keepBannerIds(current, removed) {
+	const drop = new Set(removed.map(Number).filter(Number.isFinite));
+	return currentBannerIds(current).filter((id) => !drop.has(id));
 }
 
 /**
@@ -131,7 +150,7 @@ export async function parseBusinessForm(fd, { canModerate, current }) {
 
 	if (Object.keys(errors).length) return { values, errors };
 
-	// ── מדיה: העלאה חדשה מחליפה, סימון תיבה מסיר ──
+	// ── הלוגו: יחיד, ולכן העלאה חדשה מחליפה וסימון תיבה מסיר ──
 	const logoFile = fd.get('logo');
 	if (logoFile && typeof logoFile !== 'string' && logoFile.size > 0) {
 		if (!logoFile.type.startsWith('image/') || logoFile.size > MAX_IMAGE_BYTES) {
@@ -146,11 +165,20 @@ export async function parseBusinessForm(fd, { canModerate, current }) {
 	}
 	if (errors.logo) return { values, errors };
 
+	// ── תמונות העסק: העלאה חדשה *מתווספת* לקיימות ──
+	// עד היום היא החליפה את כולן, וכל תוספת של תמונה אחת מחקה בשקט את מה
+	// שכבר היה. הסרה נעשית עכשיו במפורש בלבד — כפתור ההסרה שליד כל תמונה
+	// שולח את מזהה שלה (remove_banner_ids). remove_banners נשאר כמחיקה
+	// גורפת, לטופס שמבקש אותה.
+	const keptIds =
+		fd.get('remove_banners') === 'on' ? [] : keepBannerIds(current, fd.getAll('remove_banner_ids'));
+	const removedAny = keptIds.length !== currentBannerIds(current).length;
+
 	const bannerFiles = /** @type {File[]} */ (
 		fd.getAll('banners').filter((f) => f && typeof f !== 'string' && f.size > 0)
 	);
-	if (bannerFiles.length > MAX_BANNERS) {
-		errors.banners = `אפשר לצרף עד ${MAX_BANNERS} תמונות`;
+	if (keptIds.length + bannerFiles.length > MAX_BANNERS) {
+		errors.banners = `אפשר לשמור עד ${MAX_BANNERS} תמונות — הסירו תמונה קיימת כדי להוסיף`;
 		return { values, errors };
 	}
 	if (bannerFiles.length) {
@@ -164,9 +192,14 @@ export async function parseBusinessForm(fd, { canModerate, current }) {
 			const id = await uploadImage(f).catch(() => null);
 			if (id) ids.push(id);
 		}
-		if (ids.length) values.banners = ids;
-	} else if (fd.get('remove_banners') === 'on') {
-		values.banners = [];
+		// כשכל ההעלאות נכשלו אין מה לכתוב, ובעל העסק צריך לדעת שלא נשמרו
+		if (!ids.length) {
+			errors.banners = 'העלאת התמונות נכשלה, נסו שוב';
+			return { values, errors };
+		}
+		values.banners = [...keptIds, ...ids];
+	} else if (removedAny) {
+		values.banners = keptIds;
 	}
 
 	return { values, errors };

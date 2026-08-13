@@ -20,13 +20,15 @@ export interface AdImageFit {
 	x: number;
 	y: number;
 	z: number;
+	/** סיבוב ברבעים (0/90/180/270) — לתמונות שנשמרו שכובות בטלפון */
+	r?: number;
 	/** cover = מילוי המשבצת (ברירת המחדל); contain = התמונה כולה נראית, כמו לוגו */
 	mode?: 'cover' | 'contain';
 	/** false = הפעולה לא נוגעת בסגנון בכלל, ומה שנכתב ב-class נשאר */
 	enabled?: boolean;
 }
 
-export const DEFAULT_AD_FIT: AdImageFit = { x: 50, y: 50, z: 1 };
+export const DEFAULT_AD_FIT: AdImageFit = { x: 50, y: 50, z: 1, r: 0 };
 export const AD_ZOOM_MIN = 0.4;
 export const AD_ZOOM_MAX = 3;
 
@@ -41,7 +43,9 @@ export function parseAdImageFit(raw: unknown): AdImageFit {
 	return {
 		x: clamp(num(o.x, 50), 0, 100),
 		y: clamp(num(o.y, 50), 0, 100),
-		z: clamp(num(o.z, 1), AD_ZOOM_MIN, AD_ZOOM_MAX)
+		z: clamp(num(o.z, 1), AD_ZOOM_MIN, AD_ZOOM_MAX),
+		// כל ערך מתגלגל לרבע הקרוב בטווח 0..270, גם שלילי וגם מעל 360
+		r: (((Math.round(num(o.r, 0) / 90) * 90) % 360) + 360) % 360
 	};
 }
 
@@ -63,7 +67,8 @@ export function adImgFit(node: HTMLImageElement, fit: AdImageFit) {
 			'bottom',
 			'maxWidth',
 			'maxHeight',
-			'objectFit'
+			'objectFit',
+			'transform'
 		] as const) {
 			node.style[p] = '';
 		}
@@ -78,16 +83,24 @@ export function adImgFit(node: HTMLImageElement, fit: AdImageFit) {
 		const w = node.naturalWidth;
 		const h = node.naturalHeight;
 		if (!W || !H || !w || !h) return;
-		const { x, y, z } = parseAdImageFit(current);
-		const base = current?.mode === 'contain' ? Math.min(W / w, H / h) : Math.max(W / w, H / h);
+		const { x, y, z, r = 0 } = parseAdImageFit(current);
+		// סיבוב ברבע מחליף רוחב וגובה: ההתאמה למשבצת נעשית על המידות שאחרי
+		// הסיבוב (dw/dh — התיבה החוסמת), בעוד האלמנט עצמו נשאר במידותיו
+		// (bw/bh) ומסתובב סביב מרכזו. לשתי התיבות אותו מרכז, ולכן די בהיסט.
+		const swap = r === 90 || r === 270;
+		const [ew, eh] = swap ? [h, w] : [w, h];
+		const base = current?.mode === 'contain' ? Math.min(W / ew, H / eh) : Math.max(W / ew, H / eh);
 		const k = base * z;
-		const dw = w * k;
-		const dh = h * k;
+		const dw = ew * k;
+		const dh = eh * k;
+		const bw = w * k;
+		const bh = h * k;
 		node.style.position = 'absolute';
-		node.style.width = `${dw}px`;
-		node.style.height = `${dh}px`;
-		node.style.left = `${((W - dw) * x) / 100}px`;
-		node.style.top = `${((H - dh) * y) / 100}px`;
+		node.style.width = `${bw}px`;
+		node.style.height = `${bh}px`;
+		node.style.left = `${((W - dw) * x) / 100 + (dw - bw) / 2}px`;
+		node.style.top = `${((H - dh) * y) / 100 + (dh - bh) / 2}px`;
+		node.style.transform = r ? `rotate(${r}deg)` : '';
 		// inset-0 / dir=rtl היו מושכים לצד הנגדי; left+top הם הקובעים
 		node.style.right = 'auto';
 		node.style.bottom = 'auto';
