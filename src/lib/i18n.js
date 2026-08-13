@@ -137,6 +137,10 @@ export const translations = {
 		manageBusiness: 'ניהול ועדכון פרטי עסק',
 		updateBusiness: 'עדכון פרטים',
 		share: 'שיתוף',
+		shareApps: 'שיתוף באפליקציות',
+		shareCopyLink: 'העתקת הקישור',
+		shareCopied: 'הקישור הועתק ✓',
+		shareEmail: 'אימייל',
 		loginWithGoogle: 'התחבר באמצעות Google',
 		visitorCount: 'מספר כניסות לאתר: ',
 		// Ads rails, Footer & Register (ported from community)
@@ -400,6 +404,10 @@ export const translations = {
 		manageBusiness: 'Manage and update business details',
 		updateBusiness: 'Update details',
 		share: 'Share',
+		shareApps: 'Share to apps',
+		shareCopyLink: 'Copy link',
+		shareCopied: 'Link copied ✓',
+		shareEmail: 'Email',
 		communityPolicyTitle: 'Community policy for business owners – Yotzim LaHerut',
 		policyBack: 'Back to the business directory',
 		policyIntro:
@@ -687,6 +695,10 @@ export const translations = {
 		manageBusiness: 'Управление и обновление данных бизнеса',
 		updateBusiness: 'Обновить данные',
 		share: 'Поделиться',
+		shareApps: 'Поделиться в приложениях',
+		shareCopyLink: 'Скопировать ссылку',
+		shareCopied: 'Ссылка скопирована ✓',
+		shareEmail: 'Эл. почта',
 		communityPolicyTitle: 'Политика сообщества для владельцев бизнеса – «Йоцим ла-Херут»',
 		policyBack: 'Назад в справочник бизнесов',
 		policyIntro:

@@ -4,6 +4,8 @@
 	import { imgUrl, imgSrcSet, imgFallback } from '$lib/img.js';
 	import { adImgFit } from '$lib/adImageFit';
 	import { parseFit, isDefaultFit } from '$lib/mediaFit.js';
+	import StarRating from './StarRating.svelte';
+	import ShareButton from './ShareButton.svelte';
 
 	let { business } = $props();
 
@@ -19,26 +21,30 @@
 		toggleFav(business.id);
 	}
 
-	/* הלוגו והבאנר מוגשים דרך ממטב התמונות ($lib/img.js): המקור הוא לרוב קובץ
-	   של מגה-בייטים, והמשבצת כאן היא ~160px. כפול תשעים כרטיסיות זה ההבדל
-	   בין דף שנפתח לדף שנטען.
-	   הלוגו נכשל בשני שלבים: כישלון ראשון = הממטב לא זמין ⇒ ניסיון בכתובת
-	   המקורית; כישלון שני = אין לוגו ⇒ מונוגרם. */
+	/* התמונה מוגשת דרך ממטב התמונות ($lib/img.js): המקור הוא לרוב קובץ של
+	   מגה-בייטים, והמשבצת כאן היא ~160px. כפול תשעים כרטיסיות זה ההבדל בין
+	   דף שנפתח לדף שנטען.
+	   הכישלון הוא בשני שלבים: כישלון ראשון = הממטב לא זמין ⇒ imgFallback
+	   מנסה בכתובת המקורית; כישלון שני (הכתובת שנוסתה היא כבר המקורית) =
+	   אין תמונה ⇒ מונוגרם. */
 	let failedImage = $state(false);
-	let rawLogo = $state(false);
-	const logoSrc = $derived(rawLogo ? business.logo : imgUrl(business.logo, 384));
 
-	function onLogoError() {
-		if (!rawLogo && logoSrc !== business.logo) rawLogo = true;
-		else failedImage = true;
+	/** @param {Event} e */
+	function onBannerError(e) {
+		const img = /** @type {HTMLImageElement} */ (e.currentTarget);
+		if (img.src === new URL(business.banner, location.href).href) failedImage = true;
 	}
 
 	// מיקום וזום שנקבעו בעורך. כשהם ברירת המחדל הפעולה מכובה לגמרי,
 	// והמראה נשאר בדיוק כפי שה-class מגדיר (ראו mediaFit.js).
-	const logoFit = $derived(parseFit(business.logo_fit));
 	// business.banner הוא כבר התמונה הראשית שבחר בעל העסק — והמיקום שנלקח
 	// כאן הוא המיקום שלה, ולא של הראשונה שהועלתה (ראו mediaFit.js)
 	const bannerFit = $derived(parseFit(business.banner_fits?.[business.main_index ?? 0]));
+
+	// הדירוג בכרטיסייה — רק כשיש דירוג אמיתי (כמו בקומת "המדורגים ביותר"),
+	// ולא חמישה כוכבים כבויים בכל כרטיס. הממוצע מעוגל לספרה אחת.
+	const ratingCount = $derived(Number(business.ratingCount || 0));
+	const rating = $derived(Math.round(Number(business.rating || 0) * 10) / 10);
 </script>
 
 <!-- הרוחב נקבע ע"י רשת הכרטיסים בדף (cards-grid), לא כאן -->
@@ -70,35 +76,32 @@
 		</svg>
 	</button>
 
+	<!-- קיצור השיתוף, בפינה הנגדית למועדפים: אותו כפתור של דף העסק, בגודל
+	     של הכרטיסייה -->
+	<div class="absolute top-2 right-2 z-30">
+		<ShareButton
+			path="/business/{business.id}"
+			title={business.name}
+			text={business.slogan || business.category || business.name}
+		/>
+	</div>
+
 	<a href="/business/{business.id}" class="flex flex-1 flex-col">
-		<!-- אזור המדיה: משטח שטוח בלי גרדיאנט צבעוני. כשאין לוגו — מונוגרם
-		     שקט במקום ריבוע ריק. -->
+		<!-- אזור המדיה: רק התמונה שבעל העסק בחר כראשית — בלי הלוגו מעליה.
+		     כשאין תמונה כזו — מונוגרם שקט במקום ריבוע ריק. -->
 		<div class="relative h-24 w-full overflow-hidden bg-black/25 sm:h-40">
-			{#if business.banner}
+			{#if business.banner && !failedImage}
 				<img
-					src={imgUrl(business.banner, 256)}
-					srcset={imgSrcSet(business.banner, [128, 256])}
-					sizes="(min-width: 640px) 20rem, 50vw"
-					alt=""
-					aria-hidden="true"
-					class="absolute inset-0 h-full w-full object-cover opacity-25"
-					loading="lazy"
-					decoding="async"
-					use:imgFallback={business.banner}
-					use:adImgFit={{ ...bannerFit, enabled: !isDefaultFit(bannerFit) }}
-				/>
-			{/if}
-			{#if business.logo && !failedImage}
-				<img
-					src={logoSrc}
-					srcset={rawLogo ? undefined : imgSrcSet(business.logo, [128, 256, 384])}
+					src={imgUrl(business.banner, 384)}
+					srcset={imgSrcSet(business.banner, [256, 384, 640])}
 					sizes="(min-width: 640px) 20rem, 50vw"
 					alt={business.name}
-					class="absolute inset-0 z-10 h-full w-full object-contain p-3 sm:p-4"
+					class="absolute inset-0 h-full w-full object-cover"
 					loading="lazy"
 					decoding="async"
-					onerror={onLogoError}
-					use:adImgFit={{ ...logoFit, mode: 'contain', enabled: !isDefaultFit(logoFit) }}
+					onerror={onBannerError}
+					use:imgFallback={business.banner}
+					use:adImgFit={{ ...bannerFit, enabled: !isDefaultFit(bannerFit) }}
 				/>
 			{:else}
 				<span
@@ -122,6 +125,26 @@
 			<p class="mt-0.5 line-clamp-1 text-xs text-gray-400">
 				{business.category}
 			</p>
+
+			{#if ratingCount > 0}
+				<div class="mt-1 flex items-center gap-1.5">
+					<StarRating
+						value={rating}
+						size="sm"
+						label={t.ratingOutOf5.replace('{rating}', String(rating))}
+					/>
+					<span class="text-xs text-gray-400">
+						<span class="font-medium text-gray-200">{rating}</span>
+						({ratingCount})
+					</span>
+				</div>
+			{/if}
+
+			{#if business.slogan}
+				<p class="mt-1 line-clamp-2 text-xs leading-tight text-gray-300">
+					{business.slogan}
+				</p>
+			{/if}
 
 			{#if business.discount}
 				<p class="mt-2 line-clamp-2 text-xs leading-tight text-emerald-400">

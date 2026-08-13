@@ -48,6 +48,8 @@ export async function load() {
 			// איזו מהתמונות היא הראשית — הבאנר של האריח (ראו mediaFit.js)
 			main_index: b.main_index,
 			description: b.description || '',
+			// הסלוגן מוצג בכרטיסייה עצמה, ולא רק בעמוד העסק
+			slogan: b.slogan || '',
 			discount: b.discount || '',
 			salesArea: b.sales_area || '',
 			address: b.address || '',
