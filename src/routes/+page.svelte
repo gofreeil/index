@@ -11,6 +11,7 @@
 	import { trackSearch } from '$lib/searchTrack.js';
 	import { businessCities } from '$lib/cities.js';
 	import { favorites } from '$lib/favorites.js';
+	import { rememberCategory } from '$lib/lastCategory.js';
 	import {
 		SITE_NAME,
 		SITE_DESCRIPTION,
@@ -181,6 +182,10 @@
 	async function pickCategory(key) {
 		selectedCategory = key || 'all';
 		visibleCount = 9;
+		// הבחירה נרשמת גם ל-sessionStorage: כפתור "הוסף עסק" שבכותרת הוא קישור
+		// סטטי שאינו נושא את התחום, וטופס ההגשה קורא משם את ברירת המחדל
+		// (ראו $lib/lastCategory). ביטול הסינון מוחק את הרישום.
+		rememberCategory(key);
 		await tick();
 		// לחיצה חוזרת על תחום נבחר מבטלת את הסינון; אז בלוק התוצאות חוזר
 		// לתחתית הדף, וגלילה אליו הייתה זורקת את המשתמש הרחק מהמסילה
@@ -302,6 +307,7 @@
 		selectedCategory = 'all';
 		selectedLocation = 'all';
 		searchTerm = '';
+		rememberCategory(''); // יצא מהתחום — הטופס לא יציע תחום שכבר נעזב
 	}
 
 	/* ═══════════ SEO ═══════════

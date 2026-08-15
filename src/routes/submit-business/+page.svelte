@@ -21,6 +21,7 @@
 		MAX_BANNERS
 	} from '$lib/mediaFit.js';
 	import { formDraft, clearDraft, resumeDraft } from '$lib/formDraft';
+	import { recallCategory } from '$lib/lastCategory.js';
 	import { TERMS_FIELD } from '$lib/terms.js';
 
 	/** @type {{ data: any, form: any }} */
@@ -59,19 +60,37 @@
 	const errors = $derived(form?.errors ?? {});
 
 	/* ── התחום שהגיע מדף הבית ──
-	   מי שלחץ "יש לכם עסק בתחום הזה?" בתוך תחום במסילה מגיע לכאן עם
-	   ‎?category=…‎, והתחום כבר מסומן בבורר: הוא בחר אותו כבר בקליק הקודם,
-	   וחיפוש חוזר שלו ברשימה הוא בקשה לעשות פעמיים את אותו דבר.
-	   מתקבל רק ערך שקיים ברשימת התחומים — פרמטר שהומצא ב-URL לא יוצר אפשרות
-	   חדשה בבורר. ערך שחזר מכישלון ולידציה גובר: הוא מה שהגולש הקליד עכשיו. */
-	const presetCategory = $derived.by(() => {
-		const q = page.url.searchParams.get('category')?.trim();
-		return q && categoryOptions.some((/** @type {any} */ c) => c.value === q) ? q : '';
-	});
+	   מי שגלש בתוך תחום במסילה ולחץ "הוסף עסק" מצפה שהטופס כבר ידע איפה הוא
+	   היה — הוא בחר את התחום כבר בקליק הקודם, וחיפוש חוזר שלו ברשימה הוא
+	   בקשה לעשות פעמיים את אותו דבר. שני מקורות, לפי סדר עדיפות:
+
+	     1. ‎?category=…‎ בשאילתה — הקיצור "יש לכם עסק בתחום הזה?" שבתוך התחום.
+	     2. sessionStorage (ראו $lib/lastCategory) — התחום האחרון שנפתח במסילה.
+	        זו הדלת של כפתור "הוסף עסק" הקבוע שבכותרת: קישור סטטי בלייאאוט
+	        שאינו יודע איזה תחום פתוח בדף, ולכן דף הבית רושם את הבחירה בצד
+	        והטופס קורא אותה כאן. נקרא ב-onMount — הדפדפן בלבד מכיר אותו.
+
+	   מתקבל רק ערך שקיים ברשימת התחומים — פרמטר שהומצא ב-URL (או רישום ישן
+	   של תחום שנמחק) לא יוצר אפשרות חדשה בבורר. ערך שחזר מכישלון ולידציה
+	   גובר על שניהם: הוא מה שהגולש הקליד עכשיו. */
+	const validCategory = (/** @type {string | null | undefined} */ q) => {
+		const name = q?.trim();
+		return name && categoryOptions.some((/** @type {any} */ c) => c.value === name) ? name : '';
+	};
+	const queryPreset = $derived(validCategory(page.url.searchParams.get('category')));
+	let sessionPreset = $state('');
+	const presetCategory = $derived(queryPreset || sessionPreset);
 	const initialCategory = $derived(v.category || presetCategory);
 
-	/** שחזור הטיוטה רץ אחרי ההרכבה ועלול לדרוס את התחום שהגיע בשאילתה —
-	 *  הלחיצה שהביאה לכאן טרייה יותר מכל טיוטה, ולכן היא חוזרת ומנצחת. */
+	onMount(() => {
+		sessionPreset = validCategory(recallCategory());
+		applyPresetCategory();
+	});
+
+	/** כתיבת התחום אל הבורר עצמו + שיגור האירועים שמעדכנים את הצעות התגיות.
+	 *  נקראת פעמיים: ב-onMount (המקור מ-sessionStorage לא קיים ב-SSR, ולכן
+	 *  ה-selected שברינדור לא כיסה אותו), ואחרי שחזור טיוטה — השחזור עלול
+	 *  לדרוס את התחום שהגיע מדף הבית, והלחיצה שהביאה לכאן טרייה מכל טיוטה. */
 	function applyPresetCategory() {
 		if (!presetCategory || v.category || !formEl) return;
 		const el = /** @type {HTMLSelectElement | null} */ (
