@@ -1,6 +1,7 @@
 <script>
 	import Seo from '$lib/components/Seo.svelte';
 	import { enhance } from '$app/forms';
+	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import { CATEGORIES } from '$lib/categories.js';
 	import { MAX_BRANCHES, parseBranches } from '$lib/branches.js';
@@ -8,6 +9,7 @@
 	import ImageDropField from '$lib/components/ImageDropField.svelte';
 	import ImageFitEditor from '$lib/components/ImageFitEditor.svelte';
 	import TagsField from '$lib/components/TagsField.svelte';
+	import TermsConsent from '$lib/components/TermsConsent.svelte';
 	import { parseTags } from '$lib/tags.js';
 	import { suggestTags } from '$lib/tagSuggest.js';
 	import {
@@ -19,6 +21,7 @@
 		MAX_BANNERS
 	} from '$lib/mediaFit.js';
 	import { formDraft, clearDraft, resumeDraft } from '$lib/formDraft';
+	import { TERMS_FIELD } from '$lib/terms.js';
 
 	/** @type {{ data: any, form: any }} */
 	let { data, form } = $props();
@@ -37,8 +40,9 @@
 
 	// טיוטה אוטומטית — טופס ארוך; יציאה לדף אחר או רענון לא ימחקו אותו.
 	// חותמת הזמן וה-honeypot לא נשמרים: הם בדיקת אנטי-ספאם של השליחה הנוכחית.
+	// גם אישור התנאים אינו נשמר — הוא התחייבות, ונעשה בכל שליחה מחדש.
 	const DRAFT_KEY = 'index-submit-business';
-	const DRAFT_EXCLUDE = ['form_rendered_at', 'company_website'];
+	const DRAFT_EXCLUDE = ['form_rendered_at', 'company_website', TERMS_FIELD];
 	let draftRestored = $state(false);
 	/** @type {HTMLFormElement | null} */
 	let formEl = $state(null);
@@ -53,6 +57,31 @@
 	// ערכים חוזרים אחרי כישלון ולידציה (כדי לא לאבד מילוי)
 	const v = $derived(form?.values ?? {});
 	const errors = $derived(form?.errors ?? {});
+
+	/* ── התחום שהגיע מדף הבית ──
+	   מי שלחץ "יש לכם עסק בתחום הזה?" בתוך תחום במסילה מגיע לכאן עם
+	   ‎?category=…‎, והתחום כבר מסומן בבורר: הוא בחר אותו כבר בקליק הקודם,
+	   וחיפוש חוזר שלו ברשימה הוא בקשה לעשות פעמיים את אותו דבר.
+	   מתקבל רק ערך שקיים ברשימת התחומים — פרמטר שהומצא ב-URL לא יוצר אפשרות
+	   חדשה בבורר. ערך שחזר מכישלון ולידציה גובר: הוא מה שהגולש הקליד עכשיו. */
+	const presetCategory = $derived.by(() => {
+		const q = page.url.searchParams.get('category')?.trim();
+		return q && categoryOptions.some((/** @type {any} */ c) => c.value === q) ? q : '';
+	});
+	const initialCategory = $derived(v.category || presetCategory);
+
+	/** שחזור הטיוטה רץ אחרי ההרכבה ועלול לדרוס את התחום שהגיע בשאילתה —
+	 *  הלחיצה שהביאה לכאן טרייה יותר מכל טיוטה, ולכן היא חוזרת ומנצחת. */
+	function applyPresetCategory() {
+		if (!presetCategory || v.category || !formEl) return;
+		const el = /** @type {HTMLSelectElement | null} */ (
+			formEl.querySelector('select[name="category"]')
+		);
+		if (!el || el.value === presetCategory) return;
+		el.value = presetCategory;
+		el.dispatchEvent(new Event('input', { bubbles: true }));
+		el.dispatchEvent(new Event('change', { bubbles: true }));
+	}
 
 	// ── סניפים ומקומות שירות נוספים ──
 	// שורות שנפתחות בלחיצה. הן נשלחות כ-JSON בשדה מוסתר אחד ולא כשדות
@@ -215,7 +244,10 @@
 			use:formDraft={{
 				key: DRAFT_KEY,
 				exclude: DRAFT_EXCLUDE,
-				onRestore: () => (draftRestored = true)
+				onRestore: () => {
+					draftRestored = true;
+					applyPresetCategory();
+				}
 			}}
 			oninput={readField}
 			onchange={readField}
@@ -259,11 +291,18 @@
 							>קטגוריה *</label
 						>
 						<select id="category" name="category" required class="field">
-							<option value="" disabled selected={!v.category}>בחרו קטגוריה…</option>
+							<option value="" disabled selected={!initialCategory}>בחרו קטגוריה…</option>
 							{#each categoryOptions as cat (cat.value)}
-								<option value={cat.value} selected={v.category === cat.value}>{cat.label}</option>
+								<option value={cat.value} selected={initialCategory === cat.value}
+									>{cat.label}</option
+								>
 							{/each}
 						</select>
+						{#if presetCategory && !v.category}
+							<p class="mt-1 text-xs text-blue-300/80">
+								התחום נבחר לפי המקום שממנו הגעתם — אפשר לשנות.
+							</p>
+						{/if}
 						{#if errors.category}<p class="err">{errors.category}</p>{/if}
 					</div>
 					<div>
@@ -323,15 +362,10 @@
 					/>
 					{#if errors.discount}<p class="err">{errors.discount}</p>{/if}
 				</div>
-				<label class="flex items-start gap-3 text-sm text-gray-300">
-					<input type="checkbox" name="accepted_terms" class="mt-1 h-4 w-4 shrink-0" />
-					<span
-						>אני מקבל/ת על עצמי את
-						<a href="/policy" target="_blank" class="text-blue-400 underline">תנאי הקהילה</a>
-						(כולל הקוד האתי העולמי וזכות המזומן) ומתחייב/ת להטבה שציינתי לחברי הקהילה. *</span
-					>
-				</label>
-				{#if errors.accepted_terms}<p class="err">{errors.accepted_terms}</p>{/if}
+				<TermsConsent
+					text="אני מקבל/ת על עצמי את תנאי הקהילה של יוצאים לחירות — כולל הקוד האתי העולמי וזכות המזומן — ומתחייב/ת להטבה שציינתי לחברי הקהילה. *"
+					error={errors.accepted_terms ?? ''}
+				/>
 			</fieldset>
 
 			<!-- קשר ומיקום -->

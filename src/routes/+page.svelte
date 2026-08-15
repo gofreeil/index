@@ -92,19 +92,80 @@
 			);
 	});
 
-	/* גלילה אל בלוק התוצאות. איתור לפי id ולא ב-bind:this: הבלוק חי בשני
-	   מקומות שונים בדף (מיד מתחת למסילה כשמסננים, ובתחתית כשלא), ורק אחד מהם
-	   קיים בכל רגע — הפניה חיה עלולה להתאפס בדיוק ברגע המעבר. */
+	/* ═══════════ גלילה איטית אל התוצאות ═══════════
+	   scroll-behavior: smooth של הדפדפן מסיים את המסע ב~300ms — מהיר מדי מכדי
+	   שהעין תעקוב, והגולש נוחת בבת אחת במקום אחר בדף בלי לדעת מה חלף בדרך.
+	   כאן הגלילה נמשכת קרוב לשנייה וחצי, עם האצה והאטה בקצוות, כך שהדף
+	   "נוסע" מתחת לעין והגולש רואה שהוא עובר מהמסילה אל התוצאות שלה.
+
+	   היעד נמדד מחדש בכל פריים: תמונות שנטענות תוך כדי הנסיעה מזיזות את
+	   הבלוק, ומרחק שחושב פעם אחת בהתחלה היה מחטיא אותו.
+
+	   כל נגיעה של הגולש בגלילה (גלגלת, אצבע, מקש) עוצרת מיד — המסך שלו. */
+	const easeInOutCubic = (/** @type {number} */ t) =>
+		t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+	const SCROLL_MS_PER_PX = 1.6; // מרחק ארוך = נסיעה ארוכה, בקצב אחיד
+	const SCROLL_MS_MIN = 900;
+	const SCROLL_MS_MAX = 2400;
+	const USER_SCROLL_EVENTS = /** @type {const} */ ([
+		'wheel',
+		'touchstart',
+		'keydown',
+		'pointerdown'
+	]);
+
+	let scrollRaf = 0;
+	/** @type {(() => void) | null} */
+	let stopUserWatch = null;
+
+	function cancelSlowScroll() {
+		if (scrollRaf) cancelAnimationFrame(scrollRaf);
+		scrollRaf = 0;
+		stopUserWatch?.();
+		stopUserWatch = null;
+	}
+
+	/** @param {HTMLElement} el */
+	function slowScrollTo(el) {
+		cancelSlowScroll();
+		const header = document.querySelector('header');
+		const offset = (header?.offsetHeight ?? 0) + 12;
+		// מיקום מוחלט במסמך — אינו תלוי במקום הגלילה הנוכחי, רק בפריסה
+		const targetTop = () => Math.max(0, el.getBoundingClientRect().top + window.scrollY - offset);
+
+		const from = window.scrollY;
+		const distance = Math.abs(targetTop() - from);
+		if (distance < 4) return;
+		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+			window.scrollTo(0, targetTop());
+			return;
+		}
+
+		const duration = Math.min(SCROLL_MS_MAX, Math.max(SCROLL_MS_MIN, distance * SCROLL_MS_PER_PX));
+		const start = performance.now();
+
+		for (const ev of USER_SCROLL_EVENTS)
+			window.addEventListener(ev, cancelSlowScroll, { passive: true });
+		stopUserWatch = () => {
+			for (const ev of USER_SCROLL_EVENTS) window.removeEventListener(ev, cancelSlowScroll);
+		};
+
+		const step = (/** @type {number} */ now) => {
+			const p = Math.min(1, (now - start) / duration);
+			window.scrollTo(0, from + (targetTop() - from) * easeInOutCubic(p));
+			if (p < 1) scrollRaf = requestAnimationFrame(step);
+			else cancelSlowScroll();
+		};
+		scrollRaf = requestAnimationFrame(step);
+	}
+
+	/* איתור לפי id ולא ב-bind:this: הבלוק חי בשני מקומות שונים בדף (מיד מתחת
+	   למסילה כשמסננים, ובתחתית כשלא), ורק אחד מהם קיים בכל רגע — הפניה חיה
+	   עלולה להתאפס בדיוק ברגע המעבר. */
 	function scrollToResults() {
 		const el = document.getElementById('results');
-		if (!el) return;
-		const header = document.querySelector('header');
-		const top =
-			el.getBoundingClientRect().top + window.scrollY - ((header?.offsetHeight ?? 0) + 12);
-		window.scrollTo({
-			top: Math.max(0, top),
-			behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
-		});
+		if (el) slowScrollTo(el);
 	}
 
 	/** מעבר אל כלל בעלי המקצוע — מנקה סינון פעיל כדי שהרשימה תהיה באמת "הכל" */
@@ -206,6 +267,15 @@
 	   הקומות הקבועות מתחלפות ברשימת העסקים הרלוונטיים, מיד מתחת למסילה. */
 	const isFiltering = $derived(
 		Boolean(searchTerm) || selectedCategory !== 'all' || selectedLocation !== 'all'
+	);
+
+	/* קיצור הדרך "יש לכם עסק בתחום הזה?" — מופיע בתוך התחום שנבחר, ולכן הוא
+	   נושא אותו איתו: טופס ההגשה מקבל את התחום בשאילתה ומסמן אותו כברירת מחדל,
+	   כדי שמי שהגיע מהתחום לא יחפש אותו שוב ברשימה. */
+	const submitHref = $derived(
+		selectedCategory === 'all'
+			? '/submit-business'
+			: `/submit-business?category=${encodeURIComponent(selectedCategory)}`
 	);
 
 	// המדורגים ביותר — רק אם קיימים דירוגים אמיתיים (אחרת אין "מדורגים", זה חירטוט)
@@ -450,7 +520,7 @@
 				{#if selectedCategory !== 'all' && !searchTerm && selectedLocation === 'all'}
 					<p class="mt-8 text-center text-gray-400">
 						עדיין אין עסקים בתחום הזה. יש לכם עסק מתאים?
-						<a href="/submit-business" class="font-semibold text-blue-400 hover:text-blue-300"
+						<a href={submitHref} class="font-semibold text-blue-400 hover:text-blue-300"
 							>הוסיפו אותו לאינדקס</a
 						>
 					</p>
@@ -496,16 +566,34 @@
 		{#if isFiltering}
 			<!-- מצב תוצאות: מי שבחר תחום במסילה (או חיפש/בחר עיר) מקבל את
 			     העסקים הרלוונטיים כאן ועכשיו, ולא מתחת לקומות ולמפה. -->
+			<!-- כותרת התוצאות ולצדה קיצור הדרך להגשת עסק באותו תחום. רשת של שלוש
+			     עמודות ולא מיקום אבסולוטי: הכותרת נשארת ממורכזת, והקיצור לעולם
+			     לא נוחת עליה בשמות תחום ארוכים. בנייד הוא יורד לשורה משלו. -->
 			<div id="results" class="mt-6 mb-8 md:mb-16">
-				<div class="mb-4 text-center md:mb-8">
-					<h2
-						class="bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 bg-clip-text text-xl font-extrabold text-transparent sm:text-4xl"
-					>
-						{selectedCategory === 'all' ? t.filterResultsTitle : selectedCategory}
-					</h2>
-					<p class="mt-2 text-sm text-gray-400">
-						{t.foundResults.replace('{count}', filteredBusinesses.length.toString())}
-					</p>
+				<div class="mb-4 md:mb-8 md:grid md:grid-cols-[1fr_auto_1fr] md:items-center md:gap-3">
+					<div class="hidden md:block"></div>
+					<div class="text-center">
+						<h2
+							class="bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 bg-clip-text text-xl font-extrabold text-transparent sm:text-4xl"
+						>
+							{selectedCategory === 'all' ? t.filterResultsTitle : selectedCategory}
+						</h2>
+						<p class="mt-2 text-sm text-gray-400">
+							{t.foundResults.replace('{count}', filteredBusinesses.length.toString())}
+						</p>
+					</div>
+					{#if selectedCategory !== 'all'}
+						<div class="mt-3 flex justify-center md:mt-0 md:justify-end">
+							<a
+								href={submitHref}
+								aria-label="הוספת עסק לאינדקס בתחום {selectedCategory}"
+								class="inline-flex items-center gap-1.5 rounded-full border border-blue-500/40 bg-blue-600/10 px-4 py-2 text-xs font-bold text-blue-300 transition hover:border-blue-400/70 hover:bg-blue-600/20 hover:text-blue-200 active:scale-95 md:text-sm"
+							>
+								<span aria-hidden="true">＋</span>
+								<span>יש לכם עסק בתחום הזה?</span>
+							</a>
+						</div>
+					{/if}
 				</div>
 
 				{@render resultsBody(displayedBusinesses, true)}
