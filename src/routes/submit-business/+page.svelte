@@ -72,10 +72,19 @@
 
 	   מתקבל רק ערך שקיים ברשימת התחומים — פרמטר שהומצא ב-URL (או רישום ישן
 	   של תחום שנמחק) לא יוצר אפשרות חדשה בבורר. ערך שחזר מכישלון ולידציה
-	   גובר על שניהם: הוא מה שהגולש הקליד עכשיו. */
+	   גובר על שניהם: הוא מה שהגולש הקליד עכשיו.
+
+	   ההשוואה גם מול value וגם מול label: המסילה שולחת את שם התצוגה, אבל
+	   לקטגוריה מובנית ששמה נדרס במסך הניהול ה-value הוא השם הקנוני הישן
+	   (ראו getCategoryOptions) — השוואה מול value בלבד הפילה בשקט כל תחום
+	   ששמו שונה. מוחזר ה-value של האופציה: הוא מה שהבורר באמת שולח בשליחה. */
 	const validCategory = (/** @type {string | null | undefined} */ q) => {
 		const name = q?.trim();
-		return name && categoryOptions.some((/** @type {any} */ c) => c.value === name) ? name : '';
+		if (!name) return '';
+		const hit = categoryOptions.find(
+			(/** @type {any} */ c) => c.value === name || c.label === name
+		);
+		return hit ? hit.value : '';
 	};
 	const queryPreset = $derived(validCategory(page.url.searchParams.get('category')));
 	let sessionPreset = $state('');
