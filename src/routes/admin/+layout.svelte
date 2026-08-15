@@ -3,11 +3,19 @@
 	// רשימת המסכים מגיעה מ-$lib/adminNav.js, אותה רשימה בדיוק שמוצגת
 	// פרוסה כאריחים באזור האישי (/profile#admin), כדי שלא יתפצלו.
 	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
+	import { goto, afterNavigate, invalidate } from '$app/navigation';
 	import { adminNav, isActiveNav } from '$lib/adminNav.js';
 
 	/** @type {{ children: import('svelte').Snippet, data: any }} */
 	let { children, data } = $props();
+
+	// בכל מעבר בין מסכי הפאנל — שליפה מחדש של מוני ההמתנה (app:pending
+	// ב-+layout.server.js). בלי זה הרשימה מתחלפת והבועה נשארת על המספר
+	// שהיה בטעינת הדף: מסך ריק עם התראה דולקת. 'enter' = הטעינה הראשונה,
+	// שבה הנתונים ממילא טריים.
+	afterNavigate((nav) => {
+		if (nav.type !== 'enter') invalidate('app:pending');
+	});
 
 	const isAdmin = $derived(Boolean(data.isAdmin));
 	const nav = $derived(adminNav(isAdmin, Boolean(data.superAdmin)));

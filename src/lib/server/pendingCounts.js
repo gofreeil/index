@@ -47,10 +47,11 @@ export function invalidatePendingCounts() {
 
 /**
  * הפריטים שממתינים לטיפול אדמין. כל ספירה נכשלת בנפרד (0) ולא מפילה את השאר.
+ * @param {{ maxAgeMs?: number }} [opts] גיל מרבי של המטמון; ברירת המחדל TTL_MS
  * @returns {Promise<PendingCounts>}
  */
-export async function getPendingCounts() {
-	if (cache && Date.now() - cache.at < TTL_MS) return cache.data;
+export async function getPendingCounts({ maxAgeMs = TTL_MS } = {}) {
+	if (cache && Date.now() - cache.at < maxAgeMs) return cache.data;
 
 	// בעלות: גם בקשות שמשתמשים שלחו, וגם התאמות שהמערכת מצאה ואיש עוד לא
 	// דרש — שתיהן פריטים שמחכים להכרעת אדמין באותו מסך (/admin/claims).
@@ -75,6 +76,15 @@ export async function getPendingCounts() {
 	cache = { at: Date.now(), data };
 	return data;
 }
+
+// בתוך פאנל הניהול המספר חייב להיות אמיתי: מטמון של דקה אינו משותף בין
+// מופעי השרת, ולכן אישור של אדמין אחד השאיר בועה דולקת אצל השני מעל רשימה
+// ריקה. חלון של חמש שניות מספיק כדי לא לשלוף פעמיים באותה בקשה (ה-layout
+// הראשי כבר שלף), ובפועל הוא תמיד טרי.
+const FRESH_MS = 5_000;
+
+/** ספירה טרייה — למסכים שמציגים גם את הרשימה עצמה. @returns {Promise<PendingCounts>} */
+export const getFreshPendingCounts = () => getPendingCounts({ maxAgeMs: FRESH_MS });
 
 /** ערכי אפס — לגולש שאינו אדמין, בלי אף קריאת רשת. @returns {PendingCounts} */
 export function noPendingCounts() {

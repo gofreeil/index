@@ -9,6 +9,7 @@
 	import WelcomeScreen from '$lib/components/WelcomeScreen.svelte';
 	import Flag from '$lib/components/Flag.svelte';
 	import { authUser, hydrateAuth } from '$lib/auth';
+	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 
 	let { children, data } = $props();
@@ -19,7 +20,11 @@
 	// פריטים שממתינים לטיפול אדמין (עסקים + ביקורות + דיווחים + פרסומות +
 	// בעלות). 0 לכל מי שאינו אדמין. מסמן את האווטאר בבועה אדומה עד שמישהו
 	// מהאדמינים מטפל — אותו מספר בדיוק מוצג באזור האישי ועל אריחי הפאנל.
-	const pendingTotal = $derived(data.pending?.total ?? 0);
+	//
+	// page.data ולא data: ה-load של ה-layout הזה אינו רץ מחדש בניווט צד-לקוח,
+	// ולכן בתוך פאנל הניהול הבועה נשענת על הספירה הטרייה שמחזיר
+	// admin/+layout.server.js (אותו מפתח, דורס). בשאר האתר אין הבדל.
+	const pendingTotal = $derived(page.data.pending?.total ?? data.pending?.total ?? 0);
 
 	// אותה בועה, מהצד של בעל העסק: כרטיסיות שהמערכת זיהתה כשלו והוא עוד
 	// לא דרש אותן. הקישור מוביל אל המדור שבאזור האישי שבו דורשים אותן.
