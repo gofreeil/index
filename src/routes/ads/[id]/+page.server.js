@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { getAd } from '$lib/server/adsStore.js';
+import { getAd, withAdImageUrls } from '$lib/server/adsStore.js';
 
 // דף נחיתה ציבורי לפרסומת (פורט מהקהילה) — רק פרסומות מאושרות.
 /** @type {import('./$types').PageServerLoad} */
@@ -8,5 +8,7 @@ export async function load({ params }) {
 	if (!ad || ad.status !== 'approved') {
 		throw error(404, 'הפרסומת לא נמצאה');
 	}
-	return { ad };
+	// התמונות ככתובת ולא מוטבעות — הדף החזיר את הרשומה המלאה וסחב אותן
+	// בכל צפייה (1,218KB, 95% מהם base64). ראו withAdImageUrls.
+	return { ad: withAdImageUrls(ad) };
 }

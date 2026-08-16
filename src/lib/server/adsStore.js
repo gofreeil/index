@@ -116,6 +116,14 @@ function emptyLanding() {
 function fromStrapi(s) {
 	const logo = s.logo ?? '';
 	const mainImage = s.main_image ?? '';
+	// גם תמונות דף הנחיתה נכנסות לחותם: כולן מוגשות מאותה כתובת עם אותו ?v=,
+	// ולכן החלפת אחת מהן חייבת להחליף אותו - אחרת קאש ה-immutable יחזיק ישנה.
+	const landingImages = [
+		typeof s.landing?.image === 'string' ? s.landing.image : '',
+		...(Array.isArray(s.landing?.products)
+			? s.landing.products.map((/** @type {any} */ p) => p?.image ?? '')
+			: [])
+	];
 	return {
 		id: s.documentId,
 		status: s.ad_status,
@@ -142,7 +150,7 @@ function fromStrapi(s) {
 		gradient: s.gradient ?? '',
 		logo,
 		mainImage,
-		imgVersion: imageStamp(logo, mainImage),
+		imgVersion: imageStamp(logo, mainImage, ...landingImages),
 		landing: s.landing ?? emptyLanding(),
 		// ערכי ההגשה הארוזים ב-landing (ראו כותרת הקובץ)
 		mainImageFit: parseAdImageFit(s.landing?._mainImageFit),
@@ -426,16 +434,26 @@ export async function listApprovedLive() {
 // בכל צפייה.
 // ============================================================
 
-/** @typedef {'logo'|'main'} AdImageKind */
+/**
+ * logo/main הן תמונות הכרטיס בטור. landing ו-product-<n> הן של דף הנחיתה
+ * (/ads/<id>) — הדף שאליו מגיעה כל לחיצה על פרסומת, ולכן גם הוא חייב
+ * להגיש תמונות מכתובת ולא מוטבעות (הוא שקל 1,218KB לצפייה, 95% מהם base64).
+ * @typedef {'logo'|'main'|'landing'|`product-${number}`} AdImageKind
+ */
 
 /** @param {string|undefined} v @returns {v is AdImageKind} */
 export function isAdImageKind(v) {
-	return v === 'logo' || v === 'main';
+	if (!v) return false;
+	return v === 'logo' || v === 'main' || v === 'landing' || /^product-\d+$/.test(v);
 }
 
 /** @param {SubmittedAd} ad @param {AdImageKind} kind @returns {string} */
 function pickImage(ad, kind) {
-	return kind === 'logo' ? ad.logo : ad.mainImage;
+	if (kind === 'logo') return ad.logo;
+	if (kind === 'main') return ad.mainImage;
+	if (kind === 'landing') return ad.landing?.image ?? '';
+	const idx = Number(kind.slice('product-'.length));
+	return ad.landing?.products?.[idx]?.image ?? '';
 }
 
 /**
@@ -449,6 +467,28 @@ export function adImageUrl(ad, kind) {
 	if (!raw) return '';
 	if (!raw.startsWith('data:')) return raw;
 	return `/api/ad-image/${ad.id}/${kind}?v=${ad.imgVersion}`;
+}
+
+/**
+ * אותה רשומה, כשכל שדות התמונה שבה הוחלפו בכתובות — לדף הנחיתה /ads/<id>,
+ * שמחזיר את הפרסומת המלאה ולכן סחב את כל התמונות המוטבעות. חל על פרסומת
+ * מאושרת בלבד, כי הנתיב מגיש מאושרות בלבד.
+ * @param {SubmittedAd} ad @returns {SubmittedAd}
+ */
+export function withAdImageUrls(ad) {
+	if (ad.status !== 'approved') return ad;
+	const products = Array.isArray(ad.landing?.products)
+		? ad.landing.products.map((/** @type {any} */ p, /** @type {number} */ i) => ({
+				...p,
+				image: p?.image ? adImageUrl(ad, `product-${i}`) : ''
+			}))
+		: [];
+	return {
+		...ad,
+		logo: adImageUrl(ad, 'logo'),
+		mainImage: adImageUrl(ad, 'main'),
+		landing: { ...ad.landing, image: adImageUrl(ad, 'landing'), products }
+	};
 }
 
 /**
