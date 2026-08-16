@@ -293,7 +293,7 @@
 								: `${t.myArea} – ${user.name}`}
 						>
 							<span
-								class="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-500 to-pink-600 text-xs"
+								class="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full login-grad text-xs"
 								aria-hidden="true">👤</span
 							>
 							<span class="hidden max-w-[120px] truncate sm:inline">{user.name || user.email}</span>
@@ -310,7 +310,7 @@
 					{:else}
 						<a
 							href="/auth/login"
-							class="flex flex-shrink-0 items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500 to-pink-600 px-2 py-1.5 text-sm font-bold text-white shadow-sm transition-all hover:from-amber-400 hover:to-pink-500 sm:px-4 sm:py-2"
+							class="flex flex-shrink-0 items-center gap-1.5 rounded-full login-grad px-2 py-1.5 text-sm font-bold text-white shadow-sm transition-all hover:brightness-110 sm:px-4 sm:py-2"
 							title={t.login}
 						>
 							<span aria-hidden="true">👤</span>

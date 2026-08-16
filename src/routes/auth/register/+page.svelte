@@ -338,7 +338,7 @@
 					type="button"
 					onclick={loginWithCommunity}
 					disabled={loading}
-					class="mt-4 flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-pink-600 px-4 py-3 text-sm font-bold text-white transition hover:from-amber-400 hover:to-pink-500 disabled:cursor-not-allowed disabled:opacity-50"
+					class="mt-4 flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl login-grad px-4 py-3 text-sm font-bold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
 				>
 					<span class="text-lg">🕊️</span>
 					<span>{t.registerWithFreedom}</span>

@@ -184,7 +184,7 @@
 				type="button"
 				onclick={loginWithCommunity}
 				disabled={loading}
-				class="flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-amber-500 to-pink-600 px-4 py-2.5 text-sm font-bold text-white transition hover:from-amber-400 hover:to-pink-500 disabled:opacity-50"
+				class="flex w-full items-center justify-center gap-2 rounded-full login-grad px-4 py-2.5 text-sm font-bold text-white transition hover:brightness-110 disabled:opacity-50"
 			>
 				<span class="text-lg">🕊️</span>
 				<span>התחבר דרך "יוצאים לחירות"</span>
