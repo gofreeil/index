@@ -21,7 +21,8 @@
 	let { categories, selected = '', onselect, title = 'סינון מהיר לפי תחום' } = $props();
 
 	const LOCK_PX = 10; // דד-זון לנעילת ציר הגרירה
-	const TAP_PX = 15; // מעל זה זו גרירה ולא הקשה
+	const TAP_PX = 8; // מעל זה זו גרירה ולא הקשה. 8 ולא 15: גרירה שמתחילה על
+	// האריח הראשון וזזה מעט נקראה כהקשה ובחרה אותו "לבד" — ספק גרירה לא בוחר
 	const GAP_PX = 12; // חייב להתאים ל-gap של .cat-rail (0.75rem)
 	const CLICK_GUARD_MS = 120;
 	const CLICK_EXPIRE_MS = 400;
@@ -240,8 +241,8 @@
 	/** @param {PointerEvent} e @param {boolean} cancelled */
 	function endPointer(e, cancelled) {
 		if (e.pointerId !== pointerId) return;
-		// dragging ולא רק maxMove: גרירת עכבר מתחילה כבר ב-LOCK_PX (10px), ובלעדיו
-		// גרירה של 10—15px הייתה מסתיימת בבחירת תחום
+		// dragging בנוסף ל-maxMove — חגורת בטיחות: גרירת עכבר נעולה (LOCK_PX)
+		// מדוכאת גם אם ספירת התזוזה החמיצה משהו
 		if (cancelled || dragging || maxMove > TAP_PX) {
 			suppressClick = true;
 			dragEndedAt = performance.now();
