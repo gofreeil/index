@@ -1,5 +1,6 @@
 import { listApprovedBusinesses } from '$lib/server/strapi.js';
 import { getCategorySettings } from '$lib/server/categoryStore.js';
+import { getRelatedMap } from '$lib/server/categoryClicks.js';
 import { toBusiness } from '$lib/businessShape.js';
 import {
 	resolveCategory,
@@ -24,9 +25,13 @@ export async function load() {
 	try {
 		// דריסות הסופר-אדמין (שם/אייקון/תמונה/סדר) חלות על התצוגה בלבד —
 		// המאגר ממשיך להחזיק את התוויות הקנוניות
-		const [rows, catSettings] = await Promise.all([
+		// היסטוריית הלחיצות לפי תחום — המנוע החכם שבתחתית תוצאות הסינון
+		// ("מי שחיפשו בתחום הזה הגיעו גם אל"). לעולם לא זורקת — בלי היסטוריה
+		// הדף פשוט מציג את כפתור "לכלל בעלי המקצוע" כרגיל.
+		const [rows, catSettings, related] = await Promise.all([
 			listApprovedBusinesses(),
-			getCategorySettings()
+			getCategorySettings(),
+			getRelatedMap()
 		]);
 		const displayName = categoryDisplayResolver(catSettings);
 		// קטגוריה שנמחקה במסך הניהול אינה קיימת יותר: היא לא צדה כרטיסיות
@@ -72,13 +77,14 @@ export async function load() {
 			lat: typeof b.lat === 'number' ? b.lat : null,
 			lng: typeof b.lng === 'number' ? b.lng : null
 		}));
-		return { businesses, catRail: categoryRailMeta(catSettings), loadError: null };
+		return { businesses, catRail: categoryRailMeta(catSettings), related, loadError: null };
 	} catch (/** @type {any} */ err) {
 		console.error('index home load error:', err);
 		// fail-soft: דף בלי רשימה עדיף על 500 — הטקסט, ה-FAQ וקישורי הרשת עדיין נסרקים
 		return {
 			businesses: [],
 			catRail: categoryRailMeta(null),
+			related: {},
 			loadError: err?.message ?? 'load failed'
 		};
 	}

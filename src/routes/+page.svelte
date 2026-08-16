@@ -6,9 +6,10 @@
 	import CategoryRail from '$lib/components/CategoryRail.svelte';
 	import JsonLd from '$lib/components/JsonLd.svelte';
 	import Seo from '$lib/components/Seo.svelte';
-	import { categoryIcon, OTHER } from '$lib/categories.js';
+	import { categoryIcon, normCategoryLabel, OTHER } from '$lib/categories.js';
 	import { suggestForQuery } from '$lib/searchSuggest.js';
 	import { trackSearch } from '$lib/searchTrack.js';
+	import { trackCategoryClick } from '$lib/recoTrack.js';
 	import { businessCities } from '$lib/cities.js';
 	import { favorites } from '$lib/favorites.js';
 	import { rememberCategory } from '$lib/lastCategory.js';
@@ -21,7 +22,7 @@
 		collectionSchema
 	} from '$lib/seo';
 
-	/** @type {{ data: { businesses: any[], catRail?: { byName: Record<string, {icon: string, image: string, imageFit?: { x: number, y: number, z: number }}>, order: string[], otherName: string }, loadError: string | null } }} */
+	/** @type {{ data: { businesses: any[], catRail?: { byName: Record<string, {icon: string, image: string, imageFit?: { x: number, y: number, z: number }}>, order: string[], otherName: string }, related?: Record<string, string[]>, loadError: string | null } }} */
 	let { data } = $props();
 
 	let currentLang = $state('he');
@@ -91,6 +92,53 @@
 					b.count - a.count ||
 					a.label.localeCompare(b.label, 'he')
 			);
+	});
+
+	/* ═══════════ פס התחומים הדביק ═══════════
+	   המסילה יושבת בראש הדף, אבל התוצאות ארוכות — ומי שגלל עמוק איבד את
+	   הדרך להחליף תחום בלי לטפס חזרה. ברגע שהמסילה נגללת אל מעל המסך נשלף
+	   פס צ'יפים קומפקטי שנצמד מתחת לכותרת: כל התחומים, באותו סדר, בלחיצה
+	   אחת. הוא חי בכל מצבי הדף (גם בלי סינון) — הקומות התחתונות ארוכות
+	   לא פחות מרשימת תוצאות. */
+	let railWrapEl = $state(/** @type {HTMLElement|null} */ (null));
+	let chipStripEl = $state(/** @type {HTMLElement|null} */ (null));
+	let headerH = $state(56); // נמדד מהכותרת הדביקה בפועל; זו רק ברירת מחדל ל-SSR
+	let railGone = $state(false);
+
+	$effect(() => {
+		const el = railWrapEl;
+		if (!el) return;
+		const header = document.querySelector('header');
+		const measure = () => {
+			headerH = header?.offsetHeight ?? 0;
+		};
+		measure();
+		window.addEventListener('resize', measure);
+		// rootMargin מקזז את הכותרת הדביקה: "המסילה נעלמה" = עברה מתחתיה,
+		// לא מתחת לקצה החלון. headerH נקרא כאן, ולכן שינוי גובה הכותרת
+		// מרכיב את הצופה מחדש עם הקיזוז הנכון.
+		const io = new IntersectionObserver(
+			([entry]) => {
+				// top < 0 מבדיל "נגללה למעלה" מ"עוד לא הגיעו אליה" (מתחת לקיפול)
+				railGone = !entry.isIntersecting && entry.boundingClientRect.top < 0;
+			},
+			{ rootMargin: `-${headerH}px 0px 0px 0px` }
+		);
+		io.observe(el);
+		return () => {
+			window.removeEventListener('resize', measure);
+			io.disconnect();
+		};
+	});
+
+	/* הצ'יפ הנבחר נמשך אל מרכז הפס כשהוא נשלף וכשהבחירה מתחלפת — בפס ארוך
+	   הוא עלול לשבת הרחק מחוץ למסך. רץ רק כשהפס גלוי: scrollIntoView על
+	   אלמנט שקוף היה גורר את החלון אליו. */
+	$effect(() => {
+		void selectedCategory;
+		if (!railGone || !chipStripEl) return;
+		const chip = chipStripEl.querySelector('[aria-pressed="true"]');
+		chip?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
 	});
 
 	/* ═══════════ גלילה איטית אל התוצאות ═══════════
@@ -274,7 +322,7 @@
 		Boolean(searchTerm) || selectedCategory !== 'all' || selectedLocation !== 'all'
 	);
 
-	/* קיצור הדרך "יש לכם עסק בתחום הזה?" — מופיע בתוך התחום שנבחר, ולכן הוא
+	/* קיצור הדרך "הוסף עסק בתחום ה..." — מופיע בתוך התחום שנבחר, ולכן הוא
 	   נושא אותו איתו: טופס ההגשה מקבל את התחום בשאילתה ומסמן אותו כברירת מחדל,
 	   כדי שמי שהגיע מהתחום לא יחפש אותו שוב ברשימה. */
 	const submitHref = $derived(
@@ -282,6 +330,39 @@
 			? '/submit-business'
 			: `/submit-business?category=${encodeURIComponent(selectedCategory)}`
 	);
+
+	/* ═══════════ המנוע החכם — "מי שחיפשו בתחום הזה הגיעו גם אל" ═══════════
+	   בתחתית תוצאות הסינון, במקום כפתור "לכלל בעלי המקצוע": הכרטיסים שנפתחו
+	   הכי הרבה על ידי מי שחיפשו את התחום הזה, לפי היסטוריית הלחיצות שהאתר
+	   צובר (ראו $lib/server/categoryClicks.js — התחום בלבד, בלי מזהה גולש).
+	   ההיסטוריה מגיעה מהשרת כמפה תחום-מנורמל → מזהי כרטיסיות, מהנלחץ ומטה.
+	   מי שכבר מוצג ברשימה שמעל לא מוצע שוב — ההמלצה מוסיפה, לא משכפלת.
+	   כשאין עדיין היסטוריה לתחום — הכפתור הישן נשאר במקומו. */
+	const smartPicks = $derived.by(() => {
+		if (selectedCategory === 'all') return [];
+		const ids = data.related?.[normCategoryLabel(selectedCategory)] ?? [];
+		if (ids.length === 0) return [];
+		const byId = new Map(businesses.map((b) => [b.id, b]));
+		const shown = new Set(displayedBusinesses.map((b) => b.id));
+		return ids
+			.map((id) => byId.get(id))
+			.filter((b) => b && !shown.has(b.id))
+			.slice(0, 6);
+	});
+
+	/** ההזנה של המנוע: לחיצה על כרטיסייה בזמן שתחום מסונן נרשמת כצמד
+	 *  (תחום, עסק). האזנה על רשת הכרטיסים (delegation) ולא בתוך BusinessCard —
+	 *  הכרטיס משמש גם בקומות שאין להן תחום. גם הפעלה במקלדת עוברת כאן:
+	 *  Enter על קישור יורה click שמבעבע אל הרשת.
+	 *  @param {MouseEvent} e */
+	function onCardsClick(e) {
+		if (selectedCategory === 'all') return;
+		const target = e.target instanceof Element ? e.target : null;
+		const link = target?.closest('a[href^="/business/"]');
+		if (!link) return;
+		const id = (link.getAttribute('href') ?? '').split('/').pop() ?? '';
+		if (id) trackCategoryClick(selectedCategory, id);
+	}
 
 	// המדורגים ביותר — רק אם קיימים דירוגים אמיתיים (אחרת אין "מדורגים", זה חירטוט)
 	const ratedBusinesses = $derived(
@@ -500,11 +581,58 @@
 		<!-- מסילת התחומים — המסנן הראשי לפי תחום, במקום תפריט נפתח שהסתיר
 		     את התחומים עד שנוגעים בו. כל אריח נושא את מספר העסקים שבו. -->
 		{#if railCategories.length > 1}
-			<CategoryRail
-				categories={railCategories}
-				selected={selectedCategory === 'all' ? '' : selectedCategory}
-				onselect={pickCategory}
-			/>
+			<div bind:this={railWrapEl}>
+				<CategoryRail
+					categories={railCategories}
+					selected={selectedCategory === 'all' ? '' : selectedCategory}
+					onselect={pickCategory}
+				/>
+			</div>
+
+			<!-- פס התחומים הדביק — נשלף מתחת לכותרת כשהמסילה נגללת אל מעל המסך,
+			     כדי שהתחומים יישארו זמינים לבחירה גם עמוק בתוך הדף.
+			     fixed ולא sticky: אלמנט דביק תופס שורה בזרימת הדף גם כשהוא שקוף,
+			     והיה פוער חור בין המסילה לתוצאות. inert כשהוא נסתר — פס שקוף
+			     לא אמור לתפוס Tab ולא לקבל לחיצות. -->
+			<div
+				class="fixed inset-x-0 z-40 transition-[opacity,transform] duration-200 {railGone
+					? 'translate-y-0 opacity-100'
+					: 'pointer-events-none -translate-y-2 opacity-0'}"
+				style="top: {headerH}px"
+				inert={!railGone}
+			>
+				<nav
+					aria-label="החלפת תחום מהירה"
+					class="border-b border-gray-800 bg-gray-950/90 shadow-lg backdrop-blur-md"
+				>
+					<div
+						bind:this={chipStripEl}
+						class="chip-strip mx-auto flex max-w-7xl gap-1.5 overflow-x-auto px-3 py-2 sm:px-6 lg:px-8"
+					>
+						{#each railCategories as cat (cat.key)}
+							<button
+								type="button"
+								onclick={() => pickCategory(selectedCategory === cat.key ? '' : cat.key)}
+								aria-pressed={selectedCategory === cat.key}
+								title={selectedCategory === cat.key ? 'ביטול הסינון' : undefined}
+								class="flex flex-none items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-bold whitespace-nowrap transition active:scale-95 {selectedCategory ===
+								cat.key
+									? 'border-blue-400 bg-blue-900/60 text-blue-100'
+									: 'border-gray-700 bg-gray-900/80 text-gray-300 hover:border-blue-500 hover:text-blue-200'}"
+							>
+								<span aria-hidden="true">{cat.icon}</span>
+								<span>{cat.label}</span>
+								{#if cat.count > 0}
+									<span
+										class="text-[10px] font-black text-blue-300/70 tabular-nums"
+										aria-hidden="true">{cat.count}</span
+									>
+								{/if}
+							</button>
+						{/each}
+					</div>
+				</nav>
+			</div>
 		{/if}
 
 		<!-- גוף רשימת התוצאות — מוגדר פעם אחת ומרונדר במקום אחד בכל רגע:
@@ -514,7 +642,10 @@
 		     היא הטבלה שמתחתיה — ולכן "טען עוד" מופיע רק במצב סינון, שם רשימה
 		     קטועה בלי המשך היא תוצאה חסרה. -->
 		{#snippet resultsBody(/** @type {any[]} */ list, withLoadMore = false)}
-			<div class="cards-grid">
+			<!-- ה-onclick הוא מדידה בלבד (המנוע החכם) — הקישורים שבכרטיסים הם
+			     האינטראקציה עצמה, וגם הפעלת מקלדת עליהם מבעבעת לכאן -->
+			<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+			<div class="cards-grid" onclick={onCardsClick}>
 				{#each list as business (business.id)}
 					<BusinessCard {business} />
 				{/each}
@@ -525,7 +656,7 @@
 				     חיפשו כלום, פשוט אין עדיין עסקים בתחום -->
 				{#if selectedCategory !== 'all' && !searchTerm && selectedLocation === 'all'}
 					<p class="mt-8 text-center text-gray-400">
-						עדיין אין עסקים בתחום הזה. יש לכם עסק מתאים?
+						עדיין אין עסקים בתחום ה{selectedCategory}. יש לכם עסק מתאים?
 						<a href={submitHref} class="font-semibold text-blue-400 hover:text-blue-300"
 							>הוסיפו אותו לאינדקס</a
 						>
@@ -540,7 +671,8 @@
 						<p class="mt-1 text-center text-sm text-gray-400">
 							אלה העסקים הקרובים ביותר לתחום שחיפשתם:
 						</p>
-						<div class="cards-grid mt-6">
+						<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+						<div class="cards-grid mt-6" onclick={onCardsClick}>
 							{#each suggestedBusinesses as business (business.id)}
 								<BusinessCard {business} />
 							{/each}
@@ -590,13 +722,13 @@
 					</div>
 					{#if selectedCategory !== 'all'}
 						<div class="mt-3 flex justify-center md:mt-0 md:justify-end">
+							<!-- הצעה ולא שאלה, ועם שם התחום עצמו: "הוסף עסק בתחום ההובלות" -->
 							<a
 								href={submitHref}
-								aria-label="הוספת עסק לאינדקס בתחום {selectedCategory}"
 								class="inline-flex items-center gap-1.5 rounded-full border border-blue-500/40 bg-blue-600/10 px-4 py-2 text-xs font-bold text-blue-300 transition hover:border-blue-400/70 hover:bg-blue-600/20 hover:text-blue-200 active:scale-95 md:text-sm"
 							>
 								<span aria-hidden="true">＋</span>
-								<span>יש לכם עסק בתחום הזה?</span>
+								<span>הוסף עסק בתחום ה{selectedCategory}</span>
 							</a>
 						</div>
 					{/if}
@@ -604,14 +736,39 @@
 
 				{@render resultsBody(displayedBusinesses, true)}
 
-				<div class="mt-6 flex justify-center md:mt-10">
-					<button
-						onclick={goToAllBusinesses}
-						class="rounded-full border border-gray-700 px-6 py-2.5 text-sm font-semibold text-blue-400 transition hover:border-blue-500 hover:text-blue-300"
-					>
-						{t.allProfessionals}
-					</button>
-				</div>
+				{#if smartPicks.length > 0}
+					<!-- המנוע החכם — במקום כפתור "לכלל בעלי המקצוע": הכרטיסים שנפתחו
+					     הכי הרבה על ידי מי שחיפשו את התחום הזה (בלי מי שכבר מוצג
+					     ברשימה שמעל). ראו smartPicks בסקריפט. -->
+					<div class="mt-8 md:mt-12">
+						<div class="mb-4 text-center md:mb-6">
+							<h3
+								class="bg-gradient-to-r from-amber-300 via-orange-400 to-rose-400 bg-clip-text text-lg font-extrabold text-transparent sm:text-2xl"
+							>
+								🔥 מי שחיפשו בתחום ה{selectedCategory} הגיעו גם אל
+							</h3>
+							<p class="mt-1 text-sm text-gray-400">
+								לפי היסטוריית הגלישה באתר — הכרטיסים שנפתחו הכי הרבה מתוך התחום הזה
+							</p>
+						</div>
+						<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+						<div class="cards-grid" onclick={onCardsClick}>
+							{#each smartPicks as business (business.id)}
+								<BusinessCard {business} />
+							{/each}
+						</div>
+					</div>
+				{:else}
+					<!-- עוד אין היסטוריה לתחום הזה — הדלת הישנה לכלל הרשימה נשארת -->
+					<div class="mt-6 flex justify-center md:mt-10">
+						<button
+							onclick={goToAllBusinesses}
+							class="rounded-full border border-gray-700 px-6 py-2.5 text-sm font-semibold text-blue-400 transition hover:border-blue-500 hover:text-blue-300"
+						>
+							{t.allProfessionals}
+						</button>
+					</div>
+				{/if}
 			</div>
 		{:else}
 			<!-- קומה 1: המדורגים ביותר (רק כשיש דירוגים אמיתיים) -->
@@ -818,5 +975,14 @@
 		.cards-grid > :global(:last-child:nth-child(odd)) {
 			grid-column: auto;
 		}
+	}
+
+	/* פס התחומים הדביק — גלילה רוחבית בלי פס גלילה נראה (מגע/גלגלת עובדים) */
+	.chip-strip {
+		scrollbar-width: none;
+		-ms-overflow-style: none;
+	}
+	.chip-strip::-webkit-scrollbar {
+		display: none;
 	}
 </style>
