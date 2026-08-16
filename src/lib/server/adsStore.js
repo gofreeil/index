@@ -18,6 +18,7 @@ import { env } from '$env/dynamic/private';
 import { parseAdImageFit } from '$lib/adImageFit';
 import { parseAdStyle } from '$lib/adStyle';
 import { AD_SLOT_COUNT } from '$lib/adSlots.js';
+import { imageStamp, decodeDataImage } from './inlineImage.js';
 
 const STRAPI_URL = (env.STRAPI_URL || 'https://api.gofreeil.com').replace(/\/$/, '');
 const TOKEN = env.STRAPI_TOKEN || '';
@@ -63,6 +64,8 @@ const TTL_ADS = 120_000;
  * @property {string} gradient
  * @property {string} logo
  * @property {string} mainImage
+ * @property {string} imgVersion חותם התוכן של שתי התמונות — משמש כ-?v= בכתובת שמגישה
+ *   אותן, כדי שקאש "לנצח" בדפדפן ובקצה יתחלף ברגע שהתמונה מוחלפת. ראו imageStamp.
  * @property {{x:number,y:number,z:number}} mainImageFit מיקום+זום התמונה הראשית במשבצת (מהבילדר)
  * @property {import('$lib/adStyle').AdStyle|null} adStyle העיצוב שנקבע בבילדר (לוגו, רצועה, כותרת); null = מודעה ותיקה
  * @property {any} landing
@@ -111,6 +114,8 @@ function emptyLanding() {
 
 /** @param {any} s רשומת submitted-ad מ-Strapi (מבנה שטוח של Strapi 5) @returns {SubmittedAd} */
 function fromStrapi(s) {
+	const logo = s.logo ?? '';
+	const mainImage = s.main_image ?? '';
 	return {
 		id: s.documentId,
 		status: s.ad_status,
@@ -135,8 +140,9 @@ function fromStrapi(s) {
 		hoverText: s.hover_text ?? '',
 		cta: s.cta ?? '',
 		gradient: s.gradient ?? '',
-		logo: s.logo ?? '',
-		mainImage: s.main_image ?? '',
+		logo,
+		mainImage,
+		imgVersion: imageStamp(logo, mainImage),
 		landing: s.landing ?? emptyLanding(),
 		// ערכי ההגשה הארוזים ב-landing (ראו כותרת הקובץ)
 		mainImageFit: parseAdImageFit(s.landing?._mainImageFit),
@@ -404,6 +410,58 @@ function isLiveNow(ad, now) {
 export async function listApprovedLive() {
 	const now = Date.now();
 	return (await listApproved()).filter((a) => isLiveNow(a, now));
+}
+
+// ============================================================
+// הגשת תמונות הפרסומת ככתובת, לא כ-base64 בתוך הדף
+// ------------------------------------------------------------
+// התמונות שמורות ב-Strapi כ-data:image/...;base64 בתוך הרשומה. כש-+layout
+// החזיר אותן כמות שהן, כל טעינת דף *באתר כולו* סחבה אותן שוב: דף שקל
+// 3,574KB, מתוכם 3,074KB תמונות (86%), וכל תמונה נשלחה פעמיים — פעם
+// ב-HTML ופעם בנתוני ההידרציה. זה מה ששורף את מכסת ה-Fast Origin Transfer
+// של Vercel, ומשם מתחילים throttling ו-503 אקראיים.
+//
+// במקום זה ה-layout מחזיר כתובת ל-/api/ad-image/<id>/<kind>, והתמונה
+// נשלפת פעם אחת ונשמרת בקאש של הדפדפן ושל הקצה — כך היא לא נספרת שוב
+// בכל צפייה.
+// ============================================================
+
+/** @typedef {'logo'|'main'} AdImageKind */
+
+/** @param {string|undefined} v @returns {v is AdImageKind} */
+export function isAdImageKind(v) {
+	return v === 'logo' || v === 'main';
+}
+
+/** @param {SubmittedAd} ad @param {AdImageKind} kind @returns {string} */
+function pickImage(ad, kind) {
+	return kind === 'logo' ? ad.logo : ad.mainImage;
+}
+
+/**
+ * הכתובת שבה הצרכן (RightAdBanner) ימשוך את התמונה. ריק נשאר ריק (הצרכן
+ * בודק אמת/שקר לפני שהוא מצייר), וערך שאינו data: — למשל כתובת חיצונית
+ * במודעה ותיקה — עובר כמות שהוא.
+ * @param {SubmittedAd} ad @param {AdImageKind} kind @returns {string}
+ */
+export function adImageUrl(ad, kind) {
+	const raw = pickImage(ad, kind);
+	if (!raw) return '';
+	if (!raw.startsWith('data:')) return raw;
+	return `/api/ad-image/${ad.id}/${kind}?v=${ad.imgVersion}`;
+}
+
+/**
+ * הבייטים עצמם, לנתיב שמגיש אותם. נשלף מרשימת המאושרות שב-cache: בלי
+ * round-trip ל-Strapi, וגם כשומר סף — תמונות של פרסומת ממתינה/נדחית לא
+ * נחשפות דרך ניחוש מזהה.
+ * @param {string} id @param {AdImageKind} kind
+ * @returns {Promise<{mime:string,bytes:ArrayBuffer}|null>}
+ */
+export async function getApprovedAdImage(id, kind) {
+	const ad = (await listByStatus('approved')).find((a) => a.id === id);
+	if (!ad) return null;
+	return decodeDataImage(pickImage(ad, kind));
 }
 
 /**

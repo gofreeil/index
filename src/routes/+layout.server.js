@@ -1,5 +1,5 @@
 import { env } from '$env/dynamic/private';
-import { listApprovedLive, computeAdSlots } from '$lib/server/adsStore.js';
+import { listApprovedLive, computeAdSlots, adImageUrl } from '$lib/server/adsStore.js';
 import { isPrivileged, isSuperAdmin } from '$lib/server/strapi.js';
 import { getPendingCounts, noPendingCounts } from '$lib/server/pendingCounts.js';
 import { countMatchesForUser } from '$lib/server/ownerMatch.js';
@@ -29,6 +29,10 @@ export async function load({ locals }) {
 
 	// מספר המקום (1..12) קובע גם את סדר הפרסומות וגם אילו משבצות פנויות
 	// מוצגות סביבן — נקבע במסך הניהול ומחושב כאן פעם אחת לכל הרשימה.
+	//
+	// התמונות עוברות ככתובת ולא כ-base64: ה-load הזה רץ בכל ניווט בכל עמוד,
+	// ולכן הטבעת התמונות כאן שלחה אותן מחדש בכל צפייה (3,074KB מתוך 3,574KB
+	// של הדף, כל אחת פעמיים — ב-HTML ובנתוני ההידרציה). ראו adImageUrl.
 	const liveSlots = computeAdSlots(ads);
 	const approvedAds = ads.map((a) => ({
 		id: a.id,
@@ -39,8 +43,8 @@ export async function load({ locals }) {
 		gradient: a.gradient,
 		// הלוגו והעיצוב שהמפרסם קבע — בלעדיהם הכרטיס נבנה מברירות המחדל
 		// של האתר והמודעה מתפרסמת בלי הלוגו שהועלה
-		logo: a.logo,
-		mainImage: a.mainImage,
+		logo: adImageUrl(a, 'logo'),
+		mainImage: adImageUrl(a, 'main'),
 		// מיקום+זום שנבחרו בבילדר — מוחלים בתצוגת הסרגל (adImgFit)
 		mainImageFit: a.mainImageFit,
 		adStyle: a.adStyle,
