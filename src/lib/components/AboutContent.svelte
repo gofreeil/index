@@ -74,7 +74,18 @@
 			{#each FAQS as f (f.q)}
 				<details class="rounded-xl border border-white/10 bg-white/5 px-4">
 					<summary class="cursor-pointer py-3 font-bold text-gray-100">{f.q}</summary>
-					<p class="pb-3 leading-relaxed text-gray-400">{f.a}</p>
+					<p class="pb-3 leading-relaxed text-gray-400">
+						{f.a}
+						{#if f.link}
+							<a
+								href={f.link.href}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="text-blue-400 underline decoration-blue-500/60 underline-offset-4 transition-colors hover:text-blue-300 hover:decoration-blue-400"
+								>{f.link.label}</a
+							>
+						{/if}
+					</p>
 				</details>
 			{/each}
 		</div>

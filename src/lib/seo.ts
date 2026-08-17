@@ -196,14 +196,16 @@ export function collectionSchema(opts: {
 }
 
 /** FAQPage — שאלות ותשובות שגוגל ו-AI אוהבים לצטט */
-export function faqSchema(qa: Array<{ q: string; a: string }>) {
+export function faqSchema(qa: Array<{ q: string; a: string; link?: { href: string; label: string } }>) {
 	return {
 		'@context': 'https://schema.org',
 		'@type': 'FAQPage',
-		mainEntity: qa.map(({ q, a }) => ({
+		// קישור שמוצג בסוף התשובה בעמוד נכלל גם בטקסט הסכימה, כדי שהסכימה
+		// תשקף את התוכן הגלוי במלואו.
+		mainEntity: qa.map(({ q, a, link }) => ({
 			'@type': 'Question',
 			name: q,
-			acceptedAnswer: { '@type': 'Answer', text: a }
+			acceptedAnswer: { '@type': 'Answer', text: link ? `${a} ${link.label}: ${link.href}` : a }
 		}))
 	};
 }
