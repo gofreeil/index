@@ -21,19 +21,21 @@
 			>יוצאים לחירות</a
 		>. כל בעל מקצוע שמופיע כאן חתם על <strong>אמנת הקהילה</strong>:
 	</p>
-	<ul class="space-y-2 text-lg">
-		<li class="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+<!-- רשימה נקייה בלי מסגרת ורקע: התבנית הכרטיסית גרמה לפריטים להיראות
+	     לחיצים כמו כפתורים, למרות שהם טקסט בלבד. -->
+	<ul class="list-disc space-y-3 pr-6 text-lg marker:text-blue-400">
+		<li>
 			<strong>שירות</strong> — התחייבות לשירות אמין, עם אחריות על העבודה. לצורך זה בעלי המקצוע
 			מדורגים על ידי חברינו ומקבלים חוות דעת פומביות, כך שהבחירה נעשית לפי ניסיון אמיתי של
 			משתמשים — ולא לפי מי שקנה את המקום הראשון בפרסום.
 		</li>
-		<li class="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+		<li>
 			<strong>מחיר</strong> — התחייבות להנחה או הטבה ייחודית, רק לנו.
 		</li>
-		<li class="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+		<li>
 			<strong>שמירה על זכות המזומן</strong> — התחייבות לקבל תשלום במזומן, ולתמיד.
 		</li>
-		<li class="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+		<li>
 			<strong>קובלנה</strong> — התחייבות להישפט ב<a
 				href="https://chachmim.gofreeil.com/"
 				target="_blank"
@@ -42,7 +44,7 @@
 				>בתי הפיוס</a
 			> שלנו במקרה שיש ללקוח תלונה או סכסוך כלפי השירות.
 		</li>
-		<li class="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+		<li>
 			<strong>אמנת המוסר העולמית</strong> — כל מי שמופיע כאן חתום על
 			<a
 				href="https://www.melecshop.com/page/uecc"
