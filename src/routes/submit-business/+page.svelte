@@ -237,9 +237,36 @@
 				הוספת עסק למדריך
 			</h1>
 			<p class="mt-3 text-sm leading-relaxed text-gray-400">
-				המדריך פתוח לבעלי מקצוע שמתחייבים להטבה בלעדית לחברי הקהילה ולתנאי הקהילה. מלאו את הפרטים —
-				העסק יעבור בדיקה ויתפרסם לאחר אישור.
+				המדריך פתוח לבעלי מקצוע שמתחייבים להטבה בלעדית לחברי הקהילה ולתנאי הקהילה. הוספת עסק נעשית
+				בשלושה שלבים פשוטים — העסק יעבור בדיקה ויתפרסם לאחר אישור.
 			</p>
+			<div
+				class="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-sm font-medium text-gray-300"
+			>
+				<span class="flex items-center gap-2">
+					<span
+						class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-xs font-bold text-white"
+						>1</span
+					>
+					הרשמה לאתר
+				</span>
+				<span class="text-gray-600" aria-hidden="true">←</span>
+				<span class="flex items-center gap-2">
+					<span
+						class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-xs font-bold text-white"
+						>2</span
+					>
+					הוספת העסק
+				</span>
+				<span class="text-gray-600" aria-hidden="true">←</span>
+				<span class="flex items-center gap-2">
+					<span
+						class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-xs font-bold text-white"
+						>3</span
+					>
+					חתימה על תנאי הקהילה
+				</span>
+			</div>
 		</div>
 
 		{#if form?.error}
