@@ -217,14 +217,6 @@
 		if (el) slowScrollTo(el);
 	}
 
-	/** מעבר אל כלל בעלי המקצוע — מנקה סינון פעיל כדי שהרשימה תהיה באמת "הכל" */
-	async function goToAllBusinesses() {
-		clearFilters();
-		visibleCount = 9;
-		await tick();
-		scrollToResults();
-	}
-
 	/** בחירת תחום מהמסילה — מסננת, והתוצאות נפתחות מיד מתחת למסילה
 	 *  @param {string} key */
 	async function pickCategory(key) {
@@ -337,7 +329,7 @@
 	   צובר (ראו $lib/server/categoryClicks.js — התחום בלבד, בלי מזהה גולש).
 	   ההיסטוריה מגיעה מהשרת כמפה תחום-מנורמל → מזהי כרטיסיות, מהנלחץ ומטה.
 	   מי שכבר מוצג ברשימה שמעל לא מוצע שוב — ההמלצה מוסיפה, לא משכפלת.
-	   כשאין עדיין היסטוריה לתחום — הכפתור הישן נשאר במקומו. */
+	   כשאין עדיין היסטוריה לתחום — מוצגות תוצאות דומות (similarPicks). */
 	const smartPicks = $derived.by(() => {
 		if (selectedCategory === 'all') return [];
 		const ids = data.related?.[normCategoryLabel(selectedCategory)] ?? [];
@@ -348,6 +340,20 @@
 			.map((id) => byId.get(id))
 			.filter((b) => b && !shown.has(b.id))
 			.slice(0, 6);
+	});
+
+	/* ═══════════ תוצאות דומות — הנפילה כשאין עדיין היסטוריה ═══════════
+	   כפתור "לכלל בעלי המקצוע" שישב כאן היה שכפול של הקומה "לכלל בעלי
+	   המקצוע באתר" שמיד מתחתיו, ולכן הוסר. במקומו: העסקים הקרובים ביותר
+	   לתחום מתוך שאר התחומים, לפי מנוע הקרבה של החיפוש ($lib/searchSuggest)
+	   כששם התחום הוא ביטוי החיפוש. עסקי התחום עצמו אינם מוצעים — כולם כבר
+	   ברשימה שמעל (או מאחורי "טען עוד"). לחיצה על כרטיס כאן נרשמת דרך
+	   onCardsClick כמו למעלה, וכך התוצאות הדומות מזינות את היסטוריית
+	   הלחיצות שתחליף אותן. */
+	const similarPicks = $derived.by(() => {
+		if (selectedCategory === 'all' || smartPicks.length > 0) return [];
+		const pool = businesses.filter((b) => b.category !== selectedCategory);
+		return suggestForQuery(selectedCategory, pool, 3);
 	});
 
 	/** ההזנה של המנוע: לחיצה על כרטיסייה בזמן שתחום מסונן נרשמת כצמד
@@ -758,15 +764,26 @@
 							{/each}
 						</div>
 					</div>
-				{:else}
-					<!-- עוד אין היסטוריה לתחום הזה — הדלת הישנה לכלל הרשימה נשארת -->
-					<div class="mt-6 flex justify-center md:mt-10">
-						<button
-							onclick={goToAllBusinesses}
-							class="rounded-full border border-gray-700 px-6 py-2.5 text-sm font-semibold text-blue-400 transition hover:border-blue-500 hover:text-blue-300"
-						>
-							{t.allProfessionals}
-						</button>
+				{:else if similarPicks.length > 0}
+					<!-- עוד אין היסטוריה לתחום — תוצאות דומות מתחומים קרובים
+					     (ראו similarPicks בסקריפט). -->
+					<div class="mt-8 md:mt-12">
+						<div class="mb-4 text-center md:mb-6">
+							<h3
+								class="bg-gradient-to-r from-emerald-300 via-teal-400 to-cyan-400 bg-clip-text text-lg font-extrabold text-transparent sm:text-2xl"
+							>
+								✨ תוצאות דומות לתחום ה{selectedCategory}
+							</h3>
+							<p class="mt-1 text-sm text-gray-400">
+								העסקים הקרובים ביותר לתחום ה{selectedCategory} משאר תחומי האינדקס
+							</p>
+						</div>
+						<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+						<div class="cards-grid" onclick={onCardsClick}>
+							{#each similarPicks as business (business.id)}
+								<BusinessCard {business} />
+							{/each}
+						</div>
 					</div>
 				{/if}
 			</div>

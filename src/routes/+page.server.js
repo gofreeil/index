@@ -27,7 +27,7 @@ export async function load() {
 		// המאגר ממשיך להחזיק את התוויות הקנוניות
 		// היסטוריית הלחיצות לפי תחום — המנוע החכם שבתחתית תוצאות הסינון
 		// ("מי שחיפשו בתחום הזה הגיעו גם אל"). לעולם לא זורקת — בלי היסטוריה
-		// הדף פשוט מציג את כפתור "לכלל בעלי המקצוע" כרגיל.
+		// הדף פשוט מציג תוצאות דומות לתחום (similarPicks בדף הבית).
 		const [rows, catSettings, related] = await Promise.all([
 			listApprovedBusinesses(),
 			getCategorySettings(),
