@@ -26,12 +26,10 @@
 <!-- כרטיס כהה על רקע האתר, כמו דף המסמכים המשפטיים (/about/legal): הכרטיס
      הלבן שישב כאן היה שריד מהחלון הצף, וזרח כמלבן לבן בתוך אתר כהה. -->
 <div class="px-4 py-8 sm:px-6 sm:py-12 lg:px-8" dir={t.dir}>
-	<div
-		class="mx-auto max-w-4xl rounded-3xl border border-purple-500/25 bg-gray-900/70 p-6 shadow-2xl backdrop-blur-sm sm:p-12"
-	>
+	<div class="mx-auto max-w-4xl">
 		<a
 			href="/"
-			class="group mb-10 inline-flex items-center gap-2 font-bold text-blue-400 transition-colors hover:text-blue-300"
+			class="group mb-4 inline-flex items-center gap-2 font-bold text-blue-400 transition-colors hover:text-blue-300"
 		>
 			<svg
 				class="h-5 w-5 {t.dir === 'rtl'
@@ -52,6 +50,10 @@
 			{t.policyBack}
 		</a>
 
-		<InfoTabs />
+		<div
+			class="rounded-3xl border border-purple-500/25 bg-gray-900/70 p-6 shadow-2xl backdrop-blur-sm sm:p-12"
+		>
+			<InfoTabs />
+		</div>
 	</div>
 </div>
