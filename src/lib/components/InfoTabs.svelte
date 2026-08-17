@@ -45,8 +45,10 @@
 </script>
 
 <div dir={t.dir}>
+	<!-- המידות הקומפקטיות בנייד נחוצות כדי ששלוש הלשוניות ייכנסו בשורה אחת
+	     גם במסך צר (כ-280px פנוי בתוך הכרטיס). -->
 	<div
-		class="mb-8 flex flex-wrap gap-2 border-b border-white/10 pb-4"
+		class="mb-8 flex flex-wrap gap-1.5 border-b border-white/10 pb-4 sm:gap-2"
 		role="tablist"
 		aria-label={t.info}
 	>
@@ -58,7 +60,7 @@
 				aria-selected={active === tab.id}
 				aria-controls="info-panel-{tab.id}"
 				onclick={() => setTab(tab.id)}
-				class="flex items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-bold transition-all sm:text-base {active ===
+				class="flex items-center gap-1 rounded-full border px-2.5 py-2 text-xs font-bold whitespace-nowrap transition-all sm:gap-2 sm:px-5 sm:py-2.5 sm:text-base {active ===
 				tab.id
 					? 'border-purple-400/60 bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
 					: 'border-white/10 bg-white/5 text-gray-300 hover:border-blue-500/40 hover:bg-white/10 hover:text-white'}"
