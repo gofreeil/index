@@ -3,9 +3,10 @@
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
-	import { CATEGORIES } from '$lib/categories.js';
+	import { CATEGORIES, parseExtraCategories } from '$lib/categories.js';
 	import { MAX_BRANCHES, parseBranches } from '$lib/branches.js';
 	import { LINK_FIELDS } from '$lib/socialLinks.js';
+	import ExtraCategoriesField from '$lib/components/ExtraCategoriesField.svelte';
 	import ImageDropField from '$lib/components/ImageDropField.svelte';
 	import ImageFitEditor from '$lib/components/ImageFitEditor.svelte';
 	import TagsField from '$lib/components/TagsField.svelte';
@@ -134,6 +135,11 @@
 		branches = parseBranches(e.currentTarget.value);
 	}
 
+	// ── קטגוריות נוספות ──
+	// עסק שיושב ביותר מתחום אחד. נשמרות כמו הסניפים — JSON בשדה מוסתר אחד,
+	// ומשם ל-extra_fields.categories (ראו ExtraCategoriesField.svelte).
+	let extraCats = $state(parseExtraCategories(form?.values?.extra_categories));
+
 	// ── תגיות ──
 	// המילים שבהן יחפשו את העסק. נשמרות כמו הסניפים — JSON בשדה מוסתר אחד,
 	// ומשם ל-extra_fields (ראו tags.js).
@@ -236,12 +242,12 @@
 			>
 				הוספת עסק למדריך
 			</h1>
-			<p class="mt-3 text-sm leading-relaxed text-gray-400">
+			<p class="mt-3 text-base leading-relaxed text-gray-400">
 				המדריך פתוח לבעלי מקצוע שמתחייבים להטבה בלעדית לחברי הקהילה ולתנאי הקהילה. הוספת עסק נעשית
 				בשלושה שלבים פשוטים — העסק יעבור בדיקה ויתפרסם לאחר אישור.
 			</p>
 			<div
-				class="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-sm font-medium text-gray-300"
+				class="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-base font-medium text-gray-300"
 			>
 				<span class="flex items-center gap-2">
 					<span
@@ -279,13 +285,13 @@
 
 		{#if draftRestored}
 			<div
-				class="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-green-500/30 bg-green-900/20 px-4 py-3 text-sm text-green-200"
+				class="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-green-500/30 bg-green-900/20 px-4 py-3 text-base text-green-200"
 			>
 				<span class="font-bold">💾 שחזרנו את מה שמילאת קודם — הטופס ממשיך מהמקום שעצרת.</span>
 				<button
 					type="button"
 					onclick={discardDraft}
-					class="rounded-full border border-green-500/40 bg-green-900/40 px-3 py-1 text-xs font-bold text-green-100 transition hover:bg-green-800/50"
+					class="rounded-full border border-green-500/40 bg-green-900/40 px-3 py-1 text-sm font-bold text-green-100 transition hover:bg-green-800/50"
 				>
 					התחל מטופס ריק
 				</button>
@@ -330,10 +336,10 @@
 
 			<!-- פרטי העסק -->
 			<fieldset class="space-y-4 rounded-2xl border border-gray-800 bg-gray-900/40 p-5">
-				<legend class="px-2 text-sm font-bold text-blue-400">פרטי העסק</legend>
+				<legend class="px-2 text-base font-bold text-blue-400">פרטי העסק</legend>
 
 				<div>
-					<label for="name" class="mb-1 block text-sm font-medium text-gray-300"
+					<label for="name" class="mb-1 block text-base font-medium text-gray-300"
 						>שם העסק / השירות *</label
 					>
 					<input id="name" name="name" required defaultValue={v.name ?? ''} class="field" />
@@ -342,7 +348,7 @@
 
 				<div class="grid gap-4 sm:grid-cols-2">
 					<div>
-						<label for="category" class="mb-1 block text-sm font-medium text-gray-300"
+						<label for="category" class="mb-1 block text-base font-medium text-gray-300"
 							>קטגוריה *</label
 						>
 						<select id="category" name="category" required class="field">
@@ -354,14 +360,14 @@
 							{/each}
 						</select>
 						{#if presetCategory && !v.category}
-							<p class="mt-1 text-xs text-blue-300/80">
+							<p class="mt-1 text-sm text-blue-300/80">
 								התחום נבחר לפי המקום שממנו הגעתם — אפשר לשנות.
 							</p>
 						{/if}
 						{#if errors.category}<p class="err">{errors.category}</p>{/if}
 					</div>
 					<div>
-						<label for="subcategory" class="mb-1 block text-sm font-medium text-gray-300"
+						<label for="subcategory" class="mb-1 block text-base font-medium text-gray-300"
 							>תת-תחום (חופשי)</label
 						>
 						<input
@@ -373,10 +379,20 @@
 					</div>
 				</div>
 
+				<!-- קטגוריות נוספות — עסק שיושב ביותר מתחום אחד מופיע בסינון
+				     של כל אחד מהם (נשמרות ב-extra_fields.categories). -->
+				<ExtraCategoriesField
+					bind:selected={extraCats}
+					options={categoryOptions}
+					exclude={live.category || initialCategory}
+					labelClass="mb-1 block text-base font-medium text-gray-300"
+					selectClass="w-full rounded-[0.6rem] border border-gray-700 bg-gray-800 px-3 py-2 text-gray-100 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-900/30"
+				/>
+
 				<!-- תיבת טקסט אחת ולא שתיים ("תיאור קצר" + "מה מייחד אתכם?"): שתיהן
 				     נכתבו לאותו מקום בכרטיסייה, וההפרדה רק פיצלה את מה שנכתב. -->
 				<div>
-					<label for="unique_content" class="mb-1 block text-sm font-medium text-gray-300"
+					<label for="unique_content" class="mb-1 block text-base font-medium text-gray-300"
 						>תיאור מורחב *</label
 					>
 					<textarea
@@ -396,15 +412,15 @@
 					bind:tags
 					suggestions={tagSuggestions}
 					inputClass="w-full rounded-[0.6rem] border border-gray-700 bg-gray-800 px-3 py-2 text-gray-100 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-900/30"
-					labelClass="mb-1 block text-sm font-medium text-gray-300"
+					labelClass="mb-1 block text-base font-medium text-gray-300"
 				/>
 			</fieldset>
 
 			<!-- הטבה + תנאים (חובה, load-bearing) -->
 			<fieldset class="space-y-4 rounded-2xl border border-green-800/40 bg-green-900/10 p-5">
-				<legend class="px-2 text-sm font-bold text-green-400">ההטבה לחברי הקהילה</legend>
+				<legend class="px-2 text-base font-bold text-green-400">ההטבה לחברי הקהילה</legend>
 				<div>
-					<label for="discount" class="mb-1 block text-sm font-medium text-gray-300"
+					<label for="discount" class="mb-1 block text-base font-medium text-gray-300"
 						>ההטבה / ההנחה הבלעדית לחברי יוצאים לחירות *</label
 					>
 					<input
@@ -425,10 +441,10 @@
 
 			<!-- קשר ומיקום -->
 			<fieldset class="space-y-4 rounded-2xl border border-gray-800 bg-gray-900/40 p-5">
-				<legend class="px-2 text-sm font-bold text-blue-400">קשר ומיקום</legend>
+				<legend class="px-2 text-base font-bold text-blue-400">קשר ומיקום</legend>
 				<div class="grid gap-4 sm:grid-cols-2">
 					<div>
-						<label for="contact_name" class="mb-1 block text-sm font-medium text-gray-300"
+						<label for="contact_name" class="mb-1 block text-base font-medium text-gray-300"
 							>שם איש קשר *</label
 						>
 						<input
@@ -441,7 +457,8 @@
 						{#if errors.contact_name}<p class="err">{errors.contact_name}</p>{/if}
 					</div>
 					<div>
-						<label for="phone" class="mb-1 block text-sm font-medium text-gray-300">טלפון *</label>
+						<label for="phone" class="mb-1 block text-base font-medium text-gray-300">טלפון *</label
+						>
 						<input
 							id="phone"
 							name="phone"
@@ -454,7 +471,7 @@
 					</div>
 				</div>
 				<div>
-					<label for="email" class="mb-1 block text-sm font-medium text-gray-300"
+					<label for="email" class="mb-1 block text-base font-medium text-gray-300"
 						>אימייל * <span class="text-gray-500">(פרטי — לעריכת העסק בעתיד)</span></label
 					>
 					<input
@@ -469,11 +486,11 @@
 				</div>
 				<div class="grid gap-4 sm:grid-cols-3">
 					<div>
-						<label for="city" class="mb-1 block text-sm font-medium text-gray-300">עיר</label>
+						<label for="city" class="mb-1 block text-base font-medium text-gray-300">עיר</label>
 						<input id="city" name="city" defaultValue={v.city ?? ''} class="field" />
 					</div>
 					<div>
-						<label for="neighborhood" class="mb-1 block text-sm font-medium text-gray-300"
+						<label for="neighborhood" class="mb-1 block text-base font-medium text-gray-300"
 							>שכונה</label
 						>
 						<input
@@ -484,7 +501,7 @@
 						/>
 					</div>
 					<div>
-						<label for="sales_area" class="mb-1 block text-sm font-medium text-gray-300"
+						<label for="sales_area" class="mb-1 block text-base font-medium text-gray-300"
 							>אזור מכירה</label
 						>
 						<input
@@ -497,7 +514,7 @@
 					</div>
 				</div>
 				<div>
-					<label for="address" class="mb-1 block text-sm font-medium text-gray-300"
+					<label for="address" class="mb-1 block text-base font-medium text-gray-300"
 						>כתובת מלאה *</label
 					>
 					<input
@@ -507,7 +524,7 @@
 						defaultValue={v.address ?? ''}
 						class="field"
 					/>
-					<p class="mt-1 text-xs text-gray-500">
+					<p class="mt-1 text-sm text-gray-500">
 						העסק יופיע אוטומטית על המפה — גם כאן במדריך וגם באתר "קהילה בשכונה".
 					</p>
 					{#if errors.address}<p class="err">{errors.address}</p>{/if}
@@ -518,7 +535,7 @@
 					<div class="flex flex-wrap items-center justify-between gap-3">
 						<div>
 							<span class="text-sm font-medium text-gray-300">סניפים ומקומות שירות נוספים</span>
-							<p class="mt-0.5 text-xs text-gray-500">
+							<p class="mt-0.5 text-sm text-gray-500">
 								יש לכם יותר ממקום אחד? כל מקום שתוסיפו יופיע גם הוא על המפה.
 							</p>
 						</div>
@@ -535,11 +552,11 @@
 					{#each branches as branch, i (branch)}
 						<div class="mt-3 rounded-lg border border-gray-700 bg-gray-900/50 p-3">
 							<div class="mb-2 flex items-center justify-between gap-2">
-								<span class="text-xs font-bold text-gray-400">מקום נוסף {i + 1}</span>
+								<span class="text-sm font-bold text-gray-400">מקום נוסף {i + 1}</span>
 								<button
 									type="button"
 									onclick={() => removeBranch(i)}
-									class="text-xs font-bold text-red-400 transition hover:text-red-300"
+									class="text-sm font-bold text-red-400 transition hover:text-red-300"
 								>
 									הסרה
 								</button>
@@ -568,7 +585,7 @@
 					{/each}
 
 					{#if branches.length >= MAX_BRANCHES}
-						<p class="mt-3 text-xs text-gray-500">
+						<p class="mt-3 text-sm text-gray-500">
 							הגעתם ל-{MAX_BRANCHES} מקומות — אפשר לפרט את השאר בשדה "אזור מכירה".
 						</p>
 					{/if}
@@ -579,9 +596,9 @@
 
 			<!-- תמונות — מיד אחרי השם, הטלפון והכתובת: זה מה שרואים בכרטיסייה -->
 			<fieldset class="space-y-4 rounded-2xl border border-gray-800 bg-gray-900/40 p-5">
-				<legend class="px-2 text-sm font-bold text-blue-400">תמונות וסרטון</legend>
+				<legend class="px-2 text-base font-bold text-blue-400">תמונות וסרטון</legend>
 				<div>
-					<span id="lbl-logo" class="mb-1 block text-sm font-medium text-gray-300"
+					<span id="lbl-logo" class="mb-1 block text-base font-medium text-gray-300"
 						>לוגו העסק (תמונה עד 3MB)</span
 					>
 					<ImageDropField
@@ -592,7 +609,7 @@
 					/>
 					{#if logoPicked[0]}
 						<!-- מסגרת הלוגו: הבחירה משנה מיד את התצוגה המקדימה -->
-						<div class="mt-3 flex items-center gap-2 text-xs">
+						<div class="mt-3 flex items-center gap-2 text-sm">
 							<span class="text-gray-400">מסגרת הלוגו:</span>
 							{#each [['square', 'מרובע'], ['circle', 'עגול']] as [value, label] (value)}
 								<button
@@ -621,7 +638,7 @@
 					{#if errors.logo}<p class="err">{errors.logo}</p>{/if}
 				</div>
 				<div>
-					<span id="lbl-banners" class="mb-1 block text-sm font-medium text-gray-300"
+					<span id="lbl-banners" class="mb-1 block text-base font-medium text-gray-300"
 						>תמונות העסק (עד {MAX_BANNERS} תמונות, כל אחת עד 3MB)</span
 					>
 					<ImageDropField
@@ -634,7 +651,7 @@
 					/>
 					{#each bannersPicked as p, i (p.url)}
 						<div class="mt-3">
-							<div class="mb-1 flex flex-wrap items-center gap-2 text-xs">
+							<div class="mb-1 flex flex-wrap items-center gap-2 text-sm">
 								<span class="font-bold text-gray-400">תמונה {i + 1}</span>
 								<!-- התמונה הראשית: הבאנר של האריח בדף הבית, פתיחת הגלריה
 								     בכרטיסייה ותמונת השיתוף -->
@@ -663,7 +680,7 @@
 						</div>
 					{/each}
 					{#if bannersPicked.length > 1}
-						<p class="mt-2 text-xs text-gray-500">
+						<p class="mt-2 text-sm text-gray-500">
 							התמונה הראשית היא שמופיעה באריח של העסק בדף הבית ובשיתוף.
 						</p>
 					{/if}
@@ -672,7 +689,7 @@
 				<!-- סרטון התדמית הוא נגן מוטמע בכרטיסייה, ולכן שדה משלו ולא
 				     שורה ברשימת הקישורים — שם יושב ערוץ היוטיוב -->
 				<div>
-					<label for="video" class="mb-1 block text-sm font-medium text-gray-300"
+					<label for="video" class="mb-1 block text-base font-medium text-gray-300"
 						>סרטון תדמית (קישור ליוטיוב)</label
 					>
 					<input
@@ -682,7 +699,7 @@
 						placeholder="https://youtube.com/watch?v=…"
 						class="field"
 					/>
-					<p class="mt-1 text-xs text-gray-500">הסרטון יוטמע בכרטיסייה ויוצג לגולשים.</p>
+					<p class="mt-1 text-sm text-gray-500">הסרטון יוטמע בכרטיסייה ויוצג לגולשים.</p>
 					{#if errors.video}<p class="err">{errors.video}</p>{/if}
 				</div>
 				<input type="hidden" name="media_fit" value={mediaFitJson} />
@@ -690,13 +707,13 @@
 
 			<!-- נוכחות דיגיטלית -->
 			<fieldset class="space-y-4 rounded-2xl border border-gray-800 bg-gray-900/40 p-5">
-				<legend class="px-2 text-sm font-bold text-blue-400">נוכחות דיגיטלית</legend>
+				<legend class="px-2 text-base font-bold text-blue-400">נוכחות דיגיטלית</legend>
 				<!-- הרשתות והקישורים — הרשימה, התוויות והדוגמאות מגיעות מ-socialLinks.js,
 				     אותו מקור שממנו נבנים טופס העריכה ושורת הלוגואים בכרטיסייה. -->
 				<div class="grid gap-4 sm:grid-cols-2">
 					{#each LINK_FIELDS as [k, lbl, ph] (k)}
 						<div>
-							<label for={k} class="mb-1 block text-sm font-medium text-gray-300">{lbl}</label>
+							<label for={k} class="mb-1 block text-base font-medium text-gray-300">{lbl}</label>
 							<input id={k} name={k} defaultValue={v[k] ?? ''} placeholder={ph} class="field" />
 							{#if errors[k]}<p class="err">{errors[k]}</p>{/if}
 						</div>
@@ -711,7 +728,7 @@
 			>
 				{submitting ? 'שולח…' : 'שליחת העסק לאישור'}
 			</button>
-			<p class="text-center text-xs text-gray-500">
+			<p class="text-center text-sm text-gray-500">
 				* שדות חובה. הפרטים נשלחים לצוות האינדקס לאישור.
 			</p>
 		</form>
@@ -734,7 +751,7 @@
 	}
 	.err {
 		margin-top: 0.25rem;
-		font-size: 0.8rem;
+		font-size: 0.875rem;
 		color: #f87171;
 	}
 </style>

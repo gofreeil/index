@@ -310,7 +310,13 @@
 	// שמוכר את העסק (דירוג, סלוגן, הטבה).
 	const metaLine = $derived(bizArea);
 	const catLine = $derived(
-		[...new Set([business.category, business.subcategory].filter(Boolean))].join(' · ')
+		[
+			...new Set(
+				[business.category, ...(business.extra_categories ?? []), business.subcategory].filter(
+					Boolean
+				)
+			)
+		].join(' · ')
 	);
 </script>
 

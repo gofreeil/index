@@ -4,6 +4,7 @@
 // (ראו mediaConfig.js ו-svelte.config.js), ופיצול ביניהם היה משתיק את המיטוב
 import { MEDIA_BASE } from './mediaConfig.js';
 import { parseBranches } from './branches.js';
+import { parseExtraCategories } from './categories.js';
 import { parseTags } from './tags.js';
 import { parseExtraLinks } from './socialLinks.js';
 import { parseFit, parseFitList, parseLogoShape, parseMainIndex } from './mediaFit.js';
@@ -47,6 +48,9 @@ export function toBusiness(b) {
 		slug: b.slug || b.documentId,
 		name: b.name || '',
 		category: b.category || '',
+		// תחומים נוספים מעבר לראשי — באותה עמודת json של הסניפים והתגיות
+		// (ראו parseExtraCategories). העסק מוצג ומסונן גם תחתיהם.
+		extra_categories: parseExtraCategories(b.extra_fields?.categories),
 		subcategory: b.subcategory || '',
 		// לסלוגן אין עמודה משלו, והוא יושב ב-extra_fields כמו הסניפים והקישורים
 		// (ראו businessEdit.js). כאן הוא עולה לרמה העליונה.

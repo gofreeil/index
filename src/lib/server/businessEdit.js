@@ -19,6 +19,7 @@
 
 import { uploadImage } from './strapi.js';
 import { parseBranches } from '../branches.js';
+import { parseExtraCategories } from '../categories.js';
 import { parseTags } from '../tags.js';
 import { parseMediaFit, MAX_BANNERS } from '../mediaFit.js';
 import { EXTRA_LINK_KEYS } from '../socialLinks.js';
@@ -124,6 +125,15 @@ export async function parseBusinessForm(fd, { canModerate, current }) {
 	// תגיות — באותה עמודה (ראו tags.js). כמו הסניפים: רק טופס ששלח את השדה
 	// נוגע בהן, כדי שטופס ישן שאינו מכיר אותן לא ימחק רשימה קיימת.
 	if (fd.has('tags')) extraPatch.tags = parseTags(fd.get('tags'));
+
+	// קטגוריות נוספות — באותה עמודה (ראו ExtraCategoriesField.svelte). אותו
+	// דין: רק טופס ששלח את השדה נוגע בהן. הראשית לא נשמרת פעמיים — היא
+	// כבר יושבת בעמודת category.
+	if (fd.has('extra_categories')) {
+		extraPatch.categories = parseExtraCategories(fd.get('extra_categories')).filter(
+			(c) => c !== values.category
+		);
+	}
 
 	// מיקום וזום של הלוגו והתמונות. גם כאן רק טופס ששלח את השדה נוגע בהם,
 	// ומיקום שחזר לברירת המחדל מוחק את המפתח במקום לשמור אותו סתם.

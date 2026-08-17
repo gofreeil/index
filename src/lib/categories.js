@@ -356,10 +356,11 @@ const MATCHERS = CATEGORY_DEFS.filter((c) => c.match?.length).map((c) => ({
  * ניחוש שגוי גרוע מ"אחר", כי הוא שולח את הגולש לתחום הלא נכון.
  *
  * השדות נבדקים בשכבות ולא כמחרוזת אחת מאוחדת, כי הם אינם שווי-ערך: השם
- * ותת-התחום הם מה שהעסק קורא לעצמו, התיאור מסביר, ו"מה מייחד אתכם" הוא
- * טקסט שיווקי שמזכיר בדרך אגב עוד עשרה תחומים. בלי ההפרדה מטפלת הוליסטית
- * שכתבה שם "עיצוב חוויית לקוח" נחתה תחת "עיצוב ואומנות". רק אם שכבה שלמה
- * לא הניבה התאמה עוברים לשכבה הבאה.
+ * ותת-התחום הם מה שהעסק קורא לעצמו, ואילו "תיאור מורחב" הוא טקסט שיווקי
+ * שמזכיר בדרך אגב עוד עשרה תחומים. בלי ההפרדה מטפלת הוליסטית שכתבה שם
+ * "עיצוב חוויית לקוח" נחתה תחת "עיצוב ואומנות". רק אם שכבה שלמה לא הניבה
+ * התאמה עוברים לשכבה הבאה. description הוא שריד "תיאור קצר" שנמחק מהטופס
+ * ומוזג ל-unique_content — הוא נשאר בשכבות למקרה שנותרה כרטיסייה עם טקסט בו.
  * @param {{name?: string, subcategory?: string, description?: string, unique_content?: string}} b
  * @param {Set<string>} [retired] תוויות מנורמלות שנמחקו ממסך הניהול
  *   (retiredLabelSet) — בלעדי הדילוג קטגוריה מחוקה הייתה "קמה לתחייה"
@@ -406,6 +407,61 @@ export function resolveCategory(b, retired) {
 
 /** נרמול תווית להשוואה — חשוף למסך ניהול הקטגוריות (ספירה והתאמת כפילויות) */
 export const normCategoryLabel = norm;
+
+// ── קטגוריות נוספות ──
+// עסק אחד יכול לשבת ביותר מתחום אחד (חשמלאי שהוא גם מיזוג אוויר). התחום
+// הראשי נשאר בעמודת category — הוא מה שהכרטיס מציג ומה שכל הקוד הקיים
+// מכיר; הנוספים יושבים ב-extra_fields.categories (עמודת ה-json, כמו
+// הסניפים והתגיות — אין להם עמודה משלהם ו-Strapi היה מתעלם מהם בשקט).
+// בסינון ובמסילת דף הבית העסק נספר ומוצג בכל אחד מהתחומים שלו.
+
+/** תקרת הקטגוריות הנוספות — מעבר לתחום הראשי */
+export const MAX_EXTRA_CATEGORIES = 3;
+
+/**
+ * הקטגוריות הנוספות כרשימה נקייה. מקבל את מה שחוזר מהטופס (JSON בשדה
+ * מוסתר אחד, כמו הסניפים) או מה שכבר יושב ב-extra_fields — כל צורה אחרת
+ * מוחזרת כרשימה ריקה, כי הערך עבר ברשת ואין לסמוך על צורתו.
+ * @param {unknown} raw
+ * @returns {string[]}
+ */
+export function parseExtraCategories(raw) {
+	let list = raw;
+	if (typeof raw === 'string') {
+		try {
+			list = JSON.parse(raw);
+		} catch {
+			return [];
+		}
+	}
+	if (!Array.isArray(list)) return [];
+	/** @type {string[]} */
+	const out = [];
+	for (const v of list) {
+		if (typeof v !== 'string') continue;
+		const s = v.trim().slice(0, 80);
+		if (s && !out.includes(s)) out.push(s);
+		if (out.length >= MAX_EXTRA_CATEGORIES) break;
+	}
+	return out;
+}
+
+/**
+ * תרגום קטגוריה נוספת לתווית הקנונית שלה — הגרסה הרזה של resolveCategory:
+ * בלי סיווג אוטומטי ובלי נפילה ל"אחר". קטגוריה נוספת שנמחקה ממסך הניהול
+ * (או שכל ערכה הוא "אחר") פשוט נשמטת — לתחום הראשי יש גיבוי חכם, ולנוספת
+ * אין מה לנחש.
+ * @param {string} label
+ * @param {Set<string>} [retired] תוויות מנורמלות שנמחקו (retiredLabelSet)
+ * @returns {string} התווית הקנונית, או '' כשאין ממה להציג
+ */
+export function canonicalCategoryLabel(label, retired) {
+	const raw = String(label ?? '').trim();
+	if (!raw || retired?.has(norm(raw))) return '';
+	const canonical = BY_ALIAS.get(norm(raw));
+	if (canonical === OTHER) return '';
+	return canonical || raw;
+}
 
 // ============================================================
 // דריסות תצוגה של סופר-אדמין (נשמרות ב-configStore בשרת).

@@ -295,7 +295,11 @@ function domainScore(b, doms) {
 	if (!doms.length) return 0;
 	const head = norm(`${b?.name ?? ''} ${b?.subcategory ?? ''} ${fieldText(b?.tags)}`);
 	const body = norm(`${b?.description ?? ''} ${b?.slogan ?? ''} ${b?.discount ?? ''}`);
-	const catWords = words(String(b?.category ?? ''));
+	// כל התחומים של העסק — הראשי והנוספים (categories מדף הבית); נפילה
+	// אחורה לשדה הבודד כשקוראים למנוע עם צורה ישנה
+	const catWords = words(
+		Array.isArray(b?.categories) ? b.categories.join(' ') : String(b?.category ?? '')
+	);
 	let score = 0;
 	doms.forEach((d, i) => {
 		// התחום השני קרוב פחות מהראשון, ולכן שוקל חצי

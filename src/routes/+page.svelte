@@ -70,8 +70,10 @@
 		/** @type {Record<string, number>} */
 		const counts = {};
 		for (const b of businesses) {
-			const key = b.category || otherName;
-			counts[key] = (counts[key] ?? 0) + 1;
+			// עסק עם קטגוריות נוספות נספר בכל אחד מהתחומים שלו
+			for (const key of b.categories?.length ? b.categories : [b.category || otherName]) {
+				counts[key] = (counts[key] ?? 0) + 1;
+			}
 		}
 		// railMeta = כל התחומים החיים (כולל הריקים); counts מוסיף תוויות חופשיות
 		// שהוקלדו על כרטיסיות ואינן ברשימת הניהול — גם להן מגיע אריח
@@ -250,7 +252,8 @@
 	// הנוספות שהוא רשם בדיוק למטרה הזאת (ראו $lib/tags.js).
 	const SEARCH_FIELDS = [
 		'name',
-		'category',
+		// כל התחומים של העסק — הראשי והנוספים (ראו +page.server.js)
+		'categories',
 		'subcategory',
 		'tags',
 		'description',
@@ -271,7 +274,10 @@
 	// ה-API כבר מחזיר מהחדש לישן (createdAt:desc) — אין צורך להפוך (ה-reverse היה שריד מ-Google Sheets)
 	const filteredBusinesses = $derived(
 		businesses.filter((b) => {
-			const okCat = selectedCategory === 'all' || b.category === selectedCategory;
+			// גם הקטגוריות הנוספות נחשבות — עסק מופיע בכל תחום שסימן
+			const okCat =
+				selectedCategory === 'all' ||
+				(b.categories?.length ? b.categories : [b.category]).includes(selectedCategory);
 			// אותו מקור בדיוק שממנו נבנה הבורר ⇒ עיר שאפשר לבחור תמיד מחזירה תוצאות
 			const okLoc = selectedLocation === 'all' || !!cityIndex.get(b.id)?.has(selectedLocation);
 			return matchesSearch(b) && okCat && okLoc;
@@ -290,7 +296,9 @@
 	const suggestedBusinesses = $derived.by(() => {
 		if (!searchTerm.trim() || filteredBusinesses.length > 0) return [];
 		const inFilters = businesses.filter((b) => {
-			const okCat = selectedCategory === 'all' || b.category === selectedCategory;
+			const okCat =
+				selectedCategory === 'all' ||
+				(b.categories?.length ? b.categories : [b.category]).includes(selectedCategory);
 			const okLoc = selectedLocation === 'all' || !!cityIndex.get(b.id)?.has(selectedLocation);
 			return okCat && okLoc;
 		});
@@ -352,7 +360,9 @@
 	   הלחיצות שתחליף אותן. */
 	const similarPicks = $derived.by(() => {
 		if (selectedCategory === 'all' || smartPicks.length > 0) return [];
-		const pool = businesses.filter((b) => b.category !== selectedCategory);
+		const pool = businesses.filter(
+			(b) => !(b.categories?.length ? b.categories : [b.category]).includes(selectedCategory)
+		);
 		return suggestForQuery(selectedCategory, pool, 3);
 	});
 

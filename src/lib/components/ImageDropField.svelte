@@ -153,7 +153,7 @@
 	<span class="text-sm font-bold text-blue-300">
 		גררו לכאן {multiple ? 'תמונות' : 'תמונה'} — או לחצו לבחירה
 	</span>
-	{#if hint}<span class="text-xs text-gray-500">{hint}</span>{/if}
+	{#if hint}<span class="text-sm text-gray-500">{hint}</span>{/if}
 </label>
 
 {#if picked.length}
@@ -168,11 +168,11 @@
 		<button
 			type="button"
 			onclick={clearFiles}
-			class="rounded-full border border-gray-600 px-3 py-1 text-xs font-bold text-gray-300 transition hover:border-red-500/50 hover:text-red-300"
+			class="rounded-full border border-gray-600 px-3 py-1 text-sm font-bold text-gray-300 transition hover:border-red-500/50 hover:text-red-300"
 		>
 			ניקוי הבחירה
 		</button>
 	</div>
 {/if}
 
-{#if error}<p class="mt-1 text-xs text-red-400">{error}</p>{/if}
+{#if error}<p class="mt-1 text-sm text-red-400">{error}</p>{/if}

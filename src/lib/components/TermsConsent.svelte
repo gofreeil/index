@@ -28,7 +28,7 @@
 </script>
 
 <div>
-	<label class="flex items-start gap-2.5 text-sm leading-6 {textClass}">
+	<label class="flex items-start gap-2.5 text-base leading-7 {textClass}">
 		<!-- בלי name התיבה אינה נשלחת: כך משתמש אותה מדור שבו האישור יושב
 		     מחוץ לטופס ונוסע איתו בשדה מוסתר (האזור האישי) -->
 		<input
@@ -44,11 +44,11 @@
 		href={TERMS_LINK}
 		target="_blank"
 		rel="noopener"
-		class="mt-1 inline-block ps-7 text-xs font-bold text-blue-400 underline underline-offset-2 transition hover:text-blue-300"
+		class="mt-1 inline-block ps-7 text-sm font-bold text-blue-400 underline underline-offset-2 transition hover:text-blue-300"
 	>
 		{linkLabel} ←
 	</a>
 	{#if error}
-		<p class="mt-1 ps-7 text-xs font-bold text-red-400">{error}</p>
+		<p class="mt-1 ps-7 text-sm font-bold text-red-400">{error}</p>
 	{/if}
 </div>

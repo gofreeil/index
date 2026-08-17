@@ -2,7 +2,12 @@ import { error, fail } from '@sveltejs/kit';
 import { getBusiness, getUserPhone, isPrivileged } from '$lib/server/strapi.js';
 import { getCategorySettings } from '$lib/server/categoryStore.js';
 import { toBusiness } from '$lib/businessShape.js';
-import { resolveCategory, categoryDisplayResolver, retiredLabelSet } from '$lib/categories.js';
+import {
+	resolveCategory,
+	canonicalCategoryLabel,
+	categoryDisplayResolver,
+	retiredLabelSet
+} from '$lib/categories.js';
 import {
 	businessOwnerId,
 	canEditBusiness,
@@ -45,12 +50,24 @@ export async function load({ params, locals }) {
 		// אותו סיווג בדיוק כמו בדף הבית — כרטיסייה שהאינדקס מציג תחת "רפואה
 		// משלימה" לא תציג על עצמה "אחר" (או כלום) כשנכנסים אליה. גם דריסות
 		// השם של הסופר-אדמין חלות כאן, כדי שהצ'יפ יתאים למסילה.
-		business: {
-			...business,
-			category: categoryDisplayResolver(catSettings)(
-				resolveCategory(business, retiredLabelSet(catSettings))
-			)
-		},
+		business: (() => {
+			const displayName = categoryDisplayResolver(catSettings);
+			const retired = retiredLabelSet(catSettings);
+			const category = displayName(resolveCategory(business, retired));
+			return {
+				...business,
+				category,
+				// הקטגוריות הנוספות באותו תרגום תצוגה; מה שנמחק במסך הניהול
+				// נשמט, והראשית לא מוצגת פעמיים
+				extra_categories: [
+					...new Set(
+						business.extra_categories
+							.map((/** @type {string} */ c) => displayName(canonicalCategoryLabel(c, retired)))
+							.filter(Boolean)
+					)
+				].filter((c) => c !== category)
+			};
+		})(),
 		// "שיתוף חכם" הוא כלי של בעל העסק בלבד. ההכרעה כאן ולא בדפדפן:
 		// toBusiness לא מחזיר ללקוח את מפתחות הבעלות, ולכן אין מה לזייף.
 		// אדמין מקבל גישה גם הוא — הוא כבר עורך ומאשר את הכרטיסיות.

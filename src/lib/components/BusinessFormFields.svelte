@@ -6,9 +6,10 @@
 	// canModerate מוסיף את שדות הניהול (סטטוס). הוא רק מסתיר
 	// אותם — האכיפה עצמה בשרת (ראו $lib/server/businessEdit.js).
 	import { mediaUrl } from '$lib/businessShape.js';
-	import { CATEGORIES } from '$lib/categories.js';
+	import { CATEGORIES, parseExtraCategories } from '$lib/categories.js';
 	import { MAX_BRANCHES, parseBranches } from '$lib/branches.js';
 	import { LINK_FIELDS, parseExtraLinks } from '$lib/socialLinks.js';
+	import ExtraCategoriesField from '$lib/components/ExtraCategoriesField.svelte';
 	import ImageDropField from '$lib/components/ImageDropField.svelte';
 	import ImageFitEditor from '$lib/components/ImageFitEditor.svelte';
 	import TagsField from '$lib/components/TagsField.svelte';
@@ -55,6 +56,14 @@
 			? [{ value: biz.category, label: biz.category }, ...base]
 			: base;
 	});
+
+	// התחום הראשי מוחזק כ-state כדי שבורר הקטגוריות הנוספות ידע לא להציע
+	// אותו שוב — גם כשהוא מוחלף תוך כדי עריכה
+	let category = $state(biz.category ?? '');
+
+	// קטגוריות נוספות — עסק שיושב ביותר מתחום אחד. באותה עמודת json של
+	// הסניפים והתגיות, ונוסעות כ-JSON בשדה מוסתר אחד (ראו ExtraCategoriesField).
+	let extraCats = $state(parseExtraCategories(biz.extra_fields?.categories));
 
 	const banners = $derived(Array.isArray(biz.banners) ? biz.banners : []);
 	// לאוסף אין עמודת email — אימייל הבעלים יושב ב-extra_fields
@@ -222,7 +231,7 @@
 		</div>
 		<div>
 			<label class={LABEL} for="f-category">קטגוריה</label>
-			<select id="f-category" name="category" value={biz.category ?? ''} class={INPUT}>
+			<select id="f-category" name="category" bind:value={category} class={INPUT}>
 				<option value="">— ללא —</option>
 				{#each categoryOptions as c (c.value)}
 					<option value={c.value}>{c.label}</option>
@@ -232,6 +241,17 @@
 		<div>
 			<label class={LABEL} for="f-subcategory">תת-קטגוריה / פירוט</label>
 			<input id="f-subcategory" name="subcategory" value={biz.subcategory ?? ''} class={INPUT} />
+		</div>
+		<!-- קטגוריות נוספות — העסק מופיע בסינון של כל תחום שסומן
+		     (extra_fields.categories, ראו ExtraCategoriesField) -->
+		<div class="sm:col-span-2">
+			<ExtraCategoriesField
+				bind:selected={extraCats}
+				options={categoryOptions}
+				exclude={category}
+				labelClass={LABEL}
+				selectClass={INPUT}
+			/>
 		</div>
 		<!-- אין שדה "תיאור קצר": הסלוגן הוא המשפט הקצר של הכרטיסייה, וכל הטקסט
 		     הארוך יושב ב"תיאור מורחב". שדה שלישי לאותו תפקיד רק פיצל את מה

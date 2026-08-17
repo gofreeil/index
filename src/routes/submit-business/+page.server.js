@@ -1,12 +1,14 @@
 import { fail } from '@sveltejs/kit';
 import { createBusiness, uploadImage } from '$lib/server/strapi.js';
 import { getCategoryOptions } from '$lib/server/categoryStore.js';
+import { parseExtraCategories } from '$lib/categories.js';
 import { parseBranches } from '$lib/branches.js';
 import { parseTags } from '$lib/tags.js';
 import { getTopQueries } from '$lib/server/searchStats.js';
 import { getPopularTags } from '$lib/server/tagPool.js';
 import { EXTRA_LINK_KEYS, parseExtraLinks } from '$lib/socialLinks.js';
 import { parseMediaFit, MAX_BANNERS } from '$lib/mediaFit.js';
+import { TERMS_ERROR, TERMS_STAMP, termsAccepted } from '$lib/terms.js';
 
 /**
  * רשימת הקטגוריות לתפריט הבחירה — כולל דריסות השם והקטגוריות שהוסיף
@@ -77,6 +79,10 @@ export const actions = {
 		const values = {
 			name: str(fd.get('name')),
 			category: str(fd.get('category')),
+			// קטגוריות נוספות — JSON בשדה מוסתר אחד (ראו ExtraCategoriesField).
+			// נשארות ב-values כדי שיחזרו למסך אם הולידציה נכשלה, ונשמרות
+			// ב-extra_fields.categories ולא כעמודה משלהן.
+			extra_categories: parseExtraCategories(fd.get('extra_categories')),
 			subcategory: str(fd.get('subcategory')),
 			// אין יותר description: הטקסט של העסק נכתב כולו ל"תיאור מורחב", והעמודה
 			// הישנה רוקנה במיגרציה (scripts/merge-description-into-content.mjs).
@@ -108,7 +114,8 @@ export const actions = {
 			// תגיות — אותו דין בדיוק (ראו tags.js)
 			tags: parseTags(fd.get('tags'))
 		};
-		const accepted_terms = fd.get('accepted_terms') === 'on';
+		// אישור תנאי הקהילה — תנאי כניסה למדריך (ראו $lib/terms.js)
+		const accepted_terms = termsAccepted(fd);
 
 		// ── ולידציה בצד-שרת (מקור-האמת) ──
 		/** @type {Record<string,string>} */
@@ -121,7 +128,7 @@ export const actions = {
 		if (!EMAIL_RE.test(values.email)) errors.email = 'אימייל לא תקין (משמש לעריכה עתידית של העסק)';
 		if (!values.address) errors.address = 'כתובת מלאה חובה — דרושה להצגת העסק על המפה';
 		if (!values.discount) errors.discount = 'ההטבה הבלעדית לחברי הקהילה חובה';
-		if (!accepted_terms) errors.accepted_terms = 'יש לאשר את תנאי הקהילה';
+		if (!accepted_terms) errors.accepted_terms = TERMS_ERROR;
 		for (const k of [
 			'website',
 			'whatsapp',
@@ -180,8 +187,21 @@ export const actions = {
 		// לאוסף idx-business אין עמודת email, ו-Strapi מתעלם בשקט ממפתח לא
 		// מוכר — ולכן אימייל בעל העסק נשמר ב-extra_fields (עמודת json).
 		// זה גם המפתח שבו המערכת מזהה אותו כשהוא נרשם לאתר (ownerMatch.js).
-		const { email, branches, tags, tiktok, x, linkedin, extra, video, ...fields } = values;
+		const {
+			email,
+			branches,
+			tags,
+			extra_categories,
+			tiktok,
+			x,
+			linkedin,
+			extra,
+			video,
+			...fields
+		} = values;
 		const links = parseExtraLinks({ tiktok, x, linkedin, extra, video });
+		// הראשית לא נספרת פעמיים — היא כבר בעמודת category
+		const extraCategories = extra_categories.filter((c) => c !== fields.category);
 		// מיקום וזום של הלוגו והתמונות — null כשלא נגעו בהם, וכך הוא לא נשמר
 		const mediaFit = parseMediaFit(fd.get('media_fit'));
 		try {
@@ -189,6 +209,9 @@ export const actions = {
 				...fields,
 				extra_fields: {
 					owner_email: email.toLowerCase(),
+					// מועד אישור התנאים — לתאריך אין עמודה משלו (ראו terms.js)
+					[TERMS_STAMP]: new Date().toISOString(),
+					...(extraCategories.length ? { categories: extraCategories } : {}),
 					...(branches.length ? { branches } : {}),
 					...(tags.length ? { tags } : {}),
 					...(Object.keys(links).length ? { links } : {}),

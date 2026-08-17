@@ -4,6 +4,7 @@ import { getRelatedMap } from '$lib/server/categoryClicks.js';
 import { toBusiness } from '$lib/businessShape.js';
 import {
 	resolveCategory,
+	canonicalCategoryLabel,
 	categoryDisplayResolver,
 	categoryRailMeta,
 	retiredLabelSet
@@ -38,45 +39,60 @@ export async function load() {
 		// בסיווג האוטומטי, וכרטיסייה שנשמרה איתה מסווגת מחדש — כך לא נשאר
 		// במסילה אריח של תחום מחוק
 		const retired = retiredLabelSet(catSettings);
-		const businesses = rows.map(toBusiness).map((b) => ({
-			id: b.documentId,
-			documentId: b.documentId,
-			slug: b.slug,
-			name: b.name || 'ללא שם',
-			phone: b.phone || '',
-			category: displayName(resolveCategory(b, retired)),
-			// "תת-קטגוריה / פירוט" — שם המקצוע במילים של העסק עצמו. הוא מזין
-			// את החיפוש ואת ההצעות הקרובות ($lib/searchSuggest)
-			subcategory: b.subcategory || '',
-			// התגיות שבעל העסק רשם — המילים שבהן יחפשו אותו. הן נבדקות
-			// בחיפוש כמעט כמו שם העסק (ראו matchesSearch ו-searchSuggest).
-			tags: b.tags || [],
-			banners: b.banners || [],
-			banner: b.banner || '',
-			// מיקום וזום של הלוגו והתמונה באריח (ראו mediaFit.js)
-			logo_fit: b.logo_fit,
-			banner_fits: b.banner_fits,
-			// איזו מהתמונות היא הראשית — הבאנר של האריח (ראו mediaFit.js)
-			main_index: b.main_index,
-			// הטקסט של העסק — "תיאור מורחב" (unique_content). description הוא שריד
-			// "תיאור קצר" שנמחק מהטופס, ונשאר כנפילה אחורה לכרטיסיות שטרם מוזגו.
-			// משמש את החיפוש בדף הבית.
-			description: b.unique_content || b.description || '',
-			// הסלוגן מוצג בכרטיסייה עצמה, ולא רק בעמוד העסק
-			slogan: b.slogan || '',
-			discount: b.discount || '',
-			salesArea: b.sales_area || '',
-			address: b.address || '',
-			city: b.city || '',
-			// מקומות נוספים — המפה מציירת עיגול לכל אחד (ראו serviceArea.js)
-			branches: b.branches || [],
-			website: b.website || '',
-			logo: b.logo || '',
-			rating: Number(b.rating || 0),
-			ratingCount: Number(b.rating_count || 0),
-			lat: typeof b.lat === 'number' ? b.lat : null,
-			lng: typeof b.lng === 'number' ? b.lng : null
-		}));
+		const businesses = rows.map(toBusiness).map((b) => {
+			const category = displayName(resolveCategory(b, retired));
+			return {
+				id: b.documentId,
+				documentId: b.documentId,
+				slug: b.slug,
+				name: b.name || 'ללא שם',
+				phone: b.phone || '',
+				category,
+				// כל התחומים של העסק — הראשי + הנוספים (extra_fields.categories),
+				// כולם בשם התצוגה. תחום נוסף שנמחק במסך הניהול נשמט (ראו
+				// canonicalCategoryLabel). המסילה והסינון עוברים על הרשימה הזו,
+				// כך שהעסק נספר ומוצג בכל אחד מהתחומים שלו.
+				categories: [
+					...new Set([
+						category,
+						...b.extra_categories
+							.map((c) => displayName(canonicalCategoryLabel(c, retired)))
+							.filter(Boolean)
+					])
+				],
+				// "תת-קטגוריה / פירוט" — שם המקצוע במילים של העסק עצמו. הוא מזין
+				// את החיפוש ואת ההצעות הקרובות ($lib/searchSuggest)
+				subcategory: b.subcategory || '',
+				// התגיות שבעל העסק רשם — המילים שבהן יחפשו אותו. הן נבדקות
+				// בחיפוש כמעט כמו שם העסק (ראו matchesSearch ו-searchSuggest).
+				tags: b.tags || [],
+				banners: b.banners || [],
+				banner: b.banner || '',
+				// מיקום וזום של הלוגו והתמונה באריח (ראו mediaFit.js)
+				logo_fit: b.logo_fit,
+				banner_fits: b.banner_fits,
+				// איזו מהתמונות היא הראשית — הבאנר של האריח (ראו mediaFit.js)
+				main_index: b.main_index,
+				// הטקסט של העסק — "תיאור מורחב" (unique_content). description הוא שריד
+				// "תיאור קצר" שנמחק מהטופס, ונשאר כנפילה אחורה לכרטיסיות שטרם מוזגו.
+				// משמש את החיפוש בדף הבית.
+				description: b.unique_content || b.description || '',
+				// הסלוגן מוצג בכרטיסייה עצמה, ולא רק בעמוד העסק
+				slogan: b.slogan || '',
+				discount: b.discount || '',
+				salesArea: b.sales_area || '',
+				address: b.address || '',
+				city: b.city || '',
+				// מקומות נוספים — המפה מציירת עיגול לכל אחד (ראו serviceArea.js)
+				branches: b.branches || [],
+				website: b.website || '',
+				logo: b.logo || '',
+				rating: Number(b.rating || 0),
+				ratingCount: Number(b.rating_count || 0),
+				lat: typeof b.lat === 'number' ? b.lat : null,
+				lng: typeof b.lng === 'number' ? b.lng : null
+			};
+		});
 		return { businesses, catRail: categoryRailMeta(catSettings), related, loadError: null };
 	} catch (/** @type {any} */ err) {
 		console.error('index home load error:', err);

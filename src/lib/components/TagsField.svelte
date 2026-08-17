@@ -90,7 +90,7 @@
 	<!-- ההסבר לבעל העסק. לא "מלאו עוד שדה" אלא למה זה משרת אותו: מנוע
 	     החיפוש של האתר בודק את התגיות כמו שהוא בודק את שם העסק, ולכן כל
 	     מילה כאן היא דרך נוספת שבה לקוח מגיע אליו. -->
-	<p class="mt-0.5 mb-2 text-xs leading-relaxed text-gray-400">
+	<p class="mt-0.5 mb-2 text-sm leading-relaxed text-gray-400">
 		הגולשים לא תמיד מחפשים במילים שבהן אתם מתארים את עצמכם — אחד מקליד "שרברב" והשני "אינסטלטור",
 		אחד "מזגנים" והשני "מיזוג אוויר". כל מילה שתוסיפו כאן נכנסת למנוע החיפוש שלנו ומחזירה אתכם
 		בתוצאות גם למי שחיפש אחרת. הוסיפו מקצועות נרדפים, שירותים שאתם נותנים והערים שאתם עובדים בהן.
@@ -120,7 +120,7 @@
 			＋ הוספה
 		</button>
 	</div>
-	<p id="hint-{name}" class="mt-1 text-xs text-gray-500">
+	<p id="hint-{name}" class="mt-1 text-sm text-gray-500">
 		Enter אחרי כל מילה. עד {MAX_TAGS} תגיות.
 	</p>
 
@@ -149,7 +149,7 @@
 	     תוך כדי הקלדה, ולכן הן נראות כמו תשובה למה שנכתב ולא כרשימה כללית. -->
 	{#if openSuggestions.length && !full}
 		<div class="mt-3 rounded-xl border border-dashed border-gray-700 p-3">
-			<p class="text-xs font-bold text-gray-300">
+			<p class="text-sm font-bold text-gray-300">
 				💡 לפי מה שמילאתם, אלה התגיות שכדאי להוסיף — לחיצה מוסיפה:
 			</p>
 			<ul class="mt-2 flex flex-wrap gap-2">
