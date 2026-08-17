@@ -76,11 +76,18 @@
 		class:hidden={active !== 'about'}
 	>
 		<header class="mb-10 border-b border-white/10 pb-8">
-			<h1
-				class="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-3xl leading-tight font-black text-transparent sm:text-5xl"
-			>
-				{ABOUT_TITLE}
-			</h1>
+			<div class="flex flex-col items-start gap-5 sm:flex-row sm:items-center">
+				<img
+					src="/logo-professionals.png?v=4"
+					alt="לוגו בעלי מקצוע כשירים — סדר בכל עניין"
+					class="h-24 w-auto rounded-2xl object-contain shadow-lg sm:h-32"
+				/>
+				<h1
+					class="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-3xl leading-tight font-black text-transparent sm:text-5xl"
+				>
+					{ABOUT_TITLE}
+				</h1>
+			</div>
 		</header>
 		<AboutContent />
 	</div>
@@ -91,13 +98,13 @@
 		aria-labelledby="info-tab-terms"
 		class:hidden={active !== 'terms'}
 	>
-		<header class="mb-10 border-b border-white/10 pb-8">
+		<header class="mb-6 border-b border-white/10 pb-5">
 			<h1
 				class="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-3xl leading-tight font-black text-transparent sm:text-5xl"
 			>
 				{t.communityPolicyTitle}
 			</h1>
-			<p class="mt-6 text-xl leading-relaxed text-gray-300">
+			<p class="mt-3 text-lg leading-relaxed text-gray-300">
 				{t.policyIntro}
 			</p>
 		</header>

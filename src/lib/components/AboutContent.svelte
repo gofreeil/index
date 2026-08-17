@@ -19,17 +19,42 @@
 			rel="noopener noreferrer"
 			class="text-blue-400 underline decoration-blue-500/60 underline-offset-4 transition-colors hover:text-blue-300 hover:decoration-blue-400"
 			>יוצאים לחירות</a
-		>. כל בעל מקצוע שמופיע כאן חתם על <strong>אמנת הקהילה</strong> — מחיר הוגן, שירות אמין ואחריות
-		על העבודה — והתחייב ל<strong>הנחה או הטבה ייחודית</strong> לחברי הקהילה. הלקוחות מדרגים את בעלי המקצוע
-		וכותבים חוות דעת, כך שהבחירה נעשית לפי ניסיון אמיתי של שכנים ולא לפי מי שקנה את המקום הראשון בפרסום.
+		>. כל בעל מקצוע שמופיע כאן חתם על <strong>אמנת הקהילה</strong>:
 	</p>
+	<ul class="space-y-2 text-lg">
+		<li class="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+			<strong>שירות</strong> — התחייבות לשירות אמין, עם אחריות על העבודה. לצורך זה בעלי המקצוע
+			מדורגים על ידי חברינו ומקבלים חוות דעת פומביות, כך שהבחירה נעשית לפי ניסיון אמיתי של
+			משתמשים — ולא לפי מי שקנה את המקום הראשון בפרסום.
+		</li>
+		<li class="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+			<strong>מחיר</strong> — התחייבות להנחה או הטבה ייחודית, רק לנו.
+		</li>
+		<li class="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+			<strong>שמירה על זכות המזומן</strong> — התחייבות לקבל תשלום במזומן, ולתמיד.
+		</li>
+		<li class="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+			<strong>קובלנה</strong> — התחייבות להישפט ב<a
+				href="https://chachmim.gofreeil.com/"
+				target="_blank"
+				rel="noopener noreferrer"
+				class="text-blue-400 underline decoration-blue-500/60 underline-offset-4 transition-colors hover:text-blue-300 hover:decoration-blue-400"
+				>בתי הפיוס</a
+			> שלנו במקרה שיש ללקוח תלונה או סכסוך כלפי השירות.
+		</li>
+		<li class="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+			<strong>אמנת המוסר העולמית</strong> — כל מי שמופיע כאן חתום על
+			<a
+				href="https://www.melecshop.com/page/uecc"
+				target="_blank"
+				rel="noopener noreferrer"
+				class="text-blue-400 underline decoration-blue-500/60 underline-offset-4 transition-colors hover:text-blue-300 hover:decoration-blue-400"
+				>הקוד האתי המוסרי העולמי (UECC)</a
+			>.
+		</li>
+	</ul>
 	<p class="text-lg">
-		באינדקס תמצאו <strong>חשמלאים</strong>, <strong>אינסטלטורים</strong>,
-		<strong>שיפוצניקים</strong>, טכנאי <strong>מזגנים</strong> ומוצרי חשמל,
-		<strong>הובלות</strong>, טכנאי <strong>מחשבים</strong> ואבטחת מידע, <strong>עורכי דין</strong>
-		ושירותים פיננסיים, <strong>אוכל ומזון</strong> ואירועים, <strong>יופי וטיפוח</strong>,
-		<strong>בריאות ותזונה</strong>, טיפול וייעוץ, חוגים ופנאי ובייביסיטר — בכל הארץ. הפנייה היא
-		ישירה לבעל המקצוע, בלי תיווך ובלי עמלה.
+		הפנייה היא <strong>ישירה לבעל המקצוע</strong> — בלי תיווך ובלי עמלה.
 	</p>
 	<p class="text-lg">
 		בעל מקצוע?
