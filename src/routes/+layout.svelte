@@ -147,7 +147,7 @@
 						>
 							מדריך בעלי מקצוע כשירים
 						</p>
-						<p class="hidden text-right text-sm font-bold text-blue-50/90 sm:block dark:text-white">
+						<p class="hidden text-right text-lg font-bold text-blue-50/90 sm:block dark:text-white">
 							{t.subtitle}
 						</p>
 					</div>
