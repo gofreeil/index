@@ -30,10 +30,15 @@
 	let failedImage = $state(false);
 
 	// יש עסקים שלא העלו תמונות אבל כן העלו לוגו. במקום אות בודדת על ריבוע
-	// ריק — הלוגו עצמו ממלא את אזור המדיה, בלי חיתוך (object-contain): לוגו
-	// שנחתך לרוחב האריח קורא כמו תקלה. המונוגרם נשאר למי שאין לו גם לוגו.
+	// ריק — הלוגו עצמו ממלא את אזור המדיה, בלי שייחתך לרוחב האריח כמו באנר
+	// (contain ולא cover). המונוגרם נשאר למי שאין לו גם לוגו.
 	const cardImage = $derived(business.banner || business.logo || '');
 	const isLogoOnly = $derived(!business.banner && !!business.logo);
+
+	// התאמה מדויקת למשבצת (z=1) השאירה את הלוגו קטן: הוא נבלם בגובה האריח
+	// ומסביבו נשאר אוויר, ועוד אוויר משלו בתוך הקובץ. לכן הוא נמתח מעבר
+	// להתאמה — מה שיוצא מהמשבצת הוא בעיקר השוליים הריקים של הקובץ עצמו.
+	const LOGO_ZOOM = 1.35;
 
 	/** @param {Event} e */
 	function onBannerError(e) {
@@ -46,9 +51,10 @@
 	// business.banner הוא כבר התמונה הראשית שבחר בעל העסק — והמיקום שנלקח
 	// כאן הוא המיקום שלה, ולא של הראשונה שהועלתה (ראו mediaFit.js).
 	// כשהמוצג הוא הלוגו — המיקום שלו הוא זה שנקבע לו בעורך הלוגו.
+	const logoFit = $derived(parseFit(business.logo_fit));
 	const cardFit = $derived(
 		isLogoOnly
-			? parseFit(business.logo_fit)
+			? { ...logoFit, z: logoFit.z * LOGO_ZOOM }
 			: parseFit(business.banner_fits?.[business.main_index ?? 0])
 	);
 
@@ -105,9 +111,9 @@
 		     שקט במקום ריבוע ריק. -->
 		<div class="relative h-24 w-full overflow-hidden bg-black/25 sm:h-40">
 			{#if cardImage && !failedImage}
-				<!-- העוטף הוא משבצת המדידה של adImgFit, ולכן השוליים של הלוגו
-				     נקבעים בו (inset) ולא ב-padding של התמונה. -->
-				<div class="absolute {isLogoOnly ? 'inset-3 sm:inset-5' : 'inset-0'}">
+				<!-- העוטף הוא משבצת המדידה של adImgFit — כל האריח, גם ללוגו:
+				     שוליים כאן היו מקטינים אותו עוד לפני הזום. -->
+				<div class="absolute inset-0">
 					<img
 						src={imgUrl(cardImage, 384)}
 						srcset={imgSrcSet(cardImage, [256, 384, 640])}
@@ -121,7 +127,7 @@
 						use:adImgFit={{
 							...cardFit,
 							mode: isLogoOnly ? 'contain' : 'cover',
-							enabled: !isDefaultFit(cardFit)
+							enabled: isLogoOnly || !isDefaultFit(cardFit)
 						}}
 					/>
 				</div>
