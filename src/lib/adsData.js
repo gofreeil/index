@@ -88,7 +88,7 @@ export const ads = [
 	},
 	{
 		id: 3,
-		title: 'קבוצת רכישה',
+		title: 'רכישות קבוצתיות',
 		description: 'הוזל את ההוצאות שלך',
 		cta: 'הצטרף לקבוצת הרכישה שלנו והוזל מיד את ההוצאות!',
 		href: 'https://groups.gofreeil.com/',
