@@ -10,6 +10,7 @@
 	import SmartShare from '$lib/components/SmartShare.svelte';
 	import { branchLine } from '$lib/branches.js';
 	import ServiceAreaMap from '$lib/components/ServiceAreaMap.svelte';
+	import { hasServiceMap } from '$lib/serviceArea.js';
 	import NavigateButton from '$lib/components/NavigateButton.svelte';
 	import { adImgFit } from '$lib/adImageFit';
 	import { parseFit, isDefaultFit, logoShapeClass } from '$lib/mediaFit.js';
@@ -258,7 +259,22 @@
 	   ביותר מתוך טקסט חופשי (address / city / sales_area). היא הוחלפה
 	   ב-ServiceAreaMap: אזור השירות עונה על מה שהמחפש בא לברר — "האם הוא
 	   מגיע אליי" — ואת נקודת הכתובת ממילא מראה המפה שבדף הבית.
-	   placeOrEmpty נשאר: הוא משרת את הכותרת ואת ה-JSON-LD, לא את המפה. */
+	   placeOrEmpty נשאר: הוא משרת את הכותרת ואת ה-JSON-LD, לא את המפה.
+
+	   כרטיסייה שלא נמסר עליה שום מקום אינה מקבלת מפה בכלל. מפה בלי ציור
+	   היא תצוגת כל הארץ, והיא נקראת כ"מגיע לכל מקום" — טענה שאיש לא כתב.
+	   אין מפה ואין לאן לנווט = גם החצי הזה של השורה נעלם, ו"על העסק"
+	   נפרש על כל הרוחב במקום להשאיר חצי מסך ריק. */
+	const hasAreaMap = $derived(hasServiceMap(business));
+	const hasNavTarget = $derived(
+		!!(
+			business.address ||
+			business.city ||
+			business.neighborhood ||
+			business.branches?.length ||
+			(typeof business.lat === 'number' && typeof business.lng === 'number')
+		)
+	);
 
 	const pageTitle = $derived(
 		[business.name, business.category, bizArea ? `ב${bizArea}` : ''].filter(Boolean).join(' — ') +
@@ -692,17 +708,21 @@
 			<!-- מפה אחת בכרטיסייה, והיא של אזורי השירות. מפת גוגל שישבה כאן
 			     הראתה את נקודת הכתובת בלבד — תפקיד שהמפה של דף הבית ממלאת —
 			     ואל תוך iframe של גוגל אי אפשר לצייר את האזורים מבחוץ. -->
-			<div class="w-full flex-shrink-0 sm:w-1/2">
-				<div class="overflow-hidden rounded-xl border border-white/10">
-					<ServiceAreaMap {business} height="h-72 sm:h-[26rem]" />
+			{#if hasAreaMap || hasNavTarget}
+				<div class="w-full flex-shrink-0 sm:w-1/2">
+					{#if hasAreaMap}
+						<div class="overflow-hidden rounded-xl border border-white/10">
+							<ServiceAreaMap {business} height="h-72 sm:h-[26rem]" />
+						</div>
+					{/if}
+					<!-- "נווט" מתחת למפה ולא בתוכה: המפה מראה אזור שירות מקורב, והכפתור
+					     מוסר יעד מדויק לאפליקציה שמותקנת אצל הגולש. אין כתובת ואין
+					     נקודה = הרכיב לא מרנדר דבר, ולא נשארת שורה ריקה. -->
+					<div class={hasAreaMap ? 'mt-2.5' : ''}>
+						<NavigateButton {business} />
+					</div>
 				</div>
-				<!-- "נווט" מתחת למפה ולא בתוכה: המפה מראה אזור שירות מקורב, והכפתור
-				     מוסר יעד מדויק לאפליקציה שמותקנת אצל הגולש. אין כתובת ואין
-				     נקודה = הרכיב לא מרנדר דבר, ולא נשארת שורה ריקה. -->
-				<div class="mt-2.5">
-					<NavigateButton {business} />
-				</div>
-			</div>
+			{/if}
 		</div>
 	</section>
 

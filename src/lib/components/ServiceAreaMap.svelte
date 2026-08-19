@@ -31,6 +31,9 @@
 	const area = $derived(resolveServiceArea(business));
 	const shapes = $derived(serviceShapes(area));
 	const hasPin = $derived(typeof business?.lat === 'number' && typeof business?.lng === 'number');
+	/* אין צורה ואין נקודה = אין מפה. מפה בלי שום ציור עליה היא תצוגת כל
+	   הארץ, והמבקר קורא אותה כ"העסק מגיע לכל מקום" — טענה שלא נמסרה. */
+	const drawable = $derived(shapes.length > 0 || hasPin);
 
 	const PIN_SVG = `<svg viewBox="0 0 24 34" width="22" height="31" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 .9C6 .9 1.1 5.8 1.1 11.8c0 8.3 9.9 20.4 10.3 20.9a.8.8 0 0 0 1.2 0c.4-.5 10.3-12.6 10.3-20.9C22.9 5.8 18 .9 12 .9Z" fill="#2563eb" stroke="#fff" stroke-width="1.7"/><circle cx="12" cy="11.9" r="4.1" fill="#fff"/></svg>`;
 
@@ -153,22 +156,24 @@
 </script>
 
 <!-- isolate: כולא את ה-z-index הגבוהים של Leaflet בתוך stacking context משלו -->
-<div bind:this={holder} class="relative isolate">
-	{#if show}
-		<div bind:this={mapEl} class="w-full rounded-xl {height}"></div>
-		<!-- ההסתייגות בתוך המפה ולא מתחתיה, שלא תגזול שורה בכרטיסייה. בכחול
-		     של העיגולים ולא בשחור, ובריחוק מהפינה כדי שלא תיראה מודבקת לשוליים.
-		     שורת הייחוס יורדת לפינה השמאלית כדי שהשתיים לא ייפגשו.
-		     z גבוה מפקדי Leaflet. -->
-		<div
-			class="pointer-events-none absolute bottom-2 right-2 z-[1000] rounded bg-blue-600/90 px-2 py-0.5 text-[10px] font-medium leading-4 text-white"
-		>
-			אזורי השירות להמחשה בלבד
-		</div>
-	{:else}
-		<div class="w-full animate-pulse rounded-xl bg-gray-800 {height}"></div>
-	{/if}
-</div>
+{#if drawable}
+	<div bind:this={holder} class="relative isolate">
+		{#if show}
+			<div bind:this={mapEl} class="w-full rounded-xl {height}"></div>
+			<!-- ההסתייגות בתוך המפה ולא מתחתיה, שלא תגזול שורה בכרטיסייה. בכחול
+			     של העיגולים ולא בשחור, ובריחוק מהפינה כדי שלא תיראה מודבקת לשוליים.
+			     שורת הייחוס יורדת לפינה השמאלית כדי שהשתיים לא ייפגשו.
+			     z גבוה מפקדי Leaflet. -->
+			<div
+				class="pointer-events-none absolute right-2 bottom-2 z-[1000] rounded bg-blue-600/90 px-2 py-0.5 text-[10px] leading-4 font-medium text-white"
+			>
+				אזורי השירות להמחשה בלבד
+			</div>
+		{:else}
+			<div class="w-full animate-pulse rounded-xl bg-gray-800 {height}"></div>
+		{/if}
+	</div>
+{/if}
 
 <style>
 	:global(.area-pin) {

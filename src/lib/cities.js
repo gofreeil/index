@@ -110,6 +110,7 @@ export const IL_CITIES = [
 	'גדרה',
 	'מזכרת בתיה',
 	'באר יעקב',
+	'בית דגן',
 	'שוהם',
 	'רמת השרון',
 	'הוד השרון',
@@ -180,6 +181,17 @@ export const IL_CITIES = [
    ו"טירת כרמל" לא ייקרא כ"טירה". נבנה פעם אחת בטעינת המודול. */
 const BY_LENGTH = [...IL_CITIES].sort((a, b) => b.length - a.length);
 
+/* שם יישוב שנדבקה לו אות עברית מימין הוא מילה אחרת: "יהוד" שבתוך
+   "יהודה ושומרון", "נתניה" שבתוך "נתניהו", "נשר" שבתוך "נשרף", "מיתר"
+   שבתוך "מיתרים". הגבול נדרש מימין בלבד — משמאל דווקא נדבקות אותיות
+   השימוש ("בתל אביב", "מחיפה", "ולירושלים"), ודרישת גבול גם שם הייתה
+   מפילה את רוב ההתאמות. \b של JS אינו עוזר כאן: הוא מוגדר על אותיות
+   לטיניות, ובין שתי אותיות עבריות אין בו גבול כלל. */
+const cityRe = (/** @type {string} */ c) =>
+	new RegExp(c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![\u05D0-\u05EA])');
+
+const MATCHERS = BY_LENGTH.map((c) => /** @type {[string, RegExp]} */ ([c, cityRe(c)]));
+
 /** @param {unknown} v */
 const clean = (v) =>
 	String(v ?? '')
@@ -195,10 +207,10 @@ const clean = (v) =>
 function scanText(text, into) {
 	let rest = clean(text);
 	if (!rest) return;
-	for (const city of BY_LENGTH) {
-		if (!rest.includes(city)) continue;
+	for (const [city, re] of MATCHERS) {
+		if (!re.test(rest)) continue;
 		into.add(city);
-		rest = rest.split(city).join(' ');
+		rest = rest.split(re).join(' ');
 	}
 }
 
@@ -211,7 +223,7 @@ function scanText(text, into) {
 export function canonicalCity(raw) {
 	const v = clean(raw);
 	if (!v) return '';
-	return BY_LENGTH.find((c) => v.includes(c)) ?? v;
+	return MATCHERS.find(([, re]) => re.test(v))?.[0] ?? v;
 }
 
 /**

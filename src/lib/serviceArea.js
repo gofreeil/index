@@ -10,6 +10,12 @@
 // מי שלא כתב שום גיאוגרפיה נופל לכתובת/עיר של הכרטיסייה, ורק אם גם הן
 // ריקות הוא לא מקבל צורה כלל (ולא מומצא לו מיקום).
 //
+// מן התיאור החופשי ("על העסק") נקראים אזורים בלבד, ורק כאלה שאין להם
+// קריאה שנייה — יו"ש, הגליל, הנגב. שם נמצא בפועל רוב מה שבעלי העסקים
+// מספרים על אזור העבודה שלהם, מפני שהם כותבים "משתדל לעבוד ביו״ש"
+// במקום למלא את שדה "אזור מכירה". ערים לא נקראות משם: "הכי טוב בתל
+// אביב" הוא סופרלטיב ולא אזור שירות.
+//
 // שונה מ-cities.js: שם רשימת יישובים לזיהוי בטקסט לצורכי הבורר והסינון,
 // כאן טבלת קואורדינטות לצורכי ציור. שתיהן מתעדכנות בנפרד ובכוונה.
 // ============================================================
@@ -99,6 +105,7 @@ export const CITY_LATLNG = /** @type {Record<string, [number, number]>} */ ({
 	גדרה: [31.8139, 34.7772],
 	'מזכרת בתיה': [31.8517, 34.8386],
 	'באר יעקב': [31.9439, 34.8353],
+	'בית דגן': [31.9958, 34.8256],
 	שוהם: [31.9989, 34.9469],
 	'רמת השרון': [32.1461, 34.8397],
 	'הוד השרון': [32.15, 34.8886],
@@ -211,6 +218,16 @@ export function cityLabels(zoom, featured = []) {
 const REGIONS =
 	/** @type {Record<string, {label: string, circles: [number, number, number][]}>} */ ({
 		etzion: { label: 'גוש עציון', circles: [[31.65, 35.13, 12000]] },
+		/* רכס מתמשך מחברון ועד ג'נין, כ-110 ק"מ — עיגול אחד היה יוצא ברדיוס
+		   55 ק"מ ובולע את גוש דן ואת בקעת הירדן גם יחד. */
+		judea: {
+			label: 'יהודה ושומרון',
+			circles: [
+				[32.35, 35.28, 25000],
+				[32.05, 35.2, 25000],
+				[31.6, 35.1, 25000]
+			]
+		},
 		jezreel: { label: 'עמק יזרעאל', circles: [[32.62, 35.27, 22000]] },
 		dan: { label: 'גוש דן', circles: [[32.07, 34.83, 16000]] },
 		sharon: { label: 'השרון', circles: [[32.3, 34.92, 28000]] },
@@ -237,6 +254,10 @@ const REGIONS =
    "גוש עציון" נבדק לפני "גוש דן", ו"עמק יזרעאל" לפני "צפון". */
 const REGION_PATTERNS = /** @type {[RegExp, string][]} */ ([
 	[/גוש עציון/, 'etzion'],
+	/* "יהודה" לבדה אינה נבדקת: ברחוב יהודה הלוי ובאור יהודה היא לא אזור,
+	   ובלי \b אין דרך להבדיל. "שומרון" תופסת גם את "יהודה ושומרון", ואילו
+	   "קרני שומרון" כבר נוכתה כיישוב לפני שהשורה הזאת רצה. */
+	[/יו["'׳״]ש|שומרון/, 'judea'],
 	[/עמק יזרעאל/, 'jezreel'],
 	[/גוש דן/, 'dan'],
 	[/שרון/, 'sharon'],
@@ -244,6 +265,30 @@ const REGION_PATTERNS = /** @type {[RegExp, string][]} */ ([
 	[/נגב|דרום/, 'south'],
 	[/גליל|צפון/, 'north'],
 	[/מרכז/, 'center']
+]);
+
+/* תת-קבוצה לתיאור החופשי — המקום היחיד שבו מילה בודדת מכריעה בלי הקשר,
+   ולכן הרשימה קצרה מזו שמעל בכוונה:
+
+   בחוץ לגמרי — "מרכז" ("מרכז מסחרי", "מרכז ההדרכה"), "צפון" ("צפון תל
+   אביב") ו"דרום" ("בדרום העיר"). בתיאור שיווקי אלה כמעט תמיד לא אזור.
+
+   ביידוע בלבד — "השרון" ולא "שרון" (שם פרטי נפוץ), "הגליל" ולא "גליל"
+   (גליל נייר), "הנגב" ולא "נגב" (גם צורת עבר של לנגב), "השפלה" ולא
+   "שפלה". צורת ה-ב' נוספת מפני ש"עובד בגליל" שכיח כמו "עובד בהגליל"
+   אינו קיים.
+
+   שמות היישובים מנוכים מהטקסט לפני הבדיקה, אחרת "המשרד ברמת השרון"
+   היה נקרא כאזור השרון כולו ו"קרני שומרון" כיהודה ושומרון. */
+const DESC_REGION_PATTERNS = /** @type {[RegExp, string][]} */ ([
+	[/גוש עציון/, 'etzion'],
+	[/יו["'׳״]ש|שומרון/, 'judea'],
+	[/עמק יזרעאל/, 'jezreel'],
+	[/גוש דן/, 'dan'],
+	[/השרון|בשרון/, 'sharon'],
+	[/השפלה|בשפלה/, 'shfela'],
+	[/הנגב|בנגב/, 'south'],
+	[/הגליל|בגליל/, 'north']
 ]);
 
 const COUNTRY_RE = /ארצי|כל הארץ|בכל הארץ|כל מקום בארץ|משלוח חינם/;
@@ -260,15 +305,27 @@ const clean = (/** @type {unknown} */ v) =>
 /* מהארוך לקצר, כדי ש"מגדל העמק" לא ייחתך ל"מגדל" ו"קרית גת" לא תיקרא "גת". */
 const CITIES_BY_LENGTH = Object.keys(CITY_LATLNG).sort((a, b) => b.length - a.length);
 
+/* שם יישוב שנדבקה לו אות עברית מימין הוא מילה אחרת: "יהוד" שבתוך
+   "יהודה ושומרון", "נתניה" שבתוך "נתניהו", "נשר" שבתוך "נשרף", "מיתר"
+   שבתוך "מיתרים". הגבול נדרש מימין בלבד — משמאל דווקא נדבקות אותיות
+   השימוש ("בתל אביב", "מחיפה", "ולירושלים"), ודרישת גבול גם שם הייתה
+   מפילה את רוב ההתאמות. \b של JS אינו עוזר כאן: הוא מוגדר על אותיות
+   לטיניות, ובין שתי אותיות עבריות אין בו גבול כלל. */
+const cityRe = (/** @type {string} */ c) =>
+	new RegExp(c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![\u05D0-\u05EA])');
+
+/* נבנה פעם אחת בטעינת המודול: הפונקציה רצה על כל כרטיסייה בכל רינדור. */
+const CITY_MATCHERS = CITIES_BY_LENGTH.map((c) => /** @type {[string, RegExp]} */ ([c, cityRe(c)]));
+
 /** @param {string} text @returns {string[]} */
 function findCities(text) {
 	let rest = text;
 	/** @type {string[]} */
 	const out = [];
-	for (const c of CITIES_BY_LENGTH) {
-		if (!rest.includes(c)) continue;
+	for (const [c, re] of CITY_MATCHERS) {
+		if (!re.test(rest)) continue;
 		out.push(c);
-		rest = rest.split(c).join(' ');
+		rest = rest.split(re).join(' ');
 	}
 	return out;
 }
@@ -284,18 +341,36 @@ function scanGeo(text) {
 }
 
 /**
+ * האזורים החד-משמעיים שנזכרו בתיאור החופשי. ערים אינן נקראות מכאן, אך
+ * הן מנוכות מהטקסט קודם — ראו DESC_REGION_PATTERNS.
+ * @param {string} text
+ */
+function scanDescRegions(text) {
+	if (!text) return [];
+	let rest = text;
+	for (const [, re] of CITY_MATCHERS) rest = rest.split(re).join(' ');
+	return DESC_REGION_PATTERNS.filter(([re]) => re.test(rest)).map(([, k]) => k);
+}
+
+/**
  * אזור העבודה של כרטיסייה אחת.
  * סדר ההכרעה: גיאוגרפיה מפורשת ב"אזור מכירה" → "כל הארץ"/"כל העולם" →
  * נפילה לכתובת/עיר. הנפילה היא שמצילה את מי שכתב "קליניקה" אבל מילא כתובת.
+ * אזור שנזכר בתיאור מצטרף לכל אלה ואינו מחליף אותם: מי שיושב בבית דגן
+ * ועובד ביו"ש נכון בשניהם.
  *
  * kind: city | cities | region | country | global | none
  * @param {{ salesArea?: string, sales_area?: string, address?: string, city?: string,
+ *           uniqueContent?: string, unique_content?: string, description?: string,
  *           branches?: {city?: string, address?: string}[] }} b
  */
 export function resolveServiceArea(b) {
 	const raw = clean(b.salesArea ?? b.sales_area);
 	// סניפים ומקומות שירות נוספים הם מיקומים פיזיים מוצהרים, לא ניסוח חופשי
 	const branchText = clean(branchesGeoText(b.branches));
+	// דף הבית שולח את הטקסט הזה כ-description (הוא כבר ממוזג שם), ודף
+	// העסק כ-unique_content
+	const descRegions = scanDescRegions(clean(b.uniqueContent ?? b.unique_content ?? b.description));
 	const base = { cities: /** @type {string[]} */ ([]), regions: /** @type {string[]} */ ([]) };
 
 	let { cities, regions } = scanGeo(raw);
@@ -314,6 +389,10 @@ export function resolveServiceArea(b) {
 		// "אזור מכירה" שכבר תיאר גיאוגרפיה לא מבטל סניף שנרשם בנפרד
 		for (const c of findCities(branchText)) if (!cities.includes(c)) cities.push(c);
 	}
+
+	/* אחרי הבדיקות של "כל הארץ"/"כל העולם", ולכן עסק ארצי אינו מאבד את
+	   הצורה שלו בגלל אזור שנזכר בתיאור — שם היא ממילא מכילה אותו. */
+	for (const k of descRegions) if (!regions.includes(k)) regions.push(k);
 
 	if (!cities.length && !regions.length) return { ...base, kind: 'none', label: '' };
 
@@ -436,10 +515,14 @@ export function serviceShapes(area) {
 	/** @type {Shape[]} */
 	const out = [];
 
-	// ארצי, עולמי, ומי שלא ניתן היה לגזור ממנו שום מקום — כולם מסומנים
-	// כמדינה שלמה. כל אלה חולקים צורה אחת (key זהה), ולכן היא מצוירת פעם
-	// אחת עם פופאפ שמונה את כולם, ולא 62 מתארים זה על גבי זה.
-	if (area.kind === 'country' || area.kind === 'global' || area.kind === 'none') {
+	// ארצי ועולמי חולקים צורה אחת (key זהה), ולכן היא מצוירת פעם אחת עם
+	// פופאפ שמונה את כולם, ולא 62 מתארים זה על גבי זה.
+	//
+	// מי שלא ניתן היה לגזור ממנו שום מקום אינו מקבל כאן דבר. קודם צויר גם
+	// הוא כמדינה שלמה, וזו הייתה טענה שאיש לא מסר: חמישית מהכרטיסיות —
+	// רובן כאלה שכתבו "אזור ספציפי, אפרט בהערות" — הוצגו כעסק ארצי. עדיף
+	// בלי מפה מאשר מפה שמסמנת את כל ישראל למי שלא כתב על עצמו כלום.
+	if (area.kind === 'country' || area.kind === 'global') {
 		out.push({ type: 'country', key: 'country', label: 'כל הארץ', ...COUNTRY_CIRCLE });
 	}
 
@@ -470,4 +553,15 @@ export function serviceShapes(area) {
 		});
 	}
 	return out;
+}
+
+/**
+ * האם יש בכלל מה לצייר לכרטיסייה הזאת — נקודה מדויקת, או צורת אזור אחת
+ * לפחות. אין: הדף לא מציג מפה כלל, במקום להציג מפה ריקה של כל הארץ.
+ *
+ * @param {Parameters<typeof resolveServiceArea>[0] & {lat?: unknown, lng?: unknown}} b
+ */
+export function hasServiceMap(b) {
+	if (typeof b?.lat === 'number' && typeof b?.lng === 'number') return true;
+	return serviceShapes(resolveServiceArea(b)).length > 0;
 }
