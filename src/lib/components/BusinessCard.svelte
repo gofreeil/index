@@ -29,17 +29,28 @@
 	   אין תמונה ⇒ מונוגרם. */
 	let failedImage = $state(false);
 
+	// יש עסקים שלא העלו תמונות אבל כן העלו לוגו. במקום אות בודדת על ריבוע
+	// ריק — הלוגו עצמו ממלא את אזור המדיה, בלי חיתוך (object-contain): לוגו
+	// שנחתך לרוחב האריח קורא כמו תקלה. המונוגרם נשאר למי שאין לו גם לוגו.
+	const cardImage = $derived(business.banner || business.logo || '');
+	const isLogoOnly = $derived(!business.banner && !!business.logo);
+
 	/** @param {Event} e */
 	function onBannerError(e) {
 		const img = /** @type {HTMLImageElement} */ (e.currentTarget);
-		if (img.src === new URL(business.banner, location.href).href) failedImage = true;
+		if (img.src === new URL(cardImage, location.href).href) failedImage = true;
 	}
 
 	// מיקום וזום שנקבעו בעורך. כשהם ברירת המחדל הפעולה מכובה לגמרי,
 	// והמראה נשאר בדיוק כפי שה-class מגדיר (ראו mediaFit.js).
 	// business.banner הוא כבר התמונה הראשית שבחר בעל העסק — והמיקום שנלקח
-	// כאן הוא המיקום שלה, ולא של הראשונה שהועלתה (ראו mediaFit.js)
-	const bannerFit = $derived(parseFit(business.banner_fits?.[business.main_index ?? 0]));
+	// כאן הוא המיקום שלה, ולא של הראשונה שהועלתה (ראו mediaFit.js).
+	// כשהמוצג הוא הלוגו — המיקום שלו הוא זה שנקבע לו בעורך הלוגו.
+	const cardFit = $derived(
+		isLogoOnly
+			? parseFit(business.logo_fit)
+			: parseFit(business.banner_fits?.[business.main_index ?? 0])
+	);
 
 	// הדירוג בכרטיסייה — רק כשיש דירוג אמיתי (כמו בקומת "המדורגים ביותר"),
 	// ולא חמישה כוכבים כבויים בכל כרטיס. הממוצע מעוגל לספרה אחת.
@@ -89,22 +100,31 @@
 	</div>
 
 	<a href="/business/{business.id}" class="flex flex-1 flex-col">
-		<!-- אזור המדיה: רק התמונה שבעל העסק בחר כראשית — בלי הלוגו מעליה.
-		     כשאין תמונה כזו — מונוגרם שקט במקום ריבוע ריק. -->
+		<!-- אזור המדיה: התמונה שבעל העסק בחר כראשית — בלי הלוגו מעליה. כשאין
+		     תמונה כזו אבל יש לוגו — הלוגו במקומה; וכשאין גם לוגו — מונוגרם
+		     שקט במקום ריבוע ריק. -->
 		<div class="relative h-24 w-full overflow-hidden bg-black/25 sm:h-40">
-			{#if business.banner && !failedImage}
-				<img
-					src={imgUrl(business.banner, 384)}
-					srcset={imgSrcSet(business.banner, [256, 384, 640])}
-					sizes="(min-width: 640px) 20rem, 50vw"
-					alt={business.name}
-					class="absolute inset-0 h-full w-full object-cover"
-					loading="lazy"
-					decoding="async"
-					onerror={onBannerError}
-					use:imgFallback={business.banner}
-					use:adImgFit={{ ...bannerFit, enabled: !isDefaultFit(bannerFit) }}
-				/>
+			{#if cardImage && !failedImage}
+				<!-- העוטף הוא משבצת המדידה של adImgFit, ולכן השוליים של הלוגו
+				     נקבעים בו (inset) ולא ב-padding של התמונה. -->
+				<div class="absolute {isLogoOnly ? 'inset-3 sm:inset-5' : 'inset-0'}">
+					<img
+						src={imgUrl(cardImage, 384)}
+						srcset={imgSrcSet(cardImage, [256, 384, 640])}
+						sizes="(min-width: 640px) 20rem, 50vw"
+						alt={business.name}
+						class="absolute inset-0 h-full w-full {isLogoOnly ? 'object-contain' : 'object-cover'}"
+						loading="lazy"
+						decoding="async"
+						onerror={onBannerError}
+						use:imgFallback={cardImage}
+						use:adImgFit={{
+							...cardFit,
+							mode: isLogoOnly ? 'contain' : 'cover',
+							enabled: !isDefaultFit(cardFit)
+						}}
+					/>
+				</div>
 			{:else}
 				<span
 					class="absolute inset-0 z-10 flex items-center justify-center text-2xl font-bold text-blue-300/40 sm:text-4xl"
