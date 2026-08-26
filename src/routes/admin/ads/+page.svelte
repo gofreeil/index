@@ -7,6 +7,7 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import { adImgFit, parseAdImageFit } from '$lib/adImageFit';
 	import { AD_SLOT_COUNT } from '$lib/adSlots.js';
+	import AdCardPreview from '$lib/components/AdCardPreview.svelte';
 
 	/** @type {{ data: any, form: any }} */
 	let { data, form } = $props();
@@ -28,6 +29,84 @@
 	 *  @param {any} ad @param {number} fallback */
 	function slotOf(ad, fallback) {
 		return typeof ad?.slot === 'number' ? ad.slot : fallback;
+	}
+
+	// מי תופסת כל מקום בטור — גם מושהית/פגה שומרת את המקום שלה
+	const slotOccupants = $derived(
+		new Map(
+			data.schedules
+				.filter((/** @type {any} */ s) => typeof s.slot === 'number')
+				.map((/** @type {any} */ s) => [s.slot, { id: s.id, title: s.title }])
+		)
+	);
+	/** @param {string} t */
+	function shortTitle(t) {
+		return t.length > 22 ? t.slice(0, 21) + '…' : t;
+	}
+	/** תווית אפשרות בבורר המקום — מקום תפוס מסומן עם שם הפרסומת שיושבת בו
+	 *  @param {number} n @param {string} selfId */
+	function slotOptionLabel(n, selfId) {
+		const occ = slotOccupants.get(n);
+		if (!occ) return `${n}`;
+		if (occ.id === selfId) return `${n} — המקום הנוכחי`;
+		return `${n} ⚠ תפוס: ${shortTitle(occ.title)}`;
+	}
+	// אזהרה חיה מתחת לבורר ברגע שנבחר מקום תפוס (לפי מזהה השורה)
+	/** @type {Record<string, string>} */
+	let slotWarning = $state({});
+	/** @param {Event} e @param {{id: string}} self */
+	function onSlotPick(e, self) {
+		const n = Number(/** @type {HTMLSelectElement} */ (e.currentTarget).value);
+		const occ = slotOccupants.get(n);
+		slotWarning = {
+			...slotWarning,
+			[self.id]:
+				occ && occ.id !== self.id
+					? `מקום ${n} תפוס ע"י "${shortTitle(occ.title)}" — לחיצה על "העבר" תחליף ביניהן`
+					: ''
+		};
+	}
+	/** אישור אחרון לפני העברה למקום תפוס — אישור = החלפה, ביטול = כלום לא זז
+	 *  @param {MouseEvent} e @param {{id: string, title: string, slot?: number|null}} self */
+	function confirmSlotMove(e, self) {
+		const btnForm = /** @type {HTMLButtonElement} */ (e.currentTarget).form;
+		const sel = /** @type {HTMLSelectElement|null} */ (btnForm?.elements.namedItem('slot'));
+		const n = Number(sel?.value);
+		const occ = slotOccupants.get(n);
+		if (!occ || occ.id === self.id) return;
+		const ok = confirm(
+			`⚠ מקום ${n} כבר תפוס על ידי "${occ.title}".\n\n` +
+				`אישור — החלפה: "${self.title}" תעבור למקום ${n}, ו"${occ.title}" תעבור למקום ${self.slot ?? '-'}.\n` +
+				`ביטול — ההעברה מתבטלת ושתי הפרסומות נשארות במקומן.`
+		);
+		if (!ok) e.preventDefault();
+	}
+
+	// תצוגה מקדימה של הכרטיס כפי שהוא באמת מוצג בטור הפרסומות באתר:
+	// ריחוף על הכותרת בטבלת התזמון (דסקטופ) או הקשה עליה (נייד/דסקטופ)
+	const approvedById = $derived(
+		new Map(data.approved.map((/** @type {any} */ a) => [a.id, a]))
+	);
+	/** @type {{id: string, x: number, y: number}|null} */
+	let hoverPreview = $state(null);
+	/** @type {string|null} */
+	let modalPreviewId = $state(null);
+	const PREVIEW_W = 144; // w-36 — רוחב הכרטיס האמיתי בטור
+	const PREVIEW_H = 490; // aspect-[144/450] + רצועת ה-CTA
+	/** @param {MouseEvent} e @param {string} id */
+	function openHoverPreview(e, id) {
+		if (!approvedById.has(id)) return;
+		// מסך מגע — אין ריחוף אמיתי; ההקשה פותחת את המודאל במקום
+		if (window.matchMedia('(hover: none)').matches) return;
+		const r = /** @type {HTMLElement} */ (e.currentTarget).getBoundingClientRect();
+		// הכרטיס צף משמאל לתא, מוצמד לגבולות המסך — מחוץ למכל הגלילה של
+		// הטבלה (fixed), אחרת ה-overflow היה חותך אותו
+		const y = Math.max(
+			8,
+			Math.min(window.innerHeight - PREVIEW_H - 8, r.top + r.height / 2 - PREVIEW_H / 2)
+		);
+		const x = Math.max(8, r.left - PREVIEW_W - 16);
+		hoverPreview = { id, x, y };
 	}
 
 	// בחירה רב-פריטית (SvelteSet — ריאקטיבי לשינויים במקום)
@@ -880,29 +959,55 @@
 											</span>
 											<select
 												name="slot"
+												onchange={(e) => onSlotPick(e, s)}
 												class="rounded-lg border border-white/15 bg-black/40 px-1.5 py-1 text-[11px] text-white focus:border-amber-400/50 focus:outline-none"
 											>
 												{#each slotOptions as n (n)}
+													{@const occ = slotOccupants.get(n)}
+													{@const takenByOther = !!occ && occ.id !== s.id}
 													<option
 														value={n}
 														selected={n === s.slot}
-														style="background:#fff;color:#111"
+														style="background:{takenByOther ? '#fee2e2' : '#fff'};color:{takenByOther
+															? '#991b1b'
+															: '#111'}"
 													>
-														{n}
+														{slotOptionLabel(n, s.id)}
 													</option>
 												{/each}
 											</select>
 										</div>
 										<button
 											type="submit"
+											onclick={(e) => confirmSlotMove(e, s)}
 											class="rounded-lg border border-purple-500/40 bg-purple-500/20 px-2 py-1 text-[11px] font-black whitespace-nowrap text-purple-200 hover:bg-purple-500/30"
-											title="העבר למקום שנבחר; אם המקום תפוס - שתי הפרסומות מתחלפות"
+											title="העבר למקום שנבחר; מקום תפוס - תתבקש לאשר החלפה בין השתיים"
 										>
 											⇄ העבר
 										</button>
+										{#if slotWarning[s.id]}
+											<span class="max-w-[150px] text-[10px] leading-snug font-bold text-amber-300">
+												⚠ {slotWarning[s.id]}
+											</span>
+										{/if}
 									</form>
 								</td>
-								<td class="max-w-[150px] truncate px-2 py-2 font-bold text-white">{s.title}</td>
+								<!-- ריחוף = תצוגה מקדימה צפה של הכרטיס; הקשה = מודאל עם הכרטיס עצמו -->
+								<td class="px-2 py-2 font-bold text-white">
+									<button
+										type="button"
+										onmouseenter={(e) => openHoverPreview(e, s.id)}
+										onmouseleave={() => (hoverPreview = null)}
+										onclick={() => {
+											hoverPreview = null;
+											modalPreviewId = s.id;
+										}}
+										title="תצוגה מקדימה של הפרסומת כפי שהיא מוצגת באתר"
+										class="max-w-[150px] cursor-pointer truncate text-right underline decoration-white/30 decoration-dotted underline-offset-2 hover:text-amber-300"
+									>
+										{s.title}
+									</button>
+								</td>
 								<td class="hidden px-2 py-2 text-gray-300 md:table-cell">
 									<div class="max-w-[130px] truncate">{s.advertiserName || '-'}</div>
 									<div class="max-w-[130px] truncate text-[10px] text-gray-500">
@@ -1112,4 +1217,68 @@
 			</div>
 		{/if}
 	</section>
+
+	<!-- תצוגה מקדימה צפה בריחוף על כותרת בטבלת התזמון (דסקטופ בלבד) -->
+	{#if hoverPreview}
+		{@const pAd = approvedById.get(hoverPreview.id)}
+		{#if pAd}
+			<div
+				class="pointer-events-none fixed z-40 hidden drop-shadow-2xl md:block"
+				style="left:{hoverPreview.x}px; top:{hoverPreview.y}px"
+			>
+				<AdCardPreview ad={pAd} />
+			</div>
+		{/if}
+	{/if}
+
+	<!-- מודאל תצוגה מקדימה בהקשה על הכותרת (נייד ודסקטופ) -->
+	{#if modalPreviewId}
+		{@const mAd = approvedById.get(modalPreviewId)}
+		{#if mAd}
+			<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+			<div
+				class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm"
+				role="presentation"
+				onclick={() => (modalPreviewId = null)}
+			>
+				<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+				<div
+					class="my-auto flex flex-col items-center gap-3"
+					role="dialog"
+					aria-modal="true"
+					aria-label="תצוגה מקדימה של הפרסומת"
+					tabindex="-1"
+					onclick={(e) => e.stopPropagation()}
+				>
+					<AdCardPreview ad={mAd} />
+					<div class="flex items-center gap-2">
+						<a
+							href={`/ads/${mAd.id}`}
+							target="_blank"
+							rel="noopener"
+							class="rounded-lg border border-amber-500/40 bg-amber-500/20 px-3 py-1.5 text-xs font-black text-amber-200 hover:bg-amber-500/30"
+						>
+							פתח דף נחיתה
+						</a>
+						<button
+							type="button"
+							onclick={() => (modalPreviewId = null)}
+							class="rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-black text-gray-200 hover:bg-white/20"
+						>
+							✕ סגור
+						</button>
+					</div>
+				</div>
+			</div>
+		{/if}
+	{/if}
 </div>
+
+<svelte:window
+	onkeydown={(e) => {
+		if (e.key === 'Escape') {
+			modalPreviewId = null;
+			hoverPreview = null;
+		}
+	}}
+/>
