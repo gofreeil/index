@@ -4,10 +4,57 @@
 	/** @type {{ data: any, form: any }} */
 	let { data, form } = $props();
 
-	// שדה החיפוש נזרע מ-q שב-URL בטעינה בלבד — עריכה חיה עד שליחת הטופס (GET)
+	// שדה החיפוש נזרע מ-q שב-URL בטעינה בלבד — משם החיפוש חי (debounce), בלי טעינת עמוד
 	// svelte-ignore state_referenced_locally
 	let q = $state(data.q ?? '');
 	let busy = $state('');
+
+	// ---- חיפוש חי בין המשתמשים הרשומים ----
+	// נזרע מתוצאות השרת (כניסה עם ?q= בכתובת) וממשיך חי מול /admin/admins/search
+	// svelte-ignore state_referenced_locally
+	let results = $state(data.results ?? []);
+	// svelte-ignore state_referenced_locally
+	let searched = $state((data.q ?? '').trim().length >= 2); // הושלם חיפוש עבור הערך הנוכחי
+	let searching = $state(false);
+	let searchError = $state('');
+	/** @type {ReturnType<typeof setTimeout> | undefined} */
+	let searchTimer;
+	let searchSeq = 0; // מגן מפני תשובות שהגיעו באיחור
+
+	function onSearchInput() {
+		searched = false;
+		searchError = '';
+		clearTimeout(searchTimer);
+		const query = q.trim();
+		if (query.length < 2) {
+			results = [];
+			searchSeq++; // מבטל חיפוש שעדיין רץ
+			searching = false;
+			return;
+		}
+		searchTimer = setTimeout(() => runSearch(query), 350);
+	}
+
+	/** @param {string} query */
+	async function runSearch(query) {
+		const seq = ++searchSeq;
+		searching = true;
+		try {
+			const res = await fetch(`/admin/admins/search?q=${encodeURIComponent(query)}`);
+			const body = await res.json();
+			if (seq !== searchSeq) return; // הוקלד ערך חדש בינתיים
+			results = body.users ?? [];
+			searchError = body.error ?? '';
+			searched = true;
+		} catch {
+			if (seq !== searchSeq) return;
+			results = [];
+			searchError = 'החיפוש נכשל — אפשר לנסות שוב';
+			searched = true;
+		} finally {
+			if (seq === searchSeq) searching = false;
+		}
+	}
 
 	/** @type {Record<string, [string, string]>} */
 	const ROLE_HE = {
@@ -43,7 +90,7 @@
 	// תוצאות החיפוש בלי מי שכבר אדמין (מופיע ברשימה למעלה)
 	const adminIds = $derived(new Set(data.admins.map((/** @type {any} */ a) => a.id)));
 	const searchResults = $derived(
-		(data.results ?? []).filter((/** @type {any} */ u) => !adminIds.has(u.id))
+		(results ?? []).filter((/** @type {any} */ u) => !adminIds.has(u.id))
 	);
 
 	/** @param {string} id */
@@ -187,7 +234,9 @@
 				type="search"
 				name="q"
 				bind:value={q}
-				placeholder="חיפוש משתמש לפי אימייל או שם (לפחות 2 תווים)…"
+				oninput={onSearchInput}
+				autocomplete="off"
+				placeholder="חיפוש חי לפי שם / מייל / טלפון (לפחות 2 תווים)…"
 				class="w-full max-w-md rounded-xl border border-gray-700 bg-gray-900/60 px-4 py-2.5 text-sm text-gray-100 placeholder:text-gray-600 focus:border-blue-500/60 focus:outline-none"
 			/>
 			<button
@@ -197,10 +246,22 @@
 			</button>
 		</form>
 
-		{#if data.q && data.q.length >= 2}
+		{#if searching}
+			<p
+				class="rounded-2xl border border-gray-800 bg-gray-900/40 py-4 text-center text-sm text-gray-400"
+			>
+				🔍 מחפש בין המשתמשים הרשומים…
+			</p>
+		{:else if searchError}
+			<p
+				class="rounded-2xl border border-amber-500/30 bg-amber-900/20 py-4 text-center text-sm text-amber-300"
+			>
+				{searchError}
+			</p>
+		{:else if searched && q.trim().length >= 2}
 			{#if searchResults.length === 0}
 				<p class="rounded-2xl border border-dashed border-gray-800 py-10 text-center text-gray-500">
-					לא נמצאו משתמשים מתאימים ל"{data.q}"
+					לא נמצא משתמש רשום התואם ל"{q.trim()}"
 				</p>
 			{:else}
 				<div class="space-y-2">
