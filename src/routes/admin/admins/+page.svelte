@@ -15,6 +15,7 @@
 	let results = $state(data.results ?? []);
 	// svelte-ignore state_referenced_locally
 	let searched = $state((data.q ?? '').trim().length >= 2); // הושלם חיפוש עבור הערך הנוכחי
+	let fuzzy = $state(false); // התוצאות הן "דומים" (שגיאת כתיב) ולא התאמה מדויקת
 	let searching = $state(false);
 	let searchError = $state('');
 	/** @type {ReturnType<typeof setTimeout> | undefined} */
@@ -23,6 +24,7 @@
 
 	function onSearchInput() {
 		searched = false;
+		fuzzy = false;
 		searchError = '';
 		clearTimeout(searchTimer);
 		const query = q.trim();
@@ -44,11 +46,13 @@
 			const body = await res.json();
 			if (seq !== searchSeq) return; // הוקלד ערך חדש בינתיים
 			results = body.users ?? [];
+			fuzzy = body.fuzzy ?? false;
 			searchError = body.error ?? '';
 			searched = true;
 		} catch {
 			if (seq !== searchSeq) return;
 			results = [];
+			fuzzy = false;
 			searchError = 'החיפוש נכשל — אפשר לנסות שוב';
 			searched = true;
 		} finally {
@@ -264,6 +268,13 @@
 					לא נמצא משתמש רשום התואם ל"{q.trim()}"
 				</p>
 			{:else}
+				{#if fuzzy}
+					<p
+						class="mb-2 rounded-xl border border-amber-500/30 bg-amber-900/20 px-4 py-2 text-sm text-amber-300"
+					>
+						לא נמצאה התאמה מדויקת ל"{q.trim()}" — אולי התכוונת לאחד מאלה:
+					</p>
+				{/if}
 				<div class="space-y-2">
 					{#each searchResults as u (u.id)}
 						<div class="rounded-2xl border border-gray-800 bg-gray-900/40 p-4">
