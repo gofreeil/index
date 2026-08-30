@@ -43,13 +43,52 @@
 	function shortTitle(t) {
 		return t.length > 22 ? t.slice(0, 21) + '…' : t;
 	}
-	/** תווית אפשרות בבורר המקום — מקום תפוס מסומן עם שם הפרסומת שיושבת בו
+	// הטור מציג רביעייה עוקבת אחת בכל רגע (1-4, אחריה 5-8... — ראו RightAdBanner).
+	// הסימון כאן משקף את זה: צבע לכל רביעייה (= מה שמוצג יחד), אות לרביעייה
+	// ושם-מיקום בתוך הרביעייה (רקע בהיר בלבד — כהה נשבר בהדגשת המערכת)
+	const GROUP_LETTERS = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח'];
+	const POS_NAMES = ['עליונה', 'שנייה', 'שלישית', 'תחתונה'];
+	/** @param {number} n */
+	function slotGroup(n) {
+		return Math.ceil(n / 4);
+	}
+	/** @param {number} n */
+	function slotGroupLetter(n) {
+		return GROUP_LETTERS[slotGroup(n) - 1] ?? String(slotGroup(n));
+	}
+	/** @param {number} n */
+	function slotPosName(n) {
+		return POS_NAMES[(n - 1) % 4];
+	}
+	/** @param {number} n */
+	function slotOptionBg(n) {
+		const g = slotGroup(n) % 4;
+		if (g === 1) return '#dbeafe';
+		if (g === 2) return '#dcfce7';
+		if (g === 3) return '#fef9c3';
+		return '#f3e8ff';
+	}
+	/** אפשרויות הבורר מקובצות לרביעיות — כל קבוצה מקבלת כותרת optgroup משלה
+	 *  @param {number[]} options */
+	function groupSlotOptions(options) {
+		/** @type {Map<number, number[]>} */
+		const byGroup = new Map();
+		for (const n of options) {
+			const g = slotGroup(n);
+			byGroup.set(g, [...(byGroup.get(g) ?? []), n]);
+		}
+		return [...byGroup.entries()]
+			.sort((a, b) => a[0] - b[0])
+			.map(([g, nums]) => ({ letter: GROUP_LETTERS[g - 1] ?? String(g), nums }));
+	}
+	/** תווית אפשרות בבורר המקום: מספר + מיקום ברביעייה; מקום תפוס מסומן עם שם הפרסומת שיושבת בו
 	 *  @param {number} n @param {string} selfId */
 	function slotOptionLabel(n, selfId) {
+		const base = `${n} · ${slotPosName(n)}`;
 		const occ = slotOccupants.get(n);
-		if (!occ) return `${n}`;
-		if (occ.id === selfId) return `${n} — המקום הנוכחי`;
-		return `${n} ⚠ תפוס: ${shortTitle(occ.title)}`;
+		if (!occ) return `${base} — פנוי`;
+		if (occ.id === selfId) return `${base} — המקום הנוכחי`;
+		return `${base} ⚠ ${shortTitle(occ.title)}`;
 	}
 	// אזהרה חיה מתחת לבורר ברגע שנבחר מקום תפוס (לפי מזהה השורה)
 	/** @type {Record<string, string>} */
@@ -472,9 +511,11 @@
 						<!-- מיקום הפרסומת בטור הפרסומות באתר + החלפת מקום -->
 						<div class="mb-3 flex flex-wrap items-center gap-2 border-b border-white/10 pb-3">
 							<span
-								class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-emerald-500/40 bg-emerald-500/20 text-sm font-black text-emerald-200"
+								class="inline-flex h-7 min-w-7 items-center justify-center rounded-lg border border-black/20 px-1.5 text-sm font-black whitespace-nowrap"
+								style="background:{slotOptionBg(slotOf(ad, adIndex + 1))};color:#111"
+								title="רביעייה {slotGroupLetter(slotOf(ad, adIndex + 1))}׳ · הכרטיס ה{slotPosName(slotOf(ad, adIndex + 1))} בה"
 							>
-								{slotOf(ad, adIndex + 1)}
+								{slotOf(ad, adIndex + 1)} · {slotGroupLetter(slotOf(ad, adIndex + 1))}׳
 							</span>
 							<span class="text-[11px] font-bold text-gray-400 md:text-xs">
 								מקום {slotOf(ad, adIndex + 1)} מתוך {AD_SLOT_COUNT} בטור הפרסומות
@@ -879,6 +920,17 @@
 			</div>
 		</div>
 
+		<!-- מקרא הרביעיות: הטור מציג רביעייה עוקבת אחת בכל רגע (כמו ב-RightAdBanner),
+		     וכל רביעייה צבועה בצבע שלה. בתוך הרביעייה המספר הנמוך עליון והגבוה תחתון -->
+		<div class="mb-3 flex flex-wrap items-center gap-2 text-[10px] font-bold text-gray-300 md:text-xs">
+			<span>הטור מציג רביעייה אחת בכל רגע, לפי הסדר:</span>
+			<span class="rounded-full border border-black/20 px-2 py-0.5" style="background:#dbeafe;color:#111">א׳ · 1-4</span>
+			<span class="rounded-full border border-black/20 px-2 py-0.5" style="background:#dcfce7;color:#111">ב׳ · 5-8</span>
+			<span class="rounded-full border border-black/20 px-2 py-0.5" style="background:#fef9c3;color:#111">ג׳ · 9-12</span>
+			<span class="rounded-full border border-black/20 px-2 py-0.5" style="background:#f3e8ff;color:#111">ד׳ · 13-16</span>
+			<span class="text-gray-500">בתוך כל רביעייה: המספר הנמוך למעלה, הגבוה למטה</span>
+		</div>
+
 		{#if data.schedules.length === 0}
 			<div
 				class="rounded-2xl border border-dashed border-white/10 py-8 text-center text-sm text-gray-500 italic"
@@ -889,15 +941,12 @@
 			<div class="overflow-x-auto rounded-2xl border border-white/10 bg-white/5">
 				<table class="w-full text-sm" dir="rtl">
 					<thead class="bg-white/5">
+						<!-- 4 עמודות בלבד — המידע מוערם בכמה שורות בכל תא, כדי שבדסקטופ
+						     הכל ייכנס למסך אחד בלי גלילה אופקית -->
 						<tr class="text-[11px] tracking-wide text-gray-400 uppercase md:text-xs">
 							<th class="px-2 py-2.5 text-right font-bold">מקום</th>
-							<th class="px-2 py-2.5 text-right font-bold">פרסומת</th>
-							<th class="hidden px-2 py-2.5 text-right font-bold md:table-cell">מפרסם</th>
-							<th class="px-2 py-2.5 text-right font-bold">פורסם</th>
-							<th class="px-2 py-2.5 text-right font-bold">פג בתאריך</th>
-							<th class="px-2 py-2.5 text-right font-bold">משך</th>
-							<th class="px-2 py-2.5 text-right font-bold">ימים שנותרו</th>
-							<th class="px-2 py-2.5 text-right font-bold">סטטוס</th>
+							<th class="px-2 py-2.5 text-right font-bold">פרסומת ומפרסם</th>
+							<th class="px-2 py-2.5 text-right font-bold">תקופה</th>
 							<th class="px-2 py-2.5 text-right font-bold">ניהול</th>
 						</tr>
 					</thead>
@@ -953,27 +1002,39 @@
 										<input type="hidden" name="id" value={s.id} />
 										<div class="flex items-center gap-1">
 											<span
-												class="inline-flex h-6 min-w-6 items-center justify-center rounded-lg border border-emerald-500/40 bg-emerald-500/20 px-1 text-xs font-black text-emerald-200"
+												class="inline-flex h-6 min-w-6 items-center justify-center rounded-lg border border-black/20 px-1.5 text-xs font-black whitespace-nowrap"
+												style="background:{typeof s.slot === 'number'
+													? slotOptionBg(s.slot)
+													: '#fff'};color:#111"
+												title={typeof s.slot === 'number'
+													? `רביעייה ${slotGroupLetter(s.slot)}׳ · הכרטיס ה${slotPosName(s.slot)} בה`
+													: ''}
 											>
-												{s.slot ?? '-'}
+												{typeof s.slot === 'number' ? `${s.slot} · ${slotGroupLetter(s.slot)}׳` : '-'}
 											</span>
 											<select
 												name="slot"
 												onchange={(e) => onSlotPick(e, s)}
 												class="rounded-lg border border-white/15 bg-black/40 px-1.5 py-1 text-[11px] text-white focus:border-amber-400/50 focus:outline-none"
 											>
-												{#each slotOptions as n (n)}
-													{@const occ = slotOccupants.get(n)}
-													{@const takenByOther = !!occ && occ.id !== s.id}
-													<option
-														value={n}
-														selected={n === s.slot}
-														style="background:{takenByOther ? '#fee2e2' : '#fff'};color:{takenByOther
-															? '#991b1b'
-															: '#111'}"
-													>
-														{slotOptionLabel(n, s.id)}
-													</option>
+												<!-- כל רביעייה תחת כותרת משלה — הקשר מספר↔רביעייה קריא במילים,
+												     לא רק בצבע; מקום תפוס שומר את צבע הרביעייה ומסומן באדום מודגש -->
+												{#each groupSlotOptions(slotOptions) as grp (grp.letter)}
+													<optgroup label="— רביעייה {grp.letter}׳ (מוצגות יחד) —">
+														{#each grp.nums as n (n)}
+															{@const occ = slotOccupants.get(n)}
+															{@const takenByOther = !!occ && occ.id !== s.id}
+															<option
+																value={n}
+																selected={n === s.slot}
+																style="background:{slotOptionBg(n)};color:{takenByOther
+																	? '#b91c1c'
+																	: '#111'};font-weight:{takenByOther ? '700' : '400'}"
+															>
+																{slotOptionLabel(n, s.id)}
+															</option>
+														{/each}
+													</optgroup>
 												{/each}
 											</select>
 										</div>
@@ -992,8 +1053,9 @@
 										{/if}
 									</form>
 								</td>
-								<!-- ריחוף = תצוגה מקדימה צפה של הכרטיס; הקשה = מודאל עם הכרטיס עצמו -->
-								<td class="px-2 py-2 font-bold text-white">
+								<!-- פרסומת + מפרסם + סטטוס בתא אחד, מוערמים.
+								     ריחוף על הכותרת = תצוגה מקדימה צפה; הקשה = מודאל עם הכרטיס עצמו -->
+								<td class="px-2 py-2">
 									<button
 										type="button"
 										onmouseenter={(e) => openHoverPreview(e, s.id)}
@@ -1003,33 +1065,36 @@
 											modalPreviewId = s.id;
 										}}
 										title="תצוגה מקדימה של הפרסומת כפי שהיא מוצגת באתר"
-										class="max-w-[150px] cursor-pointer truncate text-right underline decoration-white/30 decoration-dotted underline-offset-2 hover:text-amber-300"
+										class="line-clamp-2 max-w-[160px] cursor-pointer text-right leading-snug font-bold break-words text-white underline decoration-white/30 decoration-dotted underline-offset-2 hover:text-amber-300"
 									>
 										{s.title}
 									</button>
-								</td>
-								<td class="hidden px-2 py-2 text-gray-300 md:table-cell">
-									<div class="max-w-[130px] truncate">{s.advertiserName || '-'}</div>
-									<div class="max-w-[130px] truncate text-[10px] text-gray-500">
+									<div class="mt-0.5 max-w-[160px] truncate text-xs text-gray-300">
+										{s.advertiserName || '-'}
+									</div>
+									<div class="max-w-[160px] truncate text-[10px] text-gray-500">
 										{s.advertiserEmail}
 									</div>
+									<span
+										class="mt-1 inline-block rounded-full border px-2 py-0.5 text-[11px] font-black whitespace-nowrap {stateColor}"
+										>{stateLabel}</span
+									>
 								</td>
-								<!-- תאריך ושעה בשתי שורות - חוסך רוחב כדי שהטבלה תיכנס למסך בלי גלילה -->
-								<td class="px-2 py-2 text-gray-300">
-									<div>{fmtDateOnly(s.publishedAt)}</div>
-									<div class="text-[10px] text-gray-500">{fmtTimeOnly(s.publishedAt)}</div>
-								</td>
-								<td class="px-2 py-2 text-gray-300">
-									<div>{fmtDateOnly(s.expiresAt)}</div>
-									<div class="text-[10px] text-gray-500">{fmtTimeOnly(s.expiresAt)}</div>
-								</td>
-								<td class="px-2 py-2 text-gray-300">
-									<div>{s.durationDays}</div>
-									<div class="text-[10px] text-gray-500">ימים</div>
-								</td>
-								<td class="px-2 py-2 font-black {daysColor}">
-									{s.daysLeft < 0 ? `${-s.daysLeft}- ימים` : `${s.daysLeft} ימים`}
-									<div class="mt-1 h-1.5 w-16 overflow-hidden rounded-full bg-white/10">
+								<!-- כל נתוני הזמן בתא אחד: פורסם, פג, וכמה נותר מתוך המשך -->
+								<td class="px-2 py-2 text-xs leading-relaxed whitespace-nowrap">
+									<div class="text-gray-300">
+										פורסם: {fmtDateOnly(s.publishedAt)}
+										<span class="text-[10px] text-gray-500">{fmtTimeOnly(s.publishedAt)}</span>
+									</div>
+									<div class="text-gray-300">
+										פג: {fmtDateOnly(s.expiresAt)}
+										<span class="text-[10px] text-gray-500">{fmtTimeOnly(s.expiresAt)}</span>
+									</div>
+									<div class="mt-0.5 font-black {daysColor}">
+										{s.daysLeft < 0 ? `${-s.daysLeft}- ימים` : `${s.daysLeft} ימים`}
+										<span class="text-[10px] font-bold text-gray-500">מתוך {s.durationDays}</span>
+									</div>
+									<div class="mt-1 h-1.5 w-24 overflow-hidden rounded-full bg-white/10">
 										<div
 											class="h-full {s.state === 'expired'
 												? 'bg-red-400'
@@ -1040,15 +1105,10 @@
 										></div>
 									</div>
 								</td>
+								<!-- ניהול הפרסומת ישירות מהשורה: קציבת תקופה, השהיה, הורדה, מחיקה.
+								     רוחב מוגבל — הכפתורים נערמים בשתי שורות במקום להרחיב את הטבלה -->
 								<td class="px-2 py-2">
-									<span
-										class="rounded-full border px-2 py-0.5 text-[11px] font-black whitespace-nowrap {stateColor}"
-										>{stateLabel}</span
-									>
-								</td>
-								<!-- ניהול הפרסומת ישירות מהשורה: קציבת תקופה, השהיה, הורדה, מחיקה -->
-								<td class="px-2 py-2">
-									<div class="flex flex-wrap items-center gap-1">
+									<div class="flex max-w-[240px] flex-wrap items-center gap-1">
 										<form
 											method="POST"
 											action="?/setDuration"
