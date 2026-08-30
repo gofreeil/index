@@ -19,6 +19,7 @@ import {
 	setAdSlot,
 	computeAdSlots,
 	setAdDuration,
+	setAdExpiry,
 	normalizeDurationDays,
 	pauseAd,
 	resumeAd
@@ -182,9 +183,12 @@ export const actions = {
 		return { success: true, message: `נדחו ${ok} פרסומות` };
 	},
 
-	// קציבת תקופת פרסום — נספרת מיום הפרסום
+	// קציבת תקופת פרסום — נספרת מיום הפרסום. שמורה לסופר-אדמין
 	setDuration: async ({ request, locals }) => {
 		requireAdmin(locals);
+		if (!isSuperAdmin(locals.user)) {
+			return fail(403, { error: 'קציבת תקופה שמורה לסופר-אדמין' });
+		}
 		const formData = await request.formData();
 		const id = String(formData.get('id') || '');
 		if (!id) return fail(400, { error: 'חסר מזהה' });
@@ -200,6 +204,33 @@ export const actions = {
 		} catch (e) {
 			return fail(502, {
 				error: 'קציבת התקופה נכשלה: ' + (e instanceof Error ? e.message.slice(0, 160) : '')
+			});
+		}
+	},
+
+	// תאריך תפוגה שרירותי מחלון הקציבה — הפרסומת יורדת בסוף היום שנבחר. שמור לסופר-אדמין
+	setExpiry: async ({ request, locals }) => {
+		requireAdmin(locals);
+		if (!isSuperAdmin(locals.user)) {
+			return fail(403, { error: 'קביעת תאריך תפוגה שמורה לסופר-אדמין' });
+		}
+		const formData = await request.formData();
+		const id = String(formData.get('id') || '');
+		const expires = String(formData.get('expires') || '');
+		if (!id || !expires) return fail(400, { error: 'חסר תאריך תפוגה' });
+		const d = new Date(`${expires}T23:59:59`);
+		if (isNaN(d.getTime())) return fail(400, { error: 'תאריך לא תקין' });
+		try {
+			const r = await setAdExpiry(id, d.toISOString());
+			if (!r) return fail(404, { error: 'הפרסומת לא נמצאה' });
+			const suffix = r.daysLeft < 0 ? ' — התאריך שנקבע כבר עבר, הפרסומת ירדה מהאתר' : '';
+			return {
+				success: true,
+				message: `${r.title}: תפוגה נקבעה ל-${fmtDay(r.expiresAt)}${suffix}`
+			};
+		} catch (e) {
+			return fail(502, {
+				error: 'קביעת התאריך נכשלה: ' + (e instanceof Error ? e.message.slice(0, 160) : '')
 			});
 		}
 	},

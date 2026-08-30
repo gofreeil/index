@@ -991,6 +991,36 @@ export async function setAdDuration(id, days) {
 }
 
 /**
+ * קובע תאריך תפוגה שרירותי (מחלון הקציבה). המשך (duration_days) נגזר
+ * ממנו ביחס ליום הפרסום, כדי שהטבלה תמשיך להציג "X מתוך Y" עקבי.
+ * @param {string} id @param {string} expiresIso
+ * @returns {Promise<{title:string,expiresAt:string,daysLeft:number}|null>}
+ */
+export async function setAdExpiry(id, expiresIso) {
+	const existing = await findByDocumentId(id);
+	if (!existing) return null;
+	const expires = new Date(expiresIso);
+	if (isNaN(expires.getTime())) return null;
+	const from =
+		existing.decided_at ?? existing.submitted_at ?? existing.createdAt ?? new Date().toISOString();
+	const days = Math.max(0, Math.ceil((expires.getTime() - new Date(from).getTime()) / DAY_MS));
+	const res = await api(`${ENDPOINT}/${encodeURIComponent(id)}`, {
+		method: 'PUT',
+		body: JSON.stringify({
+			data: { duration_days: days, expires_at: expires.toISOString() }
+		})
+	});
+	if (!res.ok) throw new Error(`strapi setAdExpiry → ${res.status}`);
+	invalidateAds();
+	const out = await res.json();
+	return {
+		title: fromStrapi(out.data).title,
+		expiresAt: expires.toISOString(),
+		daysLeft: Math.ceil((expires.getTime() - Date.now()) / DAY_MS)
+	};
+}
+
+/**
  * השהיה: הפרסומת יורדת מהאתר אבל שומרת את הימים שנותרו לה. בשונה
  * מ"החזר לממתינות" — המפרסם לא מפסיד ימים ששילם עליהם.
  * @param {string} id @returns {Promise<{title:string,daysLeft:number}|null>}
@@ -1128,6 +1158,9 @@ export async function countPending() {
  * @property {'expired'|'ending'|'active'|'paused'} state ending = ≤7 ימים
  * @property {number} paymentAmount
  * @property {number} [slot] מספר המקום בטור הפרסומות (1..12) — מוזן ב-listSchedules
+ * @property {string} submittedAt מתי המפרסם הגיש — מוצג בחלון הקציבה
+ * @property {string} payment "code" = סומן כשולם; "pending" = תשלום לתיאום
+ * @property {number} requestedDurationDays התקופה שהמפרסם ביקש בשליחה (30/180)
  */
 
 /** @param {SubmittedAd} ad @returns {AdSchedule|null} */
@@ -1159,7 +1192,10 @@ export function computeSchedule(ad) {
 		durationDays: days,
 		daysLeft,
 		state,
-		paymentAmount: ad.paymentAmount ?? 0
+		paymentAmount: ad.paymentAmount ?? 0,
+		submittedAt: ad.submittedAt ?? '',
+		payment: ad.payment === 'code' ? 'code' : 'pending',
+		requestedDurationDays: ad.requestedDurationDays || days
 	};
 }
 
