@@ -11,6 +11,7 @@
 	// ============================================================
 	import { onDestroy } from 'svelte';
 	import { cityLabels, resolveServiceArea, serviceShapes } from '$lib/serviceArea.js';
+	import { BASEMAP_URL, BASEMAP_OPTIONS } from '$lib/basemap.js';
 	import 'leaflet/dist/leaflet.css';
 
 	/** @type {{ business: any, height?: string }} */
@@ -62,16 +63,11 @@
 			// להסתייגות.
 			map.attributionControl.setPrefix(false);
 			map.attributionControl.setPosition('bottomleft');
-			// בסיס בלי כיתוב, כמו במפה הראשית: אריחי OSM הרגילים צורבים לתוך
-			// התמונה שמות בערבית לצד העברית, ואי אפשר לסנן שפה מ-PNG מוכן.
-			L.tileLayer(
-				'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png',
-				{
-					attribution: '&copy; OpenStreetMap &copy; CARTO',
-					subdomains: 'abcd',
-					maxZoom: 20
-				}
-			).addTo(map);
+			// בסיס בלי כיתוב, כמו במפה הראשית (למה — ראו basemap.js).
+			L.tileLayer(BASEMAP_URL, {
+				...BASEMAP_OPTIONS,
+				attribution: '&copy; OpenStreetMap &copy; CARTO'
+			}).addTo(map);
 
 			/* שמות היישובים בעברית, מצוירים על ידינו מעל בסיס חסר הכיתוב.
 			   pane נפרד מתחת ל-overlayPane (400), כדי שהתוויות לא יכסו את

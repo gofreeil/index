@@ -2,6 +2,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { cityLabels, resolveServiceArea, serviceShapes } from '$lib/serviceArea.js';
+	import { BASEMAP_URL, BASEMAP_OPTIONS } from '$lib/basemap.js';
 	import 'leaflet/dist/leaflet.css';
 
 	/** full — המופע שבתוך שכבת המסך המלא (ראו LazyMap): הוא ממלא את הגובה
@@ -280,19 +281,13 @@
 			// היה שני שלישים משורת הכיתוב. הקרדיט לנתונים (OSM ו-CARTO) כן נדרש,
 			// ולכן הוא נשאר — מקוצר לשמות בלבד, עם קישור לנוסח המלא של כל אחד.
 			map.attributionControl.setPrefix(false);
-			// אריחי OSM הרגילים צורבים את השמות אל תוך התמונה, ובאזור שלנו הם
-			// מגיעים בערבית לצד העברית — אין דרך לסנן שפה מאריח PNG מוכן. לכן
-			// בסיס בלי שום כיתוב (Voyager no-labels), והשמות נכתבים מעליו
-			// בעברית ב-renderLabels.
-			L.tileLayer(
-				'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png',
-				{
-					attribution:
-						'<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OSM</a> · <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>',
-					subdomains: 'abcd',
-					maxZoom: 20
-				}
-			).addTo(map);
+			// בסיס בלי שום כיתוב (Voyager no-labels; למה — ראו basemap.js),
+			// והשמות נכתבים מעליו בעברית ב-renderLabels.
+			L.tileLayer(BASEMAP_URL, {
+				...BASEMAP_OPTIONS,
+				attribution:
+					'<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OSM</a> · <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>'
+			}).addTo(map);
 			// שכבה משלה לשמות היישובים, מתחת לעיגולים ולפינים (overlayPane הוא
 			// 400): כך התוויות לא מכסות סימון של עסק, והן שקופות לעכבר לגמרי.
 			map.createPane('cityLabels');
