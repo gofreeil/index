@@ -32,6 +32,8 @@ export async function GET({ setHeaders }) {
 	const staticUrls = [
 		{ loc: `${SITE_URL}/`, changefreq: 'daily', priority: '1.0' },
 		{ loc: `${SITE_URL}/submit-business`, changefreq: 'monthly', priority: '0.7' },
+		// דף המידע — אודות האינדקס והשו"ת (FAQPage). /about מפנה לכאן (301) ולכן לא מופיע.
+		{ loc: `${SITE_URL}/policy`, changefreq: 'monthly', priority: '0.6' },
 		{ loc: `${SITE_URL}/about/advertise`, changefreq: 'monthly', priority: '0.5' },
 		// /privacy הוסר: הוא מפנה מחדש (301) ללשונית הפרטיות שבדף המשפטי,
 		// וכתובת שמפנה מחדש לא אמורה להופיע במפת האתר.

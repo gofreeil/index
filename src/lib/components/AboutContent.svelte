@@ -68,13 +68,15 @@
 		וקבלו דף עסק שמופיע בגוגל, עם תיאור, אזור שירות, דירוגים וקישור ישיר לוואטסאפ.
 	</p>
 
-	<section class="space-y-4 pt-4">
-		<svelte:element this={headingTag} class="text-2xl font-bold text-gray-100">
+	<!-- id="faq" — עוגן קבוע לאגף השו"ת; שתי השאלות הראשונות פתוחות כברירת
+	     מחדל כדי שהטקסט יופיע כבר ב-SSR גם בלי לחיצה. -->
+	<section id="faq" aria-labelledby="faq-title" class="space-y-4 pt-4">
+		<svelte:element this={headingTag} id="faq-title" class="text-2xl font-bold text-gray-100">
 			שאלות נפוצות
 		</svelte:element>
 		<div class="space-y-2">
-			{#each FAQS as f (f.q)}
-				<details class="rounded-xl border border-white/10 bg-white/5 px-4">
+			{#each FAQS as f, i (f.q)}
+				<details open={i < 2} class="rounded-xl border border-white/10 bg-white/5 px-4">
 					<summary class="cursor-pointer py-3 font-bold text-gray-100">{f.q}</summary>
 					<p class="pb-3 leading-relaxed text-gray-400">
 						{f.a}
