@@ -347,7 +347,7 @@
 			<!-- אריחי המסכים — אותה רשימה בדיוק שמופיעה כסרגל ניווט ב-/admin.
 			     הבועה האדומה על אריח = פריטים שממתינים לטיפול באותו מסך, והסכום
 			     שלהן הוא בדיוק המספר שעל תמונת הפרופיל ובהאדר. -->
-			<div class="grid gap-2 sm:grid-cols-2">
+			<div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
 				{#each tiles as tile (tile.href)}
 					{@const alert = tileAlert(tile)}
 					{@const count = tileCount(tile)}
