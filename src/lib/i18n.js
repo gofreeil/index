@@ -187,7 +187,7 @@ export const translations = {
 		loginHere: 'התחבר כאן',
 		backHomeArrow: '← חזרה לדף הבית',
 		or: 'או',
-		registerWithFreedom: 'יש לי חשבון באתר קהילת יוצאים לחירות',
+		registerWithFreedom: 'כניסה דרך קהילת יוצאים לחירות (חשבון קיים או קוד ב-SMS)',
 		ssoRecognizeHint:
 			'חברות בקבוצות הווצאפ אינה חשבון באתר. אם עדיין אין לך חשבון, הכניסה עם Google למעלה יוצרת אחד בלחיצה.',
 		passwordsDontMatch: 'הסיסמאות אינן תואמות',
