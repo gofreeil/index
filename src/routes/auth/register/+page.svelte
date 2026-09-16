@@ -333,12 +333,13 @@
 				<!-- Google Identity Services -->
 				<div id="google-button" class="flex justify-center"></div>
 
-				<!-- SSO "יוצאים לחירות" -->
+				<!-- SSO "יוצאים לחירות" - אפשרות משנית למי שכבר יש לו חשבון באתר הקהילה;
+				     חברי ווצאפ בלי חשבון נרשמים בלחיצה עם Google למעלה -->
 				<button
 					type="button"
 					onclick={loginWithCommunity}
 					disabled={loading}
-					class="mt-4 flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl login-grad px-4 py-3 text-sm font-bold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
+					class="mt-4 flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-purple-400/50 bg-purple-500/10 px-4 py-3 text-sm font-bold text-purple-800 transition hover:border-purple-400/80 hover:bg-purple-500/20 disabled:cursor-not-allowed disabled:opacity-50 dark:text-purple-100"
 				>
 					<span class="text-lg">🕊️</span>
 					<span>{t.registerWithFreedom}</span>
