@@ -60,7 +60,7 @@
 </script>
 
 <svelte:head>
-	<title>{ad.title} — מדריך בעלי מקצוע</title>
+	<title>{ad.title} — מדריך בעלי מקצוע | יוצאים לחירות</title>
 	<meta name="description" content={ad.subtitle || ad.title} />
 </svelte:head>
 

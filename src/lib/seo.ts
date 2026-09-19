@@ -8,8 +8,11 @@
 export const SITE_URL = 'https://index.gofreeil.com';
 export const SITE_NAME = 'בעלי מקצוע כשירים';
 export const SITE_TAGLINE = 'בהנחות והטבות ייחודיות לחברי יוצאים לחירות';
+/** שם התנועה-האם. מצורף לכל <title> (ב-Seo.svelte), לתיאור ולסכימות — כדי שחיפוש
+ *  "יוצאים לחירות בעלי מקצוע" יגיע לכאן ולא לאתרים זרים בשם דומה. */
+export const PARENT_BRAND = 'יוצאים לחירות';
 export const SITE_DESCRIPTION =
-	'אינדקס בעלי מקצוע כשירים — חשמלאים, אינסטלטורים, שיפוצניקים, מזגנים, הובלות, מחשבים, עורכי דין, יופי וטיפוח, אוכל ואירועים. כל בעל מקצוע חתם על אמנת הקהילה, מדורג בידי הלקוחות ומעניק הנחה לחברי הקהילה. חיפוש לפי תחום ולפי עיר — חינם.';
+	'אינדקס בעלי מקצוע כשירים של תנועת יוצאים לחירות — חשמלאים, אינסטלטורים, שיפוצניקים, מזגנים, הובלות, מחשבים, עורכי דין, יופי וטיפוח, אוכל ואירועים. כל בעל מקצוע חתם על אמנת הקהילה, מדורג בידי הלקוחות ומעניק הנחה לחברי הקהילה. חיפוש לפי תחום ולפי עיר — חינם.';
 /** ?v=4 — מכריח את פייסבוק/וואטסאפ לגרד מחדש אחרי החלפת הלוגו; הם ממטמנים לפי כתובת */
 export const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png?v=4`;
 export const SITE_LOGO = `${SITE_URL}/og-image.png?v=4`;
@@ -117,7 +120,13 @@ export function websiteSchema() {
 		'@type': 'WebSite',
 		'@id': `${SITE_URL}/#website`,
 		name: SITE_NAME,
-		alternateName: ['מדריך בעלי מקצוע כשירים', 'אינדקס בעלי מקצוע', 'בעלי מקצוע יוצאים לחירות'],
+		alternateName: [
+			'מדריך בעלי מקצוע כשירים',
+			'בעלי מקצוע כשירים של יוצאים לחירות',
+			'אינדקס בעלי מקצוע',
+			'בעלי מקצוע יוצאים לחירות',
+			'יוצאים לחירות בעלי מקצוע'
+		],
 		url: SITE_URL,
 		description: SITE_DESCRIPTION,
 		inLanguage: 'he-IL',
@@ -133,6 +142,7 @@ export function organizationSchema() {
 		'@type': 'Organization',
 		'@id': `${SITE_URL}/#organization`,
 		name: SITE_NAME,
+		alternateName: ['בעלי מקצוע כשירים של יוצאים לחירות', 'בעלי מקצוע כשירים — יוצאים לחירות'],
 		url: SITE_URL,
 		logo: { '@type': 'ImageObject', url: SITE_LOGO },
 		image: SITE_LOGO,
