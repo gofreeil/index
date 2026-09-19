@@ -16,7 +16,6 @@
 	import {
 		SITE_NAME,
 		SITE_DESCRIPTION,
-		PARENT_SITE,
 		websiteSchema,
 		organizationSchema,
 		serviceSchema,
@@ -510,19 +509,6 @@
 	<h1 class="mb-2 text-center text-lg font-extrabold text-gray-100 sm:mb-3 sm:text-4xl">
 		בעלי מקצוע כשירים ומומלצים בהטבות והנחות בלעדיות לחברי יוצאים לחירות
 	</h1>
-	<!-- שיוך גלוי לתנועה-האם מעל הקפל (לא רק בפוטר) כדי שגוגל יקשר "יוצאים לחירות"
-	     לאתר. גלולה כהה בשורה אחת — בלי טקסט אפור על רקע בהיר. -->
-	<p class="mb-3 text-center sm:mb-8">
-		<a
-			href={PARENT_SITE.url}
-			target="_blank"
-			rel="noopener"
-			class="inline-flex items-center gap-1.5 rounded-full border border-[#3b5794] bg-[#1c2f5a] px-4 py-1.5 text-xs font-semibold text-gray-200 shadow-md transition-colors hover:bg-[#2a4379] hover:text-white md:text-sm"
-		>
-			<span aria-hidden="true">👉</span>
-			מיזם של התנועה החברתית יוצאים לחירות
-		</a>
-	</p>
 
 	{#if error}
 		<div class="rounded-lg border border-red-800 bg-red-900/20 p-6 text-center">
