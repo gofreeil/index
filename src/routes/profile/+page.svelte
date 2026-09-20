@@ -243,7 +243,7 @@
 	{#if matches.length}
 		<section
 			id="claims"
-			class="w-full scroll-mt-24 rounded-2xl border-2 border-amber-400 bg-gradient-to-br from-amber-50 to-yellow-100/70 p-5 shadow-lg ring-4 shadow-amber-500/20 ring-amber-400/15 dark:border-amber-400/60 dark:from-amber-950/40 dark:to-yellow-900/20 dark:shadow-amber-500/10"
+			class="w-full rounded-2xl border-2 border-amber-400 bg-gradient-to-br from-amber-50 to-yellow-100/70 p-5 shadow-lg ring-4 shadow-amber-500/20 ring-amber-400/15 dark:border-amber-400/60 dark:from-amber-950/40 dark:to-yellow-900/20 dark:shadow-amber-500/10"
 		>
 			<h2 class="flex items-center gap-2 text-lg font-extrabold text-amber-900 dark:text-amber-100">
 				🪪 {t.matchesTitle}
@@ -326,7 +326,7 @@
 	{#if mod}
 		<section
 			id="admin"
-			class="w-full scroll-mt-24 rounded-2xl border border-amber-200 bg-amber-50/50 p-5 dark:border-amber-700/40 dark:bg-amber-950/20"
+			class="w-full rounded-2xl border border-amber-200 bg-amber-50/50 p-5 dark:border-amber-700/40 dark:bg-amber-950/20"
 		>
 			<div class="mb-4 flex flex-wrap items-center justify-between gap-2">
 				<h2 class="flex items-center gap-2 text-lg font-extrabold text-gray-900 dark:text-gray-100">

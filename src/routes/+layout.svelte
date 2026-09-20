@@ -1,4 +1,5 @@
 <script>
+	import { headerHeight } from '$lib/actions/headerHeight';
 	import './layout.css';
 	import { lang, translations } from '$lib/i18n';
 	import { get } from 'svelte/store';
@@ -124,7 +125,7 @@
 
 <div class="relative min-h-screen bg-gray-950 text-gray-100" dir={t.dir}>
 	<!-- Header -->
-	<header class="sticky top-0 z-50 border-b border-gray-800 bg-gray-900/80 backdrop-blur-md">
+	<header use:headerHeight class="sticky top-0 z-50 border-b border-gray-800 bg-gray-900/80 backdrop-blur-md">
 		<div class="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
 			<div class="flex items-center justify-between">
 				<!-- Title & Logo Section -->

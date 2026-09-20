@@ -804,7 +804,7 @@
 	<!-- ── חוות דעת ────────────────────────────────────────
 	     בתחתית הכרטיסייה וסגורות: הרשימה נפתחת רק בלחיצה של המבקר, כדי
 	     שדף העסק לא ייגמר בגלילה ארוכה של טקסט של אנשים אחרים. -->
-	<section id="reviews" class="mt-6 scroll-mt-4 border-t border-white/[0.08] pt-5">
+	<section id="reviews" class="mt-6 border-t border-white/[0.08] pt-5">
 		<div class="flex items-center justify-between gap-4">
 			{#if reviews.length}
 				<button
