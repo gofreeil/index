@@ -15,6 +15,19 @@ import {
 	ownershipByDoc
 } from '$lib/server/ownerMatch.js';
 import { invalidatePendingCounts } from '$lib/server/pendingCounts.js';
+import { sendSms, smsStatus, toMobileE164 } from '$lib/server/sms.js';
+import {
+	DEFAULT_TEMPLATE,
+	MAX_SMS_CHARS,
+	PLACEHOLDERS,
+	claimLinks,
+	getClaimSmsLog,
+	getClaimSmsTemplate,
+	recordClaimSms,
+	renderClaimSms,
+	setClaimSmsTemplate,
+	smsLogKey
+} from '$lib/server/claimSms.js';
 
 // כמה הכרעות אחרונות מוצגות בהיסטוריה
 const HISTORY = 20;
@@ -25,20 +38,52 @@ const HISTORY = 20;
  * על הרשומה — ומאותו רגע בעל העסק רשאי לערוך את הדף שלו.
  * @type {import('./$types').PageServerLoad}
  */
-export async function load({ locals }) {
+export async function load({ locals, url }) {
 	if (!isPrivileged(locals.user)) throw redirect(302, '/admin');
 
-	const [claims, matches, all] = await Promise.all([
+	const [claims, matches, all, sms, template, smsLog] = await Promise.all([
 		listPendingClaims().catch(() => []),
 		listAutoMatches(),
-		listClaims().catch(() => [])
+		listClaims().catch(() => []),
+		smsStatus(),
+		getClaimSmsTemplate(),
+		getClaimSmsLog()
 	]);
 
 	// בקשה על כרטיסייה שכבר יש לה בעלים אינה שיוך אלא *העברה* — האדמין
 	// צריך לראות את זה לפני שהוא לוחץ, ולאשר בכפתור נפרד.
 	const owners = await ownershipByDoc(claims.map((c) => c.bizDocId));
 
+	/**
+	 * הזמנה ב-SMS: לכל התאמה — הנמען (הטלפון שבפרופיל, ובהתאמה לפי אימייל
+	 * הטלפון שעל הכרטיסייה), טיוטת ההודעה מהנוסח השמור, ומה כבר נשלח.
+	 * הקישורים נבנים כאן (חתומים), כדי שהעורך בדפדפן יקבל טקסט מוכן.
+	 * @param {any} m
+	 */
+	const withSms = (m) => {
+		const phone = toMobileE164(m.userPhone) ? m.userPhone : m.bizPhone;
+		const links = claimLinks(url.origin, m.bizDocId, m.userId);
+		return {
+			...m,
+			smsPhone: toMobileE164(phone) ? phone : '',
+			smsDraft: renderClaimSms(template, {
+				name: m.userName,
+				business: m.bizName,
+				link: links.link,
+				decline: links.decline
+			}),
+			smsSent: smsLog[smsLogKey(m.bizDocId, m.userId)] ?? null
+		};
+	};
+
 	return {
+		sms: {
+			...sms,
+			template,
+			defaultTemplate: DEFAULT_TEMPLATE,
+			placeholders: PLACEHOLDERS,
+			maxChars: MAX_SMS_CHARS
+		},
 		claims: claims.map((c) => {
 			const owner = owners.get(c.bizDocId);
 			const ownerId = owner?.ownerId ?? '';
@@ -51,7 +96,7 @@ export async function load({ locals }) {
 			};
 		}),
 		// התאמות שאיש עוד לא דרש — הבקשות עצמן כבר מופיעות ברשימה למעלה
-		matches: matches.filter((m) => m.claim === 'none'),
+		matches: matches.filter((m) => m.claim === 'none').map(withSms),
 		history: all
 			.filter((c) => c.status !== 'pending')
 			.sort((a, b) => String(b.decidedAt).localeCompare(String(a.decidedAt)))
@@ -63,6 +108,9 @@ export async function load({ locals }) {
  * כותב את השיוך על הכרטיסייה. מאמת מחדש שאין לה כבר בעלים — שני אדמינים
  * שמאשרים במקביל לא יכולים לדרוס זה את זה בלי לשים לב. העברה מבעלים קיים
  * אפשרית, אבל רק בכוונה מפורשת (transfer) — כלומר בלחיצה על "העבר בעלות".
+ *
+ * השיוך אינו נותן גישה בפועל: בעל העסק עוד יידרש לאשר את תנאי הקהילה
+ * לפני העריכה הראשונה שלו (ראו $lib/terms.js ומסך /business/[id]/edit).
  * @param {string} bizDocId @param {string} userId @param {string} userEmail
  * @param {boolean} [transfer]
  * @returns {Promise<{ok: true, name: string, from: string} | {ok: false, error: string}>}
@@ -204,5 +252,45 @@ export const actions = {
 		}
 		refreshCaches();
 		return { ok: true, message: 'ההתאמה סומנה כלא רלוונטית' };
+	},
+
+	/**
+	 * הזמנה ב-SMS לבעל העסק לדרוש את הכרטיסייה. ההודעה מגיעה מהעורך כפי
+	 * שהאדמין השאיר אותה (הטיוטה נבנתה ב-load מהנוסח השמור), ולכן נבדק רק
+	 * שהיא לא ריקה, לא ארוכה מדי, ושהנמען הוא נייד. נרשם ביומן — כדי שהכרטיס
+	 * יציג "נשלח" ולא יישלח שוב בטעות.
+	 */
+	sms: async ({ request, locals }) => {
+		if (!isPrivileged(locals.user)) return fail(403, { error: 'אין הרשאה' });
+		const fd = await request.formData();
+		const bizDocId = String(fd.get('bizDocId') ?? '');
+		const userId = String(fd.get('userId') ?? '');
+		const phone = String(fd.get('phone') ?? '');
+		const message = String(fd.get('message') ?? '').trim();
+		if (!bizDocId || !userId) return fail(400, { error: 'בקשה לא תקינה' });
+		if (!toMobileE164(phone)) return fail(400, { error: 'אין לנמען מספר נייד תקין' });
+		if (!message) return fail(400, { error: 'ההודעה ריקה' });
+		if (message.length > MAX_SMS_CHARS) {
+			return fail(400, { error: `ההודעה ארוכה מדי (עד ${MAX_SMS_CHARS} תווים)` });
+		}
+
+		const sent = await sendSms({ phone, name: String(fd.get('userName') ?? ''), message });
+		if (!sent.ok) return fail(502, { error: 'ה-SMS לא נשלח: ' + sent.error });
+
+		await recordClaimSms({ bizDocId, userId, by: locals.user?.email ?? '', phone });
+		return { ok: true, message: `נשלח SMS אל ${phone}` };
+	},
+
+	/** שמירת נוסח ההודעה — משותף לכל האדמינים; ריק מחזיר לברירת המחדל. */
+	saveTemplate: async ({ request, locals }) => {
+		if (!isPrivileged(locals.user)) return fail(403, { error: 'אין הרשאה' });
+		const fd = await request.formData();
+		try {
+			const res = await setClaimSmsTemplate(String(fd.get('template') ?? ''));
+			if (!res.ok) return fail(400, { error: res.error });
+		} catch (e) {
+			return fail(502, { error: 'השמירה נכשלה: ' + (e instanceof Error ? e.message : '') });
+		}
+		return { ok: true, message: 'נוסח ההודעה נשמר' };
 	}
 };

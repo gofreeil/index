@@ -17,13 +17,21 @@
 	let ssoLoading = $state(false);
 	let error = $state('');
 
+	// ?returnTo=/נתיב — יעד מפורש אחרי ההתחברות (למשל דף עסק עם תיבת בקשת
+	// הבעלות פתוחה, מתוך SMS שהאדמין שלח). רק נתיב יחסי באתר — לא כתובת
+	// חיצונית, כדי שהקישור לא ישמש להפניה החוצה.
+	function requestedReturnTo() {
+		const raw = new URLSearchParams(window.location.search).get('returnTo') || '';
+		return raw.startsWith('/') && !raw.startsWith('//') ? raw : '';
+	}
+
 	// מוסיף welcome=back ליעד — מפעיל את מסך "ברוכים השבים" אחרי ההתחברות.
 	// טעינה מלאה (window.location) כדי שה-WelcomeScreen שב-layout ייטען מחדש
 	// ויקרא את הפרמטר, וגם ירענן את מצב ההתחברות מהשרת.
 	function backWithWelcome() {
-		let dest = '/';
+		let dest = requestedReturnTo() || '/';
 		const prev = document.referrer;
-		if (prev && prev.includes(window.location.host)) dest = prev;
+		if (dest === '/' && prev && prev.includes(window.location.host)) dest = prev;
 		try {
 			const u = new URL(dest, window.location.origin);
 			u.searchParams.set('welcome', 'back');
@@ -80,7 +88,8 @@
 	function loginWithCommunity() {
 		loading = true;
 		ssoLoading = true;
-		const callback = `${window.location.origin}/auth/community-callback?returnTo=/`;
+		const returnTo = encodeURIComponent(requestedReturnTo() || '/');
+		const callback = `${window.location.origin}/auth/community-callback?returnTo=${returnTo}`;
 		window.location.href = `https://community.gofreeil.com/sso?callback=${encodeURIComponent(callback)}`;
 	}
 
@@ -89,7 +98,7 @@
 	function continueAsCommunityUser() {
 		loading = true;
 		ssoLoading = true;
-		window.location.href = `/auth/community-callback?returnTo=${encodeURIComponent('/')}`;
+		window.location.href = `/auth/community-callback?returnTo=${encodeURIComponent(requestedReturnTo() || '/')}`;
 	}
 
 	async function handleLogin() {

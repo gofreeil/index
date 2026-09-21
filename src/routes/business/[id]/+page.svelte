@@ -33,7 +33,11 @@
 	   מחכה לאישור אדמין, וכשהמערכת זיהתה התאמה (טלפון/אימייל) ההזמנה נוסחת
 	   כפנייה אישית ולא כהצעה כללית. */
 	const claim = $derived(data.claim ?? {});
-	let claimOpen = $state(false);
+	// ?claim=1 — הגעה מה-SMS שהאדמין שלח ("זיהינו שהכרטיסייה שלך"): הטופס
+	// פתוח מיד, בלי לחיצה נוספת. הקישור להתחברות מחזיר לכאן עם אותו פרמטר.
+	const claimViaLink = page.url.searchParams.get('claim') === '1';
+	const claimReturnTo = $derived(`/auth/login?returnTo=${encodeURIComponent(page.url.pathname + '?claim=1#claim')}`);
+	let claimOpen = $state(claimViaLink);
 	let claimSending = $state(false);
 	const claimSent = $derived(form?.claimed === true || claim.status === 'pending');
 
@@ -491,7 +495,8 @@
 	     ב-92 הדפים. -->
 	{#if claim.open && (!data.isAdmin || claim.matchedBy)}
 		<section
-			class="mt-6 rounded-xl border p-4 {claim.matchedBy && !claimSent
+			id="claim"
+			class="mt-6 scroll-mt-24 rounded-xl border p-4 {claim.matchedBy && !claimSent
 				? 'border-amber-400/30 bg-amber-400/[0.06]'
 				: 'border-white/10 bg-white/[0.03]'}"
 		>
@@ -502,7 +507,7 @@
 			{:else if !claim.loggedIn}
 				<p class="text-base text-gray-400">
 					{t.claimLogin}
-					<a href="/auth/login" class="font-medium text-blue-400 hover:text-blue-300">{t.login}</a>
+					<a href={claimReturnTo} class="font-medium text-blue-400 hover:text-blue-300">{t.login}</a>
 				</p>
 			{:else if claim.status === 'rejected'}
 				<p class="text-base text-gray-400">{t.claimRejected}</p>

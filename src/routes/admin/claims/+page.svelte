@@ -8,6 +8,43 @@
 	const matches = $derived(data.matches ?? []);
 	const history = $derived(data.history ?? []);
 
+	/* ═══════════ הזמנה ב-SMS ═══════════
+	   השרת מביא לכל התאמה טיוטה מוכנה (הנוסח השמור עם הקישורים החתומים).
+	   האדמין פותח עורך על ההתאמה, מתקן אם צריך, ושולח. הנוסח עצמו נערך
+	   בתיבה נפרדת ומשותף לכל האדמינים. */
+	const sms = $derived(
+		data.sms ?? {
+			enabled: false,
+			provider: 'none',
+			template: '',
+			defaultTemplate: '',
+			placeholders: [],
+			maxChars: 480
+		}
+	);
+	// מפתח ההתאמה שהעורך שלה פתוח ('' = סגור)
+	let smsOpen = $state('');
+	/** הטיוטות שנערכו, לפי מפתח התאמה — כדי שסגירה ופתיחה לא ימחקו עריכה */
+	let drafts = $state(/** @type {Record<string,string>} */ ({}));
+	let templateOpen = $state(false);
+	let templateText = $state('');
+	$effect(() => {
+		templateText = sms.template;
+	});
+
+	/** SMS בעברית: 70 תווים למקטע בודד, 67 בהודעה מפוצלת. @param {string} s */
+	const segments = (s) => (s.length <= 70 ? 1 : Math.ceil(s.length / 67));
+
+	/** @param {string} key @param {string} draft */
+	function openSms(key, draft) {
+		if (smsOpen === key) {
+			smsOpen = '';
+			return;
+		}
+		if (!(key in drafts)) drafts[key] = draft;
+		smsOpen = key;
+	}
+
 	let busy = $state('');
 
 	/** @param {string} id */
@@ -202,9 +239,72 @@
 			{#if matches.length}<span class="text-gray-500">({matches.length})</span>{/if}
 		</h2>
 		<p class="mb-3 text-xs text-gray-500">
-			משתמשים רשומים שהטלפון או האימייל שלהם זהים לאלה שעל כרטיסייה בלי בעלים. אפשר לשייך ישירות, או
-			לסמן שההתאמה אינה נכונה כדי שלא תחזור.
+			משתמשים רשומים שהטלפון או האימייל שלהם זהים לאלה שעל כרטיסייה בלי בעלים. אפשר לשייך ישירות,
+			לסמן שההתאמה אינה נכונה כדי שלא תחזור, או לשלוח לבעל העסק SMS עם הזמנה להיכנס ולבקש את
+			הכרטיסייה בעצמו (ההודעה כוללת גם קישור "לא שלי").
 		</p>
+
+		<!-- ── נוסח ה-SMS + מצב הספק ─────────────────────────── -->
+		<div class="mb-4 rounded-2xl border border-gray-800 bg-gray-900/40 p-4">
+			<div class="flex flex-wrap items-center justify-between gap-2">
+				<button
+					type="button"
+					onclick={() => (templateOpen = !templateOpen)}
+					class="text-sm font-bold text-gray-200 hover:text-blue-400"
+				>
+					{templateOpen ? '▾' : '◂'} נוסח ההזמנה ב-SMS
+				</button>
+				{#if sms.enabled}
+					<span
+						class="rounded-full border border-green-500/30 bg-green-900/40 px-2.5 py-0.5 text-[11px] font-bold text-green-300"
+					>
+						SMS פעיל · {sms.provider}
+					</span>
+				{:else}
+					<span
+						class="rounded-full border border-amber-500/30 bg-amber-900/30 px-2.5 py-0.5 text-[11px] font-bold text-amber-200"
+						title="הספק מוגדר בשרת המשותף (api.gofreeil.com): SMSGATE_* / TRACCAR_SMS_TOKEN / TWILIO_*"
+					>
+						שליחת SMS אינה מוגדרת בשרת המשותף
+					</span>
+				{/if}
+			</div>
+
+			{#if templateOpen}
+				<form method="POST" action="?/saveTemplate" use:enhance={submitFn('template')} class="mt-3">
+					<textarea
+						name="template"
+						rows="5"
+						maxlength={sms.maxChars}
+						bind:value={templateText}
+						class="w-full resize-y rounded-lg border border-gray-700 bg-gray-950/60 px-3 py-2 text-sm leading-6 text-gray-100 outline-none focus:border-blue-500"
+					></textarea>
+					<p class="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-gray-500">
+						{#each sms.placeholders as p (p.key)}
+							<span><code class="text-blue-300">{p.key}</code> {p.help}</span>
+						{/each}
+					</p>
+					<div class="mt-2 flex flex-wrap items-center gap-2">
+						<button
+							disabled={busy === 'template'}
+							class="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-bold text-white transition hover:bg-blue-700 disabled:opacity-40"
+						>
+							{busy === 'template' ? '…' : 'שמור נוסח'}
+						</button>
+						<button
+							type="button"
+							onclick={() => (templateText = sms.defaultTemplate)}
+							class="rounded-lg border border-gray-600 px-4 py-1.5 text-sm font-bold text-gray-300 transition hover:bg-gray-800"
+						>
+							חזרה לברירת המחדל
+						</button>
+						<span class="text-[11px] text-gray-500">
+							הנוסח משותף לכל האדמינים. לפני כל שליחה אפשר עוד לערוך את ההודעה הספציפית.
+						</span>
+					</div>
+				</form>
+			{/if}
+		</div>
 
 		{#if matches.length === 0}
 			<p class="rounded-2xl border border-gray-800 bg-gray-900/40 py-10 text-center text-gray-500">
@@ -233,6 +333,11 @@
 							<p class="truncate text-xs text-gray-500" dir="ltr">
 								{m.userEmail}{m.userPhone ? ' · ' + m.userPhone : ''}
 							</p>
+							{#if m.smsSent}
+								<p class="mt-0.5 text-[11px] text-emerald-400">
+									✓ נשלח SMS {fmtDate(m.smsSent.at)}{m.smsSent.by ? ' · ' + m.smsSent.by : ''}
+								</p>
+							{/if}
 						</div>
 						<span
 							class="rounded-full border border-blue-500/30 bg-blue-900/40 px-2.5 py-0.5 text-[11px] font-bold text-blue-300"
@@ -266,7 +371,89 @@
 									{busy === key + 'no' ? '…' : 'התעלם'}
 								</button>
 							</form>
+							<button
+								type="button"
+								disabled={!sms.enabled || !m.smsPhone}
+								title={!sms.enabled
+									? 'שליחת SMS אינה מוגדרת בשרת המשותף'
+									: !m.smsPhone
+										? 'אין לנמען מספר נייד תקין'
+										: 'הזמנה ב-SMS לבקש את הכרטיסייה'}
+								onclick={() => openSms(key, m.smsDraft)}
+								class="rounded-lg border px-4 py-1.5 text-sm font-bold transition disabled:opacity-40 {smsOpen ===
+								key
+									? 'border-blue-500 bg-blue-900/40 text-blue-200'
+									: 'border-blue-500/40 text-blue-300 hover:bg-blue-900/30'}"
+							>
+								📱 {m.smsSent ? 'שלח SMS שוב' : 'שלח SMS'}
+							</button>
 						</div>
+
+						<!-- ── עורך ההודעה לפני השליחה ─────────────────── -->
+						{#if smsOpen === key}
+							<form
+								method="POST"
+								action="?/sms"
+								use:enhance={({ cancel }) => {
+									if (
+										m.smsSent &&
+										!confirm(`כבר נשלח SMS לנמען הזה ב-${fmtDate(m.smsSent.at)}. לשלוח שוב?`)
+									) {
+										cancel();
+										return;
+									}
+									busy = key + 'sms';
+									return async (/** @type {any} */ { result, update }) => {
+										await update({ reset: false });
+										busy = '';
+										if (result.type === 'success') smsOpen = '';
+									};
+								}}
+								class="mt-1 w-full rounded-xl border border-blue-500/20 bg-blue-950/20 p-3"
+							>
+								<input type="hidden" name="bizDocId" value={m.bizDocId} />
+								<input type="hidden" name="userId" value={m.userId} />
+								<input type="hidden" name="userName" value={m.userName} />
+								<input type="hidden" name="phone" value={m.smsPhone} />
+								<p class="mb-1.5 text-xs text-gray-400">
+									אל <span class="font-bold text-gray-200" dir="ltr">{m.smsPhone}</span>
+									{#if m.userName}· {m.userName}{/if}
+									— ההודעה נשלחת כפי שהיא מופיעה כאן:
+								</p>
+								<textarea
+									name="message"
+									rows="5"
+									maxlength={sms.maxChars}
+									bind:value={drafts[key]}
+									class="w-full resize-y rounded-lg border border-gray-700 bg-gray-950/60 px-3 py-2 text-sm leading-6 text-gray-100 outline-none focus:border-blue-500"
+								></textarea>
+								<div class="mt-2 flex flex-wrap items-center gap-2">
+									<button
+										disabled={busy === key + 'sms' || !(drafts[key] ?? '').trim()}
+										class="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-bold text-white transition hover:bg-blue-700 disabled:opacity-40"
+									>
+										{busy === key + 'sms' ? 'שולח…' : '📱 שלח עכשיו'}
+									</button>
+									<button
+										type="button"
+										onclick={() => (drafts[key] = m.smsDraft)}
+										class="rounded-lg border border-gray-600 px-3 py-1.5 text-sm font-bold text-gray-300 transition hover:bg-gray-800"
+									>
+										אפס לנוסח
+									</button>
+									<button
+										type="button"
+										onclick={() => (smsOpen = '')}
+										class="rounded-lg px-3 py-1.5 text-sm font-bold text-gray-400 transition hover:bg-gray-800"
+									>
+										ביטול
+									</button>
+									<span class="text-[11px] text-gray-500">
+										{(drafts[key] ?? '').length} תווים · {segments(drafts[key] ?? '')} מקטעי SMS
+									</span>
+								</div>
+							</form>
+						{/if}
 					</div>
 				{/each}
 			</div>
