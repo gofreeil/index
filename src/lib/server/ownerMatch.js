@@ -93,6 +93,26 @@ export function invalidateMatches() {
 	userCountCache.clear();
 }
 
+/**
+ * מאפס את הבועה של משתמש אחד — אחרי שהוא עצמו שלח בקשת בעלות. בלי זה
+ * הספירה הישנה (מטמון של עשר דקות) המשיכה להדליק "1" על האווטאר גם
+ * כשהאזור האישי כבר לא הראה שום כרטיסייה שמחכה לו.
+ * @param {string|number} userId
+ */
+export function invalidateUserMatchCount(userId) {
+	userCountCache.delete(String(userId ?? ''));
+}
+
+/**
+ * מעדכן את הבועה מספירה טרייה שכבר חושבה (האזור האישי בונה את לוח
+ * ההתאמות המלא בכל טעינה) — כדי שההאדר והדף לא יסתרו זה את זה.
+ * @param {string|number} userId @param {number} n
+ */
+export function primeUserMatchCount(userId, n) {
+	const key = String(userId ?? '');
+	if (key) userCountCache.set(key, { at: Date.now(), n });
+}
+
 /** כל הכרטיסיות בשדות ההתאמה בלבד, ממוטמנות. @returns {Promise<any[]>} */
 async function allBusinesses() {
 	if (allBizCache && Date.now() - allBizCache.at < TTL_MS) return allBizCache.rows;

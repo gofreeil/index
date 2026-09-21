@@ -11,6 +11,7 @@ import {
 import {
 	businessOwnerId,
 	canEditBusiness,
+	invalidateUserMatchCount,
 	isBusinessOwner,
 	matchKind
 } from '$lib/server/ownerMatch.js';
@@ -135,6 +136,8 @@ export const actions = {
 
 		// הבועה האדומה של האדמין נגזרת ממטמון של דקה — מאפסים כדי שהבקשה תופיע מיד
 		invalidatePendingCounts();
+		// ובועת "כרטיסיות מחכות לך" של המשתמש עצמו — הכרטיסייה כבר נדרשה
+		invalidateUserMatchCount(user.id);
 		return { claimed: true };
 	}
 };

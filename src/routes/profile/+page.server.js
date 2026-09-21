@@ -10,12 +10,25 @@ import {
 	listPendingReviews,
 	listOpenReports
 } from '$lib/server/strapi.js';
-import { listAdsByOwner } from '$lib/server/adsStore.js';
+import {
+	approveAd,
+	backToPending,
+	listAdsByOwner,
+	pauseAd,
+	rejectAd,
+	resumeAd
+} from '$lib/server/adsStore.js';
 import { getAdStats } from '$lib/server/adStats.js';
 import { getBusinessesTotal, invalidatePendingCounts } from '$lib/server/pendingCounts.js';
 import { getMonthlyVisitorStats, gaConfigured } from '$lib/server/visitorStats.js';
 import { toBusiness } from '$lib/businessShape.js';
-import { businessOwnerId, findMatchesForUser, invalidateMatches } from '$lib/server/ownerMatch.js';
+import {
+	businessOwnerId,
+	findMatchesForUser,
+	invalidateMatches,
+	invalidateUserMatchCount,
+	primeUserMatchCount
+} from '$lib/server/ownerMatch.js';
 import { createClaim, listClaimsByUser } from '$lib/server/claimsStore.js';
 import { canonicalPhoneKey } from '$lib/phoneIL.js';
 
@@ -67,6 +80,11 @@ export async function load({ locals, parent }) {
 		status: b.status || 'pending'
 	}));
 
+	// לוח ההתאמות כאן טרי; הבועה שבהאדר נשענת על מטמון של עשר דקות —
+	// מיישרים אותה לפי מה שהדף עצמו מציג, שלא יופיע "1" בלי שום פריט.
+	const matchBoard = buildMatchBoard(matches, myClaims);
+	primeUserMatchCount(user.id, matchBoard.filter((m) => !m.claimStatus).length);
+
 	return {
 		user,
 		// isAdmin מחושב בשרת (isPrivileged) — הלקוח רק מציג; ההרשאה נאכפת ב-/admin עצמו.
@@ -76,7 +94,7 @@ export async function load({ locals, parent }) {
 		// הטלפון של המשתמש עצמו — ניתן לעריכה כאן, ומשמש למנוע ההתאמה
 		myPhone: phone,
 		// כרטיסיות שנראות שלו + מצב הבקשה על כל אחת
-		myMatches: buildMatchBoard(matches, myClaims),
+		myMatches: matchBoard,
 		// סיכום הנכסים של המשתמש — הכותרת של אזור הסטטיסטיקה האישי
 		myTotals: {
 			views: myBusinesses.reduce((s, b) => s + (b.view_count || 0), 0),
@@ -93,6 +111,15 @@ export async function load({ locals, parent }) {
 			submittedAt: a.submittedAt,
 			expiresAt: a.expiresAt ?? '',
 			rejectionReason: a.rejectionReason ?? '',
+			// מוצגת עכשיו באתר: מאושרת, לא מושהית ותוקפה לא פג (כמו listApprovedLive)
+			live:
+				a.status === 'approved' &&
+				!a.paused &&
+				(!a.expiresAt || new Date(a.expiresAt).getTime() > Date.now()),
+			paused: Boolean(a.paused),
+			// לקיצורי הניהול: המסלול שהמפרסם ביקש בשליחה, והפרסומת שהגרסה הזו מעדכנת
+			requestedDurationDays: a.requestedDurationDays,
+			replacesTitle: a.replacesTitle ?? '',
 			stats: adStats[a.id]?.totals ?? { impressions: 0, clicks: 0, landing: 0, leads: 0 }
 		})),
 		moderation,
@@ -170,8 +197,101 @@ async function loadModeration() {
 	};
 }
 
+/**
+ * קיצורי הניהול מ"הפרסומות שלי" — לאדמין שגם מפרסם בעצמו, כדי לא לעבור
+ * למסך הניהול בשביל פרסומת אחת. אותן פונקציות בדיוק כמו ב-/admin/ads;
+ * ההרשאה נבדקת בתוך כל פעולה, לא רק ב-load. כל התוצאות באותה צורה:
+ * { message } בהצלחה, fail עם { error } בכישלון.
+ * @param {any} locals
+ * @param {Request} request
+ * @returns {Promise<{ id: string, form: FormData, by: string } | { error: string, status: number }>}
+ */
+async function adAction(locals, request) {
+	if (!isPrivileged(locals.user)) return { error: 'נדרשת הרשאת ניהול', status: 403 };
+	const form = await request.formData();
+	const id = String(form.get('id') ?? '');
+	if (!id) return { error: 'חסר מזהה פרסומת', status: 400 };
+	return { id, form, by: String(locals.user?.email ?? '') };
+}
+
 /** @type {import('./$types').Actions} */
 export const actions = {
+	// אישור (או חידוש של פרסומת שפג תוקפה — אותה פעולה, תוקף חדש מהיום).
+	// המסלול = מה שהמפרסם בחר בשליחה (הבחירה המפורשת נשארת במסך הניהול).
+	approve: async ({ request, locals }) => {
+		const a = await adAction(locals, request);
+		if ('error' in a) return fail(a.status, { error: a.error });
+		const durRaw = Number(a.form.get('durationDays'));
+		const durationDays = durRaw === 180 ? 180 : durRaw === 30 ? 30 : undefined;
+		try {
+			const r = await approveAd(a.id, a.by, durationDays);
+			if (!r) return fail(404, { error: 'הפרסומת לא נמצאה' });
+			invalidatePendingCounts();
+			return {
+				message: r.replacedNowTitle
+					? `אושרה ופורסמה: ${r.title} — נכנסה במקום "${r.replacedNowTitle}", שירדה מהאתר`
+					: `אושרה ופורסמה: ${r.title} ✅`
+			};
+		} catch (err) {
+			console.error('profile approve failed:', err);
+			return fail(502, { error: 'האישור נכשל - נסו שוב' });
+		}
+	},
+	reject: async ({ request, locals }) => {
+		const a = await adAction(locals, request);
+		if ('error' in a) return fail(a.status, { error: a.error });
+		const reason = String(a.form.get('reason') ?? '') || undefined;
+		try {
+			const r = await rejectAd(a.id, a.by, reason);
+			if (!r) return fail(404, { error: 'הפרסומת לא נמצאה' });
+			invalidatePendingCounts();
+			return { message: `נדחתה: ${r.title}` };
+		} catch (err) {
+			console.error('profile reject failed:', err);
+			return fail(502, { error: 'הדחייה נכשלה - נסו שוב' });
+		}
+	},
+	// השהיה — יורדת מהאתר והימים שנותרו נשמרים לה
+	pause: async ({ request, locals }) => {
+		const a = await adAction(locals, request);
+		if ('error' in a) return fail(a.status, { error: a.error });
+		try {
+			const r = await pauseAd(a.id);
+			if (!r) return fail(404, { error: 'הפרסומת לא נמצאה' });
+			return { message: `${r.title} הושהתה - ${r.daysLeft} ימים שמורים לה` };
+		} catch (err) {
+			console.error('profile pause failed:', err);
+			return fail(502, { error: 'ההשהיה נכשלה - נסו שוב' });
+		}
+	},
+	// המשך אחרי השהיה — הימים השמורים נספרים מהיום
+	resume: async ({ request, locals }) => {
+		const a = await adAction(locals, request);
+		if ('error' in a) return fail(a.status, { error: a.error });
+		try {
+			const r = await resumeAd(a.id);
+			if (!r) return fail(404, { error: 'הפרסומת לא נמצאה' });
+			return { message: `${r.title} חזרה לאוויר - ${r.daysLeft} ימים` };
+		} catch (err) {
+			console.error('profile resume failed:', err);
+			return fail(502, { error: 'ההפעלה מחדש נכשלה - נסו שוב' });
+		}
+	},
+	// הורדה מהאתר בלי מחיקה — חוזרת לממתינות
+	unapprove: async ({ request, locals }) => {
+		const a = await adAction(locals, request);
+		if ('error' in a) return fail(a.status, { error: a.error });
+		try {
+			const r = await backToPending(a.id);
+			if (!r) return fail(404, { error: 'הפרסומת לא נמצאה' });
+			invalidatePendingCounts();
+			return { message: 'הפרסומת הורדה מהאתר וחזרה לממתינות' };
+		} catch (err) {
+			console.error('profile unapprove failed:', err);
+			return fail(502, { error: 'ההורדה נכשלה - נסו שוב' });
+		}
+	},
+
 	/**
 	 * שמירת הטלפון בפרופיל המשתמש. אין אימות SMS — המספר משמש להצעת
 	 * התאמה בלבד, והבעלות עצמה ניתנת רק באישור אדמין.
@@ -224,6 +344,8 @@ export const actions = {
 		if (!res.ok) return fail(400, { claimError: res.error });
 
 		invalidatePendingCounts();
+		// הכרטיסייה כבר לא "מחכה לו" — הבועה שבהאדר צריכה לרדת מיד
+		invalidateUserMatchCount(user.id);
 		return { claimSent: true };
 	}
 };

@@ -10,6 +10,7 @@
 	import WelcomeScreen from '$lib/components/WelcomeScreen.svelte';
 	import Flag from '$lib/components/Flag.svelte';
 	import { authUser, hydrateAuth } from '$lib/auth';
+	import { adminNav } from '$lib/adminNav.js';
 	import { page, navigating } from '$app/state';
 	import { onMount } from 'svelte';
 
@@ -25,20 +26,53 @@
 	// page.data ולא data: ה-load של ה-layout הזה אינו רץ מחדש בניווט צד-לקוח,
 	// ולכן בתוך פאנל הניהול הבועה נשענת על הספירה הטרייה שמחזיר
 	// admin/+layout.server.js (אותו מפתח, דורס). בשאר האתר אין הבדל.
-	const pendingTotal = $derived(page.data.pending?.total ?? data.pending?.total ?? 0);
+	const pending = $derived(
+		/** @type {Record<string, number>} */ (page.data.pending ?? data.pending ?? {})
+	);
+	const pendingTotal = $derived(pending.total ?? 0);
 
 	// אותה בועה, מהצד של בעל העסק: כרטיסיות שהמערכת זיהתה כשלו והוא עוד
 	// לא דרש אותן. הקישור מוביל אל המדור שבאזור האישי שבו דורשים אותן.
 	const myMatches = $derived(data.myMatches ?? 0);
 	const alertTotal = $derived(pendingTotal + myMatches);
-	const alertHref = $derived(
-		pendingTotal > 0 ? '/profile#admin' : myMatches > 0 ? '/profile#claims' : '/profile'
-	);
 	const alertTitle = $derived(
 		pendingTotal > 0
 			? `${pendingTotal} פריטים ממתינים לטיפול`
 			: `${myMatches} כרטיסיות מחכות לך באתר`
 	);
+
+	// פירוט ההתראה — מה בדיוק מחכה ואיפה מטפלים בזה. המספר לבדו לא אמר
+	// כלום ("1 — אבל של מה?"), ולכן לחיצה על האווטאר פותחת רשימה: שורה לכל
+	// סוג שיש בו משהו (עסקים לאישור, ביקורות, דיווחים, פרסומות, בעלות —
+	// מאותה רשימה של פאנל הניהול) ועוד "כרטיסיות שמחכות לך" לבעל עסק.
+	const alertItems = $derived.by(() => {
+		const items = adminNav(Boolean(data.isAdmin), Boolean(data.superAdmin))
+			.filter((i) => i.alert && (pending[i.alert] ?? 0) > 0)
+			.map((i) => ({
+				href: i.href,
+				icon: i.icon,
+				label: i.title,
+				desc: i.desc,
+				n: pending[/** @type {string} */ (i.alert)]
+			}));
+		if (myMatches > 0) {
+			items.push({
+				href: '/profile#claims',
+				icon: '🪪',
+				label: 'כרטיסיות שמחכות לך',
+				desc: 'המערכת זיהתה כרטיסיות שנראות שלך — אפשר לדרוש אותן',
+				n: myMatches
+			});
+		}
+		return items;
+	});
+	let alertsOpen = $state(false);
+	/** @param {MouseEvent} e סגירת התפריט בלחיצה מחוץ לו */
+	const closeAlertsOutside = (e) => {
+		if (!alertsOpen) return;
+		const el = /** @type {HTMLElement | null} */ (e.target);
+		if (!el?.closest('[data-alerts-menu]')) alertsOpen = false;
+	};
 
 	// הטענת Google Analytics (gtag) בצד-הלקוח — רק אם הוגדר מזהה מדידה.
 	// עלות שרת אפסית: הסקריפט נטען מגוגל, לא מאיתנו.
@@ -94,6 +128,13 @@
 		ru: 'ru'
 	};
 </script>
+
+<svelte:document
+	onclick={closeAlertsOutside}
+	onkeydown={(e) => {
+		if (e.key === 'Escape') alertsOpen = false;
+	}}
+/>
 
 <svelte:head>
 	<link rel="icon" type="image/png" href="/favicon.png?v=4" />
@@ -289,21 +330,25 @@
 					     הסמוכים לא ייראו כאותו כפתור. ההתנתקות ופרטי המשתמש בעמוד /profile.
 					     כשיש פריטים שממתינים לטיפול (אדמין) — בועה אדומה ממוספרת בפינה,
 					     והקישור מוביל ישר לפאנל שבאזור האישי. -->
-					{#if user}
-						<a
-							href={alertHref}
-							class="relative flex flex-shrink-0 items-center gap-2 rounded-full bg-[#1c2f5a] px-1.5 py-1.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#2a4379] sm:px-3 sm:py-2"
-							title={alertTotal > 0 ? alertTitle : t.myArea}
-							aria-label={alertTotal > 0
-								? `${t.myArea} – ${user.name} – ${alertTitle}`
-								: `${t.myArea} – ${user.name}`}
-						>
-							<span
-								class="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full login-grad text-xs"
-								aria-hidden="true">👤</span
+					{#if user && alertTotal > 0}
+						<!-- יש התראות: האווטאר הופך לכפתור שפותח את הפירוט. -->
+						<div class="relative flex items-center" data-alerts-menu>
+							<button
+								type="button"
+								onclick={() => (alertsOpen = !alertsOpen)}
+								class="relative flex flex-shrink-0 items-center gap-2 rounded-full bg-[#1c2f5a] px-1.5 py-1.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#2a4379] sm:px-3 sm:py-2"
+								title={alertTitle}
+								aria-label={`${t.myArea} – ${user.name} – ${alertTitle}`}
+								aria-expanded={alertsOpen}
+								aria-haspopup="menu"
 							>
-							<span class="hidden max-w-[120px] truncate sm:inline">{user.name || user.email}</span>
-							{#if alertTotal > 0}
+								<span
+									class="login-grad flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-xs"
+									aria-hidden="true">👤</span
+								>
+								<span class="hidden max-w-[120px] truncate sm:inline"
+									>{user.name || user.email}</span
+								>
 								<span
 									class="pointer-events-none absolute -top-1.5 -left-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[11px] leading-none font-black text-white shadow-lg ring-2 ring-gray-900"
 								>
@@ -311,7 +356,64 @@
 										? '99+'
 										: alertTotal}
 								</span>
+							</button>
+
+							{#if alertsOpen}
+								<div
+									class="absolute top-full left-0 z-[100] mt-2 w-72 overflow-hidden rounded-xl border border-gray-100 bg-white text-right shadow-2xl dark:border-gray-700 dark:bg-gray-800"
+									role="menu"
+									dir="rtl"
+								>
+									<p
+										class="border-b border-gray-100 px-3 py-2 text-xs font-bold text-gray-500 dark:border-gray-700 dark:text-gray-400"
+									>
+										{alertTitle}
+									</p>
+									{#each alertItems as item (item.href)}
+										<a
+											href={item.href}
+											role="menuitem"
+											onclick={() => (alertsOpen = false)}
+											class="flex items-center gap-3 px-3 py-2.5 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
+										>
+											<span class="text-lg" aria-hidden="true">{item.icon}</span>
+											<span class="min-w-0 flex-1">
+												<span class="block text-sm font-bold text-gray-800 dark:text-gray-100"
+													>{item.label}</span
+												>
+												<span class="block truncate text-[11px] text-gray-500 dark:text-gray-400"
+													>{item.desc}</span
+												>
+											</span>
+											<span
+												class="flex h-6 min-w-6 flex-shrink-0 items-center justify-center rounded-full bg-rose-500 px-1.5 text-xs font-black text-white"
+												>{item.n}</span
+											>
+										</a>
+									{/each}
+									<a
+										href="/profile"
+										role="menuitem"
+										onclick={() => (alertsOpen = false)}
+										class="block border-t border-gray-100 px-3 py-2 text-center text-xs font-bold text-blue-600 hover:bg-gray-50 dark:border-gray-700 dark:text-blue-300 dark:hover:bg-gray-700"
+									>
+										{t.myArea} ←
+									</a>
+								</div>
 							{/if}
+						</div>
+					{:else if user}
+						<a
+							href="/profile"
+							class="relative flex flex-shrink-0 items-center gap-2 rounded-full bg-[#1c2f5a] px-1.5 py-1.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#2a4379] sm:px-3 sm:py-2"
+							title={t.myArea}
+							aria-label={`${t.myArea} – ${user.name}`}
+						>
+							<span
+								class="login-grad flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-xs"
+								aria-hidden="true">👤</span
+							>
+							<span class="hidden max-w-[120px] truncate sm:inline">{user.name || user.email}</span>
 						</a>
 					{:else}
 						<a
