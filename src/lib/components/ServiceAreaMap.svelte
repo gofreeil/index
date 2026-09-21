@@ -11,7 +11,7 @@
 	// ============================================================
 	import { onDestroy } from 'svelte';
 	import { cityLabels, resolveServiceArea, serviceShapes } from '$lib/serviceArea.js';
-	import { BASEMAP_URL, BASEMAP_OPTIONS } from '$lib/basemap.js';
+	import { BASEMAP_URL, BASEMAP_OPTIONS, BASEMAP_ATTRIBUTION } from '$lib/basemap.js';
 	import 'leaflet/dist/leaflet.css';
 
 	/** @type {{ business: any, height?: string }} */
@@ -66,7 +66,7 @@
 			// בסיס בלי כיתוב, כמו במפה הראשית (למה — ראו basemap.js).
 			L.tileLayer(BASEMAP_URL, {
 				...BASEMAP_OPTIONS,
-				attribution: '&copy; OpenStreetMap &copy; CARTO'
+				attribution: BASEMAP_ATTRIBUTION
 			}).addTo(map);
 
 			/* שמות היישובים בעברית, מצוירים על ידינו מעל בסיס חסר הכיתוב.

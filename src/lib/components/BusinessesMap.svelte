@@ -2,7 +2,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { cityLabels, resolveServiceArea, serviceShapes } from '$lib/serviceArea.js';
-	import { BASEMAP_URL, BASEMAP_OPTIONS } from '$lib/basemap.js';
+	import { BASEMAP_URL, BASEMAP_OPTIONS, BASEMAP_ATTRIBUTION } from '$lib/basemap.js';
 	import 'leaflet/dist/leaflet.css';
 
 	/** full — המופע שבתוך שכבת המסך המלא (ראו LazyMap): הוא ממלא את הגובה
@@ -281,12 +281,11 @@
 			// היה שני שלישים משורת הכיתוב. הקרדיט לנתונים (OSM ו-CARTO) כן נדרש,
 			// ולכן הוא נשאר — מקוצר לשמות בלבד, עם קישור לנוסח המלא של כל אחד.
 			map.attributionControl.setPrefix(false);
-			// בסיס בלי שום כיתוב (Voyager no-labels; למה — ראו basemap.js),
+			// בסיס בלי שום כיתוב (איזה ספק ולמה — ראו basemap.js),
 			// והשמות נכתבים מעליו בעברית ב-renderLabels.
 			L.tileLayer(BASEMAP_URL, {
 				...BASEMAP_OPTIONS,
-				attribution:
-					'<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OSM</a> · <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>'
+				attribution: BASEMAP_ATTRIBUTION
 			}).addTo(map);
 			// שכבה משלה לשמות היישובים, מתחת לעיגולים ולפינים (overlayPane הוא
 			// 400): כך התוויות לא מכסות סימון של עסק, והן שקופות לעכבר לגמרי.
