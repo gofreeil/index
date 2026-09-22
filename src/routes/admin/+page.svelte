@@ -249,6 +249,8 @@
 									<img
 										src={mediaUrl(b.logo)}
 										alt=""
+										loading="lazy"
+										decoding="async"
 										class="h-14 w-14 flex-shrink-0 rounded-xl object-cover"
 									/>
 								{/if}
@@ -306,6 +308,8 @@
 									<img
 										src={mediaUrl(b.logo)}
 										alt=""
+										loading="lazy"
+										decoding="async"
 										class="h-12 w-12 flex-shrink-0 rounded-xl object-cover"
 									/>
 								{:else}

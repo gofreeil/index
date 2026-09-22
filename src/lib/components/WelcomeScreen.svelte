@@ -17,7 +17,7 @@
 
 	const WELCOME_MS = 7000;
 	// לוגו האתר — המשתנה היחיד שמשתנה בין אתרי הרשת
-	const LOGO_SRC = '/logo-professionals.png?v=4';
+	const LOGO_SRC = '/images/logo-professionals.webp';
 
 	let kind = $state<'new' | 'back' | null>(null);
 	let visible = $state(false);
@@ -96,7 +96,10 @@
 				{#if kind === 'new'}
 					<img
 						src={LOGO_SRC}
-						alt="לוגו האתר"
+						alt="לוגו בעלי מקצוע כשירים"
+						width="400"
+						height="333"
+						decoding="async"
 						class="mx-auto mb-4 h-24 w-24 rounded-full bg-white object-cover shadow-lg ring-2 ring-purple-400/40 sm:h-28 sm:w-28"
 					/>
 					<h2
@@ -141,10 +144,15 @@
 							<div
 								class="aspect-[4/3] w-full overflow-hidden rounded-lg bg-gradient-to-br {site.color}"
 							>
+								<!-- העוטף (aspect-[4/3]) שומר את המקום לפני הטעינה; width/height
+								     נותנים לדפדפן יחס ברירת מחדל גם בלי CSS -->
 								<img
 									src={site.image}
-									alt={site.title}
+									alt="מעבר לאתר {site.title}"
+									width="640"
+									height="480"
 									loading="lazy"
+									decoding="async"
 									class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
 								/>
 							</div>

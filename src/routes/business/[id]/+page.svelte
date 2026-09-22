@@ -390,6 +390,7 @@
 				<img
 					src={business.logo}
 					alt="לוגו {business.name}"
+					decoding="async"
 					class="h-full w-full object-contain p-1.5"
 					use:adImgFit={{ ...logoFit, mode: 'contain', enabled: !isDefaultFit(logoFit) }}
 					onerror={(/** @type {Event} */ e) => {
@@ -582,7 +583,9 @@
 						in:fade={{ duration: 200 }}
 						out:fade={{ duration: 200 }}
 						src={banner}
-						alt="{business.name} {i + 1}"
+						alt="באנר {i + 1} מתוך {business.banners.length} של {business.name}"
+						fetchpriority={i === 0 ? 'high' : 'auto'}
+						decoding="async"
 						class="absolute inset-0 h-full w-full object-cover"
 						use:adImgFit={{ ...bannerFit(i), enabled: !isDefaultFit(bannerFit(i)) }}
 					/>

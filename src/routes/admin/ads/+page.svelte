@@ -582,6 +582,8 @@
 								<img
 									src={ad.mainImage}
 									alt={ad.title}
+									loading="lazy"
+									decoding="async"
 									class="h-full w-full object-cover"
 									use:adImgFit={parseAdImageFit(ad.mainImageFit)}
 								/>

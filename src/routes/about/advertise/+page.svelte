@@ -510,12 +510,13 @@
 					<div class="hidden md:block md:flex-1 md:overflow-hidden md:rounded-lg">
 						<img
 							src={pkg.image}
-							alt={pkg.name}
+							alt="דוגמה לפרסומת בחבילת {pkg.name}"
 							class="h-full w-full object-cover object-right-top"
 							style={pkg.imageScale
 								? `transform: scale(${pkg.imageScale}); transform-origin: ${pkg.imageOrigin ?? 'top right'};`
 								: ''}
 							loading="lazy"
+							decoding="async"
 						/>
 					</div>
 				{/if}

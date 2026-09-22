@@ -178,9 +178,17 @@
 				>
 					<!-- הלוגו גדל בריחוף מעל הקישור כולו (group-hover), כדי שגם מי
 					     שהעכבר שלו מתקרב מכיוון הכותרת יקבל את הרמז שזה קישור לדף הבית. -->
+					<!-- width/height = המידות האמיתיות של הקובץ (400×333): הדפדפן שומר את
+					     היחס עוד לפני שהתמונה נטענת, וההדר לא קופץ. ה-CSS (h-14 w-auto)
+					     קובע את הגודל המוצג בפועל. fetchpriority=high — זו התמונה הראשונה
+					     בכל דף, ולכן היא לא lazy. -->
 					<img
-						src="/logo-professionals.png?v=4"
+						src="/images/logo-professionals.webp"
 						alt="לוגו בעלי מקצוע כשירים — סדר בכל עניין"
+						width="400"
+						height="333"
+						fetchpriority="high"
+						decoding="async"
 						class="h-14 w-auto rounded-lg object-contain shadow-sm transition-transform duration-300 ease-out group-hover:scale-125 sm:h-18"
 					/>
 					<div class="flex flex-col text-right transition-opacity group-hover:opacity-80">

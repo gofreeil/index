@@ -384,7 +384,9 @@
 			{#if mediaUrl(biz.logo)}
 				<img
 					src={mediaUrl(biz.logo)}
-					alt="לוגו נוכחי"
+					alt="הלוגו הנוכחי של העסק"
+					loading="lazy"
+					decoding="async"
 					class="mb-2 h-20 w-20 rounded-xl object-cover"
 				/>
 				<label class="mb-2 flex items-center gap-2 text-xs text-gray-400">

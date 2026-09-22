@@ -87,6 +87,7 @@
 					<img
 						src={ad.logo}
 						alt=""
+						decoding="async"
 						class="mb-3 h-[68px] w-[68px] bg-white/10 object-contain p-2 md:h-[88px] md:w-[88px] {ad
 							.adStyle?.logoShape === 'circle'
 							? 'rounded-full'
@@ -153,9 +154,12 @@
 
 			{#if heroImage}
 				<div class="min-w-0">
+					<!-- התמונה הראשית של הדף (LCP) — נטענת בעדיפות גבוהה ולא lazy -->
 					<img
 						src={heroImage}
-						alt={ad.title}
+						alt="התמונה הראשית של הפרסומת {ad.title}"
+						fetchpriority="high"
+						decoding="async"
 						class="mx-auto block max-h-[17rem] w-auto max-w-full rounded-2xl shadow-2xl md:max-h-[27rem]"
 					/>
 				</div>
@@ -208,7 +212,13 @@
 					{#each lp.products as p (p.id)}
 						<article class="flex gap-3 rounded-xl border border-white/10 bg-white/5 p-3">
 							{#if p.image}
-								<img src={p.image} alt={p.name} class="h-20 w-20 rounded-lg object-cover" />
+								<img
+									src={p.image}
+									alt="המוצר {p.name}"
+									loading="lazy"
+									decoding="async"
+									class="h-20 w-20 rounded-lg object-cover"
+								/>
 							{/if}
 							<div class="min-w-0 flex-1">
 								<h3 class="font-bold">{p.name}</h3>

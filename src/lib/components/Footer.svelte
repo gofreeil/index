@@ -22,7 +22,11 @@
 			>
 				<img
 					src="/images/yotzim-lecherut.webp"
-					alt={t.freedomMovement}
+					alt="מעבר לאתר תנועת {t.freedomMovement}"
+					width="640"
+					height="365"
+					loading="lazy"
+					decoding="async"
 					class="h-28 w-28 flex-shrink-0 rounded-lg object-contain transition-transform hover:scale-105 md:h-32 md:w-32"
 				/>
 

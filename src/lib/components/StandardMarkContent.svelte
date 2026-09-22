@@ -68,10 +68,10 @@
 <div class="space-y-6 text-right leading-relaxed text-gray-300">
 	<div class="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
 		<img
-			src="/standard-mark.png"
+			src="/images/standard-mark.webp"
 			alt="תו התקן של יוצאים לחירות"
-			width="160"
-			height="160"
+			width="400"
+			height="400"
 			loading="lazy"
 			decoding="async"
 			class="h-32 w-32 flex-shrink-0 object-contain drop-shadow-[0_4px_12px_rgba(59,130,246,0.35)] sm:h-40 sm:w-40"

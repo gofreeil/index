@@ -80,8 +80,11 @@
 		<header class="mb-10 border-b border-white/10 pb-8">
 			<div class="flex flex-col items-start gap-5 sm:flex-row sm:items-center">
 				<img
-					src="/logo-professionals.png?v=4"
+					src="/images/logo-professionals.webp"
 					alt="לוגו בעלי מקצוע כשירים — סדר בכל עניין"
+					width="400"
+					height="333"
+					decoding="async"
 					class="h-24 w-auto rounded-2xl object-contain shadow-lg sm:h-32"
 				/>
 				<h1

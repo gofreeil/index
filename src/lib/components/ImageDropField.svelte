@@ -161,7 +161,8 @@
 		{#each picked as p (p.url)}
 			<img
 				src={p.url}
-				alt={p.name}
+				alt="תצוגה מקדימה של הקובץ {p.name}"
+				decoding="async"
 				class="h-14 w-14 rounded-lg border border-gray-700 object-cover"
 			/>
 		{/each}
