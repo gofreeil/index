@@ -5,11 +5,14 @@
 // בעלים שהטלפון/האימייל שלה זהים לאלה של משתמש רשום. במקום לחכות שהוא
 // יגלה את זה לבד, האדמין שולח לו SMS עם שני קישורים:
 //
-//   {link}     דף העסק עם ?claim=1 — תיבת "זה העסק שלי" נפתחת מיד, ואם
-//              הוא לא מחובר, הכניסה מחזירה אותו לשם.
-//   {decline}  "לא שלי" — קישור חתום (HMAC) שמסמן את ההתאמה כלא-נכונה
-//              בלי להתחבר, כמו "התעלם" של האדמין. חתום כדי שאיש לא יוכל
-//              לסגור התאמות של אחרים על ידי ניחוש מזהים.
+//   {link}     /c/<id> — מפנה לדף העסק עם ?claim=1, כלומר תיבת "זה העסק
+//              שלי" נפתחת מיד, ואם הוא לא מחובר הכניסה מחזירה אותו לשם.
+//   {decline}  /d/<token> — "לא שלי": קישור חתום (HMAC) שמסמן את ההתאמה
+//              כלא-נכונה בלי להתחבר, כמו "התעלם" של האדמין. חתום כדי
+//              שאיש לא יוכל לסגור התאמות של אחרים על ידי ניחוש מזהים.
+//
+// שתי הכתובות קצרות בכוונה: ב-SMS עברי מקטע הוא 70 תווים, וכתובת מלאה
+// של /business/<id>?claim=1#claim אכלה מקטע שלם לבדה.
 //
 // הנוסח נשמר ב-configStore (claim_sms_template) — אדמין עורך אותו במסך,
 // ולפני כל שליחה עוד אפשר לערוך את ההודעה הספציפית. יומן השליחות
@@ -28,14 +31,18 @@ const LOG_KEEP = 300;
 // לנוסח כולו כדי שההודעה לא תהפוך לחמישה מקטעים בטעות.
 export const MAX_SMS_CHARS = 480;
 
+// כל קישור עומד בשורה משלו אחרי המלל שמסביר אותו: ב-SMS אין טקסט-עוגן,
+// ושתי כתובות בתוך משפט הופכות את ההודעה לקיר תווים שקשה לקרוא.
 export const DEFAULT_TEMPLATE =
-	'שלום {name}, זיהינו שהכרטיסייה "{business}" במדריך בעלי המקצוע של יוצאים לחירות היא כנראה שלך. כדי לקבל עליה בעלות ולערוך אותה: {link}\nלא שלך? {decline}';
+	'שלום {name}, זיהינו שהכרטיסייה "{business}" במדריך בעלי המקצוע של יוצאים לחירות היא כנראה שלך.\n' +
+	'כנס כדי לבדוק ולקבל עליה בעלות:\n{link}\n' +
+	'או דחה — אני כבר לא מעוניין שהעסק שלי יופיע בקהילה:\n{decline}';
 
 export const PLACEHOLDERS = [
 	{ key: '{name}', help: 'שם המשתמש (או ריק)' },
 	{ key: '{business}', help: 'שם הכרטיסייה' },
-	{ key: '{link}', help: 'קישור לדף העסק עם תיבת הבקשה פתוחה' },
-	{ key: '{decline}', help: 'קישור "לא שלי" שסוגר את ההתאמה' }
+	{ key: '{link}', help: 'קישור קצר לדף העסק עם תיבת הבקשה פתוחה' },
+	{ key: '{decline}', help: 'קישור קצר "לא שלי" שסוגר את ההתאמה' }
 ];
 
 // ── נוסח ─────────────────────────────────────────────────────
@@ -85,12 +92,13 @@ function secret() {
 	return env.CLAIM_LINK_SECRET || env.STRAPI_TOKEN || 'dev-only';
 }
 
+// אורך החתימה בקישור. 12 תווי hex = 48 סיביות — די והותר מול ניחוש של
+// פעולה שכל כולה "סמן שההתאמה הזו לא נכונה", ו-20 תווים פחות בהודעה.
+const SIG_LEN = 12;
+
 /** @param {string} bizDocId @param {string} userId */
 function sign(bizDocId, userId) {
-	return createHmac('sha256', secret())
-		.update(`${bizDocId}|${userId}`)
-		.digest('hex')
-		.slice(0, 32);
+	return createHmac('sha256', secret()).update(`${bizDocId}|${userId}`).digest('hex').slice(0, 32);
 }
 
 /**
@@ -100,7 +108,7 @@ function sign(bizDocId, userId) {
  */
 export function declineToken(bizDocId, userId) {
 	const uid = String(userId);
-	return `${bizDocId}.${uid}.${sign(bizDocId, uid)}`;
+	return `${bizDocId}.${uid}.${sign(bizDocId, uid).slice(0, SIG_LEN)}`;
 }
 
 /**
@@ -112,10 +120,15 @@ export function verifyDeclineToken(token) {
 	const parts = String(token ?? '').split('.');
 	if (parts.length !== 3) return null;
 	const [bizDocId, userId, sig] = parts;
-	if (!/^[A-Za-z0-9_-]+$/.test(bizDocId) || !/^\d+$/.test(userId) || !/^[0-9a-f]{32}$/.test(sig)) {
+	// גם חתימה באורך 32 — כך שקישורים שכבר יצאו ב-SMS לפני הקיצור עדיין עובדים.
+	if (
+		!/^[A-Za-z0-9_-]+$/.test(bizDocId) ||
+		!/^\d+$/.test(userId) ||
+		!new RegExp(`^[0-9a-f]{${SIG_LEN}}([0-9a-f]{${32 - SIG_LEN}})?$`).test(sig)
+	) {
 		return null;
 	}
-	const expected = sign(bizDocId, userId);
+	const expected = sign(bizDocId, userId).slice(0, sig.length);
 	if (!timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null;
 	return { bizDocId, userId };
 }
@@ -128,8 +141,8 @@ export function verifyDeclineToken(token) {
 export function claimLinks(origin, bizDocId, userId) {
 	const base = origin.replace(/\/$/, '');
 	return {
-		link: `${base}/business/${encodeURIComponent(bizDocId)}?claim=1#claim`,
-		decline: `${base}/claim/decline/${declineToken(bizDocId, userId)}`
+		link: `${base}/c/${encodeURIComponent(bizDocId)}`,
+		decline: `${base}/d/${declineToken(bizDocId, userId)}`
 	};
 }
 

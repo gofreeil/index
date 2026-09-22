@@ -274,7 +274,7 @@
 				<form method="POST" action="?/saveTemplate" use:enhance={submitFn('template')} class="mt-3">
 					<textarea
 						name="template"
-						rows="5"
+						rows="6"
 						maxlength={sms.maxChars}
 						bind:value={templateText}
 						class="w-full resize-y rounded-lg border border-gray-700 bg-gray-950/60 px-3 py-2 text-sm leading-6 text-gray-100 outline-none focus:border-blue-500"
@@ -422,7 +422,7 @@
 								</p>
 								<textarea
 									name="message"
-									rows="5"
+									rows="6"
 									maxlength={sms.maxChars}
 									bind:value={drafts[key]}
 									class="w-full resize-y rounded-lg border border-gray-700 bg-gray-950/60 px-3 py-2 text-sm leading-6 text-gray-100 outline-none focus:border-blue-500"
