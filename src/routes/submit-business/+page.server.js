@@ -1,5 +1,11 @@
 import { fail } from '@sveltejs/kit';
-import { createBusiness, uploadImage } from '$lib/server/strapi.js';
+import {
+	createBusiness,
+	updateBusiness,
+	findSubmittedTwins,
+	uploadImage
+} from '$lib/server/strapi.js';
+import { submissionLockKey } from '$lib/businessDedupe.js';
 import { getCategoryOptions } from '$lib/server/categoryStore.js';
 import { parseExtraCategories } from '$lib/categories.js';
 import { parseBranches } from '$lib/branches.js';
@@ -47,6 +53,29 @@ function rateLimited(ip) {
 	b.count += 1;
 	return false;
 }
+
+// ── מניעת כפילויות ──────────────────────────────────────────
+// אותו עסק שמוגש פעמיים (לחיצה כפולה, רענון אחרי שגיאת רשת, "ליתר ביטחון")
+// לא הופך לשני כרטיסים בפאנל: אם כבר יש לו רשומה שממתינה לאישור (או שנדחתה)
+// — היא מתעדכנת בפרטים החדשים וחוזרת לתור; אם הוא כבר במדריך — לא נוצר
+// כלום והמגיש מקבל הודעה כנה. ההגדרה של "אותו עסק": $lib/businessDedupe.js.
+//
+// הנעילה שבזיכרון סוגרת את החור שבין הבדיקה לכתיבה: שתי בקשות זהות שנכנסות
+// באותה שנייה (לחיצה כפולה לפני ש-submitting נדלק) עוברות שתיהן את
+// findSubmittedTwins בלי למצוא כלום. השנייה ממתינה לראשונה ומחזירה "כבר נשלח".
+// מפתחות ש-extra_fields מנהל מהטופס — מוחלפים בעדכון; כל מפתח אחר (שהוסיפו
+// אדמין או תהליך בעלות) נשמר.
+/** @type {Map<string, Promise<unknown>>} */
+const inflight = new Map();
+const FORM_EXTRA_KEYS = [
+	'owner_email',
+	TERMS_STAMP,
+	'categories',
+	'branches',
+	'tags',
+	'links',
+	'media_fit'
+];
 
 const PHONE_RE = /^0\d[\d\-\s]{6,}$/;
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -145,90 +174,161 @@ export const actions = {
 			return fail(400, { errors, values });
 		}
 
-		// ── העלאת לוגו (אופציונלי) ──
-		let logoId = null;
-		const file = fd.get('logo');
-		if (file && typeof file !== 'string' && file.size > 0) {
-			if (!file.type.startsWith('image/') || file.size > 3_000_000) {
-				return fail(400, { errors: { logo: 'קובץ לוגו חייב להיות תמונה עד 3MB' }, values });
-			}
-			try {
-				logoId = await uploadImage(file);
-			} catch {
-				logoId = null; // לא לחסום הגשה על כשל העלאה
-			}
+		// ── כבר הוגש? (לפני העלאת התמונות — שלא נעלה קבצים לרשומה שלא תיווצר) ──
+		const lockKey = submissionLockKey(values);
+		const pendingTwin = inflight.get(lockKey);
+		if (pendingTwin) {
+			// הגשה זהה כבר בדרך לכתיבה ברגע זה — לא יוצרים שנייה
+			await pendingTwin.catch(() => {});
+			return { success: true, alreadyPending: true };
 		}
+		/** @type {any[]} */
+		const twins = await findSubmittedTwins(values).catch((e) => {
+			// בדיקה שנכשלה לא חוסמת הגשה — עדיף כפילות נדירה מאשר עסק שלא נכנס
+			console.warn('findSubmittedTwins failed:', e);
+			return [];
+		});
+		const listed = twins.find((t) => t.status === 'approved' || t.status === 'frozen');
+		if (listed) {
+			return {
+				success: true,
+				alreadyListed: true,
+				documentId: String(listed.documentId),
+				name: String(listed.name || values.name)
+			};
+		}
+		// ממתין → מעדכנים את אותה בקשה; נדחה → מעדכנים ומחזירים לתור (ניסיון מתוקן)
+		const reuse =
+			twins.find((t) => t.status === 'pending') ?? twins.find((t) => t.status === 'rejected');
 
-		// ── העלאת תמונות העסק (banners) ──
-		/** @type {number[]} */
-		const bannerIds = [];
-		const bannerFiles = /** @type {File[]} */ (
-			fd.getAll('banners').filter((f) => f && typeof f !== 'string' && f.size > 0)
-		);
-		if (bannerFiles.length > MAX_BANNERS) {
-			return fail(400, { errors: { banners: `אפשר לצרף עד ${MAX_BANNERS} תמונות` }, values });
-		}
-		for (const f of bannerFiles) {
-			if (!f.type.startsWith('image/') || f.size > 3_000_000) {
-				return fail(400, {
-					errors: { banners: 'כל תמונה חייבת להיות קובץ תמונה עד 3MB' },
-					values
-				});
-			}
-			try {
-				const id = await uploadImage(f);
-				if (id) bannerIds.push(id);
-			} catch {
-				/* לא לחסום הגשה על כשל העלאה */
-			}
-		}
-
-		// ── כתיבה ל-Strapi (status=pending נכפה ב-controller) ──
-		// לאוסף idx-business אין עמודת email, ו-Strapi מתעלם בשקט ממפתח לא
-		// מוכר — ולכן אימייל בעל העסק נשמר ב-extra_fields (עמודת json).
-		// זה גם המפתח שבו המערכת מזהה אותו כשהוא נרשם לאתר (ownerMatch.js).
-		const {
-			email,
-			branches,
-			tags,
-			extra_categories,
-			tiktok,
-			x,
-			linkedin,
-			extra,
-			video,
-			...fields
-		} = values;
-		const links = parseExtraLinks({ tiktok, x, linkedin, extra, video });
-		// הראשית לא נספרת פעמיים — היא כבר בעמודת category
-		const extraCategories = extra_categories.filter((c) => c !== fields.category);
-		// מיקום וזום של הלוגו והתמונות — null כשלא נגעו בהם, וכך הוא לא נשמר
-		const mediaFit = parseMediaFit(fd.get('media_fit'));
+		// הנעילה נתפסת כאן — לפני העלאת התמונות — כדי שהגשה זהה שנייה שנכנסת
+		// בזמן ההעלאה (שניות ארוכות) תיתקל בה ולא תיצור רשומה משלה.
+		/** @type {(v?: unknown) => void} */
+		let release = () => {};
+		inflight.set(lockKey, new Promise((r) => (release = r)));
 		try {
-			await createBusiness({
-				...fields,
-				extra_fields: {
-					owner_email: email.toLowerCase(),
-					// מועד אישור התנאים — לתאריך אין עמודה משלו (ראו terms.js)
-					[TERMS_STAMP]: new Date().toISOString(),
-					...(extraCategories.length ? { categories: extraCategories } : {}),
-					...(branches.length ? { branches } : {}),
-					...(tags.length ? { tags } : {}),
-					...(Object.keys(links).length ? { links } : {}),
-					...(mediaFit ? { media_fit: mediaFit } : {})
-				},
-				accepted_terms: true,
-				logo: logoId ?? undefined,
-				banners: bannerIds.length ? bannerIds : undefined,
-				source: 'index-form',
-				user: locals.user?.id ?? undefined,
-				user_id: locals.user?.id ?? undefined
-			});
-		} catch (e) {
-			console.error('createBusiness failed:', e);
-			return fail(502, { error: 'שמירת העסק נכשלה. נסו שוב עוד רגע.', values });
-		}
+			// ── העלאת לוגו (אופציונלי) ──
+			let logoId = null;
+			const file = fd.get('logo');
+			if (file && typeof file !== 'string' && file.size > 0) {
+				if (!file.type.startsWith('image/') || file.size > 3_000_000) {
+					return fail(400, { errors: { logo: 'קובץ לוגו חייב להיות תמונה עד 3MB' }, values });
+				}
+				try {
+					logoId = await uploadImage(file);
+				} catch {
+					logoId = null; // לא לחסום הגשה על כשל העלאה
+				}
+			}
 
-		return { success: true };
+			// ── העלאת תמונות העסק (banners) ──
+			/** @type {number[]} */
+			const bannerIds = [];
+			const bannerFiles = /** @type {File[]} */ (
+				fd.getAll('banners').filter((f) => f && typeof f !== 'string' && f.size > 0)
+			);
+			if (bannerFiles.length > MAX_BANNERS) {
+				return fail(400, { errors: { banners: `אפשר לצרף עד ${MAX_BANNERS} תמונות` }, values });
+			}
+			for (const f of bannerFiles) {
+				if (!f.type.startsWith('image/') || f.size > 3_000_000) {
+					return fail(400, {
+						errors: { banners: 'כל תמונה חייבת להיות קובץ תמונה עד 3MB' },
+						values
+					});
+				}
+				try {
+					const id = await uploadImage(f);
+					if (id) bannerIds.push(id);
+				} catch {
+					/* לא לחסום הגשה על כשל העלאה */
+				}
+			}
+
+			// ── כתיבה ל-Strapi (status=pending נכפה ב-controller) ──
+			// לאוסף idx-business אין עמודת email, ו-Strapi מתעלם בשקט ממפתח לא
+			// מוכר — ולכן אימייל בעל העסק נשמר ב-extra_fields (עמודת json).
+			// זה גם המפתח שבו המערכת מזהה אותו כשהוא נרשם לאתר (ownerMatch.js).
+			const {
+				email,
+				branches,
+				tags,
+				extra_categories,
+				tiktok,
+				x,
+				linkedin,
+				extra,
+				video,
+				...fields
+			} = values;
+			const links = parseExtraLinks({ tiktok, x, linkedin, extra, video });
+			// הראשית לא נספרת פעמיים — היא כבר בעמודת category
+			const extraCategories = extra_categories.filter((c) => c !== fields.category);
+			// מיקום וזום של הלוגו והתמונות — null כשלא נגעו בהם, וכך הוא לא נשמר
+			const mediaFit = parseMediaFit(fd.get('media_fit'));
+			const formExtra = {
+				owner_email: email.toLowerCase(),
+				// מועד אישור התנאים — לתאריך אין עמודה משלו (ראו terms.js)
+				[TERMS_STAMP]: new Date().toISOString(),
+				...(extraCategories.length ? { categories: extraCategories } : {}),
+				...(branches.length ? { branches } : {}),
+				...(tags.length ? { tags } : {}),
+				...(Object.keys(links).length ? { links } : {}),
+				...(mediaFit ? { media_fit: mediaFit } : {})
+			};
+			const owner = locals.user?.id
+				? { user: locals.user.id, user_id: String(locals.user.id) }
+				: {};
+
+			const write = (async () => {
+				if (reuse) {
+					// מפתחות שהטופס מנהל מוחלפים; כל השאר (אדמין/בעלות) נשמר
+					const kept = Object.fromEntries(
+						Object.entries(reuse.extra_fields ?? {}).filter(([k]) => !FORM_EXTRA_KEYS.includes(k))
+					);
+					await updateBusiness(String(reuse.documentId), {
+						...fields,
+						extra_fields: { ...kept, ...formExtra },
+						accepted_terms: true,
+						status: 'pending',
+						// תמונות חדשות מחליפות; בלי תמונות חדשות — הישנות נשארות
+						...(logoId ? { logo: logoId } : {}),
+						...(bannerIds.length ? { banners: bannerIds } : {}),
+						// בעלים קיים לא נדרס על-ידי הגשה אנונימית
+						...(reuse.user_id || reuse.user ? {} : owner)
+					});
+					return { documentId: String(reuse.documentId) };
+				}
+				const created = await createBusiness({
+					...fields,
+					extra_fields: formExtra,
+					accepted_terms: true,
+					logo: logoId ?? undefined,
+					banners: bannerIds.length ? bannerIds : undefined,
+					source: 'index-form',
+					...owner
+				});
+				return { documentId: created?.data?.documentId };
+			})();
+			try {
+				await write;
+			} catch (e) {
+				console.error(reuse ? 'updateBusiness failed:' : 'createBusiness failed:', e);
+				return fail(502, { error: 'שמירת העסק נכשלה. נסו שוב עוד רגע.', values });
+			}
+
+			if (reuse) {
+				return {
+					success: true,
+					alreadyPending: true,
+					resubmitted: reuse.status === 'rejected',
+					submittedAt: String(reuse.createdAt ?? '')
+				};
+			}
+			return { success: true };
+		} finally {
+			release();
+			inflight.delete(lockKey);
+		}
 	}
 };

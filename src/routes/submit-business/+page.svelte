@@ -58,6 +58,19 @@
 
 	// ערכים חוזרים אחרי כישלון ולידציה (כדי לא לאבד מילוי)
 	const v = $derived(form?.values ?? {});
+
+	// "כבר ממתין מאז …" — מועד ההגשה המקורית בעברית; ריק אם חסר או לא תקין
+	const formSentAt = $derived.by(() => {
+		const d = new Date(String(form?.submittedAt ?? ''));
+		if (!form?.submittedAt || Number.isNaN(d.getTime())) return '';
+		return d.toLocaleString('he-IL', {
+			day: 'numeric',
+			month: 'numeric',
+			year: 'numeric',
+			hour: '2-digit',
+			minute: '2-digit'
+		});
+	});
 	const errors = $derived(form?.errors ?? {});
 
 	/* ── התחום שהגיע מדף הבית ──
@@ -214,18 +227,48 @@
 
 <main class="mx-auto max-w-2xl px-4 py-10 sm:px-6" dir="rtl">
 	{#if form?.success}
-		<div class="rounded-3xl border border-green-500/30 bg-green-900/10 p-10 text-center shadow-xl">
-			<div class="mb-4 text-6xl">✅</div>
-			<h1 class="mb-3 text-2xl font-black text-green-400">הבקשה התקבלה!</h1>
-			<p class="mx-auto mb-8 max-w-md leading-relaxed text-gray-300">
-				העסק נשלח לצוות האינדקס ויופיע במדריך לאחר בדיקה ואישור. תודה שהצטרפתם לקהילת בעלי המקצוע
-				הכשירים של יוצאים לחירות.
-			</p>
+		<!-- הודעה כנה לפי מה שבאמת קרה: נשלח / כבר ממתין (עודכן) / כבר במדריך.
+		     בפעם השנייה לא אומרים "נשלח בהצלחה" — זה מה שגרם לשליחה שלישית. -->
+		<div
+			class="rounded-3xl border p-10 text-center shadow-xl {form.alreadyListed ||
+			form.alreadyPending
+				? 'border-amber-500/30 bg-amber-900/10'
+				: 'border-green-500/30 bg-green-900/10'}"
+		>
+			{#if form.alreadyListed}
+				<div class="mb-4 text-6xl">ℹ️</div>
+				<h1 class="mb-3 text-2xl font-black text-amber-300">העסק כבר מופיע במדריך</h1>
+				<p class="mx-auto mb-8 max-w-md leading-relaxed text-gray-300">
+					"{form.name}" כבר רשום באינדקס עם אותו שם ופרטי קשר, ולכן לא נפתחה בקשה נוספת. אם זה העסק
+					שלכם ורוצים לעדכן פרטים — היכנסו לאזור האישי ודרשו בעלות על הכרטיסייה.
+				</p>
+			{:else if form.alreadyPending}
+				<div class="mb-4 text-6xl">🕒</div>
+				<h1 class="mb-3 text-2xl font-black text-amber-300">
+					{form.resubmitted ? 'הבקשה חזרה לבדיקה' : 'הבקשה כבר נשלחה'}
+				</h1>
+				<p class="mx-auto mb-8 max-w-md leading-relaxed text-gray-300">
+					{#if form.resubmitted}
+						העסק הזה נדחה בעבר; הפרטים שמילאתם עכשיו הוחלו על אותה בקשה והיא חזרה לתור הבדיקה של
+						צוות האינדקס.
+					{:else}
+						העסק הזה כבר ממתין לאישור{formSentAt ? ` מאז ${formSentAt}` : ''}. הפרטים שמילאתם עכשיו
+						נשמרו על אותה בקשה — אין צורך לשלוח שוב, ותקבלו מענה אחרי הבדיקה.
+					{/if}
+				</p>
+			{:else}
+				<div class="mb-4 text-6xl">✅</div>
+				<h1 class="mb-3 text-2xl font-black text-green-400">הבקשה התקבלה!</h1>
+				<p class="mx-auto mb-8 max-w-md leading-relaxed text-gray-300">
+					העסק נשלח לצוות האינדקס ויופיע במדריך לאחר בדיקה ואישור. תודה שהצטרפתם לקהילת בעלי המקצוע
+					הכשירים של יוצאים לחירות.
+				</p>
+			{/if}
 			<div class="flex flex-col justify-center gap-3 sm:flex-row">
 				<a
-					href="/"
+					href={form.alreadyListed && form.documentId ? `/business/${form.documentId}` : '/'}
 					class="rounded-full bg-gray-800 px-6 py-3 font-bold text-blue-400 transition hover:bg-gray-700"
-					>חזרה למדריך</a
+					>{form.alreadyListed && form.documentId ? 'לכרטיסיית העסק' : 'חזרה למדריך'}</a
 				>
 				<a
 					href="/submit-business"

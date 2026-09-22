@@ -1,5 +1,6 @@
 import { randomBytes } from 'crypto';
 import { env } from '$env/dynamic/private';
+import { isSameBusiness } from '$lib/businessDedupe.js';
 
 // ─────────────────────────────────────────────────────────────
 // קליינט server-only ל-Strapi המשותף (api.gofreeil.com).
@@ -383,6 +384,31 @@ export async function releaseBusinessOwner(documentId) {
 /** יצירת עסק (status=pending נכפה ב-controller). @param {Record<string,any>} data */
 export async function createBusiness(data) {
 	return apiJson('/api/idx-businesses', { method: 'POST', body: JSON.stringify({ data }) });
+}
+
+/**
+ * רשומות שכבר קיימות במאגר לאותו עסק שמגישים עכשיו — בכל סטטוס — כדי שהגשה
+ * חוזרת תעדכן את הקיימת במקום ליצור כרטיס כפול (ראו $lib/businessDedupe.js).
+ *
+ * השאילתה רק מצמצמת מועמדים (שם זהה, טלפון זהה, או אותן 7 ספרות אחרונות של
+ * הטלפון בכל פורמט); ההכרעה "אותו עסק" נעשית ב-JS עם isSameBusiness, כדי
+ * שההגדרה תהיה אחת — גם כאן וגם בקיבוץ הכפילויות שבפאנל.
+ * @param {{name:string, phone?:string, email?:string}} v
+ * @returns {Promise<any[]>} מהוותיק לחדש
+ */
+export async function findSubmittedTwins(v) {
+	const name = String(v.name ?? '').trim();
+	const phone = String(v.phone ?? '').trim();
+	const tail = phone.replace(/\D/g, '').slice(-7);
+	if (!name) return [];
+	const or = [`filters[$or][0][name][$eqi]=${encodeURIComponent(name)}`];
+	if (phone) or.push(`filters[$or][1][phone][$eq]=${encodeURIComponent(phone)}`);
+	if (tail.length === 7) or.push(`filters[$or][2][phone][$contains]=${encodeURIComponent(tail)}`);
+	const qs = `${or.join('&')}&${BIZ_POPULATE}&sort=createdAt:asc&pagination[pageSize]=50`;
+	const data = await apiJson(`/api/idx-businesses?${qs}`);
+	const rows = Array.isArray(data?.data) ? data.data : [];
+	const probe = { name, phone, extra_fields: { owner_email: String(v.email ?? '').toLowerCase() } };
+	return rows.filter((/** @type {any} */ b) => isSameBusiness(probe, b));
 }
 
 /** מונה חשיפת-טלפון אטומי; מחזיר את הטלפון. @param {string} documentId */
