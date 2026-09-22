@@ -1,5 +1,6 @@
 import { error, fail } from '@sveltejs/kit';
-import { getBusiness, getUserPhone, isPrivileged } from '$lib/server/strapi.js';
+import { getBusiness, isPrivileged } from '$lib/server/strapi.js';
+import { getEffectivePhone } from '$lib/server/profileStore.js';
 import { getCategorySettings } from '$lib/server/categoryStore.js';
 import { toBusiness } from '$lib/businessShape.js';
 import {
@@ -29,7 +30,7 @@ export async function load({ params, locals }) {
 	const user = locals.user;
 	const [b, userPhone, catSettings] = await Promise.all([
 		getBusiness(params.id),
-		user ? getUserPhone(user.id) : Promise.resolve(''),
+		user ? getEffectivePhone(user.id) : Promise.resolve(''),
 		getCategorySettings()
 	]);
 	if (!b) throw error(404, 'העסק לא נמצא או ממתין לאישור');
@@ -113,7 +114,7 @@ export const actions = {
 
 		const fd = await request.formData();
 		const note = String(fd.get('note') ?? '').trim();
-		const userPhone = await getUserPhone(user.id);
+		const userPhone = await getEffectivePhone(user.id);
 		const matchedBy = matchKind(b, { email: user.email, phone: userPhone });
 		if (businessOwnerId(b) && !matchedBy) {
 			return fail(400, { claimError: 'לכרטיסייה הזו כבר יש בעלים רשום' });

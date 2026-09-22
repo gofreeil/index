@@ -1,4 +1,5 @@
 import { getStrapiMe, displayName } from '$lib/server/strapi';
+import { getSiteProfile } from '$lib/server/profileStore';
 import { SESSION_COOKIE, SHARED_SSO_COOKIE } from '$lib/server/session';
 
 // נתיב תמונות הפרסומות — ציבורי לחלוטין ולא תלוי-משתמש. חייב לעקוף את
@@ -22,9 +23,12 @@ export async function handle({ event, resolve }) {
 	if (jwt) {
 		const me = await getStrapiMe(jwt);
 		if (me?.email) {
+			// שם התצוגה: הדריסה המקומית ("רק באתר הזה") קודמת לשם המשותף של
+			// הרשת. נשענת על המטמון של configStore — לא סבב Strapi נוסף.
+			const local = await getSiteProfile(me.id).catch(() => null);
 			event.locals.user = {
 				id: String(me.id),
-				name: displayName(me),
+				name: local?.name || displayName(me),
 				email: me.email,
 				app_role: me.app_role || null
 			};

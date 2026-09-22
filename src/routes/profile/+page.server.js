@@ -1,8 +1,8 @@
 import { fail, redirect } from '@sveltejs/kit';
 import {
 	getBusinessAdmin,
-	getUserPhone,
-	setUserPhone,
+	getUserProfile,
+	setUserProfile,
 	isPrivileged,
 	isSuperAdmin,
 	listBusinessesByOwner,
@@ -30,6 +30,12 @@ import {
 	primeUserMatchCount
 } from '$lib/server/ownerMatch.js';
 import { createClaim, listClaimsByUser } from '$lib/server/claimsStore.js';
+import {
+	clearSiteProfile,
+	getEffectivePhone,
+	getSiteProfile,
+	setSiteProfile
+} from '$lib/server/profileStore.js';
 import { canonicalPhoneKey } from '$lib/phoneIL.js';
 
 // כמה פריטים מכל סוג מוצגים בתקציר המודרציה שבאזור האישי (הרשימה המלאה ב-/admin)
@@ -55,8 +61,16 @@ export async function load({ locals, parent }) {
 	const isAdmin = isPrivileged(user);
 	// מוני ההמתנה (הבועה על תמונת הפרופיל ועל האריחים) כבר חושבו ב-+layout.server
 	const { pending } = await parent();
-	// הטלפון מהפרופיל הוא מפתח הזיהוי של כרטיסיות ותיקות שאין להן בעלים
-	const phone = await getUserPhone(user.id);
+
+	// הפרופיל שהאתר הזה מציג: הדריסה המקומית ("רק כאן") אם קיימת, אחרת
+	// הרשומה המשותפת של כל אתרי יוצאים לחירות. הטלפון הוא גם מפתח הזיהוי
+	// של כרטיסיות ותיקות שאין להן בעלים.
+	const [localProfile, networkProfile] = await Promise.all([
+		getSiteProfile(user.id).catch(() => null),
+		getUserProfile(user.id).catch(() => ({ name: '', phone: '' }))
+	]);
+	const phone = localProfile?.phone || networkProfile.phone;
+	const myName = localProfile?.name || networkProfile.name || user.name;
 
 	const [businesses, ads, moderation, gaMonthly, businessesTotal, matches, myClaims] =
 		await Promise.all([
@@ -91,7 +105,16 @@ export async function load({ locals, parent }) {
 		isAdmin,
 		superAdmin: isSuperAdmin(user),
 		myBusinesses,
-		// הטלפון של המשתמש עצמו — ניתן לעריכה כאן, ומשמש למנוע ההתאמה
+		// הפרופיל הניתן לעריכה כאן. scope מספר מאיפה הערכים הנוכחיים באו,
+		// ו-network הוא מה ששמור ברשומה המשותפת — כדי שנוכל להראות למשתמש
+		// שיש לו שם/טלפון אחר בשאר אתרי הרשת.
+		myProfile: {
+			name: myName,
+			phone,
+			scope: localProfile?.name || localProfile?.phone ? 'site' : 'all',
+			network: networkProfile
+		},
+		// הטלפון של המשתמש עצמו — משמש למנוע ההתאמה
 		myPhone: phone,
 		// כרטיסיות שנראות שלו + מצב הבקשה על כל אחת
 		myMatches: matchBoard,
@@ -293,27 +316,67 @@ export const actions = {
 	},
 
 	/**
-	 * שמירת הטלפון בפרופיל המשתמש. אין אימות SMS — המספר משמש להצעת
-	 * התאמה בלבד, והבעלות עצמה ניתנת רק באישור אדמין.
+	 * שמירת הפרופיל — שם תצוגה וטלפון. שתי הרחבות חשובות:
+	 *
+	 * 1. scope: רשימת המשתמשים משותפת לכל אתרי יוצאים לחירות, ולכן כל
+	 *    כתיבה לרשומה ב-Strapi *היא* שינוי בכל האתרים. המשתמש נשאל לאן
+	 *    השינוי הולך: 'all' → הרשומה המשותפת (והדריסה המקומית נמחקת),
+	 *    'site' → רק כאן (profileStore).
+	 * 2. האימייל אינו ניתן לעריכה: הוא מזהה ההתחברות (Google/SSO), ושינוי
+	 *    שלו היה מנתק את המשתמש מהחשבון ומכל הכרטיסיות ששויכו אליו.
+	 *
+	 * הטלפון אינו מאומת ב-SMS — הוא משמש להצעת התאמה בלבד, והבעלות עצמה
+	 * ניתנת רק באישור אדמין.
 	 */
-	savePhone: async ({ request, locals }) => {
+	saveProfile: async ({ request, locals }) => {
 		const user = locals.user;
-		if (!user) return fail(401, { phoneError: 'נדרשת התחברות' });
+		if (!user) return fail(401, { profileError: 'נדרשת התחברות' });
 		const fd = await request.formData();
+		const name = String(fd.get('name') ?? '')
+			.trim()
+			.slice(0, 60);
 		const phone = String(fd.get('phone') ?? '').trim();
+		const scope = String(fd.get('scope') ?? '') === 'site' ? 'site' : 'all';
+
+		if (name.length < 2) return fail(400, { profileError: 'השם חייב להכיל לפחות שני תווים' });
 		if (phone && !canonicalPhoneKey(phone)) {
-			return fail(400, { phoneError: 'מספר טלפון לא תקין' });
+			return fail(400, { profileError: 'מספר טלפון לא תקין' });
 		}
+
 		try {
-			await setUserPhone(user.id, phone);
+			if (scope === 'all') {
+				await setUserProfile(user.id, { name, phone });
+				// הערך המשותף החדש הוא הנכון גם כאן — דריסה ישנה הייתה
+				// ממשיכה להסתיר אותו דווקא באתר שבו הוא נערך
+				await clearSiteProfile(user.id);
+			} else {
+				await setSiteProfile(user.id, { name, phone });
+			}
 		} catch (e) {
 			return fail(502, {
-				phoneError: 'השמירה נכשלה: ' + (e instanceof Error ? e.message.slice(0, 120) : '')
+				profileError: 'השמירה נכשלה: ' + (e instanceof Error ? e.message.slice(0, 120) : '')
 			});
 		}
-		// המספר החדש משנה את תוצאות ההתאמה — גם למשתמש וגם למסך האדמין
+
+		// הפרטים החדשים משנים את תוצאות ההתאמה — גם למשתמש וגם למסך האדמין
 		invalidateMatches();
-		return { phoneSaved: true };
+		invalidateUserMatchCount(user.id);
+
+		// מיד אחרי השמירה: כמה כרטיסיות נראות שלו לפי הפרטים החדשים. בלי
+		// זה המשתמש מקליד טלפון, רואה "נשמר", ולא יודע שבדיוק עכשיו נמצאה
+		// לו כרטיסייה קיימת באתר.
+		let matchesFound = 0;
+		try {
+			const [found, claims] = await Promise.all([
+				findMatchesForUser({ id: user.id, email: user.email, phone }),
+				listClaimsByUser(user.id)
+			]);
+			matchesFound = found.filter((m) => !claims.some((c) => c.bizDocId === m.documentId)).length;
+		} catch {
+			matchesFound = 0;
+		}
+
+		return { profileSaved: true, profileScope: scope, matchesFound };
 	},
 
 	/** בקשת בעלות על כרטיסייה שהמערכת זיהתה כשייכת למשתמש. */
@@ -328,7 +391,7 @@ export const actions = {
 		if (!biz) return fail(404, { claimError: 'הכרטיסייה לא נמצאה' });
 		if (businessOwnerId(biz)) return fail(400, { claimError: 'לכרטיסייה כבר יש בעלים רשום' });
 
-		const phone = await getUserPhone(user.id);
+		const phone = await getEffectivePhone(user.id);
 		const res = await createClaim({
 			bizDocId,
 			bizName: biz.name || '',

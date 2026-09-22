@@ -16,6 +16,38 @@
 	const ads = $derived(data.myAds ?? []);
 	const mod = $derived(data.moderation);
 
+	// ── הפרופיל שלי ─────────────────────────────────────────────
+	// רשימת המשתמשים משותפת לכל אתרי יוצאים לחירות, ולכן שמירה לרשומה
+	// ב-Strapi היא שינוי בכל האתרים. לכן אחרי עריכה נשאלת שאלת ההיקף:
+	// "בכל האתרים" או "רק במדריך הזה" (דריסה מקומית ב-profileStore).
+	const profile = $derived(
+		data.myProfile ?? {
+			name: data.user?.name ?? '',
+			phone: '',
+			scope: 'all',
+			network: { name: '', phone: '' }
+		}
+	);
+	let editing = $state(false);
+	let askScope = $state(false);
+	let fName = $state('');
+	let fPhone = $state('');
+	let savingScope = $state('');
+	const dirty = $derived(
+		fName.trim() !== (profile.name ?? '').trim() || fPhone.trim() !== (profile.phone ?? '').trim()
+	);
+
+	function startEdit() {
+		fName = profile.name ?? '';
+		fPhone = profile.phone ?? '';
+		askScope = false;
+		editing = true;
+	}
+	function cancelEdit() {
+		editing = false;
+		askScope = false;
+	}
+
 	// כרטיסיות שהמערכת זיהתה כשייכות למשתמש (טלפון/אימייל) ועדיין אין להן
 	// בעלים רשום. השרת מכריע — כאן רק תצוגה וכפתור "דרוש בעלות".
 	const matches = $derived(data.myMatches ?? []);
@@ -53,7 +85,7 @@
 	lang.subscribe((v) => (currentLang = v));
 	const t = $derived(/** @type {any} */ (translations)[currentLang] || translations.he);
 
-	const initial = $derived((user?.name || '?').trim().charAt(0).toUpperCase());
+	const initial = $derived((profile.name || user?.name || '?').trim().charAt(0).toUpperCase());
 
 	// הוותק של המשתמש נמדד מהכרטיסייה הוותיקה שלו ולא מיום ההרשמה: הכרטיסייה
 	// קדמה לחשבון (ראו tenure.js). הכרטיסיות שממתינות לאישור נספרות גם הן —
@@ -61,6 +93,19 @@
 	const tenureSince = $derived(
 		earliestStamp(businesses.map((/** @type {any} */ b) => b.joined_at))
 	);
+
+	// קיצורי הניהול ב"הפרסומות שלי" — כפתורים קטנים זה לצד זה, בשלוש גוונים:
+	// ok (אשר/חדש/המשך), ghost (השהה/הורד/צפה), danger (דחה)
+	const AD_BTN = 'rounded-full border px-2.5 py-1 text-xs font-black whitespace-nowrap transition';
+	const AD_BTN_OK =
+		AD_BTN +
+		' border-green-300 bg-green-50 text-green-700 hover:bg-green-100 dark:border-green-700 dark:bg-green-900/40 dark:text-green-300 dark:hover:bg-green-900/60';
+	const AD_BTN_GHOST =
+		AD_BTN +
+		' border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700';
+	const AD_BTN_DANGER =
+		AD_BTN +
+		' border-red-300 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-700 dark:bg-red-900/40 dark:text-red-300 dark:hover:bg-red-900/60';
 
 	const LOCALE = /** @type {Record<string,string>} */ ({ he: 'he-IL', en: 'en-US', ru: 'ru-RU' });
 	/** @param {string} iso */
@@ -165,7 +210,7 @@
 			</div>
 			<div class="min-w-0 flex-1">
 				<h1 class="truncate text-lg font-extrabold text-gray-900 dark:text-gray-100">
-					{user?.name}
+					{profile.name || user?.name}
 				</h1>
 				<p class="truncate text-xs text-gray-500 dark:text-gray-400" dir="ltr">{user?.email}</p>
 				<!-- הוותק שלי — אותו תג שמוצג למבקרים בכרטיסייה, כאן על המשתמש
@@ -183,41 +228,207 @@
 			</button>
 		</div>
 
-		<!-- הטלפון שלי — שני מפתחות הזיהוי של בעל כרטיסייה הם האימייל והטלפון.
-		     האימייל מגיע מההרשמה; את הטלפון המשתמש מוסיף כאן, וברגע שהוא נשמר
-		     המערכת מחפשת כרטיסיות תואמות. אין אימות SMS, ולכן המספר רק *מציע*
-		     התאמה — הבעלות עצמה ניתנת באישור אדמין. -->
-		<form method="POST" action="?/savePhone" use:enhance class="mt-3">
-			<div class="flex items-center gap-2">
-				<label
-					for="my-phone"
-					class="flex-shrink-0 text-xs font-medium text-gray-500 dark:text-gray-400"
-				>
+		<!-- הפרטים שלי — שם תצוגה וטלפון. שני מפתחות הזיהוי של בעל כרטיסייה
+		     הם האימייל והטלפון: האימייל מגיע מההתחברות ואינו ניתן לעריכה (הוא
+		     מזהה החשבון), ואת הטלפון המשתמש מוסיף כאן — וברגע שהוא נשמר המערכת
+		     מחפשת כרטיסיות תואמות. אין אימות SMS, ולכן המספר רק *מציע* התאמה;
+		     הבעלות עצמה ניתנת באישור אדמין. -->
+		{#if !editing}
+			<div class="mt-3 flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2 dark:bg-gray-700/30">
+				<span class="flex-shrink-0 text-xs font-medium text-gray-500 dark:text-gray-400">
 					{t.myPhone}
-				</label>
-				<input
-					id="my-phone"
-					name="phone"
-					type="tel"
+				</span>
+				<span
+					class="min-w-0 flex-1 truncate text-sm font-bold {profile.phone
+						? 'text-gray-900 dark:text-gray-100'
+						: 'text-gray-400 dark:text-gray-500'}"
 					dir="ltr"
-					value={data.myPhone ?? ''}
-					placeholder={t.myPhonePlaceholder}
-					class="min-w-0 flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm font-bold text-gray-900 dark:border-gray-600 dark:bg-gray-700/40 dark:text-gray-100"
-				/>
-				<button
-					class="flex-shrink-0 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-blue-700"
 				>
-					{t.myPhoneSave}
+					{profile.phone || t.myPhonePlaceholder}
+				</span>
+				<button
+					type="button"
+					onclick={startEdit}
+					class="flex-shrink-0 rounded-lg border border-blue-200 px-3 py-1.5 text-xs font-bold text-blue-700 transition hover:bg-blue-50 dark:border-blue-500/40 dark:text-blue-300 dark:hover:bg-blue-900/30"
+				>
+					✏️ {t.profileEdit}
 				</button>
 			</div>
-			<p class="mt-1 text-[11px] leading-tight text-gray-400 dark:text-gray-500">{t.myPhoneHint}</p>
-			{#if form?.phoneSaved}
-				<p class="mt-1 text-xs font-bold text-green-600 dark:text-green-400">✓ {t.myPhoneSaved}</p>
+			{#if !profile.phone}
+				<p class="mt-1 text-[11px] leading-tight text-gray-400 dark:text-gray-500">
+					{t.myPhoneHint}
+				</p>
 			{/if}
-			{#if form?.phoneError}
-				<p class="mt-1 text-xs font-bold text-red-600 dark:text-red-400">{form.phoneError}</p>
+
+			<!-- השינוי נשמר רק כאן — מזכירים לו שברשת יש לו פרטים אחרים,
+			     ומאפשרים להחיל בכל האתרים בלחיצה אחת בלי לערוך שוב. -->
+			{#if profile.scope === 'site'}
+				<form method="POST" action="?/saveProfile" use:enhance class="mt-2">
+					<input type="hidden" name="name" value={profile.name} />
+					<input type="hidden" name="phone" value={profile.phone} />
+					<input type="hidden" name="scope" value="all" />
+					<div
+						class="flex flex-wrap items-center gap-2 rounded-xl border border-dashed border-gray-300 px-3 py-2 dark:border-gray-600"
+					>
+						<span class="min-w-0 flex-1 text-[11px] leading-tight text-gray-500 dark:text-gray-400">
+							{t.profileLocalOnly}
+						</span>
+						<button
+							class="flex-shrink-0 rounded-full border border-gray-300 px-3 py-1 text-[11px] font-bold text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+						>
+							{t.profileApplyEverywhere}
+						</button>
+					</div>
+				</form>
 			{/if}
-		</form>
+		{:else}
+			<form
+				method="POST"
+				action="?/saveProfile"
+				use:enhance={({ submitter }) => {
+					savingScope = submitter?.getAttribute('value') ?? '';
+					return async ({ result, update }) => {
+						await update({ reset: false });
+						savingScope = '';
+						if (result.type === 'success') {
+							editing = false;
+							askScope = false;
+						}
+					};
+				}}
+				class="mt-3 space-y-2"
+			>
+				<div class="flex items-center gap-2">
+					<label
+						for="my-name"
+						class="w-20 flex-shrink-0 text-xs font-medium text-gray-500 dark:text-gray-400"
+					>
+						{t.profileName}
+					</label>
+					<input
+						id="my-name"
+						name="name"
+						type="text"
+						required
+						minlength="2"
+						maxlength="60"
+						bind:value={fName}
+						class="min-w-0 flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm font-bold text-gray-900 dark:border-gray-600 dark:bg-gray-700/40 dark:text-gray-100"
+					/>
+				</div>
+				<div class="flex items-center gap-2">
+					<label
+						for="my-phone"
+						class="w-20 flex-shrink-0 text-xs font-medium text-gray-500 dark:text-gray-400"
+					>
+						{t.myPhone}
+					</label>
+					<input
+						id="my-phone"
+						name="phone"
+						type="tel"
+						dir="ltr"
+						bind:value={fPhone}
+						placeholder={t.myPhonePlaceholder}
+						class="min-w-0 flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm font-bold text-gray-900 dark:border-gray-600 dark:bg-gray-700/40 dark:text-gray-100"
+					/>
+				</div>
+				<!-- האימייל מזהה את החשבון בכל אתרי הרשת; שינוי שלו היה מנתק את
+				     המשתמש מהכרטיסיות שלו, ולכן הוא מוצג בלבד. -->
+				<div class="flex items-center gap-2">
+					<span class="w-20 flex-shrink-0 text-xs font-medium text-gray-500 dark:text-gray-400">
+						{t.profileEmail}
+					</span>
+					<span class="min-w-0 flex-1 truncate text-sm text-gray-500 dark:text-gray-400" dir="ltr">
+						{user?.email}
+					</span>
+					<span class="flex-shrink-0 text-[11px] text-gray-400 dark:text-gray-500">
+						{t.profileEmailLocked}
+					</span>
+				</div>
+				<p class="text-[11px] leading-tight text-gray-400 dark:text-gray-500">{t.myPhoneHint}</p>
+
+				{#if form?.profileError}
+					<p class="text-xs font-bold text-red-600 dark:text-red-400">{form.profileError}</p>
+				{/if}
+
+				{#if !askScope}
+					<div class="flex items-center gap-2">
+						<button
+							type="button"
+							disabled={!dirty}
+							onclick={() => (askScope = true)}
+							class="rounded-lg bg-blue-600 px-4 py-1.5 text-xs font-bold text-white transition hover:bg-blue-700 disabled:opacity-40"
+						>
+							{t.myPhoneSave}
+						</button>
+						<button
+							type="button"
+							onclick={cancelEdit}
+							class="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-600 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+						>
+							{t.cancel}
+						</button>
+					</div>
+				{:else}
+					<!-- שאלת ההיקף — החשבון משותף לכל אתרי יוצאים לחירות, ולכן
+					     השמירה חייבת לדעת לאן היא הולכת. ברירת המחדל המומלצת היא
+					     "בכל האתרים": זה אותו אדם, ופרטים סותרים בין האתרים הם
+					     בדיוק מה שמשבש את זיהוי הכרטיסיות. -->
+					<div
+						class="rounded-xl border border-blue-200 bg-blue-50 p-3 dark:border-blue-500/30 dark:bg-blue-900/20"
+					>
+						<p class="text-xs font-extrabold text-blue-900 dark:text-blue-100">
+							{t.profileScopeAsk}
+						</p>
+						<p class="mt-0.5 text-[11px] leading-tight text-blue-800/80 dark:text-blue-200/70">
+							{t.profileScopeHint}
+						</p>
+						<div class="mt-2 flex flex-wrap gap-2">
+							<button
+								name="scope"
+								value="all"
+								disabled={Boolean(savingScope)}
+								class="rounded-full bg-blue-600 px-4 py-1.5 text-xs font-extrabold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-40"
+							>
+								{savingScope === 'all' ? '…' : t.profileScopeAll}
+							</button>
+							<button
+								name="scope"
+								value="site"
+								disabled={Boolean(savingScope)}
+								class="rounded-full border border-blue-300 bg-white px-4 py-1.5 text-xs font-bold text-blue-700 transition hover:bg-blue-50 disabled:opacity-40 dark:border-blue-500/40 dark:bg-gray-800 dark:text-blue-300 dark:hover:bg-blue-900/30"
+							>
+								{savingScope === 'site' ? '…' : t.profileScopeSite}
+							</button>
+							<button
+								type="button"
+								onclick={() => (askScope = false)}
+								class="rounded-full px-3 py-1.5 text-xs font-bold text-gray-500 transition hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+							>
+								{t.cancel}
+							</button>
+						</div>
+					</div>
+				{/if}
+			</form>
+		{/if}
+
+		<!-- אחרי שמירה: מה נשמר ולאן, ומיד — אם הפרטים החדשים חשפו כרטיסייה
+		     קיימת באתר, אומרים את זה כאן ומצביעים על המדור שבו דורשים אותה. -->
+		{#if form?.profileSaved}
+			<p class="mt-2 text-xs font-bold text-green-600 dark:text-green-400">
+				✓ {form.profileScope === 'all' ? t.profileSavedAll : t.profileSavedSite}
+			</p>
+			{#if form.matchesFound > 0}
+				<a
+					href="#claims"
+					class="mt-1 block rounded-lg bg-amber-100 px-3 py-2 text-xs font-extrabold text-amber-900 transition hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-100 dark:hover:bg-amber-900/60"
+				>
+					🪪 {t.profileMatchFound.replace('{n}', String(form.matchesFound))}
+				</a>
+			{/if}
+		{/if}
 
 		<!-- קיצורים -->
 		<div class="mt-3 grid grid-cols-2 gap-2">
@@ -656,6 +867,14 @@
 			</a>
 		</div>
 
+		<!-- תוצאת קיצורי הניהול (אשר/דחה/השהה/...) -->
+		{#if form?.message}
+			<p class="mb-3 text-sm font-bold text-green-600 dark:text-green-400">{form.message}</p>
+		{/if}
+		{#if form?.error}
+			<p class="mb-3 text-sm font-bold text-red-600 dark:text-red-400">{form.error}</p>
+		{/if}
+
 		{#if ads.length === 0}
 			<p class="py-6 text-center text-sm text-gray-500 dark:text-gray-400">{t.myAdsEmpty}</p>
 		{:else}
@@ -676,6 +895,10 @@
 							{#if a.status === 'approved' && a.expiresAt}
 								· {t.activeUntil}
 								{fmtDate(a.expiresAt)}
+							{/if}
+							<!-- רק כל עוד ממתינה: אחרי האישור היא כבר *במקום* הישנה, לא "עדכון ל" -->
+							{#if a.status === 'pending' && a.replacesTitle}
+								· עדכון ל"{a.replacesTitle}"
 							{/if}
 						</span>
 						{#if a.status === 'rejected' && a.rejectionReason}
@@ -710,23 +933,109 @@
 								>
 							</span>
 						</span>
-						<!-- עריכה ממוקדת: פותח את הבילדר עם התוכן של המודעה הזו בדיוק,
-						     והשליחה תעדכן רק אותה - מודעות אחרות שלך לא מושפעות -->
-						<a
-							href="/advertise/builder?edit={a.id}"
-							class="ms-auto rounded-full bg-amber-500 px-3 py-1.5 text-xs font-black text-black transition hover:bg-amber-400"
-							title={t.editAdTitle}
-						>
-							{t.editAd}
-						</a>
-						{#if a.status === 'approved'}
+						<span class="ms-auto flex flex-wrap items-center justify-end gap-1.5">
+							<!-- קיצורי הניהול לאדמין — הפעולות השכיחות ישר מכאן, בלי לעבור
+							     למסך הניהול. המסלול = מה שנבחר בשליחה; שינוי מסלול, מקום בטור
+							     וקציבה — במסך הניהול. -->
+							{#if data.isAdmin}
+								{#if a.status === 'pending'}
+									<form method="POST" action="?/approve" use:enhance class="contents">
+										<input type="hidden" name="id" value={a.id} />
+										<input
+											type="hidden"
+											name="durationDays"
+											value={a.requestedDurationDays ?? ''}
+										/>
+										<button type="submit" class={AD_BTN_OK} title="אישור ופרסום">✅ אשר</button>
+									</form>
+								{:else if a.status === 'approved' && !a.live && !a.paused}
+									<!-- פג התוקף: אישור מחדש = תקופה חדשה מהיום, באותו מקום -->
+									<form method="POST" action="?/approve" use:enhance class="contents">
+										<input type="hidden" name="id" value={a.id} />
+										<input
+											type="hidden"
+											name="durationDays"
+											value={a.requestedDurationDays ?? ''}
+										/>
+										<button
+											type="submit"
+											class={AD_BTN_OK}
+											title="תקופה חדשה מהיום, באותו מקום בטור">🔄 חדש</button
+										>
+									</form>
+								{/if}
+								{#if a.status === 'approved'}
+									{#if a.paused}
+										<form method="POST" action="?/resume" use:enhance class="contents">
+											<input type="hidden" name="id" value={a.id} />
+											<button type="submit" class={AD_BTN_OK} title="הימים השמורים נספרים מהיום"
+												>▶ המשך</button
+											>
+										</form>
+									{:else if a.live}
+										<form method="POST" action="?/pause" use:enhance class="contents">
+											<input type="hidden" name="id" value={a.id} />
+											<button
+												type="submit"
+												class={AD_BTN_GHOST}
+												title="יורדת מהאתר, הימים שנותרו נשמרים לה"
+												onclick={(e) => {
+													if (!confirm('להשהות את הפרסומת? היא תרד מהאתר והימים שנותרו יישמרו לה.'))
+														e.preventDefault();
+												}}>⏸ השהה</button
+											>
+										</form>
+									{/if}
+									<form method="POST" action="?/unapprove" use:enhance class="contents">
+										<input type="hidden" name="id" value={a.id} />
+										<button
+											type="submit"
+											class={AD_BTN_GHOST}
+											title="חוזרת לממתינות בלי מחיקה"
+											onclick={(e) => {
+												if (!confirm('להוריד את הפרסומת מהאתר ולהחזיר אותה לממתינות?'))
+													e.preventDefault();
+											}}>⬇ הורד</button
+										>
+									</form>
+								{/if}
+								{#if a.status !== 'rejected'}
+									<form method="POST" action="?/reject" use:enhance class="contents">
+										<input type="hidden" name="id" value={a.id} />
+										<input type="hidden" name="reason" value="" />
+										<button
+											type="submit"
+											class={AD_BTN_DANGER}
+											title="דחייה עם סיבה (לא חובה)"
+											onclick={(e) => {
+												const reason = prompt('סיבת הדחייה (אפשר להשאיר ריק):', '');
+												if (reason === null) {
+													e.preventDefault();
+													return;
+												}
+												const input = e.currentTarget.form?.elements.namedItem('reason');
+												if (input instanceof HTMLInputElement) input.value = reason;
+											}}>❌ דחה</button
+										>
+									</form>
+								{/if}
+							{/if}
+							<!-- דף הנחיתה — רק כשהפרסומת באמת מוצגת באתר -->
+							{#if a.live}
+								<a href="/ads/{a.id}" target="_blank" class={AD_BTN_GHOST} title="דף הנחיתה באתר">
+									👁 {t.viewAd}
+								</a>
+							{/if}
+							<!-- עריכה ממוקדת: פותח את הבילדר עם התוכן של המודעה הזו בדיוק,
+							     והשליחה תעדכן רק אותה - מודעות אחרות שלך לא מושפעות -->
 							<a
-								href="/ads/{a.id}"
-								class="rounded-full border border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+								href="/advertise/builder?edit={a.id}"
+								class="rounded-full bg-amber-500 px-3 py-1.5 text-xs font-black text-black transition hover:bg-amber-400"
+								title={t.editAdTitle}
 							>
-								{t.viewAd}
+								{t.editAd}
 							</a>
-						{/if}
+						</span>
 					</li>
 				{/each}
 			</ul>

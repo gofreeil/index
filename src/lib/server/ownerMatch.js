@@ -19,7 +19,8 @@
 // ============================================================
 
 import { canonicalPhoneKey } from '$lib/phoneIL.js';
-import { getUserPhone, isPrivileged, listBusinessesForMatch, listUsersSlim } from './strapi.js';
+import { isPrivileged, listBusinessesForMatch, listUsersSlim } from './strapi.js';
+import { applySiteProfiles, getEffectivePhone } from './profileStore.js';
 import { listClaims, listClaimsByUser } from './claimsStore.js';
 
 const TTL_MS = 5 * 60 * 1000;
@@ -159,7 +160,9 @@ export async function ownershipByDoc(docIds) {
 /** @returns {Promise<{id:string,email:string,phone:string,name:string}[]>} */
 async function allUsers() {
 	if (usersCache && Date.now() - usersCache.at < TTL_MS) return usersCache.rows;
-	const rows = await listUsersSlim();
+	// הדריסות המקומיות מוחלות כאן, כדי שמסך הבעלות של האדמין יזהה לפי
+	// אותו טלפון בדיוק שהאתר הזה מציג למשתמש
+	const rows = await applySiteProfiles(await listUsersSlim());
 	usersCache = { at: Date.now(), rows };
 	return rows;
 }
@@ -219,7 +222,7 @@ export async function countMatchesForUser(user) {
 	const hit = userCountCache.get(key);
 	if (hit && Date.now() - hit.at < USER_TTL_MS) return hit.n;
 	try {
-		const phone = await getUserPhone(key);
+		const phone = await getEffectivePhone(key);
 		const [matches, claims] = await Promise.all([
 			findMatchesForUser({ id: key, email: user.email, phone }),
 			listClaimsByUser(key)

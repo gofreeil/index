@@ -57,12 +57,17 @@ export async function strapiRegister(username, email, password) {
 }
 
 /**
- * שם תצוגה ידידותי. username אוטומטי מספק OAuth (google_/facebook_/github_ + ספרות)
- * הוא מזהה פנימי של Strapi — לא מציגים אותו גולמי; נופלים לחלק שלפני @ במייל.
- * @param {any} u אובייקט משתמש עם username/email
+ * שם תצוגה ידידותי. nickname קודם לכול — זה השדה שהמשתמש עורך בעצמו
+ * (האזור האישי כאן, וגם הפרופיל של קהילה בשכונה), בעוד username הוא
+ * מזהה ההתחברות ואינו ניתן לשינוי. username אוטומטי מספק OAuth
+ * (google_/facebook_/github_ + ספרות) הוא מזהה פנימי של Strapi — לא
+ * מציגים אותו גולמי; נופלים לחלק שלפני @ במייל.
+ * @param {any} u אובייקט משתמש עם nickname/username/email
  * @returns {string}
  */
 export function displayName(u) {
+	const nickname = String(u?.nickname ?? '').trim();
+	if (nickname) return nickname;
 	const username = String(u?.username ?? '').trim();
 	const email = String(u?.email ?? '');
 	const isAutoUsername = /^google_\d+$|^facebook_\d+$|^github_\d+$/.test(username);
@@ -225,6 +230,45 @@ export async function setUserPhone(userId, phone) {
 }
 
 /**
+ * הפרופיל של המשתמש כפי שהוא ברשומה המשותפת של הרשת — הערכים שמוצגים
+ * לו באזור האישי כשאין לו דריסה מקומית (ראו profileStore.js).
+ * @param {string|number} userId @returns {Promise<{name: string, phone: string}>}
+ */
+export async function getUserProfile(userId) {
+	try {
+		const res = await api(
+			`/api/users/${encodeURIComponent(String(userId))}` +
+				'?fields[0]=phone&fields[1]=nickname&fields[2]=username&fields[3]=email'
+		);
+		if (!res.ok) return { name: '', phone: '' };
+		const u = await res.json().catch(() => null);
+		return { name: u ? displayName(u) : '', phone: String(u?.phone ?? '') };
+	} catch {
+		return { name: '', phone: '' };
+	}
+}
+
+/**
+ * עדכון הפרופיל ברשומה המשותפת — כלומר בכל אתרי יוצאים לחירות בבת אחת.
+ * נקרא רק על המשתמש המחובר עצמו, ורק כשהוא בחר במפורש "בכל האתרים".
+ * שם התצוגה נכתב ל-nickname ולא ל-username: username הוא מזהה ההתחברות
+ * (ייחודי, נוצר בהרשמה) ושינוי שלו היה מנתק את המשתמש מהחשבון שלו.
+ * users-permissions מצפה לגוף שטוח, בלי עטיפת data.
+ * @param {string|number} userId @param {{name?: string, phone?: string}} patch
+ */
+export async function setUserProfile(userId, patch) {
+	/** @type {Record<string, string>} */
+	const body = {};
+	if (patch.name !== undefined) body.nickname = patch.name;
+	if (patch.phone !== undefined) body.phone = patch.phone;
+	if (!Object.keys(body).length) return null;
+	return apiJson(`/api/users/${encodeURIComponent(String(userId))}`, {
+		method: 'PUT',
+		body: JSON.stringify(body)
+	});
+}
+
+/**
  * כל המשתמשים הרשומים, בצורה רזה — למנוע ההתאמה בלבד. הרשימה משותפת
  * לכל אתרי הרשת והיא קטנה (מאות בודדות), ולכן נשלפת בשלמותה ומותאמת
  * בזיכרון; כך אין קריאת רשת לכל כרטיסייה בנפרד.
@@ -347,6 +391,9 @@ export async function listBusinessesForMatch() {
  * relation user וגם user_id — כי שניהם משמשים לזיהוי הבעלים, וגם
  * האימייל נשמר ב-extra_fields כדי שהזיהוי יעבוד גם בלי הטלפון.
  * ה-extra_fields ממוזג ולא נדרס: Strapi מחליף עמודת json במלואה.
+ *
+ * השיוך אינו פותח את הכרטיסייה לעריכה מיד: בעל העסק יידרש לאשר את תנאי
+ * הקהילה לפני שיקבל גישה (ראו $lib/terms.js).
  * @param {string} documentId @param {{id: string|number, email?: string}} owner
  */
 export async function assignBusinessOwner(documentId, owner) {
