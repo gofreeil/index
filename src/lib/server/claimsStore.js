@@ -7,6 +7,9 @@
 // הכרטיסייה, אדמין מאשר, ורק אז נכתב עליה השיוך והוא רשאי לערוך אותה.
 // זו נקודת האימות היחידה שיש (אין SMS/מייל אימות), ולכן היא ידנית.
 //
+// כל בקשה של משתמש שולחת התראה לתיבת ההודעות של כל האדמינים
+// (adminNotify.js) — בלי זה הבקשה יושבת בפאנל בשקט.
+//
 // אחסון: פריט יחיד באוסף ה-items המשותף תחת קטגוריה פנימית
 // (__idx_claims), באותו דפוס של configStore/adStats — כדי לא לדרוש
 // שינוי סכמה ב-Strapi. הנפח זעום (בקשה לכרטיסייה, פעם אחת בחיים).
@@ -21,6 +24,7 @@
 
 import { randomBytes } from 'crypto';
 import { env } from '$env/dynamic/private';
+import { SITE_NAME, notifyAdmins } from '$lib/server/adminNotify.js';
 
 const STRAPI_URL = (env.STRAPI_URL || 'https://api.gofreeil.com').replace(/\/$/, '');
 const TOKEN = env.STRAPI_TOKEN || '';
@@ -206,6 +210,28 @@ export async function countPendingClaims() {
 
 // ── כתיבה ────────────────────────────────────────────────────
 
+/** ניסוח קריא למה קשר בין המשתמש לכרטיסייה. @param {Claim} c */
+function matchLabel(c) {
+	if (c.matchedBy === 'phone') return 'הטלפון בפרופיל זהה לטלפון בכרטיסייה';
+	if (c.matchedBy === 'email') return 'האימייל זהה לאימייל בכרטיסייה';
+	return 'בלי התאמה אוטומטית — המשתמש ביקש ידנית';
+}
+
+/** התראה לאדמינים על בקשת בעלות חדשה. בלי זה הבקשה יושבת בפאנל בשקט
+ *  ואיש לא יודע עליה עד שנכנסים במקרה. כשל כאן לא מפיל את הבקשה.
+ *  @param {Claim} c */
+async function notifyAdminsNewClaim(c) {
+	const content =
+		`🪪 בקשת בעלות על כרטיסייה — ${SITE_NAME}\n` +
+		`כרטיסייה: "${c.bizName || c.bizDocId}"\n` +
+		`מי ביקש: ${c.userName || 'ללא שם'}${c.userEmail ? ` (${c.userEmail})` : ''}\n` +
+		(c.userPhone ? `טלפון בפרופיל: ${c.userPhone}\n` : '') +
+		`התאמה: ${matchLabel(c)}\n` +
+		(c.note ? `הודעה מהדורש: ${c.note}\n` : '') +
+		`הבקשה ממתינה לאישור ב-index.gofreeil.com/admin/claims`;
+	await notifyAdmins(content, 'new-claim notification');
+}
+
 /**
  * בקשת בעלות חדשה. בקשה קיימת על אותה כרטיסייה מאותו משתמש לא מוכפלת:
  * pending מוחזרת כמו שהיא, ובקשה שנדחתה בעבר נפתחת מחדש.
@@ -262,6 +288,9 @@ export async function createClaim(input) {
 		console.error('[claims] create failed:', e instanceof Error ? e.message : e);
 		return { ok: false, error: 'שמירת הבקשה נכשלה. נסו שוב עוד רגע.' };
 	}
+	// רק בקשה אמיתית של משתמש מזמינה התראה; שיוך יזום של אדמין (source=auto)
+	// נוצר *על ידי* מי שהיה אמור לקבל אותה.
+	if (claim.source === 'user') await notifyAdminsNewClaim(claim);
 	return { ok: true, claim };
 }
 

@@ -15,6 +15,7 @@ import { getPopularTags } from '$lib/server/tagPool.js';
 import { EXTRA_LINK_KEYS, parseExtraLinks } from '$lib/socialLinks.js';
 import { parseMediaFit, MAX_BANNERS } from '$lib/mediaFit.js';
 import { TERMS_ERROR, TERMS_STAMP, termsAccepted } from '$lib/terms.js';
+import { SITE_NAME, notifyAdmins } from '$lib/server/adminNotify.js';
 
 /**
  * רשימת הקטגוריות לתפריט הבחירה — כולל דריסות השם והקטגוריות שהוסיף
@@ -86,6 +87,31 @@ const str = (v) => (typeof v === 'string' ? v.trim() : '');
 
 /** @param {string} v */
 const normUrl = (v) => (v && !/^https?:\/\//i.test(v) ? `https://${v}` : v);
+
+// ── התראה לאדמינים ────────────────────────────────────────
+// עסק שהוגש נשמר כ-pending ומחכה בפאנל; בלי הודעה איש לא יודע שהוא שם.
+// הגשה חוזרת מקבלת ניסוח משלה, כי היא לא כרטיס חדש בתור אלא עדכון של
+// בקשה קיימת — ודחויה שחזרה לתור היא ניסיון מתוקן שצריך מבט שני.
+/** @param {{ values: any, reuse: { status?: string } | null | undefined, submitterEmail?: string | null }} info */
+async function notifyAdminsNewBusiness({ values, reuse, submitterEmail }) {
+	const resubmitted = reuse?.status === 'rejected';
+	const head = reuse
+		? resubmitted
+			? `↩️ הגשה חוזרת של עסק שנדחה — ${SITE_NAME}\n`
+			: `🔄 עדכון לבקשה שממתינה לאישור — ${SITE_NAME}\n`
+		: `🏪 עסק חדש ממתין לאישור — ${SITE_NAME}\n`;
+	const content =
+		head +
+		`עסק: "${values.name}"\n` +
+		`קטגוריה: ${values.category}${values.subcategory ? ` — ${values.subcategory}` : ''}\n` +
+		(values.city ? `עיר: ${values.city}\n` : '') +
+		`איש קשר: ${values.contact_name} · ${values.phone}\n` +
+		`אימייל בעל העסק: ${values.email}\n` +
+		`מי הגיש: ${submitterEmail || 'הגשה ללא התחברות'}\n` +
+		(resubmitted ? `הבקשה הקודמת נדחתה והוחזרה לתור עם הפרטים המתוקנים.\n` : '') +
+		`ממתין לאישור ב-index.gofreeil.com/admin?tab=pending`;
+	await notifyAdmins(content, 'new-business notification');
+}
 
 export const actions = {
 	default: async ({ request, getClientAddress, locals }) => {
@@ -316,6 +342,12 @@ export const actions = {
 				console.error(reuse ? 'updateBusiness failed:' : 'createBusiness failed:', e);
 				return fail(502, { error: 'שמירת העסק נכשלה. נסו שוב עוד רגע.', values });
 			}
+
+			await notifyAdminsNewBusiness({
+				values,
+				reuse,
+				submitterEmail: locals.user?.email
+			});
 
 			if (reuse) {
 				return {
