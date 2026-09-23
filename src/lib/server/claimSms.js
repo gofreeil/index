@@ -183,3 +183,55 @@ export async function recordClaimSms({ bizDocId, userId, by, phone }) {
 		console.error('[claim-sms] log failed:', e instanceof Error ? e.message : e);
 	}
 }
+
+// ── הודעת אישור בעלות ────────────────────────────────────────
+//
+// אחרי שאדמין שייך כרטיסייה, הוא שולח לבעל העסק הודעה שהיא שלו + קישור
+// קצר (/e/<id>) לעריכה — בלעדיה בעל העסק לא יודע שהבקשה אושרה. הנוסח
+// נשמר בנפרד מנוסח ההזמנה (claim_owner_sms_template), ולפני כל שליחה
+// עוד אפשר לערוך את ההודעה הספציפית.
+
+const OWNER_TEMPLATE_KEY = 'claim_owner_sms_template';
+
+export const DEFAULT_OWNER_TEMPLATE =
+	'שלום {name}, הכרטיסייה "{business}" במדריך בעלי המקצוע של יוצאים לחירות שויכה אליך.\n' +
+	'לניהול ועריכת העסק שלך:\n{link}';
+
+export const OWNER_PLACEHOLDERS = [
+	{ key: '{name}', help: 'שם המשתמש (או ריק)' },
+	{ key: '{business}', help: 'שם הכרטיסייה' },
+	{ key: '{link}', help: 'קישור קצר לעריכת העסק' }
+];
+
+/** @returns {Promise<string>} */
+export async function getOwnerSmsTemplate() {
+	const saved = await getConfigValue(OWNER_TEMPLATE_KEY).catch(() => undefined);
+	const text = typeof saved === 'string' ? saved.trim() : '';
+	return text || DEFAULT_OWNER_TEMPLATE;
+}
+
+/**
+ * ריק = חזרה לברירת המחדל. זורק בכישלון שמירה.
+ * @param {string} text
+ * @returns {Promise<{ok: true} | {ok: false, error: string}>}
+ */
+export async function setOwnerSmsTemplate(text) {
+	const t = String(text ?? '').trim();
+	if (t.length > MAX_SMS_CHARS) {
+		return { ok: false, error: `הנוסח ארוך מדי (עד ${MAX_SMS_CHARS} תווים)` };
+	}
+	if (t && !t.includes('{link}')) {
+		return { ok: false, error: 'הנוסח חייב לכלול את {link} — בלעדיו אין לאן להיכנס' };
+	}
+	await setConfigValueStrict(OWNER_TEMPLATE_KEY, t);
+	return { ok: true };
+}
+
+/**
+ * @param {string} template @param {string} origin
+ * @param {{bizDocId: string, bizName?: string, userName?: string}} v
+ */
+export function renderOwnerSms(template, origin, { bizDocId, bizName, userName }) {
+	const link = `${origin.replace(/\/$/, '')}/e/${encodeURIComponent(bizDocId)}`;
+	return renderClaimSms(template, { name: userName, business: bizName, link, decline: '' });
+}

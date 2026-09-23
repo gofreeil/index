@@ -45,6 +45,26 @@
 		smsOpen = key;
 	}
 
+	/* ═══════════ הודעת בעלות ב-SMS ═══════════
+	   אחרי שיוך השרת מחזיר טיוטה (form.ownerSms) — העורך נפתח מיד, והאדמין
+	   בודק, מתקן ושולח. אותו עורך נפתח גם מ"הודע לבעלים" בהיסטוריה. */
+	/** @type {{claimId: string, bizName: string, userName: string, phone: string, draft: string} | null} */
+	let ownerEdit = $state(null);
+	let ownerText = $state('');
+	/** @param {any} o */
+	function openOwner(o) {
+		ownerEdit = o;
+		ownerText = o?.draft ?? '';
+	}
+	$effect(() => {
+		if (form?.ownerSms) openOwner(form.ownerSms);
+	});
+	let ownerTemplateOpen = $state(false);
+	let ownerTemplateText = $state('');
+	$effect(() => {
+		ownerTemplateText = sms.ownerTemplate ?? '';
+	});
+
 	let busy = $state('');
 
 	/** @param {string} id */
@@ -112,12 +132,131 @@
 		</div>
 	{/if}
 
+	<!-- ── עורך הודעת הבעלות, לפני השליחה ──────────────────── -->
+	{#if ownerEdit}
+		<form
+			method="POST"
+			action="?/ownerSms"
+			use:enhance={() => {
+				busy = 'ownerSms';
+				return async (/** @type {any} */ { result, update }) => {
+					await update({ reset: false });
+					busy = '';
+					if (result.type === 'success') ownerEdit = null;
+				};
+			}}
+			class="mb-4 rounded-2xl border border-blue-500/30 bg-blue-950/20 p-4"
+		>
+			<input type="hidden" name="claimId" value={ownerEdit.claimId} />
+			<input type="hidden" name="phone" value={ownerEdit.phone} />
+			<p class="mb-1.5 text-sm font-bold text-gray-200">
+				📱 להודיע ל{ownerEdit.userName || 'בעל העסק'} ש"{ownerEdit.bizName}" שלו
+			</p>
+			{#if !ownerEdit.phone}
+				<p class="text-sm text-amber-300">אין נייד תקין בפרופיל או על הכרטיסייה — אי אפשר לשלוח SMS.</p>
+			{:else if !sms.enabled}
+				<p class="text-sm text-amber-300">שליחת SMS אינה מוגדרת בשרת המשותף.</p>
+			{:else}
+				<p class="mb-1.5 text-xs text-gray-400">
+					אל <span class="font-bold text-gray-200" dir="ltr">{ownerEdit.phone}</span> — ההודעה נשלחת
+					כפי שהיא מופיעה כאן:
+				</p>
+				<textarea
+					name="message"
+					rows="4"
+					maxlength={sms.maxChars}
+					bind:value={ownerText}
+					class="w-full resize-y rounded-lg border border-gray-700 bg-gray-950/60 px-3 py-2 text-sm leading-6 text-gray-100 outline-none focus:border-blue-500"
+				></textarea>
+			{/if}
+			<div class="mt-2 flex flex-wrap items-center gap-2">
+				{#if ownerEdit.phone && sms.enabled}
+					<button
+						disabled={busy === 'ownerSms' || !ownerText.trim()}
+						class="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-bold text-white transition hover:bg-blue-700 disabled:opacity-40"
+					>
+						{busy === 'ownerSms' ? 'שולח…' : '📱 שלח עכשיו'}
+					</button>
+					<button
+						type="button"
+						onclick={() => (ownerText = ownerEdit?.draft ?? '')}
+						class="rounded-lg border border-gray-600 px-3 py-1.5 text-sm font-bold text-gray-300 transition hover:bg-gray-800"
+					>
+						אפס לנוסח
+					</button>
+				{/if}
+				<button
+					type="button"
+					onclick={() => (ownerEdit = null)}
+					class="rounded-lg px-3 py-1.5 text-sm font-bold text-gray-400 transition hover:bg-gray-800"
+				>
+					{ownerEdit.phone && sms.enabled ? 'בלי SMS' : 'סגור'}
+				</button>
+				{#if ownerEdit.phone && sms.enabled}
+					<span class="text-[11px] text-gray-500">
+						{ownerText.length} תווים · {segments(ownerText)} מקטעי SMS
+					</span>
+				{/if}
+			</div>
+		</form>
+	{/if}
+
 	<!-- ── בקשות שמשתמשים שלחו ─────────────────────────────── -->
 	<section>
 		<h2 class="mb-3 text-sm font-bold text-gray-300">
 			בקשות בעלות
 			{#if claims.length}<span class="text-gray-500">({claims.length})</span>{/if}
 		</h2>
+
+		<!-- ── נוסח הודעת הבעלות ───────────────────────────────── -->
+		<div class="mb-3 rounded-2xl border border-gray-800 bg-gray-900/40 p-4">
+			<button
+				type="button"
+				onclick={() => (ownerTemplateOpen = !ownerTemplateOpen)}
+				class="text-sm font-bold text-gray-200 hover:text-blue-400"
+			>
+				{ownerTemplateOpen ? '▾' : '◂'} נוסח ה-SMS שנשלח אחרי אישור בעלות
+			</button>
+			{#if ownerTemplateOpen}
+				<form
+					method="POST"
+					action="?/saveOwnerTemplate"
+					use:enhance={submitFn('ownerTemplate')}
+					class="mt-3"
+				>
+					<textarea
+						name="template"
+						rows="4"
+						maxlength={sms.maxChars}
+						bind:value={ownerTemplateText}
+						class="w-full resize-y rounded-lg border border-gray-700 bg-gray-950/60 px-3 py-2 text-sm leading-6 text-gray-100 outline-none focus:border-blue-500"
+					></textarea>
+					<p class="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-gray-500">
+						{#each sms.ownerPlaceholders ?? [] as p (p.key)}
+							<span><code class="text-blue-300">{p.key}</code> {p.help}</span>
+						{/each}
+					</p>
+					<div class="mt-2 flex flex-wrap items-center gap-2">
+						<button
+							disabled={busy === 'ownerTemplate'}
+							class="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-bold text-white transition hover:bg-blue-700 disabled:opacity-40"
+						>
+							{busy === 'ownerTemplate' ? '…' : 'שמור נוסח'}
+						</button>
+						<button
+							type="button"
+							onclick={() => (ownerTemplateText = sms.defaultOwnerTemplate ?? '')}
+							class="rounded-lg border border-gray-600 px-4 py-1.5 text-sm font-bold text-gray-300 transition hover:bg-gray-800"
+						>
+							חזרה לברירת המחדל
+						</button>
+						<span class="text-[11px] text-gray-500">
+							אחרי כל אישור ההודעה נפתחת לעריכה לפני שהיא יוצאת.
+						</span>
+					</div>
+				</form>
+			{/if}
+		</div>
 
 		{#if claims.length === 0}
 			<p class="rounded-2xl border border-gray-800 bg-gray-900/40 py-10 text-center text-gray-500">
@@ -472,6 +611,7 @@
 							<th class="px-4 py-2 text-start font-medium">משתמש</th>
 							<th class="px-4 py-2 text-start font-medium">תוצאה</th>
 							<th class="px-4 py-2 text-start font-medium">מי ומתי</th>
+							<th class="px-4 py-2"></th>
 						</tr>
 					</thead>
 					<tbody>
@@ -488,6 +628,21 @@
 								</td>
 								<td class="px-4 py-2 text-xs text-gray-500">
 									{h.decidedBy || '—'} · {fmtDate(h.decidedAt)}
+								</td>
+								<td class="px-4 py-2 text-end">
+									{#if h.ownerSms}
+										<button
+											type="button"
+											onclick={() => {
+												openOwner(h.ownerSms);
+												window.scrollTo({ top: 0, behavior: 'smooth' });
+											}}
+											title="SMS לבעל העסק שהכרטיסייה שלו, עם קישור לעריכה"
+											class="rounded-lg border border-blue-500/40 px-3 py-1 text-xs font-bold whitespace-nowrap text-blue-300 transition hover:bg-blue-900/30"
+										>
+											📱 הודע לבעלים
+										</button>
+									{/if}
 								</td>
 							</tr>
 						{/each}

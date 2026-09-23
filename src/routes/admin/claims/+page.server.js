@@ -17,20 +17,43 @@ import {
 import { invalidatePendingCounts } from '$lib/server/pendingCounts.js';
 import { sendSms, smsStatus, toMobileE164 } from '$lib/server/sms.js';
 import {
+	DEFAULT_OWNER_TEMPLATE,
 	DEFAULT_TEMPLATE,
 	MAX_SMS_CHARS,
+	OWNER_PLACEHOLDERS,
 	PLACEHOLDERS,
 	claimLinks,
 	getClaimSmsLog,
 	getClaimSmsTemplate,
+	getOwnerSmsTemplate,
 	recordClaimSms,
 	renderClaimSms,
+	renderOwnerSms,
 	setClaimSmsTemplate,
+	setOwnerSmsTemplate,
 	smsLogKey
 } from '$lib/server/claimSms.js';
 
 // כמה הכרעות אחרונות מוצגות בהיסטוריה
 const HISTORY = 20;
+
+/**
+ * טיוטת ה-SMS לבעל עסק שהכרטיסייה שויכה אליו — נפתחת בעורך אחרי השיוך
+ * (וגם מההיסטוריה), כדי שהאדמין יבדוק ויערוך לפני שהיא יוצאת. הנמען: הנייד
+ * שבפרופיל, ואם אין — הנייד שעל הכרטיסייה.
+ * @param {string} origin @param {string} template
+ * @param {{claimId: string, bizDocId: string, bizName: string, userName: string, userPhone: string, bizPhone: string}} v
+ */
+function ownerSmsDraft(origin, template, v) {
+	const phone = toMobileE164(v.userPhone) ? v.userPhone : v.bizPhone;
+	return {
+		claimId: v.claimId,
+		bizName: v.bizName,
+		userName: v.userName,
+		phone: toMobileE164(phone) ? phone : '',
+		draft: renderOwnerSms(template, origin, v)
+	};
+}
 
 /**
  * מסך הבעלות: מי דרש כרטיסייה, ואילו התאמות המערכת מצאה בין המשתמשים
@@ -41,14 +64,41 @@ const HISTORY = 20;
 export async function load({ locals, url }) {
 	if (!isPrivileged(locals.user)) throw redirect(302, '/admin');
 
-	const [claims, matches, all, sms, template, smsLog] = await Promise.all([
+	const [claims, matches, all, sms, template, smsLog, ownerTemplate] = await Promise.all([
 		listPendingClaims().catch(() => []),
 		listAutoMatches(),
 		listClaims().catch(() => []),
 		smsStatus(),
 		getClaimSmsTemplate(),
-		getClaimSmsLog()
+		getClaimSmsLog(),
+		getOwnerSmsTemplate()
 	]);
+
+	const history = all
+		.filter((c) => c.status !== 'pending')
+		.sort((a, b) => String(b.decidedAt).localeCompare(String(a.decidedAt)))
+		.slice(0, HISTORY);
+	// לשיוכים שבהיסטוריה — טיוטת הודעת הבעלות. הטלפון שעל הכרטיסייה נשלף
+	// רק כשאין נייד בפרופיל, כדי לא לטעון 20 כרטיסיות בכל כניסה.
+	const historyRows = await Promise.all(
+		history.map(async (h) => {
+			if (h.status !== 'approved') return h;
+			const bizPhone = toMobileE164(h.userPhone)
+				? ''
+				: ((await getBusinessAdmin(h.bizDocId).catch(() => null))?.phone ?? '');
+			return {
+				...h,
+				ownerSms: ownerSmsDraft(url.origin, ownerTemplate, {
+					claimId: h.id,
+					bizDocId: h.bizDocId,
+					bizName: h.bizName,
+					userName: h.userName,
+					userPhone: h.userPhone,
+					bizPhone
+				})
+			};
+		})
+	);
 
 	// בקשה על כרטיסייה שכבר יש לה בעלים אינה שיוך אלא *העברה* — האדמין
 	// צריך לראות את זה לפני שהוא לוחץ, ולאשר בכפתור נפרד.
@@ -82,7 +132,10 @@ export async function load({ locals, url }) {
 			template,
 			defaultTemplate: DEFAULT_TEMPLATE,
 			placeholders: PLACEHOLDERS,
-			maxChars: MAX_SMS_CHARS
+			maxChars: MAX_SMS_CHARS,
+			ownerTemplate,
+			defaultOwnerTemplate: DEFAULT_OWNER_TEMPLATE,
+			ownerPlaceholders: OWNER_PLACEHOLDERS
 		},
 		claims: claims.map((c) => {
 			const owner = owners.get(c.bizDocId);
@@ -97,10 +150,7 @@ export async function load({ locals, url }) {
 		}),
 		// התאמות שאיש עוד לא דרש — הבקשות עצמן כבר מופיעות ברשימה למעלה
 		matches: matches.filter((m) => m.claim === 'none').map(withSms),
-		history: all
-			.filter((c) => c.status !== 'pending')
-			.sort((a, b) => String(b.decidedAt).localeCompare(String(a.decidedAt)))
-			.slice(0, HISTORY)
+		history: historyRows
 	};
 }
 
@@ -113,7 +163,7 @@ export async function load({ locals, url }) {
  * לפני העריכה הראשונה שלו (ראו $lib/terms.js ומסך /business/[id]/edit).
  * @param {string} bizDocId @param {string} userId @param {string} userEmail
  * @param {boolean} [transfer]
- * @returns {Promise<{ok: true, name: string, from: string} | {ok: false, error: string}>}
+ * @returns {Promise<{ok: true, name: string, phone: string, from: string} | {ok: false, error: string}>}
  */
 async function writeOwner(bizDocId, userId, userEmail, transfer = false) {
 	const biz = await getBusinessAdmin(bizDocId);
@@ -136,6 +186,7 @@ async function writeOwner(bizDocId, userId, userEmail, transfer = false) {
 	return {
 		ok: true,
 		name: biz.name || '',
+		phone: biz.phone || '',
 		from: current && current !== String(userId) ? current : ''
 	};
 }
@@ -154,7 +205,7 @@ export const actions = {
 	 * כבר משויכת למישהו אחר, האישור הוא העברת בעלות — והוא נדרש להגיע
 	 * מהכפתור שמצהיר על כך (transfer=1).
 	 */
-	approve: async ({ request, locals }) => {
+	approve: async ({ request, locals, url }) => {
 		if (!isPrivileged(locals.user)) return fail(403, { error: 'אין הרשאה' });
 		const fd = await request.formData();
 		const claimId = String(fd.get('claimId') ?? '');
@@ -178,7 +229,15 @@ export const actions = {
 			ok: true,
 			message: written.from
 				? `${claim.bizName || 'הכרטיסייה'} הועברה ממשתמש #${written.from} ל-${claim.userEmail}`
-				: `${claim.bizName || 'הכרטיסייה'} שויכה ל-${claim.userEmail}`
+				: `${claim.bizName || 'הכרטיסייה'} שויכה ל-${claim.userEmail}`,
+			ownerSms: ownerSmsDraft(url.origin, await getOwnerSmsTemplate(), {
+				claimId,
+				bizDocId: claim.bizDocId,
+				bizName: written.name || claim.bizName,
+				userName: claim.userName,
+				userPhone: claim.userPhone,
+				bizPhone: written.phone
+			})
 		};
 	},
 
@@ -201,7 +260,7 @@ export const actions = {
 	 * שיוך יזום מהתאמה שהמערכת מצאה — בלי לחכות שהמשתמש יבקש. נשמרת
 	 * רשומת בקשה מאושרת, כדי שתישאר עקבות למי שייך את מי ומתי.
 	 */
-	assign: async ({ request, locals }) => {
+	assign: async ({ request, locals, url }) => {
 		if (!isPrivileged(locals.user)) return fail(403, { error: 'אין הרשאה' });
 		const fd = await request.formData();
 		const bizDocId = String(fd.get('bizDocId') ?? '');
@@ -229,7 +288,54 @@ export const actions = {
 			await decideClaim(created.claim.id, 'approved', locals.user?.email ?? '').catch(() => {});
 		}
 		refreshCaches();
-		return { ok: true, message: `${written.name || 'הכרטיסייה'} שויכה ל-${userEmail}` };
+		return {
+			ok: true,
+			message: `${written.name || 'הכרטיסייה'} שויכה ל-${userEmail}`,
+			ownerSms: created.ok
+				? ownerSmsDraft(url.origin, await getOwnerSmsTemplate(), {
+						claimId: created.claim.id,
+						bizDocId,
+						bizName: written.name,
+						userName,
+						userPhone: String(fd.get('userPhone') ?? ''),
+						bizPhone: written.phone
+					})
+				: null
+		};
+	},
+
+	/**
+	 * הודעת הבעלות לבעל העסק — כפי שהאדמין השאיר אותה בעורך. נבדק רק שהשיוך
+	 * אכן אושר, שההודעה לא ריקה ולא ארוכה מדי, ושהנמען הוא נייד.
+	 */
+	ownerSms: async ({ request, locals }) => {
+		if (!isPrivileged(locals.user)) return fail(403, { error: 'אין הרשאה' });
+		const fd = await request.formData();
+		const claim = (await listClaims()).find((c) => c.id === String(fd.get('claimId') ?? ''));
+		if (!claim || claim.status !== 'approved') return fail(404, { error: 'השיוך לא נמצא' });
+		const phone = String(fd.get('phone') ?? '');
+		const message = String(fd.get('message') ?? '').trim();
+		if (!toMobileE164(phone)) return fail(400, { error: 'אין לנמען מספר נייד תקין' });
+		if (!message) return fail(400, { error: 'ההודעה ריקה' });
+		if (message.length > MAX_SMS_CHARS) {
+			return fail(400, { error: `ההודעה ארוכה מדי (עד ${MAX_SMS_CHARS} תווים)` });
+		}
+		const sent = await sendSms({ phone, name: claim.userName, message });
+		if (!sent.ok) return fail(502, { error: 'ה-SMS לא נשלח: ' + sent.error });
+		return { ok: true, message: `נשלח SMS אל ${phone}` };
+	},
+
+	/** נוסח הודעת הבעלות — משותף לכל האדמינים; ריק מחזיר לברירת המחדל. */
+	saveOwnerTemplate: async ({ request, locals }) => {
+		if (!isPrivileged(locals.user)) return fail(403, { error: 'אין הרשאה' });
+		const fd = await request.formData();
+		try {
+			const res = await setOwnerSmsTemplate(String(fd.get('template') ?? ''));
+			if (!res.ok) return fail(400, { error: res.error });
+		} catch (e) {
+			return fail(502, { error: 'השמירה נכשלה: ' + (e instanceof Error ? e.message : '') });
+		}
+		return { ok: true, message: 'נוסח הודעת הבעלות נשמר' };
 	},
 
 	/** "התעלם" — ההתאמה לא נכונה; לא תוצג שוב ולא תיספר בבועה. */
