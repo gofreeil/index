@@ -66,12 +66,18 @@
 		}
 		return items;
 	});
+	// לחיצה על האווטאר = האזור האישי המלא; התפריט נפתח רק בריחוף, כקיצור דרך.
+	// השהיית סגירה קצרה — כדי שמעבר העכבר מהכפתור אל התפריט לא יסגור אותו.
 	let alertsOpen = $state(false);
-	/** @param {MouseEvent} e סגירת התפריט בלחיצה מחוץ לו */
-	const closeAlertsOutside = (e) => {
-		if (!alertsOpen) return;
-		const el = /** @type {HTMLElement | null} */ (e.target);
-		if (!el?.closest('[data-alerts-menu]')) alertsOpen = false;
+	/** @type {ReturnType<typeof setTimeout> | undefined} */
+	let alertsCloseTimer;
+	const openAlerts = () => {
+		clearTimeout(alertsCloseTimer);
+		alertsOpen = true;
+	};
+	const closeAlertsSoon = () => {
+		clearTimeout(alertsCloseTimer);
+		alertsCloseTimer = setTimeout(() => (alertsOpen = false), 150);
 	};
 
 	// הטענת Google Analytics (gtag) בצד-הלקוח — רק אם הוגדר מזהה מדידה.
@@ -130,7 +136,6 @@
 </script>
 
 <svelte:document
-	onclick={closeAlertsOutside}
 	onkeydown={(e) => {
 		if (e.key === 'Escape') alertsOpen = false;
 	}}
@@ -166,7 +171,10 @@
 
 <div class="relative min-h-screen bg-gray-950 text-gray-100" dir={t.dir}>
 	<!-- Header -->
-	<header use:headerHeight class="sticky top-0 z-50 border-b border-gray-800 bg-gray-900/80 backdrop-blur-md">
+	<header
+		use:headerHeight
+		class="sticky top-0 z-50 border-b border-gray-800 bg-gray-900/80 backdrop-blur-md"
+	>
 		<div class="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
 			<div class="flex items-center justify-between">
 				<!-- Title & Logo Section -->
@@ -339,16 +347,21 @@
 					     כשיש פריטים שממתינים לטיפול (אדמין) — בועה אדומה ממוספרת בפינה,
 					     והקישור מוביל ישר לפאנל שבאזור האישי. -->
 					{#if user && alertTotal > 0}
-						<!-- יש התראות: האווטאר הופך לכפתור שפותח את הפירוט. -->
-						<div class="relative flex items-center" data-alerts-menu>
-							<button
-								type="button"
-								onclick={() => (alertsOpen = !alertsOpen)}
+						<!-- יש התראות: לחיצה → האזור האישי; ריחוף → תפריט קיצורי דרך. -->
+						<div
+							class="relative flex items-center"
+							role="group"
+							onmouseenter={openAlerts}
+							onmouseleave={closeAlertsSoon}
+							onfocusin={openAlerts}
+							onfocusout={closeAlertsSoon}
+						>
+							<a
+								href="/profile"
+								onclick={() => (alertsOpen = false)}
 								class="relative flex flex-shrink-0 items-center gap-2 rounded-full bg-[#1c2f5a] px-1.5 py-1.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#2a4379] sm:px-3 sm:py-2"
 								title={alertTitle}
 								aria-label={`${t.myArea} – ${user.name} – ${alertTitle}`}
-								aria-expanded={alertsOpen}
-								aria-haspopup="menu"
 							>
 								<span
 									class="login-grad flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-xs"
@@ -364,49 +377,51 @@
 										? '99+'
 										: alertTotal}
 								</span>
-							</button>
+							</a>
 
 							{#if alertsOpen}
-								<div
-									class="absolute top-full left-0 z-[100] mt-2 w-72 overflow-hidden rounded-xl border border-gray-100 bg-white text-right shadow-2xl dark:border-gray-700 dark:bg-gray-800"
-									role="menu"
-									dir="rtl"
-								>
-									<p
-										class="border-b border-gray-100 px-3 py-2 text-xs font-bold text-gray-500 dark:border-gray-700 dark:text-gray-400"
+								<div class="absolute top-full left-0 z-[100] w-72 pt-2">
+									<div
+										class="overflow-hidden rounded-xl border border-gray-100 bg-white text-right shadow-2xl dark:border-gray-700 dark:bg-gray-800"
+										role="menu"
+										dir="rtl"
 									>
-										{alertTitle}
-									</p>
-									{#each alertItems as item (item.href)}
+										<p
+											class="border-b border-gray-100 px-3 py-2 text-xs font-bold text-gray-500 dark:border-gray-700 dark:text-gray-400"
+										>
+											{alertTitle}
+										</p>
+										{#each alertItems as item (item.href)}
+											<a
+												href={item.href}
+												role="menuitem"
+												onclick={() => (alertsOpen = false)}
+												class="flex items-center gap-3 px-3 py-2.5 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
+											>
+												<span class="text-lg" aria-hidden="true">{item.icon}</span>
+												<span class="min-w-0 flex-1">
+													<span class="block text-sm font-bold text-gray-800 dark:text-gray-100"
+														>{item.label}</span
+													>
+													<span class="block truncate text-[11px] text-gray-500 dark:text-gray-400"
+														>{item.desc}</span
+													>
+												</span>
+												<span
+													class="flex h-6 min-w-6 flex-shrink-0 items-center justify-center rounded-full bg-rose-500 px-1.5 text-xs font-black text-white"
+													>{item.n}</span
+												>
+											</a>
+										{/each}
 										<a
-											href={item.href}
+											href="/profile"
 											role="menuitem"
 											onclick={() => (alertsOpen = false)}
-											class="flex items-center gap-3 px-3 py-2.5 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
+											class="block border-t border-gray-100 px-3 py-2 text-center text-xs font-bold text-blue-600 hover:bg-gray-50 dark:border-gray-700 dark:text-blue-300 dark:hover:bg-gray-700"
 										>
-											<span class="text-lg" aria-hidden="true">{item.icon}</span>
-											<span class="min-w-0 flex-1">
-												<span class="block text-sm font-bold text-gray-800 dark:text-gray-100"
-													>{item.label}</span
-												>
-												<span class="block truncate text-[11px] text-gray-500 dark:text-gray-400"
-													>{item.desc}</span
-												>
-											</span>
-											<span
-												class="flex h-6 min-w-6 flex-shrink-0 items-center justify-center rounded-full bg-rose-500 px-1.5 text-xs font-black text-white"
-												>{item.n}</span
-											>
+											{t.myArea} ←
 										</a>
-									{/each}
-									<a
-										href="/profile"
-										role="menuitem"
-										onclick={() => (alertsOpen = false)}
-										class="block border-t border-gray-100 px-3 py-2 text-center text-xs font-bold text-blue-600 hover:bg-gray-50 dark:border-gray-700 dark:text-blue-300 dark:hover:bg-gray-700"
-									>
-										{t.myArea} ←
-									</a>
+									</div>
 								</div>
 							{/if}
 						</div>
@@ -426,7 +441,7 @@
 					{:else}
 						<a
 							href="/auth/login"
-							class="flex flex-shrink-0 items-center gap-1.5 rounded-full login-grad px-2 py-1.5 text-sm font-bold text-white shadow-sm transition-all hover:brightness-110 sm:px-4 sm:py-2"
+							class="login-grad flex flex-shrink-0 items-center gap-1.5 rounded-full px-2 py-1.5 text-sm font-bold text-white shadow-sm transition-all hover:brightness-110 sm:px-4 sm:py-2"
 							title={t.login}
 						>
 							<span aria-hidden="true">👤</span>
@@ -476,17 +491,31 @@
 		background: linear-gradient(90deg, #4f46e5, #7c3aed, #f5d57a);
 		animation: nav-progress 8s cubic-bezier(0.15, 0.85, 0.25, 1) forwards;
 	}
-	:global(html[dir="rtl"]) .nav-progress {
+	:global(html[dir='rtl']) .nav-progress {
 		transform-origin: right center;
 	}
 	@keyframes nav-progress {
-		0% { transform: scaleX(0.04); opacity: 1; }
-		25% { transform: scaleX(0.55); }
-		60% { transform: scaleX(0.82); }
-		100% { transform: scaleX(0.97); opacity: 1; }
+		0% {
+			transform: scaleX(0.04);
+			opacity: 1;
+		}
+		25% {
+			transform: scaleX(0.55);
+		}
+		60% {
+			transform: scaleX(0.82);
+		}
+		100% {
+			transform: scaleX(0.97);
+			opacity: 1;
+		}
 	}
 	@media (prefers-reduced-motion: reduce) {
-		.nav-progress { animation-duration: 0s; transform: scaleX(1); opacity: 1; }
+		.nav-progress {
+			animation-duration: 0s;
+			transform: scaleX(1);
+			opacity: 1;
+		}
 	}
 
 	/* פריסת התוכן עם שני מסילות פרסום (מפורט מקהילה) */
