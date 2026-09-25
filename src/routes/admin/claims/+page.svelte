@@ -8,6 +8,29 @@
 	const matches = $derived(data.matches ?? []);
 	const history = $derived(data.history ?? []);
 
+	/* ═══════════ מעקב תגובות להזמנות ה-SMS ═══════════
+	   לחיצה על מונה פותחת מתחתיו את הכרטיסיות שמאחוריו. */
+	const tracking = $derived(/** @type {any[]} */ (data.smsTracking ?? []));
+	/** @type {Array<[string, string, string]>} */
+	const statDefs = [
+		['sentAt', '📨 נשלחו', ''],
+		['openedAt', '👀 נכנסו לאתר', ''],
+		['declinedAt', '🙅 דחו ("לא שלי")', ''],
+		['requestedAt', '⏳ ביקשו בעלות (ממתין)', ''],
+		['claimedAt', '✅ קיבלו בעלות', '']
+	];
+	let openStat = $state('');
+	const statRows = $derived(openStat ? tracking.filter((r) => r[openStat]) : []);
+	/** @param {string} k */
+	const statCount = (k) => tracking.filter((r) => r[k]).length;
+	/** @param {number} n */
+	const statPct = (n) => (tracking.length && n ? ` (${Math.round((n / tracking.length) * 100)}%)` : '');
+	/** @param {string} iso */
+	const shortDate = (iso) => {
+		const d = new Date(iso);
+		return iso && !isNaN(d.getTime()) ? d.toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' }) : '';
+	};
+
 	/* ═══════════ הזמנה ב-SMS ═══════════
 	   השרת מביא לכל התאמה טיוטה מוכנה (הנוסח השמור עם הקישורים החתומים).
 	   האדמין פותח עורך על ההתאמה, מתקן אם צריך, ושולח. הנוסח עצמו נערך
@@ -199,6 +222,55 @@
 				{/if}
 			</div>
 		</form>
+	{/if}
+
+	<!-- ── מעקב תגובות להזמנות ה-SMS ─────────────────────────── -->
+	{#if tracking.length}
+		<section class="mb-8 rounded-2xl border border-gray-800 bg-gray-900/40 p-4">
+			<h2 class="mb-3 text-sm font-bold text-gray-200">📊 מעקב תגובות להזמנות SMS</h2>
+			<div class="grid grid-cols-2 gap-2 sm:grid-cols-5">
+				{#each statDefs as [k, label] (k)}
+					{@const n = statCount(k)}
+					<button
+						type="button"
+						onclick={() => (openStat = openStat === k ? '' : k)}
+						class="rounded-xl px-3 py-2 text-center transition {openStat === k
+							? 'bg-blue-600 ring-2 ring-blue-300'
+							: 'bg-gray-800 hover:bg-gray-700'}"
+					>
+						<div class="text-2xl font-black text-white">
+							{n}<span class="text-xs font-bold text-gray-200">{k === 'sentAt' ? '' : statPct(n)}</span>
+						</div>
+						<div class="text-xs text-gray-100">{label} {openStat === k ? '▲' : '▼'}</div>
+					</button>
+				{/each}
+			</div>
+			{#if openStat}
+				<div class="mt-3 space-y-1.5">
+					{#if statRows.length === 0}
+						<p class="rounded-lg bg-gray-800 px-3 py-2 text-sm text-gray-200">אין עדיין אף אחד כאן.</p>
+					{/if}
+					{#each statRows as r (r.key)}
+						<div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 rounded-xl bg-gray-800 px-3 py-2 text-sm">
+							<a href="/business/{r.bizDocId}" target="_blank" rel="noopener" class="font-bold text-white hover:text-blue-300">
+								{r.bizName || r.bizDocId}
+							</a>
+							<span class="text-xs text-gray-300">
+								{r.userName}{r.phone ? ' · ' : ''}<span dir="ltr">{r.phone}</span>
+							</span>
+							<span class="ms-auto flex flex-wrap gap-1.5 text-xs font-bold">
+								<span class="text-emerald-300">📨 {shortDate(r.sentAt)}</span>
+								{#if r.openedAt}<span class="text-sky-300">👀 {shortDate(r.openedAt)}{r.opens > 1 ? ` (${r.opens}×)` : ''}</span>{/if}
+								{#if r.declinedAt}<span class="text-rose-300">🙅 {shortDate(r.declinedAt)}</span>{/if}
+								{#if r.requestedAt}<span class="text-amber-300">⏳ {shortDate(r.requestedAt)}</span>{/if}
+								{#if r.claimedAt}<span class="text-emerald-300">✅ בעלים {shortDate(r.claimedAt)}</span>{/if}
+							</span>
+						</div>
+					{/each}
+				</div>
+			{/if}
+			<p class="mt-2 text-xs text-gray-500">לחצו על מונה כדי לראות את הכרטיסיות שמאחוריו. כניסות נספרות מהקישור שב-SMS.</p>
+		</section>
 	{/if}
 
 	<!-- ── בקשות שמשתמשים שלחו ─────────────────────────────── -->
@@ -553,6 +625,7 @@
 								<input type="hidden" name="bizDocId" value={m.bizDocId} />
 								<input type="hidden" name="userId" value={m.userId} />
 								<input type="hidden" name="userName" value={m.userName} />
+								<input type="hidden" name="bizName" value={m.bizName} />
 								<input type="hidden" name="phone" value={m.smsPhone} />
 								<p class="mb-1.5 text-xs text-gray-400">
 									אל <span class="font-bold text-gray-200" dir="ltr">{m.smsPhone}</span>

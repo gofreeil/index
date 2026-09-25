@@ -203,6 +203,9 @@ export const translations = {
 		claimBodyMatched:
 			'הפרטים בחשבון שלכם תואמים לכרטיסייה הזו. דרשו אותה, ואחרי אישור שלנו היא תהיה שלכם לעריכה.',
 		claimBtn: 'זה העסק שלי',
+		// הגיע מהקישור ב-SMS — בעלות מיידית בלי המתנה לאישור
+		claimBodyInstant: 'לחיצה אחת — והכרטיסייה עוברת אליכם מיד לעריכה, בלי המתנה לאישור.',
+		claimDoneNow: 'הכרטיסייה שלכם! אפשר לערוך אותה עכשיו.',
 		// כרטיסייה שכבר משויכת למישהו אחר — בקשת העברת בעלות
 		claimTitleTransfer: 'הכרטיסייה הזו רשומה על שם מישהו אחר',
 		claimBodyTransfer:
@@ -512,6 +515,8 @@ export const translations = {
 		claimBodyMatched:
 			"Your account details match this listing. Claim it, and once we approve it's yours to edit.",
 		claimBtn: 'This is my business',
+		claimBodyInstant: 'One click and the listing is yours to edit right away — no waiting for approval.',
+		claimDoneNow: 'The listing is yours! You can edit it now.',
 		// A listing that already belongs to someone else — ownership transfer request
 		claimTitleTransfer: 'This listing is registered to someone else',
 		claimBodyTransfer:
@@ -823,6 +828,8 @@ export const translations = {
 		claimBodyMatched:
 			'Данные вашего аккаунта совпадают с этой карточкой. Заявите права, и после одобрения она станет вашей.',
 		claimBtn: 'Это мой бизнес',
+		claimBodyInstant: 'Один клик — и карточка сразу ваша, без ожидания одобрения.',
+		claimDoneNow: 'Карточка ваша! Её можно редактировать прямо сейчас.',
 		// Карточка уже принадлежит другому — запрос на передачу прав
 		claimTitleTransfer: 'Эта карточка зарегистрирована на другого пользователя',
 		claimBodyTransfer:

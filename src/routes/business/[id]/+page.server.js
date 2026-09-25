@@ -1,5 +1,5 @@
 import { error, fail } from '@sveltejs/kit';
-import { getBusiness, isPrivileged } from '$lib/server/strapi.js';
+import { assignBusinessOwner, getBusiness, isPrivileged } from '$lib/server/strapi.js';
 import { getEffectivePhone } from '$lib/server/profileStore.js';
 import { getCategorySettings } from '$lib/server/categoryStore.js';
 import { toBusiness } from '$lib/businessShape.js';
@@ -12,11 +12,13 @@ import {
 import {
 	businessOwnerId,
 	canEditBusiness,
+	invalidateMatches,
 	invalidateUserMatchCount,
 	isBusinessOwner,
 	matchKind
 } from '$lib/server/ownerMatch.js';
-import { createClaim, findClaim } from '$lib/server/claimsStore.js';
+import { createClaim, decideClaim, findClaim, invalidateClaims } from '$lib/server/claimsStore.js';
+import { claimInviteUser, recordClaimEvent } from '$lib/server/claimSms.js';
 import { invalidatePendingCounts } from '$lib/server/pendingCounts.js';
 
 /**
@@ -26,7 +28,7 @@ import { invalidatePendingCounts } from '$lib/server/pendingCounts.js';
  * תוסיף סבב רשת להשהיית הדף. מבקר אנונימי (וסורק) לא משלם עליה כלל.
  * @type {import('./$types').PageServerLoad}
  */
-export async function load({ params, locals }) {
+export async function load({ params, locals, cookies }) {
 	const user = locals.user;
 	const [b, userPhone, catSettings] = await Promise.all([
 		getBusiness(params.id),
@@ -47,6 +49,8 @@ export async function load({ params, locals }) {
 	// של הגולש, ייתכן שהיא שויכה בטעות למישהו אחר — ואז הוא רשאי לבקש
 	// *העברת* בעלות. הבעלים עצמו כמובן לא צריך לבקש כלום.
 	const matchedBy = user && !isOwner ? matchKind(b, { email: user.email, phone: userPhone }) : '';
+	// הגיע מהקישור החתום שה-SMS שלח בדיוק למשתמש הזה — בעלות בלחיצה, בלי אדמין
+	const instant = !!user && !owned && claimInviteUser(cookies, business.documentId) === String(user.id);
 
 	return {
 		// אותו סיווג בדיוק כמו בדף הבית — כרטיסייה שהאינדקס מציג תחת "רפואה
@@ -89,7 +93,8 @@ export async function load({ params, locals }) {
 			loggedIn: !!user,
 			status: claim?.status ?? '',
 			// התאמה אוטומטית — "זיהינו שהעסק הזה שלך" ולא סתם הזמנה כללית
-			matchedBy
+			matchedBy,
+			instant
 		}
 	};
 }
@@ -104,7 +109,7 @@ export const actions = {
 	 * (טלפון/אימייל זהים) רשאי לבקש *העברת* בעלות, והאדמין מכריע. בלי
 	 * התאמה כזו אין דרך לבקש כרטיסייה של מישהו אחר.
 	 */
-	claim: async ({ request, params, locals }) => {
+	claim: async ({ request, params, locals, cookies }) => {
 		const user = locals.user;
 		if (!user) return fail(401, { claimError: 'צריך להתחבר כדי לדרוש את הכרטיסייה' });
 
@@ -116,6 +121,36 @@ export const actions = {
 		const note = String(fd.get('note') ?? '').trim();
 		const userPhone = await getEffectivePhone(user.id);
 		const matchedBy = matchKind(b, { email: user.email, phone: userPhone });
+
+		// הקישור החתום מה-SMS נשלח למשתמש הזה בדיוק, אחרי שהמערכת זיהתה אותו
+		// ככבעלים — זו ההוכחה. כרטיסייה בלי בעלים עוברת אליו מיד; העברה
+		// מבעלים קיים נשארת בהכרעת אדמין.
+		const invited = claimInviteUser(cookies, b.documentId) === String(user.id);
+		if (invited && !businessOwnerId(b)) {
+			try {
+				await assignBusinessOwner(b.documentId, { id: user.id, email: user.email });
+			} catch (e) {
+				return fail(502, { claimError: 'השיוך נכשל — נסו שוב' });
+			}
+			const created = await createClaim({
+				bizDocId: b.documentId,
+				bizName: b.name || '',
+				userId: user.id,
+				userName: user.name,
+				userEmail: user.email,
+				userPhone,
+				matchedBy: matchedBy || 'manual',
+				source: 'auto',
+				note: 'שיוך אוטומטי מקישור ה-SMS החתום'
+			}).catch(() => null);
+			if (created?.ok) await decideClaim(created.claim.id, 'approved', 'sms:auto').catch(() => {});
+			await recordClaimEvent(b.documentId, user.id, 'claimed');
+			invalidateClaims();
+			invalidateMatches();
+			invalidatePendingCounts();
+			invalidateUserMatchCount(user.id);
+			return { claimedNow: true };
+		}
 		if (businessOwnerId(b) && !matchedBy) {
 			return fail(400, { claimError: 'לכרטיסייה הזו כבר יש בעלים רשום' });
 		}
@@ -135,6 +170,7 @@ export const actions = {
 		});
 		if (!res.ok) return fail(400, { claimError: res.error });
 
+		if (invited) await recordClaimEvent(b.documentId, user.id, 'request');
 		// הבועה האדומה של האדמין נגזרת ממטמון של דקה — מאפסים כדי שהבקשה תופיע מיד
 		invalidatePendingCounts();
 		// ובועת "כרטיסיות מחכות לך" של המשתמש עצמו — הכרטיסייה כבר נדרשה

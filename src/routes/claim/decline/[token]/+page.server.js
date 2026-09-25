@@ -1,5 +1,5 @@
 import { fail } from '@sveltejs/kit';
-import { verifyDeclineToken } from '$lib/server/claimSms.js';
+import { recordClaimEvent, verifyDeclineToken } from '$lib/server/claimSms.js';
 import { dismissMatch, invalidateClaims } from '$lib/server/claimsStore.js';
 import { invalidateMatches } from '$lib/server/ownerMatch.js';
 import { invalidatePendingCounts } from '$lib/server/pendingCounts.js';
@@ -36,6 +36,7 @@ export const actions = {
 		} catch (e) {
 			return fail(502, { error: 'העדכון נכשל: ' + (e instanceof Error ? e.message : '') });
 		}
+		await recordClaimEvent(ids.bizDocId, ids.userId, 'declined');
 		invalidateClaims();
 		invalidateMatches();
 		invalidatePendingCounts();

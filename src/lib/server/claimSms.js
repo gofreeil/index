@@ -5,8 +5,11 @@
 // בעלים שהטלפון/האימייל שלה זהים לאלה של משתמש רשום. במקום לחכות שהוא
 // יגלה את זה לבד, האדמין שולח לו SMS עם שני קישורים:
 //
-//   {link}     /c/<id> — מפנה לדף העסק עם ?claim=1, כלומר תיבת "זה העסק
-//              שלי" נפתחת מיד, ואם הוא לא מחובר הכניסה מחזירה אותו לשם.
+//   {link}     /c/<id>.<userId>.<sig> — מפנה לדף העסק עם ?claim=1, כלומר
+//              תיבת "זה העסק שלי" נפתחת מיד, ואם הוא לא מחובר הכניסה מחזירה
+//              אותו לשם. הקישור חתום ושייך למשתמש שהמערכת זיהתה: כשהוא עצמו
+//              מחובר ולוחץ, הבעלות עוברת מיד — בלי אישור אדמין (ראו
+//              claimInviteUser). קישורים ישנים (/c/<id>) רק פותחים את התיבה.
 //   {decline}  /d/<token> — "לא שלי": קישור חתום (HMAC) שמסמן את ההתאמה
 //              כלא-נכונה בלי להתחבר, כמו "התעלם" של האדמין. חתום כדי
 //              שאיש לא יוכל לסגור התאמות של אחרים על ידי ניחוש מזהים.
@@ -22,6 +25,7 @@
 
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { env } from '$env/dynamic/private';
+/** @typedef {import('@sveltejs/kit').Cookies} Cookies */
 import { getConfigValue, setConfigValueStrict } from './configStore.js';
 
 const TEMPLATE_KEY = 'claim_sms_template';
@@ -141,15 +145,67 @@ export function verifyDeclineToken(token) {
 export function claimLinks(origin, bizDocId, userId) {
 	const base = origin.replace(/\/$/, '');
 	return {
-		link: `${base}/c/${encodeURIComponent(bizDocId)}`,
+		link: `${base}/c/${bizDocId}.${String(userId)}.${signFor('link', bizDocId, String(userId))}`,
 		decline: `${base}/d/${declineToken(bizDocId, userId)}`
 	};
+}
+
+// ── קישור חתום → בעלות מיידית ────────────────────────────────
+
+const INVITE_COOKIE = 'ix_claim_invite';
+
+/**
+ * חתימה נפרדת לכל שימוש — אסימון "לא שלי" לא ישמש כקישור בעלות
+ * @param {string} purpose @param {string} bizDocId @param {string} userId */
+function signFor(purpose, bizDocId, userId) {
+	return createHmac('sha256', secret()).update(`${purpose}|${bizDocId}|${userId}`).digest('hex').slice(0, SIG_LEN);
+}
+
+/** @param {string} a @param {string} b */
+const sameSig = (a, b) => a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
+
+/**
+ * מפרק את /c/<param>: חתום (<biz>.<userId>.<sig>) או ישן (<biz> בלבד).
+ * @param {string} param
+ * @returns {{bizDocId: string, userId: string} | null} userId ריק = קישור ישן
+ */
+export function parseClaimLink(param) {
+	const parts = String(param ?? '').split('.');
+	if (!/^[A-Za-z0-9_-]+$/.test(parts[0] ?? '')) return null;
+	if (parts.length === 1) return { bizDocId: parts[0], userId: '' };
+	if (parts.length !== 3 || !/^d+$/.test(parts[1]) || !/^[0-9a-f]+$/.test(parts[2])) return null;
+	const [bizDocId, userId, sig] = parts;
+	return sameSig(sig, signFor('link', bizDocId, userId)) ? { bizDocId, userId } : null;
+}
+
+/**
+ * זוכר בדפדפן שנכנס מהקישור החתום — עד שיתחבר ויחזור לדף העסק
+ * @param {Cookies} cookies @param {string} bizDocId @param {string} userId */
+export function setClaimInviteCookie(cookies, bizDocId, userId) {
+	cookies.set(INVITE_COOKIE, `${bizDocId}.${userId}.${signFor('cookie', bizDocId, userId)}`, {
+		path: '/',
+		httpOnly: true,
+		sameSite: 'lax',
+		secure: true,
+		maxAge: 30 * 24 * 3600
+	});
+}
+
+/**
+ * המשתמש שהקישור החתום נשלח אליו עבור הכרטיסייה הזו, או ''.
+ * @param {Cookies} cookies @param {string} bizDocId
+ */
+export function claimInviteUser(cookies, bizDocId) {
+	const [biz, uid, sig] = String(cookies.get(INVITE_COOKIE) ?? '').split('.');
+	if (!biz || biz !== bizDocId || !uid || !sig) return '';
+	return sameSig(sig, signFor('cookie', biz, uid)) ? uid : '';
 }
 
 // ── יומן שליחות ──────────────────────────────────────────────
 
 /**
- * @typedef {{at: string, by: string, phone: string}} SmsLogEntry
+ * @typedef {{at: string, by: string, phone: string, bizName?: string, userName?: string,
+ *   openedAt?: string, opens?: number, requestedAt?: string, claimedAt?: string, declinedAt?: string}} SmsLogEntry
  */
 
 /** @param {string} bizDocId @param {string|number} userId */
@@ -165,12 +221,21 @@ export async function getClaimSmsLog() {
 
 /**
  * רושם שליחה. נכשל בשקט — ה-SMS כבר יצא, והיומן הוא נוחות בלבד.
- * @param {{bizDocId: string, userId: string|number, by: string, phone: string}} e
+ * שליחה חוזרת שומרת את המעקב (כניסות/דחייה/בעלות) של אותה התאמה.
+ * @param {{bizDocId: string, userId: string|number, by: string, phone: string, bizName?: string, userName?: string}} e
  */
-export async function recordClaimSms({ bizDocId, userId, by, phone }) {
+export async function recordClaimSms({ bizDocId, userId, by, phone, bizName, userName }) {
 	try {
 		const log = { ...(await getClaimSmsLog()) };
-		log[smsLogKey(bizDocId, userId)] = { at: new Date().toISOString(), by, phone };
+		const key = smsLogKey(bizDocId, userId);
+		log[key] = {
+			...log[key],
+			at: new Date().toISOString(),
+			by,
+			phone,
+			...(bizName ? { bizName } : {}),
+			...(userName ? { userName } : {})
+		};
 		const keys = Object.keys(log);
 		if (keys.length > LOG_KEEP) {
 			keys
@@ -181,6 +246,33 @@ export async function recordClaimSms({ bizDocId, userId, by, phone }) {
 		await setConfigValueStrict(LOG_KEY, log);
 	} catch (e) {
 		console.error('[claim-sms] log failed:', e instanceof Error ? e.message : e);
+	}
+}
+
+/**
+ * מעקב תגובות: כניסה מהקישור / בקשת בעלות / קבלת בעלות / "לא שלי".
+ * נכשל בשקט — לא חוסם את המשתמש.
+ * @param {string} bizDocId @param {string|number} userId
+ * @param {'open'|'request'|'claimed'|'declined'} kind
+ */
+export async function recordClaimEvent(bizDocId, userId, kind) {
+	try {
+		const log = { ...(await getClaimSmsLog()) };
+		const key = smsLogKey(bizDocId, userId);
+		const c = log[key];
+		if (!c) return; // רק התאמות שנשלח להן SMS
+		const now = new Date().toISOString();
+		log[key] =
+			kind === 'open'
+				? { ...c, openedAt: c.openedAt ?? now, opens: (c.opens ?? 0) + 1 }
+				: kind === 'request'
+					? { ...c, requestedAt: c.requestedAt ?? now }
+					: kind === 'claimed'
+						? { ...c, claimedAt: c.claimedAt ?? now }
+						: { ...c, declinedAt: c.declinedAt ?? now };
+		await setConfigValueStrict(LOG_KEY, log);
+	} catch (e) {
+		console.error('[claim-sms] track failed:', e instanceof Error ? e.message : e);
 	}
 }
 

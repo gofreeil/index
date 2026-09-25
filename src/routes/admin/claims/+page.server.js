@@ -105,6 +105,37 @@ export async function load({ locals, url }) {
 	const owners = await ownershipByDoc(claims.map((c) => c.bizDocId));
 
 	/**
+	 * מעקב תגובות להזמנות ה-SMS: לכל שליחה ביומן — נכנס מהקישור, דחה ("לא
+	 * שלי"), ביקש בעלות, קיבל בעלות. המצב נגזר גם מרשומות הבקשות והבעלות
+	 * עצמן, כך שגם שליחות מלפני שהמעקב נוסף נספרות נכון.
+	 */
+	const logKeys = Object.keys(smsLog);
+	const trackOwners = await ownershipByDoc(logKeys.map((k) => k.split('|')[0])).catch(() => new Map());
+	const smsTracking = logKeys
+		.map((key) => {
+			const [bizDocId, userId] = key.split('|');
+			const e = smsLog[key];
+			const c = all.find((x) => x.bizDocId === bizDocId && x.userId === userId);
+			const m = matches.find((x) => x.bizDocId === bizDocId && x.userId === userId);
+			const ownedByHim = trackOwners.get(bizDocId)?.ownerId === userId;
+			return {
+				key,
+				bizDocId,
+				bizName: e.bizName || c?.bizName || m?.bizName || '',
+				userName: e.userName || c?.userName || m?.userName || '',
+				phone: e.phone || '',
+				sentAt: e.at,
+				openedAt: e.openedAt || '',
+				opens: e.opens || 0,
+				declinedAt:
+					e.declinedAt || (c?.status === 'dismissed' && c.decidedBy === 'sms:not-mine' ? c.decidedAt : ''),
+				requestedAt: e.requestedAt || (c?.status === 'pending' ? c.createdAt || '' : ''),
+				claimedAt: e.claimedAt || (ownedByHim ? (c?.status === 'approved' ? c.decidedAt : '') || 'yes' : '')
+			};
+		})
+		.sort((a, b) => String(b.sentAt).localeCompare(String(a.sentAt)));
+
+	/**
 	 * הזמנה ב-SMS: לכל התאמה — הנמען (הטלפון שבפרופיל, ובהתאמה לפי אימייל
 	 * הטלפון שעל הכרטיסייה), טיוטת ההודעה מהנוסח השמור, ומה כבר נשלח.
 	 * הקישורים נבנים כאן (חתומים), כדי שהעורך בדפדפן יקבל טקסט מוכן.
@@ -150,7 +181,8 @@ export async function load({ locals, url }) {
 		}),
 		// התאמות שאיש עוד לא דרש — הבקשות עצמן כבר מופיעות ברשימה למעלה
 		matches: matches.filter((m) => m.claim === 'none').map(withSms),
-		history: historyRows
+		history: historyRows,
+		smsTracking
 	};
 }
 
@@ -383,7 +415,14 @@ export const actions = {
 		const sent = await sendSms({ phone, name: String(fd.get('userName') ?? ''), message });
 		if (!sent.ok) return fail(502, { error: 'ה-SMS לא נשלח: ' + sent.error });
 
-		await recordClaimSms({ bizDocId, userId, by: locals.user?.email ?? '', phone });
+		await recordClaimSms({
+			bizDocId,
+			userId,
+			by: locals.user?.email ?? '',
+			phone,
+			bizName: String(fd.get('bizName') ?? ''),
+			userName: String(fd.get('userName') ?? '')
+		});
 		return { ok: true, message: `נשלח SMS אל ${phone}` };
 	},
 
