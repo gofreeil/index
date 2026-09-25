@@ -173,7 +173,7 @@ export function parseClaimLink(param) {
 	const parts = String(param ?? '').split('.');
 	if (!/^[A-Za-z0-9_-]+$/.test(parts[0] ?? '')) return null;
 	if (parts.length === 1) return { bizDocId: parts[0], userId: '' };
-	if (parts.length !== 3 || !/^d+$/.test(parts[1]) || !/^[0-9a-f]+$/.test(parts[2])) return null;
+	if (parts.length !== 3 || !/^\d+$/.test(parts[1]) || !/^[0-9a-f]+$/.test(parts[2])) return null;
 	const [bizDocId, userId, sig] = parts;
 	return sameSig(sig, signFor('link', bizDocId, userId)) ? { bizDocId, userId } : null;
 }
