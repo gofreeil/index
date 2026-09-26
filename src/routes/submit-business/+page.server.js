@@ -3,6 +3,7 @@ import {
 	createBusiness,
 	updateBusiness,
 	findSubmittedTwins,
+	deleteItem,
 	uploadImage
 } from '$lib/server/strapi.js';
 import { submissionLockKey } from '$lib/businessDedupe.js';
@@ -64,10 +65,42 @@ function rateLimited(ip) {
 // הנעילה שבזיכרון סוגרת את החור שבין הבדיקה לכתיבה: שתי בקשות זהות שנכנסות
 // באותה שנייה (לחיצה כפולה לפני ש-submitting נדלק) עוברות שתיהן את
 // findSubmittedTwins בלי למצוא כלום. השנייה ממתינה לראשונה ומחזירה "כבר נשלח".
+//
+// אבל הנעילה שבזיכרון תקפה רק בתוך מופע שרת אחד, ובפרודקשן (Vercel) כל
+// בקשה יכולה לנחות במופע אחר. העלאת התמונות לוקחת שניות ארוכות, ולכן
+// הגשות חוזרות בזמן הזה עוברות את הבדיקה. כך נוצרו ארבעה כרטיסים של "קסם השמן"
+// בתוך עשר שניות. לכן אחרי היצירה יש גם יישוב (settleCreateRace): כל מי שיצר
+// רשומה בודק שוב, ומי שאינו הוותיק מוחק את עצמו. זה עובד בין מופעים בלי
+// תשתית נעילה נוספת, כי המאגר עצמו הוא נקודת ההכרעה.
 // מפתחות ש-extra_fields מנהל מהטופס — מוחלפים בעדכון; כל מפתח אחר (שהוסיפו
 // אדמין או תהליך בעלות) נשמר.
 /** @type {Map<string, Promise<unknown>>} */
 const inflight = new Map();
+
+/**
+ * אחרי יצירה: האם נוצרה במקביל רשומה ותיקה יותר לאותו עסק? אם כן — הרשומה
+ * שלנו מיותרת ונמחקת, ומחזירים את הוותיקה. ההכרעה דטרמיניסטית (createdAt,
+ * ובשוויון documentId), ולכן גם כשכמה הגשות מתיישבות בו-זמנית בדיוק אחת שורדת.
+ * כשל בבדיקה או במחיקה לא מפיל את ההגשה — במקרה הגרוע נשארת כפילות כמו קודם.
+ * @param {any} values @param {string} ourId
+ * @returns {Promise<any|null>} הרשומה הוותיקה כשהרשומה שלנו נמחקה, אחרת null
+ */
+async function settleCreateRace(values, ourId) {
+	try {
+		const twins = await findSubmittedTwins(values);
+		const winner = [...twins].sort(
+			(a, b) =>
+				String(a.createdAt ?? '').localeCompare(String(b.createdAt ?? '')) ||
+				String(a.documentId).localeCompare(String(b.documentId))
+		)[0];
+		if (!winner || String(winner.documentId) === ourId) return null;
+		await deleteItem('business', ourId);
+		return winner;
+	} catch (e) {
+		console.warn('settleCreateRace failed:', e);
+		return null;
+	}
+}
 const FORM_EXTRA_KEYS = [
 	'owner_email',
 	TERMS_STAMP,
@@ -336,11 +369,25 @@ export const actions = {
 				});
 				return { documentId: created?.data?.documentId };
 			})();
+			/** @type {{documentId?: string}} */
+			let written;
 			try {
-				await write;
+				written = await write;
 			} catch (e) {
 				console.error(reuse ? 'updateBusiness failed:' : 'createBusiness failed:', e);
 				return fail(502, { error: 'שמירת העסק נכשלה. נסו שוב עוד רגע.', values });
+			}
+
+			// הגשה מקבילה ממופע שרת אחר הקדימה אותנו — שלנו נמחקה, ואין התראה כפולה
+			if (!reuse && written.documentId) {
+				const winner = await settleCreateRace(values, written.documentId);
+				if (winner) {
+					return {
+						success: true,
+						alreadyPending: true,
+						submittedAt: String(winner.createdAt ?? '')
+					};
+				}
 			}
 
 			await notifyAdminsNewBusiness({

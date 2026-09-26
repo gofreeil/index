@@ -355,7 +355,9 @@
 			}}
 			oninput={readField}
 			onchange={readField}
-			use:enhance={() => {
+			use:enhance={({ cancel }) => {
+				// שליחה כבר בדרך (Enter בשדה, לחיצה חוזרת) — לא שולחים שוב
+				if (submitting) return cancel();
 				submitting = true;
 				return async ({ result, update }) => {
 					// נשלח בהצלחה — הטיוטה סיימה את תפקידה (לפני הרינדור מחדש)
