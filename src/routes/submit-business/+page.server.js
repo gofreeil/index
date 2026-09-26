@@ -8,6 +8,7 @@ import {
 } from '$lib/server/strapi.js';
 import { submissionLockKey } from '$lib/businessDedupe.js';
 import { getCategoryOptions } from '$lib/server/categoryStore.js';
+import { getMonthlyVisitorStats } from '$lib/server/visitorStats.js';
 import { parseExtraCategories } from '$lib/categories.js';
 import { parseBranches } from '$lib/branches.js';
 import { parseTags } from '$lib/tags.js';
@@ -34,7 +35,16 @@ export async function load() {
 		getTopQueries().catch(() => []),
 		getPopularTags().catch(() => [])
 	]);
-	return { categoryOptions, topQueries, popularTags };
+	// הצפיות באתר — למסך התודה, שמזמין לפרסם מוצר. מוזרם (לא ממתינים לו)
+	// כדי ש-GA איטי לא יעכב את הטופס; כשל = פשוט לא מציגים את המספר.
+	const siteViews = getMonthlyVisitorStats()
+		.then((s) => {
+			const rows = s?.rows ?? [];
+			const total = rows.reduce((n, r) => n + r.pageViews, 0);
+			return total > 0 ? { total, since: rows[0].yearMonth } : null;
+		})
+		.catch(() => null);
+	return { categoryOptions, topQueries, popularTags, siteViews };
 }
 
 // ── Anti-spam: rate-limit per-IP (token bucket בזיכרון) ──────────
