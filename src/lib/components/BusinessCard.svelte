@@ -6,6 +6,7 @@
 	import { parseFit, isDefaultFit } from '$lib/mediaFit.js';
 	import StarRating from './StarRating.svelte';
 	import ShareButton from './ShareButton.svelte';
+	import { adGateClick } from '$lib/adPopupStore.js';
 
 	let { business } = $props();
 
@@ -105,7 +106,7 @@
 		/>
 	</div>
 
-	<a href="/business/{business.id}" class="flex flex-1 flex-col">
+	<a href="/business/{business.id}" onclick={adGateClick} class="flex flex-1 flex-col">
 		<!-- אזור המדיה: התמונה שבעל העסק בחר כראשית — בלי הלוגו מעליה. כשאין
 		     תמונה כזו אבל יש לוגו — הלוגו במקומה; וכשאין גם לוגו — מונוגרם
 		     שקט במקום ריבוע ריק. -->

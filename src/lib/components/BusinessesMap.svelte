@@ -1,6 +1,7 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { triggerAdPopup } from '$lib/adPopupStore.js';
 	import { cityLabels, resolveServiceArea, serviceShapes } from '$lib/serviceArea.js';
 	import { BASEMAP_URL, BASEMAP_OPTIONS, BASEMAP_ATTRIBUTION } from '$lib/basemap.js';
 	import 'leaflet/dist/leaflet.css';
@@ -97,7 +98,9 @@
 		a.href = `/business/${b.documentId}`;
 		a.addEventListener('click', (e) => {
 			e.preventDefault();
-			goto(a.getAttribute('href') || '/');
+			const href = a.getAttribute('href') || '/';
+			// בנייד — פרסומת לכמה שניות לפני דף העסק (כמו בקהילה בשכונה)
+			if (!triggerAdPopup(href)) goto(href);
 		});
 		return a;
 	}

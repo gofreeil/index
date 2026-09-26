@@ -41,24 +41,15 @@
 			image: 'https://community.gofreeil.com/images/advertisement-page/Desktop-advertisement.webp'
 		},
 		{
-			name: 'כרטיס תוכן',
-			icon: '🖼️',
-			location: 'בתוכן עמוד הבית',
-			border: 'border-purple-500/40',
-			bg: 'bg-purple-900/10',
-			features: ['הופעה על המפה', 'הופעה ברשימת התצוגה', 'דף פרטי עם הפרטים'],
-			image: 'https://community.gofreeil.com/images/advertisement-page/neighborhood-map.webp'
-		},
-		{
 			name: 'פרסומת נייד',
 			icon: '📱',
-			location: 'באנר במסך מלא',
+			location: 'אותן פרסומות — במסך מלא בנייד',
 			border: 'border-green-500/40',
 			bg: 'bg-green-900/10',
 			features: [
-				'פרסומת ל4 שניות כאשר הגולש לוחץ על היתרונות באתר',
-				'כולל דף נחיתה',
-				'קישור ישיר לאתר המפרסם'
+				'מוצגת ל-5 שניות כשגולש בנייד לוחץ על עסק באתר',
+				'כלולה במחיר הפרסומת הארוכה',
+				'כולל דף נחיתה וקישור לאתר שלך'
 			],
 			image: 'https://community.gofreeil.com/images/advertisement-page/mobile.webp',
 			imageScale: 1.45,
@@ -388,7 +379,7 @@
 
 	<!-- Packages -->
 	<h2 class="mb-4 text-center text-xl font-black text-white md:text-2xl">אפשרויות הפרסום</h2>
-	<div class="mb-12 grid grid-cols-3 gap-2 md:gap-4">
+	<div class="mb-12 grid grid-cols-2 gap-2 md:gap-4">
 		{#each packages as pkg (pkg.name)}
 			<div
 				class="rounded-xl border {pkg.border} {pkg.bg} flex flex-col p-2.5 md:flex-row-reverse md:items-stretch md:gap-5 md:p-5"
@@ -455,7 +446,7 @@
 				</div>
 			</div>
 			<ul class="flex flex-wrap gap-2 text-xs font-bold text-gray-200">
-				{#each [`🌍 ${AD.reach}`, '🔗 קישור לאתר שלך', '🎨 עיצוב בבילדר'] as tag (tag)}
+				{#each [`🌍 ${AD.reach}`, '📱 גם בנייד', '🔗 קישור לאתר שלך', '🎨 עיצוב בבילדר'] as tag (tag)}
 					<li class="rounded-full border border-white/15 bg-white/5 px-3 py-1">{tag}</li>
 				{/each}
 			</ul>

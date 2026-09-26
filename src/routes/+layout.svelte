@@ -4,6 +4,8 @@
 	import { lang, translations } from '$lib/i18n';
 	import { get } from 'svelte/store';
 	import MobileAdsDrawer from '$lib/components/MobileAdsDrawer.svelte';
+	import MobileAdPopup from '$lib/components/MobileAdPopup.svelte';
+	import { registerPaidAds } from '$lib/adPopupStore.js';
 	import RightAdBanner from '$lib/components/RightAdBanner.svelte';
 	import AdsSidebar from '$lib/components/AdsSidebar.svelte';
 	import Footer from '$lib/components/Footer.svelte';
@@ -13,11 +15,32 @@
 	import { adminNav } from '$lib/adminNav.js';
 	import { page, navigating } from '$app/state';
 	import { onMount } from 'svelte';
+	import { parseAdImageFit } from '$lib/adImageFit';
 
 	let { children, data } = $props();
 
 	// מקור-האמת לזהות המשתמש הוא ה-session בשרת (data.user מ-+layout.server.js).
 	$effect(() => hydrateAuth(data.user));
+
+	// פרסומות משולמות → הפופ-אפ בנייד (הטור הימני הוא דסקטופ בלבד). לחיצה על
+	// עסק בנייד מציגה אחת מהן לכמה שניות — אותו סבב כמו בקהילה בשכונה.
+	$effect(() => {
+		registerPaidAds(
+			(data.approvedAds ?? [])
+				.filter((a) => a.mainImage)
+				.map((a) => ({
+					id: a.id,
+					title: a.title,
+					description: a.subtitle,
+					cta: a.cta || a.title,
+					href: `/ads/${a.id}`,
+					internal: true,
+					image: a.mainImage,
+					imageFit: a.mainImageFit ? parseAdImageFit(a.mainImageFit) : undefined,
+					color: a.gradient
+				}))
+		);
+	});
 
 	// פריטים שממתינים לטיפול אדמין (עסקים + ביקורות + דיווחים + פרסומות +
 	// בעלות). 0 לכל מי שאינו אדמין. מסמן את האווטאר בבועה אדומה עד שמישהו
@@ -168,6 +191,7 @@
 <WelcomeScreen userName={user?.name || ''} />
 
 <MobileAdsDrawer />
+<MobileAdPopup />
 
 <div class="relative min-h-screen bg-gray-950 text-gray-100" dir={t.dir}>
 	<!-- Header -->
