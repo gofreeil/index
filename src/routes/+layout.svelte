@@ -70,7 +70,7 @@
 	// מאותה רשימה של פאנל הניהול) ועוד "כרטיסיות שמחכות לך" לבעל עסק.
 	const alertItems = $derived.by(() => {
 		const items = adminNav(Boolean(data.isAdmin), Boolean(data.superAdmin))
-			.filter((i) => i.alert && (pending[i.alert] ?? 0) > 0)
+			.filter((i) => i.notify && i.alert && (pending[i.alert] ?? 0) > 0)
 			.map((i) => ({
 				href: i.href,
 				icon: i.icon,

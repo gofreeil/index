@@ -27,6 +27,8 @@
 
 	/** מונה ההמתנה של המסך — הבועה האדומה. @param {any} item */
 	const alertOf = (item) => (item.alert ? (pending[item.alert] ?? 0) : 0);
+	/** רמז עדין (התאמות מערכת) — בועה אפורה, רק כשאין אדומה. @param {any} item */
+	const softOf = (item) => (item.soft ? (pending[item.soft] ?? 0) : 0);
 	/** מונה "כמה נתונים יש" — תגית אפורה, לא התראה. @param {any} item */
 	const countOf = (item) => (item.count === 'all' ? (data.businessesTotal ?? 0) : 0);
 
@@ -85,6 +87,7 @@
 		<nav class="mb-6 flex flex-wrap gap-2 border-b border-gray-800 pb-4">
 			{#each nav as item (item.href)}
 				{@const alert = alertOf(item)}
+				{@const soft = softOf(item)}
 				{@const count = countOf(item)}
 				<a
 					href={item.href}
@@ -103,6 +106,12 @@
 							class="absolute -top-1.5 -left-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[11px] leading-none font-black text-white shadow-lg ring-2 ring-gray-950"
 						>
 							<span class="sr-only">ממתינים לטיפול:</span>{alert}
+						</span>
+					{:else if soft > 0}
+						<span
+							class="absolute -top-1.5 -left-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-slate-600 px-1 text-[11px] leading-none font-bold text-slate-200 ring-2 ring-gray-950"
+						>
+							<span class="sr-only">התאמות שהמערכת מצאה:</span>{soft}
 						</span>
 					{:else if count > 0}
 						<span class="rounded-full bg-black/25 px-1.5 py-0.5 text-[11px] font-bold">{count}</span

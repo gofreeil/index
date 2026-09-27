@@ -21,6 +21,8 @@
  * @property {string} title    כותרת מלאה — לאריח בפאנל הפרוס
  * @property {string} desc     משפט הסבר — לאריח בפאנל הפרוס
  * @property {'businesses'|'reviews'|'reports'|'ads'|'claims'} [alert] איזה מונה-המתנה שייך למסך
+ * @property {'matches'} [soft] מונה-רמז בבועה עדינה, כשאין התראה אדומה (לא נספר בהתראת הפרופיל)
+ * @property {boolean} [notify] המונה נספר בהתראה שבפרופיל ובהאדר; בלי זה — רק על האריח
  * @property {'all'} [count]   מונה "כמה נתונים יש" (לא התראה)
  * @property {boolean} [navOnly] מוצג רק בסרגל הניווט — לא כאריח באזור האישי
  */
@@ -43,7 +45,8 @@ export function adminNav(isAdmin, superAdmin = false) {
 			label: 'ממתינים',
 			title: 'ממתינים לאישור',
 			desc: 'עסקים חדשים שנשלחו וממתינים לאישור',
-			alert: 'businesses'
+			alert: 'businesses',
+			notify: true
 		},
 		{
 			href: '/admin/claims',
@@ -52,7 +55,9 @@ export function adminNav(isAdmin, superAdmin = false) {
 			label: 'בעלות',
 			title: 'בעלות על כרטיסיות',
 			desc: 'בקשות "זה העסק שלי" והתאמות שהמערכת מצאה',
-			alert: 'claims'
+			alert: 'claims',
+			soft: 'matches',
+			notify: true
 		},
 		{
 			href: '/admin?tab=cards',
@@ -91,7 +96,8 @@ export function adminNav(isAdmin, superAdmin = false) {
 			label: 'פרסומות',
 			title: 'ניהול פרסומות',
 			desc: 'אישור מודעות, לוח תפוסה ונתוני מפרסמים',
-			alert: 'ads'
+			alert: 'ads',
+			notify: true
 		},
 		{
 			// באזור האישי הנתונים כבר פרוסים בכרטיס הסטטיסטיקה הפתוח — אריח מיותר

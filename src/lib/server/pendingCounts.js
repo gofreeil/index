@@ -31,14 +31,18 @@ const TTL_MS = 60_000;
  * @property {number} reviews    ביקורות שממתינות לאישור
  * @property {number} reports    דיווחים פתוחים
  * @property {number} ads        פרסומות שממתינות לאישור
- * @property {number} claims     בקשות בעלות + התאמות שהמערכת מצאה
- * @property {number} total      סך הכל — המספר שבבועה
+ * @property {number} claims     בקשות בעלות שמשתמשים שלחו
+ * @property {number} matches    התאמות שהמערכת מצאה ואיש עוד לא דרש — רמז בלבד:
+ *   בועה עדינה על אריח הבעלות, לא נספרת ב-total ולא מקפיצה התראה בפרופיל
+ * @property {number} total      סך הכל — המספר שבבועה בפרופיל ובהאדר. נספרים בו
+ *   רק מה שמשתמש אמיתי מחכה לו: עסקים לאישור, בקשות בעלות ובקשות פרסום.
+ *   ביקורות, דיווחים והתאמות מערכת מסומנים רק על האריח של המסך שלהם.
  */
 
 /** @type {{ at: number, data: PendingCounts } | null} */
 let cache = null;
 
-const EMPTY = { businesses: 0, reviews: 0, reports: 0, ads: 0, claims: 0, total: 0 };
+const EMPTY = { businesses: 0, reviews: 0, reports: 0, ads: 0, claims: 0, matches: 0, total: 0 };
 
 /** מאפס את המטמון — נקרא אחרי פעולת מודרציה כדי שהבועה תתעדכן מיד. */
 export function invalidatePendingCounts() {
@@ -53,9 +57,9 @@ export function invalidatePendingCounts() {
 export async function getPendingCounts({ maxAgeMs = TTL_MS } = {}) {
 	if (cache && Date.now() - cache.at < maxAgeMs) return cache.data;
 
-	// בעלות: גם בקשות שמשתמשים שלחו, וגם התאמות שהמערכת מצאה ואיש עוד לא
-	// דרש — שתיהן פריטים שמחכים להכרעת אדמין באותו מסך (/admin/claims).
-	const [businesses, reviews, reports, ads, claimRequests, openMatches] = await Promise.all([
+	// בעלות: בקשות שמשתמשים שלחו (התראה), והתאמות שהמערכת מצאה ואיש עוד לא
+	// דרש (רמז עדין על האריח בלבד) — שתיהן מוכרעות באותו מסך (/admin/claims).
+	const [businesses, reviews, reports, ads, claims, matches] = await Promise.all([
 		countPendingBusinesses().catch(() => 0),
 		countPendingReviews().catch(() => 0),
 		countOpenReports().catch(() => 0),
@@ -64,14 +68,14 @@ export async function getPendingCounts({ maxAgeMs = TTL_MS } = {}) {
 		countOpenMatches().catch(() => 0)
 	]);
 
-	const claims = claimRequests + openMatches;
 	const data = {
 		businesses,
 		reviews,
 		reports,
 		ads,
 		claims,
-		total: businesses + reviews + reports + ads + claims
+		matches,
+		total: businesses + ads + claims
 	};
 	cache = { at: Date.now(), data };
 	return data;

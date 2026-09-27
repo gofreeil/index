@@ -74,6 +74,11 @@
 		const counts = /** @type {Record<string, number>} */ (pendingCounts);
 		return item.alert ? (counts[item.alert] ?? 0) : 0;
 	};
+	/** רמז עדין (התאמות מערכת) — רק כשאין התראה אדומה על האריח. @param {any} item */
+	const tileSoft = (item) => {
+		const counts = /** @type {Record<string, number>} */ (pendingCounts);
+		return item.soft ? (counts[item.soft] ?? 0) : 0;
+	};
 	/** @param {any} item */
 	const tileCount = (item) => (item.count === 'all' ? (data.businessesTotal ?? 0) : 0);
 
@@ -556,11 +561,13 @@
 			</div>
 
 			<!-- אריחי המסכים — אותה רשימה בדיוק שמופיעה כסרגל ניווט ב-/admin.
-			     הבועה האדומה על אריח = פריטים שממתינים לטיפול באותו מסך, והסכום
-			     שלהן הוא בדיוק המספר שעל תמונת הפרופיל ובהאדר. -->
+			     הבועה האדומה על אריח = פריטים שממתינים לטיפול באותו מסך. רק עסקים,
+			     בעלות ופרסומות נספרים במספר שעל תמונת הפרופיל ובהאדר; ביקורות
+			     ודיווחים — על האריח בלבד. בועה אפורה = התאמות מערכת (רמז, לא התראה). -->
 			<div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
 				{#each tiles as tile (tile.href)}
 					{@const alert = tileAlert(tile)}
+					{@const soft = tileSoft(tile)}
 					{@const count = tileCount(tile)}
 					<a
 						href={tile.href}
@@ -571,6 +578,12 @@
 								class="absolute -top-2 -left-2 z-10 flex h-6 min-w-6 items-center justify-center rounded-full bg-red-600 px-1.5 text-[11px] leading-none font-black text-white shadow-lg ring-2 ring-amber-50 dark:ring-amber-950"
 							>
 								<span class="sr-only">ממתינים לטיפול: </span>{alert}
+							</span>
+						{:else if soft > 0}
+							<span
+								class="absolute -top-2 -left-2 z-10 flex h-6 min-w-6 items-center justify-center rounded-full bg-slate-200 px-1.5 text-[11px] leading-none font-bold text-slate-600 ring-2 ring-amber-50 dark:bg-slate-700 dark:text-slate-300 dark:ring-amber-950"
+							>
+								<span class="sr-only">התאמות שהמערכת מצאה: </span>{soft}
 							</span>
 						{/if}
 						<span class="text-xl" aria-hidden="true">{tile.icon}</span>
