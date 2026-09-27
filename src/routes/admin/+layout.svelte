@@ -27,7 +27,7 @@
 
 	/** מונה ההמתנה של המסך — הבועה האדומה. @param {any} item */
 	const alertOf = (item) => (item.alert ? (pending[item.alert] ?? 0) : 0);
-	/** רמז עדין (התאמות מערכת) — בועה אפורה, רק כשאין אדומה. @param {any} item */
+	/** רמז עדין (התאמות מערכת) — בועה תכולה, רק כשאין אדומה. @param {any} item */
 	const softOf = (item) => (item.soft ? (pending[item.soft] ?? 0) : 0);
 	/** מונה "כמה נתונים יש" — תגית אפורה, לא התראה. @param {any} item */
 	const countOf = (item) => (item.count === 'all' ? (data.businessesTotal ?? 0) : 0);
@@ -109,7 +109,7 @@
 						</span>
 					{:else if soft > 0}
 						<span
-							class="absolute -top-1.5 -left-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-slate-600 px-1 text-[11px] leading-none font-bold text-slate-200 ring-2 ring-gray-950"
+							class="absolute -top-1.5 -left-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-sky-300 px-1 text-[11px] leading-none font-bold text-sky-950 ring-2 ring-gray-950"
 						>
 							<span class="sr-only">התאמות שהמערכת מצאה:</span>{soft}
 						</span>

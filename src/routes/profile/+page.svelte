@@ -563,7 +563,7 @@
 			<!-- אריחי המסכים — אותה רשימה בדיוק שמופיעה כסרגל ניווט ב-/admin.
 			     הבועה האדומה על אריח = פריטים שממתינים לטיפול באותו מסך. רק עסקים,
 			     בעלות ופרסומות נספרים במספר שעל תמונת הפרופיל ובהאדר; ביקורות
-			     ודיווחים — על האריח בלבד. בועה אפורה = התאמות מערכת (רמז, לא התראה). -->
+			     ודיווחים — על האריח בלבד. בועה תכולה = התאמות מערכת (רמז, לא התראה). -->
 			<div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
 				{#each tiles as tile (tile.href)}
 					{@const alert = tileAlert(tile)}
@@ -581,7 +581,7 @@
 							</span>
 						{:else if soft > 0}
 							<span
-								class="absolute -top-2 -left-2 z-10 flex h-6 min-w-6 items-center justify-center rounded-full bg-slate-200 px-1.5 text-[11px] leading-none font-bold text-slate-600 ring-2 ring-amber-50 dark:bg-slate-700 dark:text-slate-300 dark:ring-amber-950"
+								class="absolute -top-2 -left-2 z-10 flex h-6 min-w-6 items-center justify-center rounded-full bg-sky-300 px-1.5 text-[11px] leading-none font-bold text-sky-950 ring-2 ring-amber-50 dark:ring-amber-950"
 							>
 								<span class="sr-only">התאמות שהמערכת מצאה: </span>{soft}
 							</span>
