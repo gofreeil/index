@@ -1145,16 +1145,12 @@
 							✅ הקוד התקבל — בקשה לפרסום חינם ל{payDurationLabel} תישלח לאישור המנהל.
 						</p>
 					{:else}
-						<p class="pay-sub">המודעה תעלה לאוויר אחרי אישור מנהל, בהתאם לתשלום. לתיאום התשלום:</p>
-						<a
-							href={'https://wa.me/972508750632?text=' +
-								encodeURIComponent(
-									`שלום, אני מעלה פרסומת באתר מדריך בעלי המקצוע ורוצה לתאם תשלום לתקופה של ${payDurationLabel}`
-								)}
-							target="_blank"
-							rel="noopener noreferrer"
-							class="pay-wa">💬 לתיאום תשלום בוואטסאפ</a
-						>
+						<!-- כפתור הוואטסאפ עבר למסך "נשלח": כשהיה כאן, מפרסמים יצאו לוואטסאפ
+						     ולא חזרו ללחוץ "שליחה" — והבקשה מעולם לא הגיעה למנהל. -->
+						<p class="pay-sub">
+							המודעה תעלה לאוויר אחרי אישור מנהל, בהתאם לתשלום. מיד אחרי השליחה יופיע כאן כפתור לתיאום
+							התשלום בוואטסאפ.
+						</p>
 						<form class="pay-code" onsubmit={tryPayCode}>
 							<input
 								type="text"
@@ -1231,6 +1227,17 @@
 					<p>
 						הצוות שלנו יעבור על הפרסומת ויאשר אותה בהקדם. ברגע שתאושר - היא תופיע באתר ותקבלו עדכון.
 					</p>
+					{#if !payCodeOk}
+						<a
+							href={'https://wa.me/972508750632?text=' +
+								encodeURIComponent(
+									`שלום, שלחתי פרסומת "${title}" באתר מדריך בעלי המקצוע ורוצה לתאם תשלום לתקופה של ${payDurationLabel}`
+								)}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="pay-wa">💬 לתיאום תשלום בוואטסאפ</a
+						>
+					{/if}
 					<div class="done-actions">
 						<a href="/" class="l-btn ghost">לדף הבית</a>
 						<a href="/about/advertise" class="l-btn amber">לדף הפרסום</a>
