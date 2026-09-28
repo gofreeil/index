@@ -54,8 +54,8 @@
 		}
 		return m;
 	});
-	/** שכפל פרסומת — המקומות הפנויים: קודם אלה שבאותו גובה ברביעיות האחרות
-	 *  (שם הפרסומת נשארת קבועה בסבב), אחריהם כל השאר
+	/** שכפל פרסומת — המקומות הפנויים: קודם אלה שבאותה רביעייה
+	 *  (אותה משבצת בטור - שם הפרסומת נשארת קבועה בסבב), אחריהם כל השאר
 	 *  @param {{slot?: number}} s */
 	function dupOptions(s) {
 		const free = SLOT_NUMBERS.filter((n) => !slotOccupants.has(n));
@@ -67,14 +67,15 @@
 	function shortTitle(t) {
 		return t.length > 22 ? t.slice(0, 21) + '…' : t;
 	}
-	// הטור מציג רביעייה עוקבת אחת בכל רגע (1-4, אחריה 5-8... — ראו RightAdBanner).
-	// הסימון כאן משקף את זה: צבע לכל רביעייה (= מה שמוצג יחד), אות לרביעייה
-	// ושם-מיקום בתוך הרביעייה (רקע בהיר בלבד — כהה נשבר בהדגשת המערכת)
+	// רביעייה = המקומות שמתחלפים באותה משבצת בטור: א׳ = 1,5,9,13 (העליונה),
+	// ב׳ = 2,6,10,14, ג׳ = 3,7,11,15, ד׳ = 4,8,12,16 (התחתונה). הטור עצמו מציג
+	// 1-4 יחד, אחריהם 5-8 וכו' (ראו RightAdBanner) - אחד מכל רביעייה בכל רגע.
+	// צבע ואות לכל רביעייה (רקע בהיר בלבד — כהה נשבר בהדגשת המערכת)
 	const GROUP_LETTERS = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח'];
 	const POS_NAMES = ['עליונה', 'שנייה', 'שלישית', 'תחתונה'];
 	/** @param {number} n */
 	function slotGroup(n) {
-		return Math.ceil(n / 4);
+		return ((n - 1) % 4) + 1;
 	}
 	/** @param {number} n */
 	function slotGroupLetter(n) {
@@ -555,7 +556,7 @@
 							<span
 								class="inline-flex h-7 min-w-7 items-center justify-center rounded-lg border border-black/20 px-1.5 text-sm font-black whitespace-nowrap"
 								style="background:{slotOptionBg(slotOf(ad, adIndex + 1))};color:#111"
-								title="רביעייה {slotGroupLetter(slotOf(ad, adIndex + 1))}׳ · הכרטיס ה{slotPosName(slotOf(ad, adIndex + 1))} בה"
+								title="רביעייה {slotGroupLetter(slotOf(ad, adIndex + 1))}׳ · המשבצת ה{slotPosName(slotOf(ad, adIndex + 1))} בטור"
 							>
 								{slotOf(ad, adIndex + 1)} · {slotGroupLetter(slotOf(ad, adIndex + 1))}׳
 							</span>
@@ -964,15 +965,14 @@
 			</div>
 		</div>
 
-		<!-- מקרא הרביעיות: הטור מציג רביעייה עוקבת אחת בכל רגע (כמו ב-RightAdBanner),
-		     וכל רביעייה צבועה בצבע שלה. בתוך הרביעייה המספר הנמוך עליון והגבוה תחתון -->
+		<!-- מקרא הרביעיות: רביעייה = המקומות שמתחלפים באותה משבצת בטור (1,5,9,13 וכו׳),
+		     וכל רביעייה צבועה בצבע שלה. בכל רגע הטור מציג מקום אחד מכל רביעייה -->
 		<div class="mb-3 flex flex-wrap items-center gap-2 text-[10px] font-bold text-gray-300 md:text-xs">
-			<span>הטור מציג רביעייה אחת בכל רגע, לפי הסדר:</span>
-			<span class="rounded-full border border-black/20 px-2 py-0.5" style="background:#dbeafe;color:#111">א׳ · 1-4</span>
-			<span class="rounded-full border border-black/20 px-2 py-0.5" style="background:#dcfce7;color:#111">ב׳ · 5-8</span>
-			<span class="rounded-full border border-black/20 px-2 py-0.5" style="background:#fef9c3;color:#111">ג׳ · 9-12</span>
-			<span class="rounded-full border border-black/20 px-2 py-0.5" style="background:#f3e8ff;color:#111">ד׳ · 13-16</span>
-			<span class="text-gray-500">בתוך כל רביעייה: המספר הנמוך למעלה, הגבוה למטה</span>
+			<span>כל רביעייה מתחלפת באותה משבצת בטור:</span>
+			{#each groupSlotOptions(SLOT_NUMBERS) as grp (grp.letter)}
+				<span class="rounded-full border border-black/20 px-2 py-0.5" style="background:{slotOptionBg(grp.nums[0])};color:#111">{grp.letter}׳ · {grp.nums.join(", ")}</span>
+			{/each}
+			<span class="text-gray-500">א׳ למעלה, ד׳ למטה; בכל רגע מוצג מקום אחד מכל רביעייה</span>
 		</div>
 
 		{#if data.schedules.length === 0}
@@ -1047,7 +1047,7 @@
 													? slotOptionBg(s.slot)
 													: '#fff'};color:#111"
 												title={typeof s.slot === 'number'
-													? `רביעייה ${slotGroupLetter(s.slot)}׳ · הכרטיס ה${slotPosName(s.slot)} בה`
+													? `רביעייה ${slotGroupLetter(s.slot)}׳ · המשבצת ה${slotPosName(s.slot)} בטור`
 													: ''}
 											>
 												{typeof s.slot === 'number' ? `${s.slot} · ${slotGroupLetter(s.slot)}׳` : '-'}
@@ -1060,7 +1060,7 @@
 												<!-- כל רביעייה תחת כותרת משלה — הקשר מספר↔רביעייה קריא במילים,
 												     לא רק בצבע; מקום תפוס שומר את צבע הרביעייה ומסומן באדום מודגש -->
 												{#each groupSlotOptions(slotOptions) as grp (grp.letter)}
-													<optgroup label="— רביעייה {grp.letter}׳ (מוצגות יחד) —">
+													<optgroup label="— רביעייה {grp.letter}׳ · המשבצת ה{slotPosName(grp.nums[0])} בטור —">
 														{#each grp.nums as n (n)}
 															{@const occ = slotOccupants.get(n)}
 															{@const takenByOther = !!occ && occ.id !== s.id}
@@ -1093,7 +1093,7 @@
 										{/if}
 									</form>
 									<!-- שכפל פרסומת (סופר-אדמין): אותה פרסומת גם במקומות נוספים — למשל
-									     2 ו-6, כך שהיא נשארת באותו גובה ולא מתחלפת בסבב הרביעיות.
+									     2 ו-6 (אותה רביעייה), כך שהיא נשארת באותה משבצת ולא מתחלפת בסבב.
 									     תג ⧉ = שכפול קיים; לחיצה עליו מבטלת אותו -->
 									{#if data.superAdmin}
 										{@const dup = dupOptions(s)}
@@ -1106,7 +1106,7 @@
 														type="submit"
 														class="inline-flex h-6 items-center gap-1 rounded-lg border border-black/20 px-1.5 text-[11px] font-black whitespace-nowrap hover:opacity-80"
 														style="background:{slotOptionBg(n)};color:#111"
-														title="שכפול במקום {n} (רביעייה {slotGroupLetter(n)}׳ · הכרטיס ה{slotPosName(n)} בה) — לחיצה מבטלת את השכפול"
+														title="שכפול במקום {n} (רביעייה {slotGroupLetter(n)}׳ · המשבצת ה{slotPosName(n)} בטור) — לחיצה מבטלת את השכפול"
 													>
 														⧉ {n} · {slotGroupLetter(n)}׳ <span class="text-red-700">✕</span>
 													</button>
@@ -1124,14 +1124,14 @@
 														<option value="" selected disabled>⧉ שכפל פרסומת</option>
 														{#if dup.same.length > 1}
 															<option value="same" style="background:#fff;color:#111;font-weight:700">
-																★ קבועה בכל הרביעיות ({dup.same.join(', ')})
+																★ קבועה בכל הרביעייה ({dup.same.join(', ')})
 															</option>
 														{/if}
 														{#if dup.same.length > 0}
-															<optgroup label="★ אותו גובה ברביעייה אחרת">
+															<optgroup label="★ אותה רביעייה (אותה משבצת)">
 																{#each dup.same as n (n)}
 																	<option value={n} style="background:{slotOptionBg(n)};color:#111">
-																		{n} · רביעייה {slotGroupLetter(n)}׳
+																		{n} · {slotPosName(n)}
 																	</option>
 																{/each}
 															</optgroup>
