@@ -31,6 +31,14 @@
 		return typeof ad?.slot === 'number' ? ad.slot : fallback;
 	}
 
+	// טבלת התזמון מסודרת לפי תאריך הפרסום — החדשות בראש
+	const schedulesByDate = $derived(
+		[...data.schedules].sort(
+			(/** @type {any} */ a, /** @type {any} */ b) =>
+				(Date.parse(b.publishedAt) || 0) - (Date.parse(a.publishedAt) || 0)
+		)
+	);
+
 	// מי תופסת כל מקום בטור — גם מושהית/פגה שומרת את המקום שלה
 	const slotOccupants = $derived(
 		new Map(
@@ -965,7 +973,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each data.schedules as s (s.id)}
+						{#each schedulesByDate as s (s.id)}
 							{@const stateColor =
 								s.state === 'paused'
 									? 'bg-blue-500/15 text-blue-300 border-blue-500/40'
