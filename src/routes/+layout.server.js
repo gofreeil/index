@@ -1,5 +1,10 @@
 import { env } from '$env/dynamic/private';
-import { listApprovedLive, computeAdSlots, adImageUrl } from '$lib/server/adsStore.js';
+import {
+	listApprovedLive,
+	computeAdSlots,
+	computeAdExtraSlots,
+	adImageUrl
+} from '$lib/server/adsStore.js';
 import { isPrivileged, isSuperAdmin } from '$lib/server/strapi.js';
 import { getPendingCounts, noPendingCounts } from '$lib/server/pendingCounts.js';
 import { countMatchesForUser } from '$lib/server/ownerMatch.js';
@@ -34,6 +39,7 @@ export async function load({ locals }) {
 	// ולכן הטבעת התמונות כאן שלחה אותן מחדש בכל צפייה (3,074KB מתוך 3,574KB
 	// של הדף, כל אחת פעמיים — ב-HTML ובנתוני ההידרציה). ראו adImageUrl.
 	const liveSlots = computeAdSlots(ads);
+	const liveExtras = computeAdExtraSlots(ads);
 	const approvedAds = ads.map((a) => ({
 		id: a.id,
 		title: a.title,
@@ -49,7 +55,9 @@ export async function load({ locals }) {
 		mainImageFit: a.mainImageFit,
 		adStyle: a.adStyle,
 		// מספר המקום בטור (1..12) — נקבע במסך הניהול
-		slot: liveSlots.get(a.id)
+		slot: liveSlots.get(a.id),
+		// שכפל פרסומת — מקומות נוספים שבהם אותה פרסומת מוצגת
+		extraSlots: liveExtras.get(a.id) ?? []
 	}));
 
 	return {
