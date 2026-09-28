@@ -73,12 +73,11 @@
 	});
 	const errors = $derived(form?.errors ?? {});
 
-	/** "מאז יולי 2026" — החודש הראשון בנתוני הצפיות (YYYYMM). @param {string} ym */
+	/** "8/2026" — החודש הראשון בנתוני הצפיות (YYYYMM). @param {string} ym */
 	function sinceLabel(ym) {
-		const d = new Date(Number(ym.slice(0, 4)), Number(ym.slice(4, 6)) - 1, 1);
-		return Number.isNaN(d.getTime())
-			? ''
-			: d.toLocaleDateString('he-IL', { month: 'long', year: 'numeric' });
+		const m = Number(ym.slice(4, 6));
+		const y = ym.slice(0, 4);
+		return m >= 1 && m <= 12 && /^\d{4}$/.test(y) ? `${m}/${y}` : '';
 	}
 
 	/* ── התחום שהגיע מדף הבית ──
@@ -268,9 +267,8 @@
 				<div class="mb-4 text-6xl">✅</div>
 				<h1 class="mb-3 text-2xl font-black text-green-400">הבקשה התקבלה!</h1>
 				<p class="mx-auto mb-8 max-w-md leading-relaxed text-gray-300">
-					בדקנו שהעסק לא רשום כבר במדריך — ונפתחה עבורו בקשה אחת בלבד. העסק נשלח לצוות האינדקס
-					ויופיע במדריך לאחר בדיקה ואישור. תודה שהצטרפתם לקהילת בעלי המקצוע הכשירים של יוצאים
-					לחירות.
+					העסק נשלח לצוות יוצאים לחירות ויופיע במדריך לאחר בדיקה ואישור. תודה שהצטרפתם לקהילת בעלי
+					המקצוע הכשירים שלנו.
 				</p>
 			{/if}
 
@@ -280,23 +278,20 @@
 			>
 				{#await data.siteViews then views}
 					{#if views}
-						<p class="mb-1 text-3xl font-black text-purple-300">
-							{views.total.toLocaleString('he-IL')}
-						</p>
-						<p class="mb-3 text-sm text-gray-400">
-							צפיות בדפי האתר{sinceLabel(views.since) ? ` מאז ${sinceLabel(views.since)}` : ''}
+						<p class="mb-3 text-sm leading-relaxed text-gray-300">
+							אתרנו פעיל וקהילתנו כבר נכנסה עם
+							<b class="text-lg font-black text-purple-300">{views.total.toLocaleString('he-IL')}</b
+							>
+							צפיות בדפי האתר{sinceLabel(views.since) ? ` מאז ${sinceLabel(views.since)}` : ''} כדי לרשום
+							בעל מקצוע
 						</p>
 					{/if}
 				{/await}
-				<h2 class="mb-2 text-lg font-bold text-white">רוצים שיראו גם את המוצר שלכם?</h2>
-				<p class="mb-4 text-sm leading-relaxed text-gray-300">
-					פרסמו מוצר או שירות באינדקס: בנייד המודעה מוצגת בכל פעם שגולש לוחץ על "פרטים", ובמחשב היא
-					מוצגת לאורך כל תקופת הפרסום.
-				</p>
+				<h2 class="mb-3 text-lg font-bold text-white">מוזמנים גם לפרסם אצלנו פרסומת זמנית</h2>
 				<a
 					href="/advertise/builder"
 					class="inline-block rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-2.5 font-bold text-white transition hover:scale-105"
-					>לפרסום מוצר</a
+					>לחצו כאן כדי להכיר את המחיר האטרקטיבי והמשתלם שלנו!</a
 				>
 			</div>
 			<div class="flex flex-col justify-center gap-3 sm:flex-row">
@@ -808,21 +803,6 @@
 			>
 				{submitting ? 'שומר…' : 'שליחת העסק לאישור'}
 			</button>
-			{#if submitting}
-				<!-- השמירה לוקחת כמה שניות (העלאת תמונות) — אומרים מה קורה, כדי שלא ישלחו שוב -->
-				<div
-					class="flex items-start gap-3 rounded-2xl border border-blue-500/30 bg-blue-900/15 p-4 text-sm text-gray-200"
-					role="status"
-				>
-					<span
-						class="mt-0.5 size-5 shrink-0 animate-spin rounded-full border-2 border-blue-400 border-t-transparent"
-					></span>
-					<p class="leading-relaxed">
-						<b class="text-blue-300">בודקים שהעסק לא רשום כבר במדריך</b>, מעלים את התמונות ושומרים —
-						זה לוקח כמה שניות. אין צורך ללחוץ שוב: המערכת לא תיצור כרטיס כפול.
-					</p>
-				</div>
-			{/if}
 			<p class="text-center text-sm text-gray-500">
 				* שדות חובה. הפרטים נשלחים לצוות האינדקס לאישור.
 			</p>
