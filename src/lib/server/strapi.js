@@ -87,6 +87,24 @@ export async function getStrapiMe(jwt) {
 	}
 }
 
+/**
+ * כמו getStrapiMe, אבל מבחין בין "הטוקן פסול" (401/403 — באמת מנותק) לבין
+ * "Strapi לא ענה" (timeout, רשת, 5xx) — שבו אסור לנתק משתמש מחובר.
+ * @param {string} jwt
+ * @returns {Promise<{ me: any } | { invalid: true } | { transient: true }>}
+ */
+export async function verifyStrapiJwt(jwt) {
+	if (!jwt) return { invalid: true };
+	try {
+		const res = await api('/api/users/me', { token: jwt, signal: AbortSignal.timeout(6000) });
+		if (res.status === 401 || res.status === 403) return { invalid: true };
+		if (!res.ok) return { transient: true };
+		return { me: await res.json() };
+	} catch {
+		return { transient: true };
+	}
+}
+
 /** מנפיק JWT אמיתי למשתמש קיים לפי אימייל (שרת-לשרת). @param {string} email @returns {Promise<string|null>} */
 async function issueSsoJwt(email) {
 	if (!TOKEN) return null;

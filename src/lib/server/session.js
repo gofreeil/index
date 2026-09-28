@@ -1,4 +1,5 @@
 import { dev } from '$app/environment';
+import { forgetUser } from './rememberedUser.js';
 
 // עוגיית ה-session של אתר האינדקס (host-only). httpOnly → לא נגישה ל-JS בדפדפן,
 // מונעת דליפת JWT דרך XSS (בניגוד ל-localStorage הישן). קוראים גם את העוגייה
@@ -22,6 +23,7 @@ export function setSession(cookies, jwt) {
 /** @param {import('@sveltejs/kit').Cookies} cookies */
 export function clearSession(cookies) {
 	cookies.delete(SESSION_COOKIE, { path: '/' });
+	forgetUser(cookies);
 	// חובה למחוק גם את עוגיית ה-SSO המשותפת — hooks מאמת דרכה כ-fallback,
 	// ובלעדי זה המשתמש "מתחבר מחדש" מיד אחרי התנתקות. היא נכתבת על הדומיין
 	// ההורה (.gofreeil.com), ומחיקה תופסת רק עם אותו domain; מוחקים גם host-only ליתר ביטחון.

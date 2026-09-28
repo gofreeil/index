@@ -1,4 +1,5 @@
-import { getStrapiMe, displayName } from '$lib/server/strapi';
+import { verifyStrapiJwt, displayName } from '$lib/server/strapi';
+import { rememberUser, recallUser } from '$lib/server/rememberedUser.js';
 import { getSiteProfile } from '$lib/server/profileStore';
 import { SESSION_COOKIE, SHARED_SSO_COOKIE } from '$lib/server/session';
 
@@ -21,8 +22,12 @@ export async function handle({ event, resolve }) {
 	event.locals.user = null;
 	const jwt = event.cookies.get(SESSION_COOKIE) || event.cookies.get(SHARED_SSO_COOKIE);
 	if (jwt) {
-		const me = await getStrapiMe(jwt);
-		if (me?.email) {
+		const r = await verifyStrapiJwt(jwt);
+		const me = 'me' in r ? r.me : null;
+		if ('transient' in r) {
+			// Strapi לא ענה — לא מנתקים משתמש מחובר; הזהות האחרונה שאומתה
+			event.locals.user = recallUser(event.cookies, jwt);
+		} else if (me?.email) {
 			// שם התצוגה: הדריסה המקומית ("רק באתר הזה") קודמת לשם המשותף של
 			// הרשת. נשענת על המטמון של configStore — לא סבב Strapi נוסף.
 			const local = await getSiteProfile(me.id).catch(() => null);
@@ -32,6 +37,7 @@ export async function handle({ event, resolve }) {
 				email: me.email,
 				app_role: me.app_role || null
 			};
+			rememberUser(event.cookies, jwt, event.locals.user);
 		}
 	}
 	return resolve(event);
