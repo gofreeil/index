@@ -927,6 +927,7 @@
 	// דגל "נערך" לאזהרת beforeunload - רק אחרי עריכה אמיתית בסשן הזה
 	let formDirty = $state(false);
 	let autosaveRanOnce = false;
+	let draftSaveFailed = $state(false);
 
 	$effect(() => {
 		if (!browser) return;
@@ -967,7 +968,10 @@
 		};
 		try {
 			localStorage.setItem(LS_KEY, JSON.stringify(snapshot));
-		} catch {}
+			draftSaveFailed = false;
+		} catch {
+			draftSaveFailed = true;
+		}
 		if (autosaveRanOnce) {
 			formDirty = true;
 		} else {
@@ -1191,6 +1195,15 @@
 				מעצבים את הפרסומת שלכם צעד-צעד - בדיוק כפי שתיראה באתר.
 				<br />כל שינוי נשמר אוטומטית.
 			</p>
+
+			<!-- שמירת הטיוטה נכשלה (בדרך כלל אחסון מלא) — חובה לומר, אחרת המפרסם
+			     סומך על "נשמר במכשיר" ומגלה אחרי מעבר דף שהכול נעלם -->
+			{#if draftSaveFailed}
+				<div class="draft-fail" role="alert">
+					⚠️ <strong>הטיוטה לא נשמרת במכשיר</strong> — האחסון בדפדפן מלא או חסום (למשל גלישה בסתר).
+					אל תסגרו ואל תרעננו את הדף עד שתשלחו, או פנו מקום / נסו דפדפן אחר.
+				</div>
+			{/if}
 
 			<!-- עריכה ממוקדת: מציין איזו פרסומת נערכת / כשל בטעינת התוכן שלה -->
 			{#if editLoadState === 'failed'}
@@ -2167,6 +2180,20 @@
 {/if}
 
 <style>
+	.draft-fail {
+		margin: 0.75rem auto;
+		max-width: 640px;
+		border: 1px solid rgba(239, 68, 68, 0.45);
+		background: rgba(239, 68, 68, 0.12);
+		border-radius: 14px;
+		padding: 10px 14px;
+		color: #fca5a5;
+		font-size: 0.85rem;
+		font-weight: 700;
+		text-align: right;
+		line-height: 1.5;
+	}
+
 	/* ============== מבנה כללי ============== */
 	.ad-builder {
 		max-width: 64rem;
