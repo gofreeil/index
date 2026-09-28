@@ -21,7 +21,7 @@ export async function POST({ request, cookies }) {
 		const payload = ticket.getPayload();
 
 		if (!payload || !payload.email) {
-			return json({ success: false, error: 'טוקן Google לא תקין' }, { status: 400 });
+			return json({ success: false, error: 'Google לא אישר את ההתחברות — נסו שוב' }, { status: 400 });
 		}
 
 		const email = String(payload.email).trim().toLowerCase();
@@ -29,12 +29,18 @@ export async function POST({ request, cookies }) {
 
 		const result = await strapiGoogleUpsert(email, name);
 		if (!result) {
-			return json({ success: false, error: 'ההתחברות נכשלה' }, { status: 500 });
+			return json(
+				{ success: false, error: 'שרת המשתמשים לא הגיב כרגע — נסו שוב בעוד דקה' },
+				{ status: 500 }
+			);
 		}
 		setSession(cookies, result.jwt);
 		return json({ success: true, user: result.user });
 	} catch (error) {
 		console.error('Google Auth API Error:', error);
-		return json({ success: false, error: 'ההתחברות נכשלה' }, { status: 500 });
+		return json(
+			{ success: false, error: 'ההתחברות נכשלה בגלל תקלה אצלנו — נסו שוב בעוד דקה' },
+			{ status: 500 }
+		);
 	}
 }

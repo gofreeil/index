@@ -20,6 +20,23 @@ export async function POST({ request, cookies }) {
 			user: { id: String(user.id), name: displayName(user) || user.name || '', email: user.email }
 		});
 	} catch (error) {
-		return json({ success: false, error: 'אימייל או סיסמה שגויים' }, { status: 401 });
+		// 400/401 מ-Strapi = פרטים שגויים; כל השאר = השרת לא ענה. המשתמש חייב
+		// לדעת מה מהשניים — "סיסמה שגויה" על תקלת שרת שולח אותו לאפס סיסמה לחינם.
+		const msg = error instanceof Error ? error.message : '';
+		if (/→ 40[01] /.test(msg)) {
+			return json(
+				{
+					success: false,
+					error:
+						'האימייל או הסיסמה לא נכונים. אם נרשמתם עם Google או דרך "יוצאים לחירות" — התחברו באותה דרך (הכפתורים למעלה).'
+				},
+				{ status: 401 }
+			);
+		}
+		console.error('login failed:', msg);
+		return json(
+			{ success: false, error: 'שרת המשתמשים לא הגיב כרגע — נסו שוב בעוד דקה. הפרטים שלכם לא נפגעו.' },
+			{ status: 503 }
+		);
 	}
 }

@@ -71,7 +71,7 @@
 				error = result.error;
 			}
 		} catch (e) {
-			error = 'Google Sign-In failed';
+			error = 'לא הצלחנו להתחבר עם Google — בדקו את החיבור לאינטרנט ונסו שוב.';
 		} finally {
 			loading = false;
 		}
@@ -132,7 +132,7 @@
 				error = result.error;
 			}
 		} catch (e) {
-			error = 'Login failed. Please try again.';
+			error = 'לא הצלחנו להגיע לשרת — בדקו את החיבור לאינטרנט ונסו שוב בעוד רגע.';
 		} finally {
 			loading = false;
 		}
