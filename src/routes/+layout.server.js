@@ -57,7 +57,9 @@ export async function load({ locals }) {
 		// מספר המקום בטור (1..12) — נקבע במסך הניהול
 		slot: liveSlots.get(a.id),
 		// שכפל פרסומת — מקומות נוספים שבהם אותה פרסומת מוצגת
-		extraSlots: liveExtras.get(a.id) ?? []
+		extraSlots: liveExtras.get(a.id) ?? [],
+		// כרטיס מוצר מחנות החירות (מסונכרן מקהילה בשכונה) - מוצג בלי רצועת המחיר
+		shop: Boolean(a.landing?._shopProduct)
 	}));
 
 	return {

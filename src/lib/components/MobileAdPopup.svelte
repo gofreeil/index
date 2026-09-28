@@ -75,15 +75,32 @@
 				aria-label="סגור">{countdown}</button
 			>
 
-			<div class="relative h-44 w-full overflow-hidden">
+			<!-- בלי CTA (כרטיס מוצר מהחנות) - התמונה היא הקישור -->
+			{#snippet adImage(/** @type {any} */ ad)}
 				<img
-					src={popup.ad.image}
-					alt={popup.ad.title}
+					src={ad.image}
+					alt={ad.title}
 					class="h-full w-full object-cover"
-					use:adImgFit={popup.ad.imageFit ?? { x: 50, y: 50, z: popup.ad.imageScale ?? 1, r: 0 }}
+					use:adImgFit={ad.imageFit ?? { x: 50, y: 50, z: ad.imageScale ?? 1, r: 0 }}
 				/>
 				<div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
-			</div>
+			{/snippet}
+			{#if popup.ad.cta}
+				<div class="relative h-44 w-full overflow-hidden">
+					{@render adImage(popup.ad)}
+				</div>
+			{:else}
+				<a
+					href={popup.ad.href}
+					target={popup.ad.internal ? undefined : '_blank'}
+					rel={popup.ad.internal ? undefined : 'noopener noreferrer'}
+					onclick={handleAdClick}
+					aria-label={popup.ad.title}
+					class="relative block h-44 w-full overflow-hidden"
+				>
+					{@render adImage(popup.ad)}
+				</a>
+			{/if}
 
 			<div class="bg-[#0f172a] p-4">
 				<h3
@@ -93,8 +110,9 @@
 					{popup.ad.title}
 				</h3>
 				{#if popup.ad.description}
-					<p class="mb-3 text-sm leading-snug text-gray-300">{popup.ad.description}</p>
+					<p class="text-sm leading-snug text-gray-300" class:mb-3={!!popup.ad.cta}>{popup.ad.description}</p>
 				{/if}
+				{#if popup.ad.cta}
 				<a
 					href={popup.ad.href}
 					target={popup.ad.internal ? undefined : '_blank'}
@@ -104,6 +122,7 @@
 				>
 					← {popup.ad.cta}
 				</a>
+				{/if}
 			</div>
 		</div>
 	</div>
