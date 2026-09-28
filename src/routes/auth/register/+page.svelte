@@ -22,7 +22,16 @@
 	 * שב-layout ייטען מחדש ויציג את מסך "ברוכים המצטרפים" עם רשת האתרים.
 	 */
 	function goWelcome() {
-		window.location.href = '/?welcome=new';
+		const u = new URL(returnTo(), window.location.origin);
+		u.searchParams.set('welcome', 'new');
+		window.location.href = `${u.pathname}${u.search}${u.hash}`;
+	}
+
+	// ?returnTo= שהגיע מדף ההתחברות (למשל מהבילדר של הפרסומות) — אחרת
+	// נרשם חדש היה נזרק לדף הבית ומאבד את המקום שבו עצר. נתיב יחסי בלבד.
+	function returnTo() {
+		const raw = new URLSearchParams(window.location.search).get('returnTo') || '';
+		return raw.startsWith('/') && !raw.startsWith('//') ? raw : '/';
 	}
 
 	/** @param {any} response */
@@ -67,7 +76,7 @@
 	// SSO "יוצאים לחירות": מפנים לקהילה, היא קובעת את העוגייה המשותפת gofreeil-auth
 	// על .gofreeil.com ומחזירה ל-callback שמזהה את המשתמש דרך ה-Strapi המשותף.
 	function loginWithCommunity() {
-		const callback = `${window.location.origin}/auth/community-callback?returnTo=/`;
+		const callback = `${window.location.origin}/auth/community-callback?returnTo=${encodeURIComponent(returnTo())}`;
 		window.location.href = `https://community.gofreeil.com/sso?callback=${encodeURIComponent(callback)}`;
 	}
 

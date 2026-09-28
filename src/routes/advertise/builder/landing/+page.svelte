@@ -636,7 +636,8 @@
 				'לא הצלחנו לשמור את הטיוטה בדפדפן הזה — פנו מקום (היסטוריה/אחסון) או נסו דפדפן אחר';
 			return;
 		}
-		window.location.href = '/auth/login';
+		// returnTo מפורש: בלעדיו כניסה דרך "יוצאים לחירות" החזירה לדף הבית
+		window.location.href = '/auth/login?returnTo=' + encodeURIComponent('/advertise/builder/landing');
 	}
 </script>
 

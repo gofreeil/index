@@ -25,13 +25,26 @@
 		return raw.startsWith('/') && !raw.startsWith('//') ? raw : '';
 	}
 
+	// יעד החזרה: returnTo מפורש, ואם אין — העמוד שממנו הגיעו (באותו אתר).
+	// גם כניסת ה-SSO של "יוצאים לחירות" חייבת לקבל אותו: בלעדיו היא החזירה
+	// לדף הבית, ומפרסמת שנשלחה מהבילדר להתחבר חזרה לדף הבית שוב ושוב.
+	function returnTarget() {
+		const explicit = requestedReturnTo();
+		if (explicit) return explicit;
+		try {
+			const prev = new URL(document.referrer);
+			if (prev.host === window.location.host && !prev.pathname.startsWith('/auth/')) {
+				return prev.pathname + prev.search + prev.hash;
+			}
+		} catch {}
+		return '/';
+	}
+
 	// מוסיף welcome=back ליעד — מפעיל את מסך "ברוכים השבים" אחרי ההתחברות.
 	// טעינה מלאה (window.location) כדי שה-WelcomeScreen שב-layout ייטען מחדש
 	// ויקרא את הפרמטר, וגם ירענן את מצב ההתחברות מהשרת.
 	function backWithWelcome() {
-		let dest = requestedReturnTo() || '/';
-		const prev = document.referrer;
-		if (dest === '/' && prev && prev.includes(window.location.host)) dest = prev;
+		const dest = returnTarget();
 		try {
 			const u = new URL(dest, window.location.origin);
 			u.searchParams.set('welcome', 'back');
@@ -88,7 +101,7 @@
 	function loginWithCommunity() {
 		loading = true;
 		ssoLoading = true;
-		const returnTo = encodeURIComponent(requestedReturnTo() || '/');
+		const returnTo = encodeURIComponent(returnTarget());
 		const callback = `${window.location.origin}/auth/community-callback?returnTo=${returnTo}`;
 		window.location.href = `https://community.gofreeil.com/sso?callback=${encodeURIComponent(callback)}`;
 	}
@@ -98,7 +111,7 @@
 	function continueAsCommunityUser() {
 		loading = true;
 		ssoLoading = true;
-		window.location.href = `/auth/community-callback?returnTo=${encodeURIComponent(requestedReturnTo() || '/')}`;
+		window.location.href = `/auth/community-callback?returnTo=${encodeURIComponent(returnTarget())}`;
 	}
 
 	async function handleLogin() {
@@ -269,6 +282,11 @@
 			<div class="text-center">
 				<a
 					href="/auth/register"
+					onclick={(e) => {
+						// מעבירים את יעד החזרה גם להרשמה — שנרשם חדש יחזור לאן שהיה
+						e.preventDefault();
+						window.location.href = `/auth/register?returnTo=${encodeURIComponent(returnTarget())}`;
+					}}
 					class="text-sm font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400"
 				>
 					{t.dontHaveAccount}
