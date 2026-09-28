@@ -256,6 +256,23 @@ function byDisplayOrder(a, b) {
 	return new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime();
 }
 
+/**
+ * מסנן גרסאות שהוחלפו: מי שסומנה _supersededBy, וגם מי שיש לה ברשימה יורשת
+ * מאושרת (עדכון שלה שכבר אושר) — גם אם סימון ההחלפה לא נכתב, למשל כשה-PUT
+ * של ההורדה (supersedeAd) נכשל אחרי שהאישור כבר עבר. בלי זה אותה פרסומת
+ * הופיעה פעמיים: הגרסה החדשה "באוויר" והישנה "פג התוקף", באותו מקום בטור.
+ * @param {SubmittedAd[]} list
+ * @returns {SubmittedAd[]}
+ */
+function withoutReplaced(list) {
+	const replaced = new Set(
+		list
+			.filter((a) => a.status === 'approved' && a.replacesAdId && !a.supersededBy)
+			.map((a) => a.replacesAdId)
+	);
+	return list.filter((a) => !a.supersededBy && !replaced.has(a.id));
+}
+
 // ============================================================
 // מפרסם חוזר: זיהוי גרסה מעודכנת של פרסומת קיימת
 // ------------------------------------------------------------
@@ -402,8 +419,9 @@ export async function listApproved() {
 	} catch {
 		/* שגיאה זמנית — סרגל הצד יציג רק את מודעות הרשת הסטטיות */
 	}
-	// עותק לפני מיון — המערך עצמו יושב ב-cache ומשותף לכל הקוראים
-	return [...ads].sort(byDisplayOrder);
+	// עותק לפני מיון — המערך עצמו יושב ב-cache ומשותף לכל הקוראים.
+	// גרסה שהוחלפה בעדכון מאושר לא מוצגת לצד היורשת שלה.
+	return withoutReplaced([...ads]).sort(byDisplayOrder);
 }
 
 /** האם הפרסומת אמורה להיות מוצגת לגולש עכשיו @param {SubmittedAd} ad @param {number} now */
@@ -526,7 +544,8 @@ export async function listAdsByOwner({ id, email }) {
 		const res = await api(`${ENDPOINT}?${qs}`);
 		if (!res.ok) return [];
 		const data = await res.json().catch(() => null);
-		return (Array.isArray(data?.data) ? data.data : []).map(fromStrapi);
+		// גרסה שהוחלפה בעדכון מאושר יורדת מהרשימה — הפרסומת מופיעה פעם אחת
+		return withoutReplaced((Array.isArray(data?.data) ? data.data : []).map(fromStrapi));
 	} catch {
 		return [];
 	}
