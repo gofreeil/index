@@ -1059,7 +1059,7 @@ export async function setAdSlot(id, requested) {
  * שכפל פרסומת: מוסיף לפרסומת מאושרת מקום נוסף בטור (1..16), כך שהיא מוצגת
  * בכמה רביעיות — למשל 2 ו-6, והיא נשארת באותו מקום בלי להתחלף. רק מקום
  * פנוי: מקום של פרסומת אחרת (גם מושהית/פגה) או שכפול שלה — נדחה.
- * 'same' = כל המקומות הפנויים באותו גובה בשאר הרביעיות (2 → 6, 10, 14),
+ * 'same' = כל המקומות הפנויים באותה רביעייה — אותה משבצת בטור (2 → 6, 10, 14),
  * כך שהפרסומת קבועה בטור לאורך כל הסבב.
  * @param {string} id @param {number|'same'} requested
  * @returns {Promise<{ok:true,title:string,slots:number[]}|{ok:false,error:string}|null>}
@@ -1089,7 +1089,7 @@ export async function addAdExtraSlot(id, requested) {
 		if (targets.length === 0) {
 			return {
 				ok: false,
-				error: `אין מקום פנוי באותו גובה בשאר הרביעיות — "${ad.title}" כבר שם או שהמקומות תפוסים`
+				error: `אין מקום פנוי נוסף ברביעייה של המקום הזה — "${ad.title}" כבר שם או שהמקומות תפוסים`
 			};
 		}
 	} else {
