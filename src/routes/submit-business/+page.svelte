@@ -282,7 +282,7 @@
 							אתרנו פעיל וקהילתנו כבר נכנסה עם
 							<b class="text-lg font-black text-purple-300">{views.total.toLocaleString('he-IL')}</b
 							>
-							צפיות בדפי האתר{sinceLabel(views.since) ? ` מאז ${sinceLabel(views.since)}` : ''} כדי לרשום
+							צפיות בדפי האתר{sinceLabel(views.since) ? ` מאז ${sinceLabel(views.since)}` : ''} כדי למצוא
 							בעל מקצוע
 						</p>
 					{/if}
