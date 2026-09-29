@@ -28,6 +28,8 @@
 	/** @type {any} */
 	let L;
 	let show = $state(false);
+	// הזכוכית שמעל המפה במסך מגע ירדה בהקשה — עד הנגיעה הבאה מחוץ למפה
+	let active = $state(false);
 
 	const area = $derived(resolveServiceArea(business));
 	const shapes = $derived(serviceShapes(area));
@@ -67,6 +69,16 @@
 		);
 		if (holder) io.observe(holder);
 		return () => io.disconnect();
+	});
+
+	$effect(() => {
+		if (!active) return;
+		/** @param {PointerEvent} e */
+		const relock = (e) => {
+			if (!holder?.contains(/** @type {Node} */ (e.target))) active = false;
+		};
+		document.addEventListener('pointerdown', relock);
+		return () => document.removeEventListener('pointerdown', relock);
 	});
 
 	$effect(() => {
@@ -160,7 +172,10 @@
 			}
 
 			const bounds = layer.getBounds();
-			if (bounds?.isValid()) map.fitBounds(bounds, { padding: [24, 24], maxZoom: 12 });
+			// תקרה 10: עיגול של יישוב אחד (או פין לבד) מסוגר בזום 12 מילא את
+			// המלבן כולו, ולא נשאר סביבו אף יישוב שכן להתמצאות. ב-10 רואים את
+			// העיגול יחד עם הערים הסמוכות (נתיבות — מאשקלון ועד באר שבע).
+			if (bounds?.isValid()) map.fitBounds(bounds, { padding: [24, 24], maxZoom: 10 });
 		})();
 		return () => {
 			dead = true;
@@ -180,6 +195,21 @@
 			     שורת הייחוס יורדת לפינה השמאלית כדי שהשתיים לא ייפגשו.
 			     z גבוה מפקדי Leaflet. מפה שיש עליה רק פין אינה מציגה אזור, ולכן
 			     גם לא הסתייגות עליו; עסק ארצי שממוסגר על מקומו אומר זאת כאן. -->
+			<!-- ה"זכוכית", כמו בתצוגה המקדימה של BusinessesMap: Leaflet קובע
+			     touch-action:none על המכל, ואצבע שנחתה על המפה בדרך מטה בדף גררה
+			     את המפה במקום לגלול. על הכפתור הזה הגלילה היא גלילת הדף; הקשה
+			     מורידה אותו, ונגיעה מחוץ למפה מחזירה. z-500 — מעל שכבות המפה (400)
+			     ומתחת לבקרים (1000), כך ש-+/− עובדים גם כשהזכוכית במקומה. רק
+			     במסך מגע: עם עכבר אין גרירה-לגלילה, והגלגלת כבויה ממילא. -->
+			{#if !active}
+				<button
+					type="button"
+					onclick={() => (active = true)}
+					class="absolute inset-0 z-[500] hidden rounded-xl pointer-coarse:block"
+					aria-hidden="true"
+					tabindex="-1"
+				></button>
+			{/if}
 			{#if note}
 				<div
 					class="pointer-events-none absolute right-2 bottom-2 z-[1000] rounded bg-blue-600/90 px-2 py-0.5 text-[10px] leading-4 font-medium text-white"

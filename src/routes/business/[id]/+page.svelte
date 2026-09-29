@@ -267,8 +267,8 @@
 
 	   כרטיסייה שלא נמסר עליה שום מקום אינה מקבלת מפה בכלל. מפה בלי ציור
 	   היא תצוגת כל הארץ, והיא נקראת כ"מגיע לכל מקום" — טענה שאיש לא כתב.
-	   אין מפה ואין לאן לנווט = גם החצי הזה של השורה נעלם, ו"על העסק"
-	   נפרש על כל הרוחב במקום להשאיר חצי מסך ריק. */
+	   אין מפה = גם החצי הזה של השורה נעלם, ו"על העסק" נפרש על כל הרוחב
+	   במקום להשאיר חצי מסך ריק. hasNavTarget מחליט על "נווט" שבטור התוכן. */
 	const hasAreaMap = $derived(hasServiceMap(business));
 	const hasNavTarget = $derived(
 		!!(
@@ -738,24 +738,24 @@
 						{/if}
 					</dl>
 				{/if}
+
+				<!-- "נווט" צמוד לכתובת, בטור התוכן ולא מתחת למפה: שם הוא הוסיף
+				     שורה שלמה מתחת למפה הגבוהה, בזמן שמתחת לפרטי הקשר עמד מקום ריק.
+				     המפה מראה אזור שירות מקורב; הכפתור מוסר יעד מדויק לאפליקציה
+				     שמותקנת אצל הגולש. -->
+				{#if hasNavTarget}
+					<div class="mt-4">
+						<NavigateButton {business} />
+					</div>
+				{/if}
 			</div>
 
 			<!-- מפה אחת בכרטיסייה, והיא של אזורי השירות. מפת גוגל שישבה כאן
 			     הראתה את נקודת הכתובת בלבד — תפקיד שהמפה של דף הבית ממלאת —
 			     ואל תוך iframe של גוגל אי אפשר לצייר את האזורים מבחוץ. -->
-			{#if hasAreaMap || hasNavTarget}
-				<div class="w-full flex-shrink-0 sm:w-1/2">
-					{#if hasAreaMap}
-						<div class="overflow-hidden rounded-xl border border-white/10">
-							<ServiceAreaMap {business} height="h-72 sm:h-[26rem]" />
-						</div>
-					{/if}
-					<!-- "נווט" מתחת למפה ולא בתוכה: המפה מראה אזור שירות מקורב, והכפתור
-					     מוסר יעד מדויק לאפליקציה שמותקנת אצל הגולש. אין כתובת ואין
-					     נקודה = הרכיב לא מרנדר דבר, ולא נשארת שורה ריקה. -->
-					<div class={hasAreaMap ? 'mt-2.5' : ''}>
-						<NavigateButton {business} />
-					</div>
+			{#if hasAreaMap}
+				<div class="w-full flex-shrink-0 overflow-hidden rounded-xl border border-white/10 sm:w-1/2">
+					<ServiceAreaMap {business} height="h-72 sm:h-[26rem]" />
 				</div>
 			{/if}
 		</div>

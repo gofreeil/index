@@ -1,6 +1,6 @@
 <script>
 	// ─────────────────────────────────────────────────────────────
-	// NavigateButton — "נווט" מתחת למפה של הכרטיסייה.
+	// NavigateButton — "נווט" מתחת לפרטי הקשר של הכרטיסייה.
 	//
 	// המפה עונה על "איפה זה"; הכפתור הזה עונה על "קח אותי לשם" — ומוסר את
 	// היעד לאפליקציה שכבר מותקנת אצל הגולש, במקום לנסות לנווט בתוך האתר.
@@ -178,8 +178,8 @@
 <svelte:window onresize={close} onscroll={close} />
 
 {#if places.length}
-	<!-- הכפתורים ממורכזים מתחת למפה, ונשברים לשורה נוספת כשיש הרבה מקומות -->
-	<div class="flex flex-wrap items-center justify-center gap-2">
+	<!-- הכפתורים בתחילת השורה, מתחת לפרטי הקשר, ונשברים לשורה נוספת כשיש הרבה מקומות -->
+	<div class="flex flex-wrap items-center justify-start gap-2">
 		{#each places as p, i (p.key)}
 			<button
 				type="button"
