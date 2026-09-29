@@ -62,7 +62,7 @@ export const translations = {
 		cancel: 'ביטול',
 		aboutBusiness: 'על העסק',
 		contactInfo: 'פרטי קשר ומיקום',
-		callNow: 'התקשרו עכשיו',
+		callNow: 'להתקשר עכשיו',
 		revealPhone: 'הצג מספר טלפון',
 		businessSite: 'לאתר העסק',
 		exclusiveBenefit: 'הטבה בלעדית',
