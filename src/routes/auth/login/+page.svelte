@@ -17,6 +17,11 @@
 	let ssoLoading = $state(false);
 	let error = $state('');
 
+	// האימייל שהוקלד נשלח לדף השחזור - לא צריך להקליד אותו פעמיים.
+	const forgotHref = $derived(
+		email.includes('@') ? `/forgot-password?email=${encodeURIComponent(email.trim())}` : '/forgot-password'
+	);
+
 	// ?returnTo=/נתיב — יעד מפורש אחרי ההתחברות (למשל דף עסק עם תיבת בקשת
 	// הבעלות פתוחה, מתוך SMS שהאדמין שלח). רק נתיב יחסי באתר — לא כתובת
 	// חיצונית, כדי שהקישור לא ישמש להפניה החוצה.
@@ -226,11 +231,21 @@
 						bind:value={password}
 						class="relative block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-blue-500 focus:ring-blue-500 focus:outline-none sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
 					/>
+					<div class="mt-1.5 text-left">
+						<a href={forgotHref} class="text-sm font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400">שכחתי סיסמה</a>
+					</div>
 				</div>
 			</div>
 
 			{#if error}
-				<div class="text-center text-sm text-red-500">{error}</div>
+				<div class="text-center text-sm text-red-500">
+					{error}
+					{#if error.includes('לא נכונים')}
+						<a href={forgotHref} class="mt-1 block font-bold text-blue-600 underline dark:text-blue-400">
+							שכחתם סיסמה? שלחו לי קישור לבחירת סיסמה חדשה
+						</a>
+					{/if}
+				</div>
 			{/if}
 
 			<div>
