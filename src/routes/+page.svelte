@@ -892,24 +892,36 @@
 				<div class="text-center">
 					<!-- המספר חי: businesses.length נגזר מהרשימה שמגיעה מהשרת, ולכן
 					     הוא מתעדכן מאליו עם כל בעל מקצוע שמתווסף לאתר. -->
-					<h2
-						id="rest-title"
-						class="mb-5 bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 bg-clip-text text-xl font-extrabold text-transparent sm:text-4xl"
-					>
-						לכלל {businesses.length} בעלי המקצוע באתר
+					<h2 id="rest-title" class="text-xl font-extrabold sm:text-4xl">
+						<!-- הכותרת עצמה היא הכפתור שפותח וסוגר את הרשימה. הגרדיינט על
+						     הטקסט בלבד והחץ מחוץ לו: אחרת currentColor שקוף והחץ נעלם. -->
+						<button
+							type="button"
+							onclick={() => (showRest = !showRest)}
+							aria-expanded={showRest}
+							aria-controls="rest-list"
+							class="inline-flex cursor-pointer items-center gap-2 rounded-lg transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-400 sm:gap-3"
+						>
+							<span
+								class="bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 bg-clip-text text-transparent"
+							>
+								לכלל {businesses.length} בעלי המקצוע באתר
+							</span>
+							<svg
+								class="h-5 w-5 shrink-0 text-blue-400 transition-transform duration-200 sm:h-8 sm:w-8"
+								class:rotate-180={showRest}
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="3"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								aria-hidden="true"
+							>
+								<path d="M6 9l6 6 6-6" />
+							</svg>
+						</button>
 					</h2>
-
-					<button
-						type="button"
-						onclick={() => (showRest = !showRest)}
-						aria-expanded={showRest}
-						aria-controls="rest-list"
-						class="inline-flex items-center gap-2 rounded-full border border-blue-500/40 bg-gradient-to-r from-blue-900/50 to-indigo-900/50 px-6 py-3 text-sm font-black text-blue-200 shadow-lg transition-all hover:border-blue-400/70 hover:from-blue-900/70 hover:to-indigo-900/70 active:scale-95"
-					>
-						<span aria-hidden="true">👷</span>
-						{showRest ? 'סגירת הרשימה' : 'הצגת שאר בעלי המקצוע'}
-						<span class="text-xs" aria-hidden="true">{showRest ? '▲' : '▼'}</span>
-					</button>
 				</div>
 
 				<div id="rest-list" class="mt-8" class:hidden={!showRest}>
