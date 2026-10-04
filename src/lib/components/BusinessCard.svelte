@@ -8,6 +8,7 @@
 	import ShareButton from './ShareButton.svelte';
 	import { adGateClick } from '$lib/adPopupStore.js';
 	import { cardBlurb } from '$lib/blurb.js';
+	import { businessCities } from '$lib/cities.js';
 
 	let { business } = $props();
 
@@ -67,7 +68,15 @@
 
 	// כותרת משנה: הסלוגן, ואם לא מולא — קטע קצר מהתיאור המורחב, כדי שהגולש
 	// יבין במה העסק עוסק גם כששם העסק הוא רק שם בעליו.
-	const subtitle = $derived(business.slogan || cardBlurb(business.description));
+	// במקום: העיר בלבד — שאר הכתובת בדף העסק. קודם שדה העיר, אחריו עיר שזוהתה
+	// בכתובת; רק אם אין שום עיר מזוהה נשארים עם הטקסט המקורי.
+	const place = $derived(
+		[...businessCities({ city: business.city, address: business.address })][0] ||
+			business.address ||
+			business.salesArea
+	);
+
+	const subtitle =$derived(business.slogan || cardBlurb(business.description));
 </script>
 
 <!-- הרוחב נקבע ע"י רשת הכרטיסים בדף (cards-grid), לא כאן -->
@@ -201,7 +210,7 @@
 						d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.683 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z"
 					/>
 				</svg>
-				<span class="line-clamp-1">{business.address || business.salesArea}</span>
+				<span class="line-clamp-1">{place}</span>
 			</div>
 		</div>
 	</a>
