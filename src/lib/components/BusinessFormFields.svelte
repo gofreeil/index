@@ -220,12 +220,13 @@
 		<!-- אין שדה "כותרת" נפרד: הכותרת שבראש הכרטיסייה היא שם העסק עצמו.
 		     שני שדות לאותו משפט רק גרמו לבעל העסק לכתוב אותו פעמיים. -->
 		<div>
-			<label class={LABEL} for="f-slogan">סלוגן</label>
+			<label class={LABEL} for="f-slogan">במשפט אחד: מה אתם עושים? (מוצג בכרטיסייה)</label>
 			<input
 				id="f-slogan"
 				name="slogan"
 				value={slogan}
-				placeholder="שורה קצרה שמלווה את הכותרת"
+				maxlength="70"
+				placeholder="לדוגמה: אספקה של מוצרים כלי בית ומוצרי חשמל"
 				class={INPUT}
 			/>
 		</div>

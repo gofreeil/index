@@ -7,6 +7,7 @@
 	import StarRating from './StarRating.svelte';
 	import ShareButton from './ShareButton.svelte';
 	import { adGateClick } from '$lib/adPopupStore.js';
+	import { cardBlurb } from '$lib/blurb.js';
 
 	let { business } = $props();
 
@@ -63,6 +64,10 @@
 	// ולא חמישה כוכבים כבויים בכל כרטיס. הממוצע מעוגל לספרה אחת.
 	const ratingCount = $derived(Number(business.ratingCount || 0));
 	const rating = $derived(Math.round(Number(business.rating || 0) * 10) / 10);
+
+	// כותרת משנה: הסלוגן, ואם לא מולא — קטע קצר מהתיאור המורחב, כדי שהגולש
+	// יבין במה העסק עוסק גם כששם העסק הוא רק שם בעליו.
+	const subtitle = $derived(business.slogan || cardBlurb(business.description));
 </script>
 
 <!-- הרוחב נקבע ע"י רשת הכרטיסים בדף (cards-grid), לא כאן -->
@@ -166,9 +171,9 @@
 				</div>
 			{/if}
 
-			{#if business.slogan}
+			{#if subtitle}
 				<p class="mt-1 line-clamp-2 text-xs leading-tight text-gray-300">
-					{business.slogan}
+					{subtitle}
 				</p>
 			{/if}
 
