@@ -29,7 +29,7 @@ const jwtTag = (jwt) => createHash('sha256').update(jwt).digest('base64url').sli
 const sign = (body) => createHmac('sha256', secret()).update(body).digest('base64url');
 
 /**
- * @typedef {{ id: string, name: string, email: string, app_role: string | null }} LocalUser
+ * @typedef {{ id: string, name: string, email: string, app_role: string | null, avatar?: string }} LocalUser
  */
 
 /**

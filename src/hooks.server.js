@@ -2,6 +2,7 @@ import { verifyStrapiJwt, displayName } from '$lib/server/strapi';
 import { rememberUser, recallUser } from '$lib/server/rememberedUser.js';
 import { getSiteProfile } from '$lib/server/profileStore';
 import { SESSION_COOKIE, SHARED_SSO_COOKIE } from '$lib/server/session';
+import { avatarSrc } from '$lib/server/userAvatar.js';
 
 // נתיב תמונות הפרסומות — ציבורי לחלוטין ולא תלוי-משתמש. חייב לעקוף את
 // שרשרת הזיהוי: כל נגיעה בסשן עלולה לצרף Set-Cookie לתשובה, ו-Vercel
@@ -35,7 +36,9 @@ export async function handle({ event, resolve }) {
 				id: String(me.id),
 				name: local?.name || displayName(me),
 				email: me.email,
-				app_role: me.app_role || null
+				app_role: me.app_role || null,
+				// תמונת הפרופיל לאווטאר בהדר ('' = אין → האות הראשונה)
+				avatar: avatarSrc(me.avatar_url)
 			};
 			rememberUser(event.cookies, jwt, event.locals.user);
 		}

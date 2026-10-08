@@ -148,6 +148,8 @@
 	/** @type {any} */
 	let user = $state(null);
 	authUser.subscribe((v) => (user = v));
+	// תמונת הפרופיל לא נטענה (קישור שפג / חסום) → חוזרים לאות הראשונה
+	let avatarBroken = $state(false);
 
 	// קודי הדגלים ב-flagcdn (ISO 3166-1 alpha-2) — אותו מקור דגלים כמו בשאר
 	// אתרי הרשת, במקום אימוג'י שלא נתמך ב-Windows.
@@ -158,6 +160,27 @@
 		ru: 'ru'
 	};
 </script>
+
+<!-- אווטאר המשתמש בהדר: תמונת הפרופיל אם יש, אחרת האות הראשונה של השם -->
+{#snippet userAvatar()}
+	{#if user?.avatar && !avatarBroken}
+		<img
+			src={user.avatar}
+			alt=""
+			width="24"
+			height="24"
+			decoding="async"
+			referrerpolicy="no-referrer"
+			onerror={() => (avatarBroken = true)}
+			class="h-6 w-6 flex-shrink-0 rounded-full object-cover"
+		/>
+	{:else}
+		<span
+			class="login-grad flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold"
+			aria-hidden="true">{(user?.name || user?.email || '?').charAt(0).toUpperCase()}</span
+		>
+	{/if}
+{/snippet}
 
 <svelte:document
 	onkeydown={(e) => {
@@ -388,10 +411,7 @@
 								title={alertTitle}
 								aria-label={`${t.myArea} – ${user.name} – ${alertTitle}`}
 							>
-								<span
-									class="login-grad flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-xs"
-									aria-hidden="true">👤</span
-								>
+								{@render userAvatar()}
 								<span class="hidden max-w-[120px] truncate sm:inline"
 									>{user.name || user.email}</span
 								>
@@ -457,10 +477,7 @@
 							title={t.myArea}
 							aria-label={`${t.myArea} – ${user.name}`}
 						>
-							<span
-								class="login-grad flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-xs"
-								aria-hidden="true">👤</span
-							>
+							{@render userAvatar()}
 							<span class="hidden max-w-[120px] truncate sm:inline">{user.name || user.email}</span>
 						</a>
 					{:else}
