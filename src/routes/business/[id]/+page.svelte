@@ -379,9 +379,11 @@
 
 	<!-- ── כותרת ───────────────────────────────────────────── -->
 	<header class="mt-4 flex items-start gap-4">
-		<!-- מסגרת הלוגו — ריבוע מעוגל או עיגול, לבחירת בעל העסק (mediaFit.js) -->
+		<!-- מסגרת הלוגו — ריבוע מעוגל או עיגול, לבחירת בעל העסק (mediaFit.js).
+		     relative חובה: adImgFit שם על התמונה position:absolute, ובלעדיו
+		     הלוגו נמדד מול הדף כולו ונזרק לקצה המסך מחוץ למסגרת. -->
 		<div
-			class="h-14 w-14 flex-shrink-0 overflow-hidden bg-white/5 sm:h-16 sm:w-16 {logoShapeClass(
+			class="relative h-14 w-14 flex-shrink-0 overflow-hidden bg-white/5 sm:h-16 sm:w-16 {logoShapeClass(
 				business.logo_shape
 			)}"
 			aria-hidden={!business.logo}
