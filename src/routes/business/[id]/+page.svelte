@@ -38,6 +38,9 @@
 	const claimViaLink = page.url.searchParams.get('claim') === '1';
 	const claimReturnTo = $derived(`/auth/login?returnTo=${encodeURIComponent(page.url.pathname + '?claim=1#claim')}`);
 	let claimOpen = $state(claimViaLink);
+	// אורח שלחץ "התחברות/הרשמה" בטופס הביקורת חוזר עם ?intent=review — הטופס נפתח מעצמו
+	// (ומסך הפתיחה אחרי ההרשמה מציג "כעת תועבר לבקשתך — כתיבת ביקורת", ראו $lib/authIntent)
+	const reviewReturnTo = $derived(encodeURIComponent(page.url.pathname + '?intent=review#reviews'));
 	let claimSending = $state(false);
 	const claimSent = $derived(form?.claimed === true || claim.status === 'pending');
 
@@ -145,6 +148,12 @@
 
 	onMount(() => {
 		fetchReviews();
+		if (page.url.searchParams.get('intent') === 'review') {
+			showReviewForm = true;
+			requestAnimationFrame(() =>
+				document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+			);
+		}
 		// מונה צפייה אטומי (לא כתיבה לגיליון write-only)
 		fetch('/api/stats', {
 			method: 'POST',
@@ -888,12 +897,12 @@
 					<p class="text-base text-gray-400">{t.loginToReview}</p>
 					<div class="mt-3 flex gap-2">
 						<a
-							href="/auth/login"
+							href="/auth/login?returnTo={reviewReturnTo}"
 							class="rounded-lg bg-blue-600 px-4 py-2 text-base font-semibold text-white transition hover:bg-blue-500"
 							>{t.login}</a
 						>
 						<a
-							href="/auth/register"
+							href="/auth/register?returnTo={reviewReturnTo}"
 							class="rounded-lg border border-white/15 px-4 py-2 text-base font-medium text-gray-300 transition hover:border-white/30 hover:text-white"
 							>{t.register}</a
 						>

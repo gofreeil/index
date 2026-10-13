@@ -1,6 +1,7 @@
 <script>
 	import { lang, translations } from '$lib/i18n';
 	import { onMount } from 'svelte';
+	import { page } from '$app/state';
 	import * as publicVars from '$env/static/public';
 	const PUBLIC_GOOGLE_CLIENT_ID = publicVars['PUBLIC_GOOGLE_CLIENT_ID'] || '';
 
@@ -33,6 +34,13 @@
 		const raw = new URLSearchParams(window.location.search).get('returnTo') || '';
 		return raw.startsWith('/') && !raw.startsWith('//') ? raw : '/';
 	}
+	// "כבר רשומים?" — ההתחברות שומרת את אותו יעד חזרה (נבנה גם ב-SSR, לכן מ-page ולא מ-window)
+	const loginHref = $derived.by(() => {
+		const raw = page.url.searchParams.get('returnTo') || '';
+		return raw.startsWith('/') && !raw.startsWith('//')
+			? `/auth/login?returnTo=${encodeURIComponent(raw)}`
+			: '/auth/login';
+	});
 
 	/** @param {any} response */
 	async function handleGoogleResponse(response) {
@@ -361,7 +369,7 @@
 				<p class="mt-6 text-center text-sm text-gray-500">
 					{t.alreadyRegistered}
 					<a
-						href="/auth/login"
+						href={loginHref}
 						class="font-medium text-purple-400 transition-colors hover:text-purple-300"
 					>
 						{t.loginHere}
