@@ -14,6 +14,19 @@
 	let open = $state(false);
 	let collapsed = $state(false);
 
+	// תמונות הפרסומות נכנסות ל-DOM רק אחרי שהגולש נגע בלשונית. loading="lazy"
+	// לבדו לא הספיק: המגירה הסגורה יושבת ב-left שלילי *צמוד* לקצה המסך, וזה
+	// בתוך מרווח הטעינה-מראש של כרום — כך שהוא הוריד את כל התמונות בכל טעינת
+	// דף בנייד. הכרטיס עצמו והקישור נשארים ב-SSR, ורק ה-img נדחה, כדי לא
+	// לפגוע בסריקה של הקישורים.
+	let adImagesReady = $state(false);
+
+	// רשת ביטחון: הדגל נדלק גם אם המגירה נפתחה ממסלול שאינו הלשונית (דיפ-לינק,
+	// כפתור עתידי במקום אחר). בלי זה מסלול כזה היה פותח מגירה עם ריבועים ריקים.
+	$effect(() => {
+		if (open) adImagesReady = true;
+	});
+
 	function closeAll() {
 		open = false;
 		collapsed = false;
@@ -67,6 +80,7 @@
 
 	/** @param {TouchEvent} e */
 	function onTabTouchStart(e) {
+		adImagesReady = true;
 		tabTouchStartX = e.touches[0].clientX;
 		tabTouchStartY = e.touches[0].clientY;
 		tabDragStartClientY = e.touches[0].clientY;
@@ -174,6 +188,7 @@
 	}
 
 	function onTabClick() {
+		adImagesReady = true;
 		if (tabSwipeHandled) {
 			tabSwipeHandled = false;
 			return;
@@ -228,9 +243,9 @@
 		<div
 			class="drawer"
 			role="dialog"
-			aria-modal="true"
+			aria-modal={open}
 			aria-label="האזור האישי וההטבות מהקהילה הארצית"
-			aria-hidden={!open}
+			inert={!open || undefined}
 			ontouchstart={onDrawerTouchStart}
 			ontouchend={onDrawerTouchEnd}
 		>
@@ -289,7 +304,19 @@
 						onclick={closeAll}
 					>
 						<div class="benefit-img-wrap">
-							<img src={ad.image} alt={ad.title} class="benefit-img" decoding="async" />
+							<!-- ראה adImagesReady. הריבוע 88px שמסביב קבוע, ולכן אין קפיצת
+							     תצוגה כשהתמונה נכנסת; loading="lazy" מדלג בנוסף על הכרטיסים
+							     שנמצאים מתחת לגלילה ברשימה. -->
+							{#if adImagesReady}
+								<img
+									src={ad.thumb}
+									alt={ad.title}
+									class="benefit-img"
+									decoding="async"
+									loading="lazy"
+									fetchpriority="low"
+								/>
+							{/if}
 						</div>
 						<div class="benefit-body">
 							<p class="benefit-title">{ad.title}</p>

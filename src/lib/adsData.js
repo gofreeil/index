@@ -21,6 +21,7 @@ export const ads = [
 		cta: 'יש לך סיכסוך? לחץ לפתרון',
 		href: 'https://chachmim.gofreeil.com/',
 		image: '/images/bati-hapius.webp',
+		thumb: '/images/bati-hapius-thumb.webp',
 		color: 'from-orange-600 to-red-600'
 	},
 	{
@@ -31,6 +32,7 @@ export const ads = [
 		hover: 'הקהילה שלך, בשכונה שלך',
 		href: 'https://community.gofreeil.com/',
 		image: '/images/community-neighborhood.webp',
+		thumb: '/images/community-neighborhood-thumb.webp',
 		color: 'from-blue-500 to-purple-600',
 		imageHeight: '110px'
 	},
@@ -42,6 +44,7 @@ export const ads = [
 		hover: 'מצא כל גמח בקלות!',
 		href: 'https://gemach.gofreeil.com/',
 		image: '/images/gemach-harzi.webp',
+		thumb: '/images/gemach-harzi-thumb.webp',
 		color: 'from-pink-600 via-fuchsia-600 to-purple-700'
 	},
 	{
@@ -51,6 +54,7 @@ export const ads = [
 		cta: 'הכר והשתתף במהפכת משילות העם על מוסדותיו',
 		href: 'https://neighborhoods.gofreeil.com/',
 		image: '/images/news/vaadei-shchunot.webp',
+		thumb: '/images/news/vaadei-shchunot-thumb.webp',
 		color: 'from-blue-600 to-cyan-600',
 		imageHeight: '110px'
 	},
@@ -61,6 +65,7 @@ export const ads = [
 		cta: 'מבקרים את הרשויות, ממצים את זכות התושב',
 		href: 'https://criticism.gofreeil.com/',
 		image: '/images/mevaker-rashuyot.webp',
+		thumb: '/images/mevaker-rashuyot-thumb.webp',
 		color: 'from-blue-700 to-indigo-700',
 		imageHeight: '120px',
 		imageScale: 1.2
@@ -72,6 +77,7 @@ export const ads = [
 		cta: 'העם מדרג את הרשויות ועובדי הציבור',
 		href: 'https://rating.gofreeil.com/',
 		image: '/images/public-rating.webp',
+		thumb: '/images/public-rating-thumb.webp',
 		color: 'from-indigo-600 to-blue-600',
 		imageHeight: '110px',
 		imageScale: 0.9
@@ -84,6 +90,7 @@ export const ads = [
 		hover: 'הבע דעתך על הסוגיות האקטואליות',
 		href: 'https://referendum.gofreeil.com/',
 		image: '/images/referendum.webp',
+		thumb: '/images/referendum-thumb.webp',
 		color: 'from-purple-600 to-indigo-700'
 	},
 	{
@@ -93,6 +100,7 @@ export const ads = [
 		cta: 'הצטרף לקבוצת הרכישה שלנו והוזל מיד את ההוצאות!',
 		href: 'https://groups.gofreeil.com/',
 		image: '/images/whatsapp_cta.webp',
+		thumb: '/images/whatsapp_cta-thumb.webp',
 		color: 'from-green-800 to-emerald-900'
 	},
 	{
@@ -103,6 +111,7 @@ export const ads = [
 		hover: 'החנות שלנו!',
 		href: 'https://shop.gofreeil.com/',
 		image: '/images/shop.webp',
+		thumb: '/images/shop-thumb.webp',
 		color: 'from-emerald-600 to-teal-700',
 		imageHeight: '110px'
 	}
