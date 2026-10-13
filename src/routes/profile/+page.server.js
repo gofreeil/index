@@ -257,7 +257,7 @@ export const actions = {
 			};
 		} catch (err) {
 			console.error('profile approve failed:', err);
-			return fail(502, { error: 'האישור נכשל - נסו שוב' });
+			return fail(502, { error: 'האישור נכשל: ' + (err instanceof Error ? err.message.slice(0, 160) : '') });
 		}
 	},
 	reject: async ({ request, locals }) => {
@@ -271,7 +271,7 @@ export const actions = {
 			return { message: `נדחתה: ${r.title}` };
 		} catch (err) {
 			console.error('profile reject failed:', err);
-			return fail(502, { error: 'הדחייה נכשלה - נסו שוב' });
+			return fail(502, { error: 'הדחייה נכשלה: ' + (err instanceof Error ? err.message.slice(0, 160) : '') });
 		}
 	},
 	// השהיה — יורדת מהאתר והימים שנותרו נשמרים לה
@@ -284,7 +284,7 @@ export const actions = {
 			return { message: `${r.title} הושהתה - ${r.daysLeft} ימים שמורים לה` };
 		} catch (err) {
 			console.error('profile pause failed:', err);
-			return fail(502, { error: 'ההשהיה נכשלה - נסו שוב' });
+			return fail(502, { error: 'ההשהיה נכשלה: ' + (err instanceof Error ? err.message.slice(0, 160) : '') });
 		}
 	},
 	// המשך אחרי השהיה — הימים השמורים נספרים מהיום
@@ -297,7 +297,7 @@ export const actions = {
 			return { message: `${r.title} חזרה לאוויר - ${r.daysLeft} ימים` };
 		} catch (err) {
 			console.error('profile resume failed:', err);
-			return fail(502, { error: 'ההפעלה מחדש נכשלה - נסו שוב' });
+			return fail(502, { error: 'ההפעלה מחדש נכשלה: ' + (err instanceof Error ? err.message.slice(0, 160) : '') });
 		}
 	},
 	// הורדה מהאתר בלי מחיקה — חוזרת לממתינות
@@ -311,7 +311,7 @@ export const actions = {
 			return { message: 'הפרסומת הורדה מהאתר וחזרה לממתינות' };
 		} catch (err) {
 			console.error('profile unapprove failed:', err);
-			return fail(502, { error: 'ההורדה נכשלה - נסו שוב' });
+			return fail(502, { error: 'ההורדה נכשלה: ' + (err instanceof Error ? err.message.slice(0, 160) : '') });
 		}
 	},
 
