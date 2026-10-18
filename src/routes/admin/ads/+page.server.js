@@ -11,6 +11,9 @@ import {
 	rejectAd,
 	backToPending,
 	removeAd,
+	trashAd,
+	restoreAd,
+	listTrash,
 	updateAdFields,
 	getAdsStats,
 	listSchedules,
@@ -72,12 +75,15 @@ export async function load({ locals }) {
 	// מספר המקום של כל מאושרת בטור (1..12) — לכותרת הכרטיס בטאב "פורסמו"
 	const approvedRaw = approvedRes.status === 'fulfilled' ? approvedRes.value : [];
 	const slotMap = computeAdSlots(approvedRaw);
+	// האשפה: נמחקו (לשחזור) ופג תוקפן (לחידוש) — מאותו קאש של הרשימות
+	const trash = await listTrash().catch(() => []);
 
 	return {
 		user,
 		superAdmin: isSuperAdmin(user),
 		pending: pendingRes.status === 'fulfilled' ? pendingRes.value : [],
 		approved: approvedRaw.map((a) => ({ ...a, slot: slotMap.get(a.id) })),
+		trash,
 		stats: statsRes.status === 'fulfilled' ? statsRes.value : emptyStats,
 		schedules: schedulesRes.status === 'fulfilled' ? schedulesRes.value : [],
 		advertisers: advertisersRes.status === 'fulfilled' ? advertisersRes.value : [],
@@ -369,7 +375,36 @@ export const actions = {
 		return { success: true, message: `הוחזרה לממתינות: ${r.result.title}` };
 	},
 
+	// "מחק" = לאשפה (אפשר לשחזר משם). שמור לסופר-אדמין
 	remove: async ({ request, locals }) => {
+		requireAdmin(locals);
+		if (!isSuperAdmin(locals.user)) {
+			return fail(403, { error: 'מחיקה שמורה לסופר-אדמין' });
+		}
+		const formData = await request.formData();
+		const id = String(formData.get('id') || '');
+		if (!id) return fail(400, { error: 'חסר מזהה' });
+		const r = await runAdAction(() => trashAd(id));
+		if ('failResp' in r) return r.failResp;
+		return { success: true, message: `"${r.result.title}" הועברה לאשפה — אפשר לשחזר אותה משם` };
+	},
+
+	// שחזור מהאשפה — למצב שלפני המחיקה (המקום בטור והתוקף נשמרו)
+	restore: async ({ request, locals }) => {
+		requireAdmin(locals);
+		if (!isSuperAdmin(locals.user)) {
+			return fail(403, { error: 'שחזור שמור לסופר-אדמין' });
+		}
+		const formData = await request.formData();
+		const id = String(formData.get('id') || '');
+		if (!id) return fail(400, { error: 'חסר מזהה' });
+		const r = await runAdAction(() => restoreAd(id));
+		if ('failResp' in r) return r.failResp;
+		return { success: true, message: `"${r.result.title}" שוחזרה ✅` };
+	},
+
+	// ריקון מהאשפה — מחיקה לצמיתות, בלי דרך חזרה
+	purge: async ({ request, locals }) => {
 		requireAdmin(locals);
 		if (!isSuperAdmin(locals.user)) {
 			return fail(403, { error: 'מחיקה לצמיתות שמורה לסופר-אדמין' });
