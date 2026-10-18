@@ -8,12 +8,31 @@
 	import VisitorStatsCard from '$lib/components/VisitorStatsCard.svelte';
 	import TenureBadge from '$lib/components/TenureBadge.svelte';
 	import { earliestStamp } from '$lib/tenure.js';
+	import AdCardPreview from '$lib/components/AdCardPreview.svelte';
 
 	/** @type {{ data: any, form: any }} */
 	let { data, form } = $props();
 	const user = $derived(data.user);
 	const businesses = $derived(data.myBusinesses ?? []);
 	const ads = $derived(data.myAds ?? []);
+
+	// תצוגה מקדימה של הפרסומת כפי שהיא מוצגת בטור (כמו במסך הניהול):
+	// ריחוף על הכותרת (דסקטופ) = הכרטיס צף לידה; הקשה = מודאל עם הכרטיס
+	/** @type {{ ad: any, x: number, y: number } | null} */
+	let hoverAd = $state(null);
+	/** @type {any} */
+	let modalAd = $state(null);
+	const PREVIEW_W = 144,
+		PREVIEW_H = 490; // מידות הכרטיס האמיתי בטור (144px + יחס 144/450)
+	/** @param {MouseEvent} e @param {any} a */
+	function showAdPreview(e, a) {
+		// מסך מגע - אין ריחוף אמיתי; ההקשה פותחת את המודאל במקום
+		if (window.matchMedia('(hover: none)').matches) return;
+		const r = /** @type {HTMLElement} */ (e.currentTarget).getBoundingClientRect();
+		const y = Math.max(8, Math.min(window.innerHeight - PREVIEW_H - 8, r.top + r.height / 2 - PREVIEW_H / 2));
+		const x = Math.max(8, r.left - PREVIEW_W - 16);
+		hoverAd = { ad: a, x, y };
+	}
 	const mod = $derived(data.moderation);
 
 	// ── הפרופיל שלי ─────────────────────────────────────────────
@@ -891,12 +910,58 @@
 		{#if ads.length === 0}
 			<p class="py-6 text-center text-sm text-gray-500 dark:text-gray-400">{t.myAdsEmpty}</p>
 		{:else}
+			<!-- תצוגה מקדימה צפה בריחוף על הכותרת (דסקטופ בלבד) -->
+			{#if hoverAd}
+				<div
+					class="pointer-events-none fixed z-40 hidden drop-shadow-2xl md:block"
+					style="left:{hoverAd.x}px; top:{hoverAd.y}px"
+				>
+					<AdCardPreview ad={hoverAd.ad} />
+				</div>
+			{/if}
+			<!-- מודאל תצוגה מקדימה בהקשה על הכותרת (נייד ודסקטופ) -->
+			{#if modalAd}
+				<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+				<div
+					class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/70 p-4"
+					role="presentation"
+					onclick={() => (modalAd = null)}
+				>
+					<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+					<div
+						class="my-auto flex flex-col items-center gap-3"
+						role="dialog"
+						aria-modal="true"
+						aria-label="תצוגה מקדימה של הפרסומת"
+						tabindex="-1"
+						onclick={(e) => e.stopPropagation()}
+					>
+						<AdCardPreview ad={modalAd} />
+						<div class="flex items-center gap-2">
+							{#if modalAd.live}
+								<a href="/ads/{modalAd.id}" target="_blank" class={AD_BTN_GHOST}>👁 {t.viewAd}</a>
+							{/if}
+							<button type="button" class={AD_BTN_GHOST} onclick={() => (modalAd = null)}>✕</button>
+						</div>
+					</div>
+				</div>
+			{/if}
 			<ul class="space-y-2">
 				{#each ads as a (a.id)}
 					<li
 						class="flex flex-wrap items-center gap-2 rounded-xl border border-gray-100 p-3 dark:border-gray-700"
 					>
-						<span class="font-bold text-gray-900 dark:text-gray-100">{a.title || '—'}</span>
+						<button
+							type="button"
+							class="cursor-pointer text-right font-bold text-gray-900 underline decoration-dotted underline-offset-4 hover:text-amber-600 dark:text-gray-100 dark:hover:text-amber-300"
+							onmouseenter={(e) => showAdPreview(e, { ...a.card, id: a.id })}
+							onmouseleave={() => (hoverAd = null)}
+							onclick={() => {
+								hoverAd = null;
+								modalAd = { ...a.card, id: a.id, live: a.live };
+							}}
+							title="תצוגה מקדימה של הפרסומת כפי שהיא מוצגת באתר">{a.title || '—'}</button
+						>
 						<span
 							class="rounded-full border px-2 py-0.5 text-[11px] font-bold {statusCls(a.status)}"
 						>

@@ -14,6 +14,7 @@ import {
 	approveAd,
 	backToPending,
 	listAdsByOwner,
+	adImageUrl,
 	pauseAd,
 	rejectAd,
 	resumeAd
@@ -143,7 +144,19 @@ export async function load({ locals, parent }) {
 			// לקיצורי הניהול: המסלול שהמפרסם ביקש בשליחה, והפרסומת שהגרסה הזו מעדכנת
 			requestedDurationDays: a.requestedDurationDays,
 			replacesTitle: a.replacesTitle ?? '',
-			stats: adStats[a.id]?.totals ?? { impressions: 0, clicks: 0, landing: 0, leads: 0 }
+			stats: adStats[a.id]?.totals ?? { impressions: 0, clicks: 0, landing: 0, leads: 0 },
+			// הכרטיס לתצוגה המקדימה (ריחוף/הקשה על הכותרת), כפי שהוא מוצג בטור.
+			// התמונות ככתובת ולא base64, ורק למאושרות - הנתיב מגיש מאושרות בלבד
+			card: {
+				title: a.title,
+				subtitle: a.subtitle,
+				cta: a.cta,
+				gradient: a.gradient,
+				adStyle: a.adStyle,
+				mainImageFit: a.mainImageFit,
+				logo: a.status === 'approved' ? adImageUrl(a, 'logo') : '',
+				mainImage: a.status === 'approved' ? adImageUrl(a, 'main') : ''
+			}
 		})),
 		moderation,
 		// לפאנל הניהול הפרוס: מונה הכרטיסיות לאריח, וסטטיסטיקת הכניסות
