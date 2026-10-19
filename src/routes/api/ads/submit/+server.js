@@ -1,6 +1,7 @@
 import { json, error } from '@sveltejs/kit';
 import { submitAd } from '$lib/server/adsStore.js';
 import { isOwnerCode, notifyOwnerCodeUse, notifyAdminsNewAd } from '$lib/server/adsCode.js';
+import { isSuperAdmin } from '$lib/server/strapi.js';
 
 // קליטת פרסומת חדשה מהבילדר המקומי (/advertise/builder) — נשמרת באוסף
 // submitted-ads המשותף במצב "ממתינה לאישור". האישור עצמו ידני ב-/admin/ads.
@@ -62,6 +63,8 @@ export async function POST({ request, locals }) {
 				typeof payload.editOfAdId === 'string' && payload.editOfAdId.trim()
 					? payload.editOfAdId.trim()
 					: undefined,
+			// סופר-אדמין רשאי לערוך גם פרסומת של מפרסם אחר (הבעלות נשארת אצלו)
+			anyOwner: isSuperAdmin(user),
 			landing: {
 				headline: payload.landing.headline ?? '',
 				pitch: payload.landing.pitch ?? '',

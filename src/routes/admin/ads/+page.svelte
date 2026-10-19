@@ -992,6 +992,17 @@
 								>
 									✏️ ערוך
 								</button>
+								{#if data.superAdmin}
+									<!-- עריכה מלאה (סופר-אדמין) בבילדר, גם של פרסומת של מפרסם אחר:
+									     העדכון נרשם על שם המפרסם המקורי ונכנס לאישור במקום הישנה -->
+									<a
+										href={`/advertise/builder?edit=${ad.id}`}
+										class="rounded-xl border border-blue-500/40 bg-blue-500/20 px-4 py-2 text-sm font-black text-blue-200 hover:bg-blue-500/30"
+										title="פתיחת הפרסומת בבילדר לעריכה מלאה"
+									>
+										🎨 ערוך בבילדר
+									</a>
+								{/if}
 								<form method="POST" action="?/backToPending" use:enhance>
 									<input type="hidden" name="id" value={ad.id} />
 									<button

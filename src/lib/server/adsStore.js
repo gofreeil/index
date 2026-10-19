@@ -567,15 +567,17 @@ export async function getAd(id) {
  * הזהות של המפרסם (id/email וגם פרטי הקשר שבדף הנחיתה), כדי שאי אפשר
  * יהיה למשוך תוכן של פרסומת זרה בניחוש מזהה. מזהה של גלגול ישן מוביל
  * לגרסה העדכנית ביותר של אותה פרסומת.
+ * anyOwner = סופר-אדמין: רשאי לערוך גם פרסומת של מפרסם אחר.
  * @param {string} id @param {{id?: string, email?: string}} identity
+ * @param {{anyOwner?: boolean}} [opts]
  * @returns {Promise<SubmittedAd|null>}
  */
-export async function getOwnAdForEdit(id, identity) {
+export async function getOwnAdForEdit(id, identity, { anyOwner = false } = {}) {
 	if (!identity?.id && !identity?.email) return null;
 	const ad = await resolveLatestVersion(id);
 	if (!ad) return null;
 	const me = { submittedBy: { id: identity.id, email: identity.email } };
-	return sameAdvertiser(ad, me) ? ad : null;
+	return anyOwner || sameAdvertiser(ad, me) ? ad : null;
 }
 
 /**
@@ -596,7 +598,8 @@ export async function getOwnAdForEdit(id, identity) {
  *   submittedBy?: { id?: string, email?: string, name?: string },
  *   payment?: string,
  *   requestedDurationDays?: number,
- *   editOfAdId?: string
+ *   editOfAdId?: string,
+ *   anyOwner?: boolean
  * }} payload
  * @returns {Promise<SubmittedAd>}
  */
@@ -605,13 +608,24 @@ export async function submitAd(payload) {
 	// שלה הגיע עם השליחה. הגרסה החדשה מקושרת אליה בלבד - האישור יחליף
 	// בדיוק אותה ולא ייגע בשאר הפרסומות של המפרסם. מזהה שלא שייך לאותו
 	// מפרסם (טעות/זיוף) לא מכובד, ונופלים לזיהוי הרגיל לפי זהות.
+	// סופר-אדמין (anyOwner) רשאי לערוך גם פרסומת של מפרסם אחר.
 	const explicitRaw = payload.editOfAdId ? await resolveLatestVersion(payload.editOfAdId) : null;
-	const explicitTarget = explicitRaw && sameAdvertiser(explicitRaw, payload) ? explicitRaw : null;
+	const explicitTarget =
+		explicitRaw && (payload.anyOwner || sameAdvertiser(explicitRaw, payload)) ? explicitRaw : null;
+	// עריכה של פרסומת זרה (סופר-אדמין): הגרסה החדשה נרשמת על שם המפרסם
+	// המקורי, כך שהבעלות לא עוברת לעורך באישור. ההשוואה לפי השולח בלבד -
+	// פרטי הקשר שבדף הנחיתה הם של המפרסם גם כשמישהו אחר עורך.
+	const foreign =
+		!!explicitTarget && !sameAdvertiser(explicitTarget, { submittedBy: payload.submittedBy });
+	const owner = foreign ? explicitTarget.submittedBy : payload.submittedBy;
 	// מפרסם חוזר: מחפשים לפני היצירה, כדי שהרשומה החדשה עצמה לא תיספר
 	const { target: predecessor, stalePending } = explicitTarget
 		? {
 				target: explicitTarget,
-				stalePending: await findStalePendingEditsOf(explicitTarget.id, payload)
+				stalePending: await findStalePendingEditsOf(
+					explicitTarget.id,
+					foreign ? explicitTarget : payload
+				)
 			}
 		: await findPredecessors(payload);
 	const landing = {
@@ -645,9 +659,9 @@ export async function submitAd(payload) {
 				logo: payload.logo ?? '',
 				main_image: payload.mainImage ?? '',
 				landing,
-				submitted_by_id: payload.submittedBy?.id ?? null,
-				submitted_by_email: payload.submittedBy?.email ?? null,
-				submitted_by_name: payload.submittedBy?.name ?? null,
+				submitted_by_id: owner?.id ?? null,
+				submitted_by_email: owner?.email ?? null,
+				submitted_by_name: owner?.name ?? null,
 				submitted_at: new Date().toISOString()
 			}
 		})

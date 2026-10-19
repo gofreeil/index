@@ -1,5 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import { getOwnAdForEdit } from '$lib/server/adsStore.js';
+import { isSuperAdmin } from '$lib/server/strapi.js';
 
 // GET /api/ads/mine?id=<documentId>
 // התוכן המלא של פרסומת אחת של המשתמש המחובר - להזנת הבילדר בעריכה
@@ -13,10 +14,12 @@ export async function GET({ url, locals }) {
 	const id = url.searchParams.get('id')?.trim();
 	if (!id) throw error(400, 'חסר מזהה פרסומת');
 
-	const ad = await getOwnAdForEdit(id, {
-		id: String(user.id ?? ''),
-		email: user.email ?? ''
-	}).catch(() => null);
+	// סופר-אדמין רשאי לפתוח בעורך גם פרסומת של מפרסם אחר
+	const ad = await getOwnAdForEdit(
+		id,
+		{ id: String(user.id ?? ''), email: user.email ?? '' },
+		{ anyOwner: isSuperAdmin(user) }
+	).catch(() => null);
 	if (!ad) throw error(404, 'הפרסומת לא נמצאה או שאינה שייכת לחשבון הזה');
 
 	// רק מה שהבילדר צריך כדי להמשיך לערוך - תוכן ועיצוב, בלי שדות ניהול
