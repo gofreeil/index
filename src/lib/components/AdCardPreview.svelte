@@ -15,6 +15,7 @@
 		logoFreeStyle,
 		logoCornerSide
 	} from '$lib/adStyle';
+	import { logoClearance } from '$lib/logoClearance';
 
 	/**
 	 * @typedef {Object} PreviewAd
@@ -38,7 +39,7 @@
 <!-- אותו כרטיס של RightAdBanner: עמודה ברוחב w-36, אזור תמונה ביחס
      144/450 ורצועת CTA מתחתיו — רק בלי ה-hover והקישור -->
 <div class="relative w-36 overflow-hidden rounded-lg bg-gray-900 shadow-lg" style={adStyleVars(st)}>
-	<div class="relative aspect-[144/450] w-full overflow-hidden">
+	<div class="relative aspect-[144/450] w-full overflow-hidden" use:logoClearance={ad}>
 		<div class="absolute inset-0 overflow-hidden">
 			{#if ad.mainImage}
 				<img
@@ -58,11 +59,11 @@
 			class:has-corner-logo-left={cornerSide === 'left'}
 			style="transform: translateY({st.titleOffsetY}px);"
 		>
-			<h3 class="promo-title" style="color: {st.titleColor};">{ad.title}</h3>
+			<h3 class="promo-title" style="color: {st.titleColor};"><span class="logo-avoid" aria-hidden="true"></span>{ad.title}</h3>
 		</div>
 		{#if ad.subtitle}
 			<div class="promo-sub-wrap">
-				<p class="promo-sub">{ad.subtitle}</p>
+				<p class="promo-sub"><span class="logo-avoid" data-anchor="bottom" aria-hidden="true"></span>{ad.subtitle}</p>
 			</div>
 		{/if}
 		{#if ad.logo}
@@ -71,6 +72,7 @@
 				alt=""
 				loading="lazy"
 				decoding="async"
+				data-ad-logo
 				class="promo-logo {logoAnchorClass(st, 'promo')} {st.logoShape === 'circle'
 					? 'promo-logo-circle'
 					: ''}"
@@ -161,10 +163,15 @@
 	}
 	.promo-sub::before {
 		content: '';
+		display: var(--logo-avoid-tri, block);
 		float: left;
 		width: 28%;
 		height: 1.35em;
 		shape-outside: polygon(0 0, 100% 0, 0 100%);
+	}
+	/* ה-float שגורם לטקסט לעקוף את הלוגו - מוצג ומוצב רק ע"י logoClearance */
+	.logo-avoid {
+		display: none;
 	}
 	.promo-logo {
 		position: absolute;

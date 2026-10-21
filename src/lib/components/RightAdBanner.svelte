@@ -10,6 +10,7 @@
 		logoFreeStyle,
 		logoCornerSide
 	} from '$lib/adStyle';
+	import { logoClearance } from '$lib/logoClearance';
 	import { adSeen } from '$lib/adSeen.js';
 	import { trackAdClick } from '$lib/adTrack.js';
 	import { AD_SLOT_COUNT } from '$lib/adSlots.js';
@@ -324,7 +325,7 @@
 					use:adSeen={ad.id}
 					onclick={() => trackAdClick(ad.id)}
 				>
-					<div class="relative aspect-[144/450] w-full overflow-hidden">
+					<div class="relative aspect-[144/450] w-full overflow-hidden" use:logoClearance={ad}>
 						<div class="absolute inset-0 overflow-hidden">
 							<img
 								src={ad.mainImage}
@@ -348,13 +349,13 @@
 							class:has-corner-logo-left={cornerSide === 'left'}
 							style="transform: translateY({st.titleOffsetY}px);"
 						>
-							<h3 class="promo-title" style="color: {st.titleColor};">{ad.title}</h3>
+							<h3 class="promo-title" style="color: {st.titleColor};"><span class="logo-avoid" aria-hidden="true"></span>{ad.title}</h3>
 						</div>
 						{#if ad.subtitle}
 							<div
 								class="promo-sub-wrap transition-opacity duration-[1500ms] group-hover:opacity-0"
 							>
-								<p class="promo-sub">{ad.subtitle}</p>
+								<p class="promo-sub"><span class="logo-avoid" data-anchor="bottom" aria-hidden="true"></span>{ad.subtitle}</p>
 							</div>
 						{/if}
 						{#if ad.logo}
@@ -363,6 +364,7 @@
 								alt=""
 								loading="lazy"
 								decoding="async"
+								data-ad-logo
 								class="promo-logo {logoAnchorClass(st, 'promo')} {st.logoShape === 'circle'
 									? 'promo-logo-circle'
 									: ''} transition-opacity duration-[1500ms] group-hover:opacity-0"
@@ -559,10 +561,15 @@
 	/* משולש בלתי-נראה שגורם לשורה הראשונה להתקצר לפי שיפוע האלכסון */
 	.promo-sub::before {
 		content: '';
+		display: var(--logo-avoid-tri, block);
 		float: left;
 		width: 28%;
 		height: 1.35em;
 		shape-outside: polygon(0 0, 100% 0, 0 100%);
+	}
+	/* ה-float שגורם לטקסט לעקוף את הלוגו - מוצג ומוצב רק ע"י logoClearance */
+	.logo-avoid {
+		display: none;
 	}
 	.promo-logo {
 		position: absolute;
