@@ -113,6 +113,14 @@
 	let logoFreeY = $state(null);
 	let titleColor = $state('#ffffff');
 	let titleOffsetY = $state(0);
+	// טיפוגרפיית תת-הכותרת (שלב 5 בבילדר) - ערכים גולמיים מהטיוטה;
+	// parseAdStyle מנרמל אותם (תחומים, ברירות מחדל) לפני השליחה
+	/** @type {unknown} */
+	let subFontSize = $state(undefined);
+	/** @type {unknown} */
+	let subLineHeight = $state(undefined);
+	/** @type {unknown} */
+	let subAlign = $state(undefined);
 	let diagHeight = $state(12);
 	let gradient = $state('linear-gradient(135deg, #f59e0b, #ea580c)');
 
@@ -176,7 +184,10 @@
 				logoY: logoFreeY,
 				bandHeight: diagHeight,
 				titleOffsetY,
-				titleColor
+				titleColor,
+				subFontSize,
+				subLineHeight,
+				subAlign
 			}),
 			landing: {
 				headline: landingHeadline,
@@ -458,6 +469,9 @@
 					logoFreeY = typeof d.logoFreeY === 'number' ? d.logoFreeY : null;
 					titleColor = d.titleColor ?? '#ffffff';
 					titleOffsetY = typeof d.titleOffsetY === 'number' ? d.titleOffsetY : 0;
+					subFontSize = d.subFontSize;
+					subLineHeight = d.subLineHeight;
+					subAlign = d.subAlign;
 					diagHeight = typeof d.diagHeight === 'number' ? d.diagHeight : 12;
 					gradient = d.gradient ?? gradient;
 				}

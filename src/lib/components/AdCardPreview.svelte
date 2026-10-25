@@ -80,9 +80,12 @@
 			/>
 		{/if}
 	</div>
-	<div class="bg-gradient-to-r {ad.gradient} p-2.5 text-center">
-		<p class="text-xs leading-tight font-bold text-white">{ad.cta || ad.title}</p>
-	</div>
+	<!-- פרסומת שטקסט הכפתור שלה נמחק מוצגת בלי רצועה — כמו בטור -->
+	{#if ad.cta}
+		<div class="bg-gradient-to-r {ad.gradient} p-2.5 text-center">
+			<p class="text-xs leading-tight font-bold text-white">{ad.cta || ad.title}</p>
+		</div>
+	{/if}
 </div>
 
 <style>
@@ -150,15 +153,15 @@
 		bottom: 0;
 		z-index: 4;
 		padding: 0.55rem 0.7rem 1.1rem;
-		text-align: right;
+		text-align: var(--sub-align, right);
 		pointer-events: none;
 	}
 	.promo-sub {
 		margin: 0;
 		color: rgba(255, 255, 255, 0.95);
 		font-weight: 600;
-		font-size: 0.88rem;
-		line-height: 1.3;
+		font-size: var(--sub-size, 0.88rem);
+		line-height: var(--sub-lh, 1.3);
 		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
 	}
 	.promo-sub::before {

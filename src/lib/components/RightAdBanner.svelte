@@ -380,13 +380,16 @@
 							</div>
 						</div>
 					</div>
-					<!-- כרטיס מוצר מהחנות - בלי רצועת המחיר ("₪.. · לצפייה בחנות") -->
-					{#if !ad.shop}
+					<!-- כרטיס מוצר מהחנות - בלי רצועת המחיר ("₪.. · לצפייה בחנות").
+					     גם פרסומת שטקסט הכפתור שלה נמחק מוצגת בלי רצועה -->
+					{#if !ad.shop && ad.cta}
 					<div class="group/cta relative bg-gradient-to-r {ad.gradient} p-2.5 text-center">
 						<p class="text-xs leading-tight font-bold text-white">{ad.cta || ad.title}</p>
 						{#if ad.hover}
+							<!-- pre-line + w-max: משפט בשורה אחת נשאר בשורה אחת, אבל ירידות שורה
+							     שהמפרסם הקליד נשמרות, וטקסט ארוך נגמר ב-max-w במקום לגלוש -->
 							<span
-								class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 hidden -translate-x-1/2 rounded-lg border border-white/10 bg-gray-900 px-3 py-1.5 text-xs font-bold whitespace-nowrap text-white shadow-xl group-hover/cta:block"
+								class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 hidden w-max max-w-[15rem] -translate-x-1/2 rounded-lg border border-white/10 bg-gray-900 px-3 py-1.5 text-center text-xs font-bold whitespace-pre-line text-white shadow-xl group-hover/cta:block"
 							>
 								{ad.hover}
 							</span>
@@ -396,7 +399,8 @@
 				</a>
 			{:else if cell.tpl}
 				{@const ad = cell.tpl}
-				<div
+				<a
+					href="/about/advertise"
 					class="group relative flex h-[490px] flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed {ad.borderColor} {ad.bgColor} p-3 text-center transition-all duration-700 {ad.hoverBorder} {ad.hoverBg}"
 				>
 					<!-- מספר המקום הפנוי - בדיוק המספרים שלא נתפסו ע"י פרסומות -->
@@ -430,14 +434,13 @@
 							</div>
 						</div>
 
-						<a
-							href="/about/advertise"
+						<span
 							class="z-10 mb-4 rounded-full {ad.buttonColor} px-5 py-2 text-sm font-bold text-white shadow-xl transition-transform hover:scale-105"
 						>
 							{t.adDetails}
-						</a>
+						</span>
 					</div>
-				</div>
+				</a>
 			{/if}
 		{/each}
 		</div>
@@ -541,21 +544,23 @@
 			0 2px 10px rgba(0, 0, 0, 0.85),
 			0 1px 2px rgba(0, 0, 0, 0.95);
 	}
+	/* גודל/רווח/יישור מגיעים מ-adStyleVars — מה שהמפרסם כיוון בשלב 5.
+	   ה-fallback הוא הערך שהיה קבוע כאן, כדי שמודעות ותיקות לא ישתנו. */
 	.promo-sub-wrap {
 		position: absolute;
 		inset-inline: 0;
 		bottom: 0;
 		z-index: 4;
 		padding: 0.55rem 0.7rem 1.1rem;
-		text-align: right;
+		text-align: var(--sub-align, right);
 		pointer-events: none;
 	}
 	.promo-sub {
 		margin: 0;
 		color: rgba(255, 255, 255, 0.95);
 		font-weight: 600;
-		font-size: 0.88rem;
-		line-height: 1.3;
+		font-size: var(--sub-size, 0.88rem);
+		line-height: var(--sub-lh, 1.3);
 		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
 	}
 	/* משולש בלתי-נראה שגורם לשורה הראשונה להתקצר לפי שיפוע האלכסון */
