@@ -1,4 +1,5 @@
 <script>
+	import PasswordInput from '$lib/components/PasswordInput.svelte';
 	import { lang, translations } from '$lib/i18n';
 	import { onMount } from 'svelte';
 	import * as publicVars from '$env/static/public';
@@ -223,9 +224,10 @@
 						class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300"
 						>{t.password}</label
 					>
-					<input
+					<PasswordInput
 						id="password"
-						type="password"
+						showLabel={t.showPassword}
+						hideLabel={t.hidePassword}
 						autocomplete="current-password"
 						required
 						bind:value={password}
