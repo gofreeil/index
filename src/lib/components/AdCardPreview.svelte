@@ -14,6 +14,7 @@
 		logoAnchorClass,
 		logoFreeStyle,
 		logoBgStyle,
+		logoSizeStyle, titleSizeStyle,
 		logoCornerSide
 	} from '$lib/adStyle';
 	import { logoClearance } from '$lib/logoClearance';
@@ -60,7 +61,7 @@
 			class:has-corner-logo-left={cornerSide === 'left'}
 			style="transform: translateY({st.titleOffsetY}px);"
 		>
-			<h3 class="promo-title" style="color: {st.titleColor};"><span class="logo-avoid" aria-hidden="true"></span>{ad.title}</h3>
+			<h3 class="promo-title" style="color: {st.titleColor};{titleSizeStyle(st.titleFontSize)}"><span class="logo-avoid" aria-hidden="true"></span>{ad.title}</h3>
 		</div>
 		{#if ad.subtitle}
 			<div class="promo-sub-wrap">
@@ -77,7 +78,7 @@
 				class="promo-logo {logoAnchorClass(st, 'promo')} {st.logoShape === 'circle'
 					? 'promo-logo-circle'
 					: ''}"
-				style={logoFreeStyle(st) + logoBgStyle(st.logoBg)}
+				style={logoFreeStyle(st) + logoBgStyle(st.logoBg) + logoSizeStyle(st.logoSize)}
 			/>
 		{/if}
 	</div>

@@ -89,6 +89,7 @@
 	let logoOriginal = $state('');
 	let logoShape = $state(/** @type {'square' | 'circle'} */ ('square'));
 	let logoBg = $state(/** @type {'white' | 'black' | 'clear'} */ ('white'));
+	let logoSize = $state(36);
 	let hasCircleCrop = $state(false);
 	let logoPosition = $state(/** @type {'right' | 'left' | 'cta'} */ ('right'));
 	let logoPositionExplicit = $state(false);
@@ -111,7 +112,9 @@
 	let logoFreeStyle = $derived(
 		(logoFree
 			? `left:${logoFreeX}%; top:${logoFreeY}%; right:auto; bottom:auto; transform:translate(-50%,-50%);`
-			: '') + logoBgCss
+			: '') +
+		logoBgCss +
+		(logoSize !== 36 ? `width:${logoSize}px;height:${logoSize}px;` : '')
 	);
 
 	// מדדי הגרירה, נמדדים בלחיצה מול התצוגה שבה הלוגו יושב (דמו חי / כרטיס
@@ -332,6 +335,7 @@
 	let mainImageFit = $derived({ x: mainImageObjectX, y: mainImageObjectY, z: mainImageZoom });
 	let title = $state('');
 	let titleColor = $state('#ffffff');
+	let titleFontSize = $state(1.15);
 	let titleOffsetY = $state(0);
 	let subtitle = $state('');
 	// טיפוגרפיית תת-הכותרת (שלב 5) - גודל, רווח בין שורות ויישור
@@ -455,11 +459,13 @@
 	let adStyle = $derived({
 		logoShape,
 		logoBg,
+		logoSize,
 		logoAnchor: logoPosition,
 		logoX: logoFreeX,
 		logoY: logoFreeY,
 		bandHeight: diagHeight,
 		titleOffsetY,
+		titleFontSize,
 		titleColor,
 		subFontSize,
 		subLineHeight,
@@ -897,6 +903,7 @@
 					logoOriginal = d.logoOriginal ?? d.logo ?? '';
 					logoShape = d.logoShape ?? 'square';
 					logoBg = d.logoBg === 'black' || d.logoBg === 'clear' ? d.logoBg : 'white';
+					logoSize = typeof d.logoSize === 'number' ? d.logoSize : 36;
 					hasCircleCrop = Boolean(d.hasCircleCrop);
 					logoPosition = d.logoPosition ?? 'right';
 					logoPositionExplicit = Boolean(d.logoPositionExplicit);
@@ -909,6 +916,7 @@
 					title = d.title ?? '';
 					titleColor = d.titleColor ?? '#ffffff';
 					titleOffsetY = typeof d.titleOffsetY === 'number' ? d.titleOffsetY : 0;
+					titleFontSize = typeof d.titleFontSize === 'number' ? d.titleFontSize : 1.15;
 					subFontSize =
 						typeof d.subFontSize === 'number' ? d.subFontSize : DEFAULT_SUB_FONT_SIZE;
 					subLineHeight =
@@ -992,6 +1000,7 @@
 			hasCircleCrop,
 			logoShape,
 			logoBg,
+			logoSize,
 			logoPosition,
 			logoPositionExplicit,
 			logoFreeX,
@@ -1003,6 +1012,7 @@
 			title,
 			titleColor,
 			titleOffsetY,
+			titleFontSize,
 			subtitle,
 			subFontSize,
 			subLineHeight,
@@ -1072,12 +1082,14 @@
 				logoShape = st.logoShape === 'circle' ? 'circle' : 'square';
 				hasCircleCrop = st.logoShape === 'circle';
 				logoBg = st.logoBg ?? 'white';
+				logoSize = st.logoSize ?? 36;
 				logoPosition = st.logoAnchor ?? 'right';
 				logoPositionExplicit = true;
 				logoFreeX = typeof st.logoX === 'number' ? st.logoX : null;
 				logoFreeY = typeof st.logoY === 'number' ? st.logoY : null;
 				diagHeight = typeof st.bandHeight === 'number' ? st.bandHeight : diagHeight;
 				titleOffsetY = typeof st.titleOffsetY === 'number' ? st.titleOffsetY : 0;
+				titleFontSize = typeof st.titleFontSize === 'number' ? st.titleFontSize : 1.15;
 				titleColor = typeof st.titleColor === 'string' ? st.titleColor : '#ffffff';
 				subFontSize =
 					typeof st.subFontSize === 'number' ? st.subFontSize : DEFAULT_SUB_FONT_SIZE;
@@ -1581,6 +1593,14 @@
 									</div>
 								</div>
 								<div>
+									<p class="control-label">{$bt('b_logo_size')}</p>
+									<div class="seg-group" style="align-items:center;gap:6px;padding:4px 8px;">
+										<button type="button" aria-label="-" onclick={() => (logoSize = Math.max(20, logoSize - 4))} class="seg-btn">−</button>
+										<input type="range" min="20" max="80" step="2" bind:value={logoSize} style="width:80px;accent-color:#f59e0b;" />
+										<button type="button" aria-label="+" onclick={() => (logoSize = Math.min(80, logoSize + 4))} class="seg-btn">+</button>
+									</div>
+								</div>
+								<div>
 									<p class="control-label">{$bt('b_logo_pos')}</p>
 									<div class="seg-group">
 										<button
@@ -1730,6 +1750,14 @@
 						class="text-input"
 					/>
 					<div class="char-count">{title.length}/40</div>
+
+					<div class="slider-block">
+						<div class="slider-head">
+							<p>{$bt('b_title_size')} <span class="amber-strong">{titleFontSize.toFixed(2)}</span></p>
+							<button type="button" onclick={() => (titleFontSize = 1.15)} class="slider-reset">{$bt('b_reset_word')}</button>
+						</div>
+						<input type="range" min="0.8" max="1.8" step="0.05" bind:value={titleFontSize} class="range-input" aria-label={$bt('b_title_size')} />
+					</div>
 
 					<div class="slider-block">
 						<div class="slider-head">
@@ -2077,7 +2105,7 @@
 										style:opacity={showHover ? 0 : 1}
 										style:transform="translateY({titleOffsetY}px)"
 									>
-										<h3 class="pro-title" style:color={titleColor}><span class="logo-avoid" aria-hidden="true"></span>{title || $bt('b_s3_title')}</h3>
+										<h3 class="pro-title" style:color={titleColor} style:font-size={titleFontSize !== 1.15 ? `${titleFontSize}rem` : undefined}><span class="logo-avoid" aria-hidden="true"></span>{title || $bt('b_s3_title')}</h3>
 									</div>
 									<div class="pro-title-wrap" style:opacity={showHover ? 0 : 1}>
 										<p class="pro-sub"><span class="logo-avoid" data-anchor="bottom" aria-hidden="true"></span>{subtitle || $bt('b_ph_slogan')}</p>
@@ -2215,7 +2243,7 @@
 								style:opacity={activeStep === 'hover' ? 0 : 1}
 							>
 								{#if title}
-									<h3 class="pro-title" style:color={titleColor}><span class="logo-avoid" aria-hidden="true"></span>{title}</h3>
+									<h3 class="pro-title" style:color={titleColor} style:font-size={titleFontSize !== 1.15 ? `${titleFontSize}rem` : undefined}><span class="logo-avoid" aria-hidden="true"></span>{title}</h3>
 								{:else}
 									<div class="placeholder-dashed placeholder-line">{$bt('b_ph_title_step')}</div>
 								{/if}

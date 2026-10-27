@@ -104,6 +104,7 @@
 	let logo = $state('');
 	let logoShape = $state(/** @type {'square' | 'circle'} */ ('square'));
 	let logoBg = $state(/** @type {'white' | 'black' | 'clear'} */ ('white'));
+	let logoSize = $state(36);
 	// שאר עיצוב הכרטיס מהבילדר — לא נערך כאן, אבל חייב לנסוע עם השליחה:
 	// בלעדיו הפרסומת המפורסמת נבנית מברירות המחדל של האתר (legacyAdStyle)
 	// ולא ממה שהמפרסם ראה בתצוגת הבילדר
@@ -114,6 +115,7 @@
 	let logoFreeY = $state(null);
 	let titleColor = $state('#ffffff');
 	let titleOffsetY = $state(0);
+	let titleFontSize = $state(1.15);
 	// טיפוגרפיית תת-הכותרת (שלב 5 בבילדר) - ערכים גולמיים מהטיוטה;
 	// parseAdStyle מנרמל אותם (תחומים, ברירות מחדל) לפני השליחה
 	/** @type {unknown} */
@@ -181,11 +183,13 @@
 			adStyle: parseAdStyle({
 				logoShape,
 				logoBg,
+				logoSize,
 				logoAnchor: logoPosition,
 				logoX: logoFreeX,
 				logoY: logoFreeY,
 				bandHeight: diagHeight,
 				titleOffsetY,
+				titleFontSize,
 				titleColor,
 				subFontSize,
 				subLineHeight,
@@ -467,11 +471,13 @@
 					logo = d.logo ?? '';
 					logoShape = d.logoShape ?? 'square';
 					logoBg = d.logoBg === 'black' || d.logoBg === 'clear' ? d.logoBg : 'white';
+					logoSize = typeof d.logoSize === 'number' ? d.logoSize : 36;
 					logoPosition = d.logoPosition ?? 'right';
 					logoFreeX = typeof d.logoFreeX === 'number' ? d.logoFreeX : null;
 					logoFreeY = typeof d.logoFreeY === 'number' ? d.logoFreeY : null;
 					titleColor = d.titleColor ?? '#ffffff';
 					titleOffsetY = typeof d.titleOffsetY === 'number' ? d.titleOffsetY : 0;
+					titleFontSize = typeof d.titleFontSize === 'number' ? d.titleFontSize : 1.15;
 					subFontSize = d.subFontSize;
 					subLineHeight = d.subLineHeight;
 					subAlign = d.subAlign;
