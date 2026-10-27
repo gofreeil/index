@@ -340,6 +340,10 @@
 	let title = $state('');
 	let titleColor = $state('#ffffff');
 	let titleFontSize = $state(1.15);
+	// לוגו בדף הנחיתה (נקבע בעמוד הנחיתה) - נשמר בטיוטה כדי שלא יתאפס בעריכה
+	let lpLogoAlign = $state(/** @type {'right' | 'center' | 'left'} */ ('right'));
+	let lpLogoBg = $state(/** @type {'white' | 'black' | 'clear' | null} */ (null));
+	let lpLogoSize = $state(/** @type {number | null} */ (null));
 	let titleOffsetY = $state(0);
 	let subtitle = $state('');
 	// טיפוגרפיית תת-הכותרת (שלב 5) - גודל, רווח בין שורות ויישור
@@ -464,9 +468,9 @@
 		logoShape,
 		logoBg,
 		logoSize,
-		lpLogoAlign: 'right',
-		lpLogoBg: null,
-		lpLogoSize: null,
+		lpLogoAlign,
+		lpLogoBg,
+		lpLogoSize,
 		hoverLogo,
 		hoverLogoX,
 		hoverLogoY,
@@ -932,6 +936,9 @@
 					titleColor = d.titleColor ?? '#ffffff';
 					titleOffsetY = typeof d.titleOffsetY === 'number' ? d.titleOffsetY : 0;
 					titleFontSize = typeof d.titleFontSize === 'number' ? d.titleFontSize : 1.15;
+					lpLogoAlign = d.lpLogoAlign === 'center' || d.lpLogoAlign === 'left' ? d.lpLogoAlign : 'right';
+					lpLogoBg = d.lpLogoBg === 'white' || d.lpLogoBg === 'black' || d.lpLogoBg === 'clear' ? d.lpLogoBg : null;
+					lpLogoSize = typeof d.lpLogoSize === 'number' ? d.lpLogoSize : null;
 					subFontSize =
 						typeof d.subFontSize === 'number' ? d.subFontSize : DEFAULT_SUB_FONT_SIZE;
 					subLineHeight =
@@ -1032,6 +1039,9 @@
 			titleColor,
 			titleOffsetY,
 			titleFontSize,
+			lpLogoAlign,
+			lpLogoBg,
+			lpLogoSize,
 			subtitle,
 			subFontSize,
 			subLineHeight,
@@ -1113,6 +1123,9 @@
 				diagHeight = typeof st.bandHeight === 'number' ? st.bandHeight : diagHeight;
 				titleOffsetY = typeof st.titleOffsetY === 'number' ? st.titleOffsetY : 0;
 				titleFontSize = typeof st.titleFontSize === 'number' ? st.titleFontSize : 1.15;
+				lpLogoAlign = st.lpLogoAlign === 'center' || st.lpLogoAlign === 'left' ? st.lpLogoAlign : 'right';
+				lpLogoBg = st.lpLogoBg === 'white' || st.lpLogoBg === 'black' || st.lpLogoBg === 'clear' ? st.lpLogoBg : null;
+				lpLogoSize = typeof st.lpLogoSize === 'number' ? st.lpLogoSize : null;
 				titleColor = typeof st.titleColor === 'string' ? st.titleColor : '#ffffff';
 				subFontSize =
 					typeof st.subFontSize === 'number' ? st.subFontSize : DEFAULT_SUB_FONT_SIZE;

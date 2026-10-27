@@ -503,6 +503,9 @@
 					subAlign = d.subAlign;
 					diagHeight = typeof d.diagHeight === 'number' ? d.diagHeight : 12;
 					gradient = d.gradient ?? gradient;
+					lpAlign = d.lpLogoAlign === 'center' || d.lpLogoAlign === 'left' ? d.lpLogoAlign : 'right';
+					lpBg = d.lpLogoBg === 'white' || d.lpLogoBg === 'black' || d.lpLogoBg === 'clear' ? d.lpLogoBg : null;
+					lpSize = typeof d.lpLogoSize === 'number' ? d.lpLogoSize : null;
 				}
 			} catch {}
 			// טיוטה ישנה שחורגת מהתקציב מכווצת מיד — לא מחכים לכישלון בסוף
@@ -535,7 +538,10 @@
 				products,
 				uniqueness,
 				address,
-				hours
+				hours,
+				lpLogoAlign: lpAlign,
+				lpLogoBg: lpBg,
+				lpLogoSize: lpSize
 			};
 			localStorage.setItem(LS_KEY, JSON.stringify(merged));
 			draftSaveFailed = false;
@@ -691,7 +697,10 @@
 					products,
 					uniqueness,
 					address,
-					hours
+					hours,
+					lpLogoAlign: lpAlign,
+					lpLogoBg: lpBg,
+					lpLogoSize: lpSize
 				})
 			);
 		} catch {
