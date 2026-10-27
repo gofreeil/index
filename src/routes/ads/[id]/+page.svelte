@@ -3,6 +3,7 @@
 	// עיצוב מינימליסטי: הכותרת, משפט הפתיחה והיתרונות יושבים *ליד* התמונה
 	// ולא מתחתיה — כדי לחסוך גלילה. הגולש רואה את כל העיקר במסך הראשון.
 	import { onMount } from 'svelte';
+	import { parseAdStyle, lpLogoStyle, DEFAULT_AD_STYLE } from '$lib/adStyle';
 	import { trackAdLanding, trackAdLead } from '$lib/adTrack.js';
 
 	/** @type {{ data: any }} */
@@ -92,7 +93,7 @@
 							.adStyle?.logoShape === 'circle'
 							? 'rounded-full'
 							: 'rounded-2xl'} {heroImage ? 'mx-auto md:mx-0' : 'mx-auto'}"
-							style={ad.adStyle?.logoBg === 'black' ? 'background:#000' : ad.adStyle?.logoBg === 'clear' ? 'background:transparent' : ''}
+							style={lpLogoStyle(parseAdStyle(ad.adStyle) ?? DEFAULT_AD_STYLE)}
 					/>
 				{/if}
 				<h1 class="mb-2 text-2xl leading-tight font-black drop-shadow md:text-4xl">
