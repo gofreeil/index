@@ -8,6 +8,7 @@
 		adStyleVars,
 		logoAnchorClass,
 		logoFreeStyle,
+		logoBgStyle,
 		logoCornerSide
 	} from '$lib/adStyle';
 	import { logoClearance } from '$lib/logoClearance';
@@ -368,7 +369,7 @@
 								class="promo-logo {logoAnchorClass(st, 'promo')} {st.logoShape === 'circle'
 									? 'promo-logo-circle'
 									: ''} transition-opacity duration-[1500ms] group-hover:opacity-0"
-								style={logoFreeStyle(st)}
+								style={logoFreeStyle(st) + logoBgStyle(st.logoBg)}
 							/>
 						{/if}
 						<div

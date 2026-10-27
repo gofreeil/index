@@ -103,6 +103,7 @@
 	let mainImageFit = $state({ x: 50, y: 50, z: 1 });
 	let logo = $state('');
 	let logoShape = $state(/** @type {'square' | 'circle'} */ ('square'));
+	let logoBg = $state(/** @type {'white' | 'black' | 'clear'} */ ('white'));
 	// שאר עיצוב הכרטיס מהבילדר — לא נערך כאן, אבל חייב לנסוע עם השליחה:
 	// בלעדיו הפרסומת המפורסמת נבנית מברירות המחדל של האתר (legacyAdStyle)
 	// ולא ממה שהמפרסם ראה בתצוגת הבילדר
@@ -179,6 +180,7 @@
 			// את הערכים שנטענו מ-localStorage (תחומים, צבע hex) לפני השליחה
 			adStyle: parseAdStyle({
 				logoShape,
+				logoBg,
 				logoAnchor: logoPosition,
 				logoX: logoFreeX,
 				logoY: logoFreeY,
@@ -464,6 +466,7 @@
 					};
 					logo = d.logo ?? '';
 					logoShape = d.logoShape ?? 'square';
+					logoBg = d.logoBg === 'black' || d.logoBg === 'clear' ? d.logoBg : 'white';
 					logoPosition = d.logoPosition ?? 'right';
 					logoFreeX = typeof d.logoFreeX === 'number' ? d.logoFreeX : null;
 					logoFreeY = typeof d.logoFreeY === 'number' ? d.logoFreeY : null;
@@ -1038,6 +1041,7 @@
 											alt="לוגו"
 											class="landing-logo"
 											class:circle={logoShape === 'circle'}
+											style={logoBg === 'black' ? 'background:#000;' : logoBg === 'clear' ? 'background:transparent;' : ''}
 										/>
 									{/if}
 									<h1>{landingHeadline || title || 'כותרת דף הנחיתה'}</h1>

@@ -92,6 +92,7 @@
 							.adStyle?.logoShape === 'circle'
 							? 'rounded-full'
 							: 'rounded-2xl'} {heroImage ? 'mx-auto md:mx-0' : 'mx-auto'}"
+							style={ad.adStyle?.logoBg === 'black' ? 'background:#000' : ad.adStyle?.logoBg === 'clear' ? 'background:transparent' : ''}
 					/>
 				{/if}
 				<h1 class="mb-2 text-2xl leading-tight font-black drop-shadow md:text-4xl">
