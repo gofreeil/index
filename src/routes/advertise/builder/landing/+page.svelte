@@ -105,6 +105,10 @@
 	let logoShape = $state(/** @type {'square' | 'circle'} */ ('square'));
 	let logoBg = $state(/** @type {'white' | 'black' | 'clear'} */ ('white'));
 	let logoSize = $state(36);
+	let hoverLogo       = $state(false);
+	let hoverLogoX      = $state(50);
+	let hoverLogoY      = $state(22);
+	let hoverLogoSize   = $state(56);
 	// שאר עיצוב הכרטיס מהבילדר — לא נערך כאן, אבל חייב לנסוע עם השליחה:
 	// בלעדיו הפרסומת המפורסמת נבנית מברירות המחדל של האתר (legacyAdStyle)
 	// ולא ממה שהמפרסם ראה בתצוגת הבילדר
@@ -184,6 +188,10 @@
 				logoShape,
 				logoBg,
 				logoSize,
+				hoverLogo,
+				hoverLogoX,
+				hoverLogoY,
+				hoverLogoSize,
 				logoAnchor: logoPosition,
 				logoX: logoFreeX,
 				logoY: logoFreeY,
@@ -472,6 +480,10 @@
 					logoShape = d.logoShape ?? 'square';
 					logoBg = d.logoBg === 'black' || d.logoBg === 'clear' ? d.logoBg : 'white';
 					logoSize = typeof d.logoSize === 'number' ? d.logoSize : 36;
+					hoverLogo = d.hoverLogo === true;
+					hoverLogoX = typeof d.hoverLogoX === 'number' ? d.hoverLogoX : 50;
+					hoverLogoY = typeof d.hoverLogoY === 'number' ? d.hoverLogoY : 22;
+					hoverLogoSize = typeof d.hoverLogoSize === 'number' ? d.hoverLogoSize : 56;
 					logoPosition = d.logoPosition ?? 'right';
 					logoFreeX = typeof d.logoFreeX === 'number' ? d.logoFreeX : null;
 					logoFreeY = typeof d.logoFreeY === 'number' ? d.logoFreeY : null;

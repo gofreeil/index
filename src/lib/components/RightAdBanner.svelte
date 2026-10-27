@@ -9,7 +9,7 @@
 		logoAnchorClass,
 		logoFreeStyle,
 		logoBgStyle,
-		logoSizeStyle, titleSizeStyle,
+		logoSizeStyle, titleSizeStyle, hoverLogoStyle,
 		logoCornerSide
 	} from '$lib/adStyle';
 	import { logoClearance } from '$lib/logoClearance';
@@ -380,6 +380,9 @@
 								<h3 class="mb-1 text-sm font-bold text-white">{ad.title}</h3>
 								<p class="text-xs text-gray-200">{ad.subtitle}</p>
 							</div>
+						    {#if ad.logo && st.hoverLogo}
+						        <img src={ad.logo} alt="" class="bg-white p-[3px] shadow-md" style={hoverLogoStyle(st, logoBgStyle(st.logoBg))} />
+						    {/if}
 						</div>
 					</div>
 					<!-- כרטיס מוצר מהחנות - בלי רצועת המחיר ("₪.. · לצפייה בחנות").
