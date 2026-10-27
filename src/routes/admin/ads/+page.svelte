@@ -1218,6 +1218,64 @@
 											</span>
 										{/if}
 									</form>
+									<!-- שכפל פרסומת (סופר-אדמין): אותה פרסומת גם במקומות נוספים — למשל
+									     2 ו-6 (אותה רביעייה), כך שהיא נשארת באותה משבצת ולא מתחלפת בסבב.
+									     תג ⧉ = שכפול קיים; לחיצה עליו מבטלת אותו -->
+									{#if data.superAdmin}
+										{@const dup = dupOptions(s)}
+										<div class="mt-1 flex flex-wrap items-center gap-1 max-w-[200px]">
+											{#each s.extraSlots ?? [] as n (n)}
+												<form method="POST" action="?/removeExtraSlot" use:enhance>
+													<input type="hidden" name="id" value={s.id} />
+													<input type="hidden" name="slot" value={n} />
+													<button
+														type="submit"
+														class="inline-flex h-6 items-center gap-1 rounded-lg border border-black/20 px-1.5 text-[11px] font-black whitespace-nowrap hover:opacity-80"
+														style="background:{slotOptionBg(n)};color:#111"
+														title="שכפול במקום {n} (רביעייה {slotGroupLetter(n)}׳ · המשבצת ה{slotPosName(n)} בטור) — לחיצה מבטלת את השכפול"
+													>
+														⧉ {n} · {slotGroupLetter(n)}׳ <span class="text-red-700">✕</span>
+													</button>
+												</form>
+											{/each}
+											{#if dup.same.length + dup.rest.length > 0}
+												<form class="flex-1 min-w-[110px]" method="POST" action="?/addExtraSlot" use:enhance>
+													<input type="hidden" name="id" value={s.id} />
+													<select
+														name="slot"
+														aria-label="שכפל פרסומת"
+														onchange={(e) => e.currentTarget.form?.requestSubmit()}
+														class="h-7 w-full rounded-lg border border-sky-500/40 bg-sky-500/15 px-1.5 text-[11px] font-black text-sky-200 focus:border-sky-400/60 focus:outline-none"
+													>
+														<option value="" selected disabled>⧉ שכפל פרסומת</option>
+														{#if dup.same.length > 1}
+															<option value="same" style="background:#fff;color:#111;font-weight:700">
+																★ קבועה בכל הרביעייה ({dup.same.join(', ')})
+															</option>
+														{/if}
+														{#if dup.same.length > 0}
+															<optgroup label="★ אותה רביעייה (אותה משבצת)">
+																{#each dup.same as n (n)}
+																	<option value={n} style="background:{slotOptionBg(n)};color:#111">
+																		{n} · {slotPosName(n)}
+																	</option>
+																{/each}
+															</optgroup>
+														{/if}
+														{#each groupSlotOptions(dup.rest) as grp (grp.letter)}
+															<optgroup label="— רביעייה {grp.letter}׳ —">
+																{#each grp.nums as n (n)}
+																	<option value={n} style="background:{slotOptionBg(n)};color:#111">
+																		{n} · {slotPosName(n)}
+																	</option>
+																{/each}
+															</optgroup>
+														{/each}
+													</select>
+												</form>
+											{/if}
+										</div>
+									{/if}
 								</td>
 								<!-- פרסומת + מפרסם + סטטוס בתא אחד, מוערמים.
 								     ריחוף על הכותרת = תצוגה מקדימה צפה; הקשה = מודאל עם הכרטיס עצמו -->
@@ -1274,14 +1332,14 @@
 								<!-- ניהול הפרסומת ישירות מהשורה: קציבת תקופה, השהיה, הורדה, מחיקה.
 								     רוחב מוגבל — הכפתורים נערמים בשתי שורות במקום להרחיב את הטבלה -->
 								<td class="px-2 py-2">
-									<div class="flex max-w-[240px] flex-wrap items-center gap-1">
+									<div class="grid w-[210px] grid-cols-3 gap-1">
 										<!-- פותח את חלון הקציבה: פרטי תשלום ותאריכים + שינוי תקופה/תפוגה.
 										     שמור לסופר-אדמין (כמו המחיקה) — אדמין רגיל לא רואה את הכפתור -->
 										{#if data.superAdmin}
 											<button
 												type="button"
 												onclick={() => (durationModal = s)}
-												class="rounded-lg border border-blue-500/40 bg-blue-500/20 px-2 py-1 text-[11px] font-black whitespace-nowrap text-blue-200 hover:bg-blue-500/30"
+												class="inline-flex h-7 w-full items-center justify-center rounded-lg border border-blue-500/40 bg-blue-500/20 px-1 text-[11px] font-black whitespace-nowrap text-blue-200 hover:bg-blue-500/30"
 												title="פרטי התקופה והתשלום + שינוי תקופה או תאריך תפוגה">⏱ קצוב</button
 											>
 										{/if}
@@ -1291,7 +1349,7 @@
 												<input type="hidden" name="id" value={s.id} />
 												<button
 													type="submit"
-													class="rounded-lg border border-emerald-500/40 bg-emerald-500/20 px-2 py-1 text-[11px] font-black whitespace-nowrap text-emerald-200 hover:bg-emerald-500/30"
+													class="inline-flex h-7 w-full items-center justify-center rounded-lg border border-emerald-500/40 bg-emerald-500/20 px-1 text-[11px] font-black whitespace-nowrap text-emerald-200 hover:bg-emerald-500/30"
 													title="הימים השמורים נספרים מהיום">▶ המשך</button
 												>
 											</form>
@@ -1300,7 +1358,7 @@
 												<input type="hidden" name="id" value={s.id} />
 												<button
 													type="submit"
-													class="rounded-lg border border-white/20 bg-white/10 px-2 py-1 text-[11px] font-black whitespace-nowrap text-gray-200 hover:bg-white/20"
+													class="inline-flex h-7 w-full items-center justify-center rounded-lg border border-white/20 bg-white/10 px-1 text-[11px] font-black whitespace-nowrap text-gray-200 hover:bg-white/20"
 													title="יורדת מהאתר ושומרת את הימים שנותרו"
 													onclick={(e) => {
 														if (
@@ -1316,7 +1374,7 @@
 											<input type="hidden" name="id" value={s.id} />
 											<button
 												type="submit"
-												class="rounded-lg border border-amber-500/40 bg-amber-500/15 px-2 py-1 text-[11px] font-black whitespace-nowrap text-amber-200 hover:bg-amber-500/25"
+												class="inline-flex h-7 w-full items-center justify-center rounded-lg border border-amber-500/40 bg-amber-500/15 px-1 text-[11px] font-black whitespace-nowrap text-amber-200 hover:bg-amber-500/25"
 												title="חוזרת לתור האישורים"
 												onclick={(e) => {
 													if (!confirm('להוריד את הפרסומת מהאתר ולהחזיר אותה לממתינות?'))
@@ -1330,70 +1388,12 @@
 												<input type="hidden" name="id" value={s.id} />
 												<button
 													type="submit"
-													class="rounded-lg border border-red-500/40 bg-red-600/20 px-2 py-1 text-[11px] font-black whitespace-nowrap text-red-300 hover:bg-red-600/30"
+													class="inline-flex h-7 w-full items-center justify-center rounded-lg border border-red-500/40 bg-red-600/20 px-1 text-[11px] font-black whitespace-nowrap text-red-300 hover:bg-red-600/30"
 													onclick={(e) => {
 														if (!confirm(`להעביר את "${s.title}" לאשפה? אפשר לשחזר אותה משם.`)) e.preventDefault();
 													}}>🗑 מחק</button
 												>
 											</form>
-										{/if}
-										<!-- שכפל פרסומת (סופר-אדמין): אותה פרסומת גם במקומות נוספים — למשל
-										     2 ו-6 (אותה רביעייה), כך שהיא נשארת באותה משבצת ולא מתחלפת בסבב.
-										     תג ⧉ = שכפול קיים; לחיצה עליו מבטלת אותו -->
-										{#if data.superAdmin}
-											{@const dup = dupOptions(s)}
-											<div style="display: contents">
-												{#each s.extraSlots ?? [] as n (n)}
-													<form method="POST" action="?/removeExtraSlot" use:enhance>
-														<input type="hidden" name="id" value={s.id} />
-														<input type="hidden" name="slot" value={n} />
-														<button
-															type="submit"
-															class="inline-flex h-6 items-center gap-1 rounded-lg border border-black/20 px-1.5 text-[11px] font-black whitespace-nowrap hover:opacity-80"
-															style="background:{slotOptionBg(n)};color:#111"
-															title="שכפול במקום {n} (רביעייה {slotGroupLetter(n)}׳ · המשבצת ה{slotPosName(n)} בטור) — לחיצה מבטלת את השכפול"
-														>
-															⧉ {n} · {slotGroupLetter(n)}׳ <span class="text-red-700">✕</span>
-														</button>
-													</form>
-												{/each}
-												{#if dup.same.length + dup.rest.length > 0}
-													<form method="POST" action="?/addExtraSlot" use:enhance>
-														<input type="hidden" name="id" value={s.id} />
-														<select
-															name="slot"
-															aria-label="שכפל פרסומת"
-															onchange={(e) => e.currentTarget.form?.requestSubmit()}
-															class="rounded-lg border border-sky-500/40 bg-sky-500/15 px-1.5 py-1 text-[11px] font-black text-sky-200 focus:border-sky-400/60 focus:outline-none"
-														>
-															<option value="" selected disabled>⧉ שכפל פרסומת</option>
-															{#if dup.same.length > 1}
-																<option value="same" style="background:#fff;color:#111;font-weight:700">
-																	★ קבועה בכל הרביעייה ({dup.same.join(', ')})
-																</option>
-															{/if}
-															{#if dup.same.length > 0}
-																<optgroup label="★ אותה רביעייה (אותה משבצת)">
-																	{#each dup.same as n (n)}
-																		<option value={n} style="background:{slotOptionBg(n)};color:#111">
-																			{n} · {slotPosName(n)}
-																		</option>
-																	{/each}
-																</optgroup>
-															{/if}
-															{#each groupSlotOptions(dup.rest) as grp (grp.letter)}
-																<optgroup label="— רביעייה {grp.letter}׳ —">
-																	{#each grp.nums as n (n)}
-																		<option value={n} style="background:{slotOptionBg(n)};color:#111">
-																			{n} · {slotPosName(n)}
-																		</option>
-																	{/each}
-																</optgroup>
-															{/each}
-														</select>
-													</form>
-												{/if}
-											</div>
 										{/if}
 									</div>
 								</td>
