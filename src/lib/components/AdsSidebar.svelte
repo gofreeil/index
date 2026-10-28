@@ -41,7 +41,7 @@
 			hover: a.hover,
 			href: a.href,
 			trackId: /** @type {string|undefined} */ (undefined),
-			target: /** @type {'_blank'} */ ('_blank'),
+			target: /** @type {'_self'} */ ('_self'),
 			image: a.image,
 			// למודעות השותפים הסטטיות אין fit — ברירת המחדל שקולה ל-object-cover
 			imageFit: /** @type {{x:number,y:number,z:number}|undefined} */ (undefined),
