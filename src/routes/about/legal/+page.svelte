@@ -548,10 +548,6 @@
 							<span class="contact-icon">✉️</span>
 							<span>freedomhasbegun@gmail.com</span>
 						</a>
-						<a href="mailto:support@melecshop.com" class="contact-item">
-							<span class="contact-icon">✉️</span>
-							<span>support@melecshop.com</span>
-						</a>
 						<a href="tel:0508750632" class="contact-item">
 							<span class="contact-icon">📞</span>
 							<span dir="ltr">050‑8750632</span>

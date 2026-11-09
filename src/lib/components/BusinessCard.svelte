@@ -190,8 +190,11 @@
 			     הכיתוב שמסביר מה הוא — 🎁 15% הנחה לנו -->
 			{#if business.discount}
 				<p class="mt-2 line-clamp-2 text-xs leading-tight font-medium text-emerald-400">
-					🎁 {business.discount}
-					{t.benefitShort}
+					{#if /^\s*\d+(\.\d+)?\s*%?\s*$/.test(String(business.discount))}
+						🎁 {String(business.discount).replace(/[\s%]/g, '')}% {t.benefitShort}
+					{:else}
+						🎁 {business.discount}
+					{/if}
 				</p>
 			{/if}
 

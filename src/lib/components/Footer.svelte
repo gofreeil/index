@@ -72,7 +72,7 @@
 				</a>
 				<span class="hidden font-black text-gray-600 md:inline" aria-hidden="true">|</span>
 				<a
-					href="mailto:support@melecshop.com"
+					href="mailto:freedomhasbegun@gmail.com"
 					class="border-s border-b border-white/10 py-2 text-center transition-colors hover:text-white md:border-0 md:py-0"
 					aria-label={t.contactEmailAria}>{t.contact}</a
 				>

@@ -60,6 +60,6 @@ export const FAQS = [
 	{
 		q: 'איך יוצרים קשר או מדווחים על בעיה?',
 		a: 'לפניות כלליות כותבים לצוות בכתובת המייל שבקישור "צור קשר" בתחתית כל דף. אם בעל מקצוע מהאינדקס לא עמד בהתחייבויותיו — לא נתן את ההטבה, סירב לקבל מזומן או הפר את הקוד האתי — ממלאים את טופס "דיווח על עסק" באתר, ותלונה על השירות עצמו אפשר להביא לבירור בבתי הפיוס.',
-		link: { href: 'mailto:support@melecshop.com', label: 'support@melecshop.com' }
+		link: { href: 'mailto:freedomhasbegun@gmail.com', label: 'freedomhasbegun@gmail.com' }
 	}
 ];
