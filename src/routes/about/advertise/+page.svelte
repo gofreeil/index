@@ -763,14 +763,14 @@
 	<!-- ===== STEP 3: Period confirmation (FREE editing day + expiration) ===== -->
 	{#if hasSelection}
 		<div
-			class="mt-8 rounded-2xl border-2 border-purple-500/40 bg-gradient-to-br from-purple-900/20 to-indigo-900/15 p-5 md:p-7"
+			class="mt-4 rounded-xl border border-purple-500/40 bg-gradient-to-br from-purple-900/20 to-indigo-900/15 p-3 md:p-4"
 			dir="rtl"
 		>
 			<h2
-				class="mb-3 flex items-center justify-center gap-2 text-center text-xl font-black text-white md:text-2xl"
+				class="mb-2 flex items-center justify-center gap-2 text-center text-base font-black text-white md:text-lg"
 			>
 				<span
-					class="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-sm font-black text-black"
+					class="flex h-6 w-6 md:h-7 md:w-7 flex-shrink-0 items-center justify-center rounded-full text-xs md:text-sm font-black text-black"
 					style="background: radial-gradient(circle, #fde047 0%, #f59e0b 60%, #d97706 100%); opacity: 0.85"
 					>3</span
 				>
@@ -778,39 +778,25 @@
 			</h2>
 
 			<!-- Explainer -->
-			<div class="mb-5 rounded-xl border border-white/10 bg-white/3 p-4 md:p-5">
-				<p class="mb-2 flex items-center gap-2 text-sm font-black text-amber-300 md:text-base">
-					<span class="text-xl">🎁</span>
-					<span>יום העריכה - חינם על חשבון המערכת</span>
-				</p>
-				<ul
-					class="list-outside list-disc space-y-1.5 pr-6 text-xs leading-relaxed text-gray-200 md:text-sm"
-				>
-					<li>
-						היום, <strong class="text-amber-200">{fmtDate(today)}</strong>, הוא יום העריכה החינמית -
-						לא נספר בתקופת הפרסום.
-					</li>
+			<div class="mb-2 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-gray-200">
+				<div class="flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-center">
+					<span class="font-bold text-amber-300">🎁 יום העריכה - חינם על חשבון המערכת:</span>
+					<span>היום, <strong class="text-amber-200">{fmtDate(today)}</strong>, הוא יום העריכה החינמית - לא נספר בתקופת הפרסום.</span>
 					{#each expirationInfos as info (info.date.getTime())}
-						<li>
-							הפרסומת תרוץ <strong class="text-amber-200">{info.period}</strong> - עד
-							<strong class="text-amber-200">{fmtDate(info.date)} כולל</strong>.
-						</li>
+						<span>• הפרסומת תרוץ <strong class="text-amber-200">{info.period}</strong> - עד <strong class="text-amber-200">{fmtDate(info.date)} כולל</strong>.</span>
 					{/each}
-					<li>
-						תקופת העריכה החינמית נגמרת היום ב<strong class="text-amber-200">23:59</strong>. כדאי
-						לסיים את העריכה לפני זה!
-					</li>
-				</ul>
+					<span class="text-gray-400">(תקופת העריכה החינמית נגמרת היום ב-<strong class="text-amber-200">23:59</strong>. כדאי לסיים את העריכה לפני זה!)</span>
+				</div>
 			</div>
 
-			<!-- Two-month calendar with markers -->
-			<div class="mb-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+			<!-- Two-month calendar with markers - compact height -->
+			<div class="mb-2 grid grid-cols-1 gap-2 md:grid-cols-2">
 				{#each [today, ...expirationInfos.map((i) => i.date)] as anchor (anchor.getTime())}
 					{@const cells = buildCalendar(anchor)}
-					<div class="rounded-xl border border-white/10 bg-black/30 p-3">
-						<p class="mb-2 text-center text-sm font-black text-amber-300">{fmtMonthName(anchor)}</p>
+					<div class="rounded-lg border border-white/10 bg-black/30 p-2">
+						<p class="mb-1 text-center text-xs font-black text-amber-300">{fmtMonthName(anchor)}</p>
 						<div
-							class="mb-1 grid grid-cols-7 gap-0.5 text-center text-[10px] font-bold text-gray-500"
+							class="mb-0.5 grid grid-cols-7 gap-0.5 text-center text-[9px] font-bold text-gray-400"
 						>
 							{#each ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'] as dow (dow)}
 								<div>{dow}</div>
@@ -822,10 +808,10 @@
 								{@const isToday = sameDay(cell, today)}
 								{@const isExpiry = expirationInfos.some((i) => sameDay(cell, i.date))}
 								<div
-									class="flex aspect-square items-center justify-center rounded text-xs font-bold
+									class="flex h-5 sm:h-5.5 items-center justify-center rounded text-[10px] sm:text-[11px] font-bold
 									{!inMonth ? 'text-gray-700' : 'text-gray-300'}
-									{isToday ? 'bg-amber-500 text-black ring-2 ring-amber-300' : ''}
-									{isExpiry && !isToday ? 'bg-red-500 text-white ring-2 ring-red-300' : ''}"
+									{isToday ? 'bg-amber-500 text-black ring-1 ring-amber-300' : ''}
+									{isExpiry && !isToday ? 'bg-red-500 text-white ring-1 ring-red-300' : ''}"
 								>
 									{cell.getDate()}
 								</div>
@@ -836,29 +822,29 @@
 			</div>
 
 			<!-- Calendar legend -->
-			<div class="mb-5 flex flex-wrap items-center justify-center gap-4 text-xs text-gray-400">
+			<div class="mb-2 flex flex-wrap items-center justify-center gap-3 text-[11px] text-gray-400">
 				<span class="inline-flex items-center gap-1.5"
-					><span class="h-3 w-3 rounded bg-amber-500"></span> היום - יום עריכה חינם</span
+					><span class="h-2.5 w-2.5 rounded bg-amber-500"></span> היום - יום עריכה חינם</span
 				>
 				<span class="inline-flex items-center gap-1.5"
-					><span class="h-3 w-3 rounded bg-red-500"></span> תאריך תפוגת הפרסומת</span
+					><span class="h-2.5 w-2.5 rounded bg-red-500"></span> תאריך תפוגת הפרסומת</span
 				>
 			</div>
 
 			<!-- Confirmation checkbox -->
 			<label
-				class="flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-white/5 p-4 transition-colors hover:border-amber-500/40 hover:bg-white/8"
+				class="mb-2 flex cursor-pointer items-center gap-2.5 rounded-lg border border-white/10 bg-white/5 px-3 py-2 transition-colors hover:border-amber-500/40 hover:bg-white/8"
 			>
 				<input
 					type="checkbox"
 					bind:checked={confirmedPeriod}
-					class="mt-0.5 h-5 w-5 flex-shrink-0 cursor-pointer rounded border-2 border-amber-500/50 accent-amber-500"
+					class="h-4 w-4 flex-shrink-0 cursor-pointer rounded border-2 border-amber-500/50 accent-amber-500"
 				/>
-				<div class="flex-1">
-					<p class="mb-1 text-sm font-bold text-white md:text-base">
+				<div class="flex-1 text-xs">
+					<p class="font-bold text-white text-xs sm:text-sm">
 						הבנתי את אורך התקופה ואת תאריך התפוגה
 					</p>
-					<p class="text-xs leading-relaxed text-gray-400 md:text-sm">
+					<p class="text-[11px] sm:text-xs leading-snug text-gray-400">
 						היום ({fmtDate(today)}) - יום עריכה חינם. הפרסומת שלי תפעל עד
 						{#each expirationInfos as info, i (info.date.getTime())}{#if i > 0}
 								·
