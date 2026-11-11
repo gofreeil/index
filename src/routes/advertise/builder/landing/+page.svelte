@@ -133,6 +133,19 @@
 	let subLineHeight = $state(undefined);
 	/** @type {unknown} */
 	let subAlign = $state(undefined);
+	// הזזת הטקסטים בפופ-אפ הנייד (שלב 7) - ערכים גולמיים, parseAdStyle מנרמל
+	/** @type {unknown} */
+	let mobTitleX = $state(undefined);
+	/** @type {unknown} */
+	let mobTitleY = $state(undefined);
+	/** @type {unknown} */
+	let mobSubX = $state(undefined);
+	/** @type {unknown} */
+	let mobSubY = $state(undefined);
+	/** @type {unknown} */
+	let mobCtaX = $state(undefined);
+	/** @type {unknown} */
+	let mobCtaY = $state(undefined);
 	let diagHeight = $state(12);
 	let gradient = $state('linear-gradient(135deg, #f59e0b, #ea580c)');
 
@@ -207,6 +220,12 @@
 				subFontSize,
 				subLineHeight,
 				subAlign,
+				mobTitleX,
+				mobTitleY,
+				mobSubX,
+				mobSubY,
+				mobCtaX,
+				mobCtaY,
 				lpLogoAlign: lpAlign,
 				lpLogoBg: lpBg,
 				lpLogoSize: lpSize
@@ -501,6 +520,12 @@
 					subFontSize = d.subFontSize;
 					subLineHeight = d.subLineHeight;
 					subAlign = d.subAlign;
+					mobTitleX = d.mobTitleX;
+					mobTitleY = d.mobTitleY;
+					mobSubX = d.mobSubX;
+					mobSubY = d.mobSubY;
+					mobCtaX = d.mobCtaX;
+					mobCtaY = d.mobCtaY;
 					diagHeight = typeof d.diagHeight === 'number' ? d.diagHeight : 12;
 					gradient = d.gradient ?? gradient;
 					lpAlign = d.lpLogoAlign === 'center' || d.lpLogoAlign === 'left' ? d.lpLogoAlign : 'right';

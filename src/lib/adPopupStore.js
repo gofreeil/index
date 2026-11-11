@@ -24,6 +24,7 @@ import { ads } from './adsData.js';
  * @property {import('./adImageFit').AdImageFit} [imageFit]
  * @property {number} [imageScale]
  * @property {string} color
+ * @property {{ logo: string, style: import('./adStyle').AdStyle }} [card] פרסומת משולמת מהבילדר — הפופ-אפ מצויר בדיוק כמו שלב 7
  */
 
 const STORAGE_KEY = 'ad_popup_deck_v1';

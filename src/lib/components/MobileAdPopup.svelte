@@ -4,6 +4,7 @@
 	// שניות וממשיכה ליעד שנלחץ.
 	import { adPopup, closeAdPopup } from '$lib/adPopupStore.js';
 	import { adImgFit } from '$lib/adImageFit';
+	import MobileAdCard from '$lib/components/MobileAdCard.svelte';
 	import { markAdSeen, trackAdClick } from '$lib/adTrack.js';
 	import { beforeNavigate, goto } from '$app/navigation';
 	import { onDestroy } from 'svelte';
@@ -69,6 +70,26 @@
 				></div>
 			</div>
 
+			{#if popup.ad.card}
+				<!-- פרסומת משולמת: אותו כרטיס בדיוק כמו התצוגה בשלב 7 בבילדר -->
+				<MobileAdCard
+					title={popup.ad.title}
+					subtitle={popup.ad.description}
+					cta={popup.ad.cta}
+					image={popup.ad.image}
+					imageFit={popup.ad.imageFit ?? { x: 50, y: 50, z: popup.ad.imageScale ?? 1, r: 0 }}
+					logo={popup.ad.card.logo}
+					gradient={popup.ad.color}
+					st={popup.ad.card.style}
+					showCta={!!popup.ad.cta}
+					{countdown}
+					onclose={handleClose}
+					href={popup.ad.href}
+					target={popup.ad.internal ? undefined : '_blank'}
+					rel={popup.ad.internal ? undefined : 'noopener noreferrer'}
+					onctaclick={handleAdClick}
+				/>
+			{:else}
 			<button
 				onclick={handleClose}
 				class="absolute top-2 left-2 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-white/25 bg-black/55 text-xs font-bold text-white transition-colors hover:bg-black/80"
@@ -124,6 +145,7 @@
 				</a>
 				{/if}
 			</div>
+			{/if}
 		</div>
 	</div>
 {/if}

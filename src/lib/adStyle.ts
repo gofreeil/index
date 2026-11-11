@@ -72,7 +72,18 @@ export interface AdStyle {
 	subLineHeight: number;
 	/** יישור תת-הכותרת */
 	subAlign: SubAlign;
+	/** הזזת הכותרת / תת-הכותרת / הכפתור בפופ-אפ הנייד, באחוזי רוחב הכרטיס (cqw) */
+	mobTitleX: number;
+	mobTitleY: number;
+	mobSubX: number;
+	mobSubY: number;
+	mobCtaX: number;
+	mobCtaY: number;
 }
+
+/** טווח ההזזה בנייד (באחוזי רוחב הכרטיס) */
+export const MOB_OFFSET_MIN = -50;
+export const MOB_OFFSET_MAX = 50;
 
 /** ברירת המחדל של הבילדר: רצועה בגובה 12% מהתמונה */
 export const DEFAULT_BAND_HEIGHT = 12;
@@ -111,7 +122,13 @@ export const DEFAULT_AD_STYLE: AdStyle = {
 	titleFontSize: DEFAULT_TITLE_FONT_SIZE,
 	subFontSize: DEFAULT_SUB_FONT_SIZE,
 	subLineHeight: DEFAULT_SUB_LINE_HEIGHT,
-	subAlign: 'right'
+	subAlign: 'right',
+	mobTitleX: 0,
+	mobTitleY: 0,
+	mobSubX: 0,
+	mobSubY: 0,
+	mobCtaX: 0,
+	mobCtaY: 0
 };
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
@@ -163,8 +180,18 @@ export function parseAdStyle(raw: unknown): AdStyle | null {
 			SUB_LINE_HEIGHT_MIN,
 			SUB_LINE_HEIGHT_MAX
 		),
-		subAlign: parseSubAlign(o.subAlign)
+		subAlign: parseSubAlign(o.subAlign),
+		mobTitleX: mobOffset(o.mobTitleX),
+		mobTitleY: mobOffset(o.mobTitleY),
+		mobSubX: mobOffset(o.mobSubX),
+		mobSubY: mobOffset(o.mobSubY),
+		mobCtaX: mobOffset(o.mobCtaX),
+		mobCtaY: mobOffset(o.mobCtaY)
 	};
+}
+
+function mobOffset(v: unknown): number {
+	return clamp(num(v) ?? 0, MOB_OFFSET_MIN, MOB_OFFSET_MAX);
 }
 
 function parseSubAlign(v: unknown): SubAlign {

@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
+	import MobileAdCard from '$lib/components/MobileAdCard.svelte';
 	import { adImgFit, AD_ZOOM_MIN, AD_ZOOM_MAX } from '$lib/adImageFit';
 	import { logoClearance } from '$lib/logoClearance';
 	import {
@@ -360,6 +361,31 @@
 	let subFontSize = $state(DEFAULT_SUB_FONT_SIZE);
 	let subLineHeight = $state(DEFAULT_SUB_LINE_HEIGHT);
 	let subAlign = $state(/** @type {import('$lib/adStyle').SubAlign} */ ('right'));
+	// הזזת הכותרת / הכיתוב / הכפתור בפופ-אפ הנייד (שלב 7), באחוזי רוחב הכרטיס
+	let mobTitleX = $state(0);
+	let mobTitleY = $state(0);
+	let mobSubX = $state(0);
+	let mobSubY = $state(0);
+	let mobCtaX = $state(0);
+	let mobCtaY = $state(0);
+	/** @param {unknown} v */
+	const num0 = (v) => (typeof v === 'number' && isFinite(v) ? v : 0);
+	/** @param {'title' | 'sub' | 'cta'} key @param {number} x @param {number} y */
+	function moveMobile(key, x, y) {
+		if (key === 'title') {
+			mobTitleX = x;
+			mobTitleY = y;
+		} else if (key === 'sub') {
+			mobSubX = x;
+			mobSubY = y;
+		} else {
+			mobCtaX = x;
+			mobCtaY = y;
+		}
+	}
+	function resetMobilePositions() {
+		mobTitleX = mobTitleY = mobSubX = mobSubY = mobCtaX = mobCtaY = 0;
+	}
 	let hoverText = $state('');
 	let cta = $state('הקלק לפרטים והזמנות');
 	// גרדיאנט כמחרוזת CSS - תואם לשדה color של adsData.js באתר הזה
@@ -494,7 +520,13 @@
 		titleColor,
 		subFontSize,
 		subLineHeight,
-		subAlign
+		subAlign,
+		mobTitleX,
+		mobTitleY,
+		mobSubX,
+		mobSubY,
+		mobCtaX,
+		mobCtaY
 	});
 	// מקום ללוגו פינתי ליד הכותרת - אותו עזר של האתר, כדי שהכותרת תישבר
 	// אותו דבר בתצוגה ובטור
@@ -992,6 +1024,12 @@
 						d.subAlign === 'center' || d.subAlign === 'left' || d.subAlign === 'justify'
 							? d.subAlign
 							: 'right';
+					mobTitleX = num0(d.mobTitleX);
+					mobTitleY = num0(d.mobTitleY);
+					mobSubX = num0(d.mobSubX);
+					mobSubY = num0(d.mobSubY);
+					mobCtaX = num0(d.mobCtaX);
+					mobCtaY = num0(d.mobCtaY);
 					subtitle = d.subtitle ?? '';
 					hoverText = d.hoverText ?? '';
 					cta = d.cta || 'הקלק לפרטים והזמנות';
@@ -1095,6 +1133,12 @@
 			subFontSize,
 			subLineHeight,
 			subAlign,
+			mobTitleX,
+			mobTitleY,
+			mobSubX,
+			mobSubY,
+			mobCtaX,
+			mobCtaY,
 			hoverText,
 			cta,
 			gradient,
@@ -1184,6 +1228,12 @@
 					st.subAlign === 'center' || st.subAlign === 'left' || st.subAlign === 'justify'
 						? st.subAlign
 						: 'right';
+				mobTitleX = num0(st.mobTitleX);
+				mobTitleY = num0(st.mobTitleY);
+				mobSubX = num0(st.mobSubX);
+				mobSubY = num0(st.mobSubY);
+				mobCtaX = num0(st.mobCtaX);
+				mobCtaY = num0(st.mobCtaY);
 			}
 
 			landingHeadline = ad.landing?.headline ?? '';
@@ -2172,46 +2222,34 @@
 							<div class="phone-screen">
 								<div class="phone-notch"></div>
 								<div class="phone-content">
-									<div class="mobile-popup">
-										<div class="popup-title-row">
-											{#if logo}
-												<img
-													src={logo}
-													alt={$bt('b_logo_alt')}
-													class="popup-logo-above"
-													class:circle={logoShape === 'circle'}
-													style={logoBgCss}
-												/>
-											{/if}
-											<h3 class="popup-title-above" style:color={titleColor}>
-												{title || $bt('b_s3_title')}
-											</h3>
-										</div>
-										<div class="popup-img pro-img-wrap">
-											{#if previewMobileImage}
-												<img
-													src={previewMobileImage}
-													alt={title}
-													use:adImgFit={previewMobileFit}
-												/>
-											{:else}
-												<div class="img-placeholder">{$bt('b_main_image_alt')}</div>
-											{/if}
-											<div class="pro-diag" style:background={gradient}></div>
-											<div class="pro-title-wrap mobile">
-												<p class="pro-sub"><span class="logo-avoid" data-anchor="bottom" aria-hidden="true"></span>{subtitle || $bt('b_s5_title')}</p>
-											</div>
-											<div class="close-countdown">5</div>
-										</div>
-										<div class="popup-body">
-											<button type="button" class="popup-cta" style:background={gradient}
-												>← {cta}</button
+									<div class="mobile-popup-slot">
+										<MobileAdCard
+											editable
+											{title}
+											{subtitle}
+											{cta}
+											gradientCss={gradient}
+											image={previewMobileImage}
+											imageFit={previewMobileFit}
+											{logo}
+											st={adStyle}
+											placeholder={$bt('b_main_image_alt')}
+											onedit={(f, v) => {
+												if (f === 'title') title = v;
+												else if (f === 'sub') subtitle = v;
+												else cta = v;
+											}}
+											onmove={moveMobile}
+										/>
+										{#if mobTitleX || mobTitleY || mobSubX || mobSubY || mobCtaX || mobCtaY}
+											<button type="button" class="mobile-reset-pos" onclick={resetMobilePositions}
+												>{$bt('b_mobile_reset_pos')}</button
 											>
-										</div>
+										{/if}
 									</div>
 								</div>
 							</div>
-							<p class="preview-caption">{$bt('ix_mobile_caption')}</p>
+							<p class="preview-caption">{$bt('ix_mobile_caption')} <b>{$bt('b_mobile_edit_hint')}</b></p>
 						</div>
 					{:else}
 						<div class="preview-frame">
@@ -3703,6 +3741,20 @@
 		align-items: center;
 		justify-content: center;
 		padding: 1rem;
+	}
+	.mobile-popup-slot {
+		width: 100%;
+		max-width: 240px;
+	}
+	.mobile-reset-pos {
+		display: block;
+		margin: 0.4rem auto 0;
+		font-size: 0.7rem;
+		padding: 0.15rem 0.6rem;
+		border-radius: 9999px;
+		background: rgba(255, 255, 255, 0.08);
+		color: #fbbf24;
+		border: 1px solid rgba(251, 191, 36, 0.4);
 	}
 	.mobile-popup {
 		width: 100%;

@@ -16,6 +16,7 @@
 	import { page, navigating } from '$app/state';
 	import { onMount } from 'svelte';
 	import { parseAdImageFit } from '$lib/adImageFit';
+	import { parseAdStyle, legacyAdStyle } from '$lib/adStyle';
 
 	let { children, data } = $props();
 
@@ -38,7 +39,11 @@
 					internal: true,
 					image: a.mainImage,
 					imageFit: a.mainImageFit ? parseAdImageFit(a.mainImageFit) : undefined,
-					color: a.gradient
+					color: a.gradient,
+					// הפופ-אפ מצויר מהעיצוב שהמפרסם קבע (כולל הזזת הטקסטים בנייד)
+					card: a.shop
+						? undefined
+						: { logo: a.logo, style: parseAdStyle(a.adStyle) ?? legacyAdStyle(a.title) }
 				}))
 		);
 	});
