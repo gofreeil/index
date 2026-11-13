@@ -36,6 +36,9 @@ export async function GET({ url, locals }) {
 		logo: ad.logo,
 		mainImage: ad.mainImage,
 		mainImageFit: ad.mainImageFit,
+		// תמונה ייעודית לנייד - מגיעה כאן (בקשת בעלים) ולא בנתוני דף
+		mobileImage: ad.mobileImage,
+		mobileImageFit: ad.mobileImageFit,
 		adStyle: ad.adStyle,
 		landing: {
 			headline: L?.headline ?? '',

@@ -12,6 +12,7 @@
 //   landing._payment               'code' (קוד תנועה — כמו שולם) | 'pending'
 //   landing._requestedDurationDays 30 | 180 (התקופה שהמפרסם ביקש)
 //   landing._mainImageFit          {x,y,z} מיקום+זום התמונה הראשית מהבילדר
+//   landing._mobileImage/_mobileImageFit  תמונה ייעודית לנייד (אופציונלי)
 // ============================================================
 
 import { env } from '$env/dynamic/private';
@@ -67,6 +68,9 @@ const TTL_ADS = 120_000;
  * @property {string} imgVersion חותם התוכן של שתי התמונות — משמש כ-?v= בכתובת שמגישה
  *   אותן, כדי שקאש "לנצח" בדפדפן ובקצה יתחלף ברגע שהתמונה מוחלפת. ראו imageStamp.
  * @property {{x:number,y:number,z:number}} mainImageFit מיקום+זום התמונה הראשית במשבצת (מהבילדר)
+ * @property {string} mobileImage תמונה ייעודית לנייד (data URI); ריק = הנייד מציג את הראשית.
+ *   נשמרת ב-landing._mobileImage ומוסרת מ-landing שנשלח לדפדפן (withAdImageUrls).
+ * @property {{x:number,y:number,z:number}} mobileImageFit מיקום+זום התמונה לנייד
  * @property {import('$lib/adStyle').AdStyle|null} adStyle העיצוב שנקבע בבילדר (לוגו, רצועה, כותרת); null = מודעה ותיקה
  * @property {any} landing
  * @property {string} payment "code" = סומן כשולם; "pending" = תשלום לתיאום. הגשה תמיד נכנסת כ-pending.
@@ -128,6 +132,7 @@ function fromStrapi(s) {
 			? s.landing.products.map((/** @type {any} */ p) => p?.image ?? '')
 			: [])
 	];
+	const mobileImage = typeof s.landing?._mobileImage === 'string' ? s.landing._mobileImage : '';
 	return {
 		id: s.documentId,
 		status: s.ad_status,
@@ -154,10 +159,13 @@ function fromStrapi(s) {
 		gradient: s.gradient ?? '',
 		logo,
 		mainImage,
-		imgVersion: imageStamp(logo, mainImage, ...landingImages),
+		// התמונה לנייד נכנסת לחותם רק כשהיא קיימת - כך החותם של מודעות ותיקות לא משתנה
+		imgVersion: imageStamp(logo, mainImage, ...landingImages, ...(mobileImage ? [mobileImage] : [])),
 		landing: s.landing ?? emptyLanding(),
 		// ערכי ההגשה הארוזים ב-landing (ראו כותרת הקובץ)
 		mainImageFit: parseAdImageFit(s.landing?._mainImageFit),
+		mobileImage,
+		mobileImageFit: parseAdImageFit(s.landing?._mobileImageFit),
 		// null במודעות שנשלחו לפני שהעיצוב נשמר — הצרכן נופל ל-legacyAdStyle
 		adStyle: parseAdStyle(s.landing?._adStyle),
 		payment: s.landing?._payment === 'code' ? 'code' : 'pending',
@@ -465,19 +473,20 @@ export async function listApprovedLive() {
  * logo/main הן תמונות הכרטיס בטור. landing ו-product-<n> הן של דף הנחיתה
  * (/ads/<id>) — הדף שאליו מגיעה כל לחיצה על פרסומת, ולכן גם הוא חייב
  * להגיש תמונות מכתובת ולא מוטבעות (הוא שקל 1,218KB לצפייה, 95% מהם base64).
- * @typedef {'logo'|'main'|'landing'|`product-${number}`} AdImageKind
+ * @typedef {'logo'|'main'|'mobile'|'landing'|`product-${number}`} AdImageKind
  */
 
 /** @param {string|undefined} v @returns {v is AdImageKind} */
 export function isAdImageKind(v) {
 	if (!v) return false;
-	return v === 'logo' || v === 'main' || v === 'landing' || /^product-\d+$/.test(v);
+	return v === 'logo' || v === 'main' || v === 'mobile' || v === 'landing' || /^product-\d+$/.test(v);
 }
 
 /** @param {SubmittedAd} ad @param {AdImageKind} kind @returns {string} */
 function pickImage(ad, kind) {
 	if (kind === 'logo') return ad.logo;
 	if (kind === 'main') return ad.mainImage;
+	if (kind === 'mobile') return ad.mobileImage;
 	if (kind === 'landing') return ad.landing?.image ?? '';
 	const idx = Number(kind.slice('product-'.length));
 	return ad.landing?.products?.[idx]?.image ?? '';
@@ -510,11 +519,15 @@ export function withAdImageUrls(ad) {
 				image: p?.image ? adImageUrl(ad, `product-${i}`) : ''
 			}))
 		: [];
+	// התמונה לנייד שמורה בתוך landing רק כי אין לה עמודה - היא לא חלק מדף
+	// הנחיתה ואסור שתיסחב לדפדפן כ-base64; היא יוצאת ככתובת בשדה נפרד
+	const { _mobileImage: _drop, ...landingRest } = ad.landing ?? {};
 	return {
 		...ad,
 		logo: adImageUrl(ad, 'logo'),
 		mainImage: adImageUrl(ad, 'main'),
-		landing: { ...ad.landing, image: adImageUrl(ad, 'landing'), products }
+		mobileImage: adImageUrl(ad, 'mobile'),
+		landing: { ...landingRest, image: adImageUrl(ad, 'landing'), products }
 	};
 }
 
@@ -593,6 +606,8 @@ export async function getOwnAdForEdit(id, identity, { anyOwner = false } = {}) {
  *   logo?: string,
  *   mainImage?: string,
  *   mainImageFit?: unknown,
+ *   mobileImage?: string,
+ *   mobileImageFit?: unknown,
  *   adStyle?: unknown,
  *   landing?: any,
  *   submittedBy?: { id?: string, email?: string, name?: string },
@@ -628,8 +643,13 @@ export async function submitAd(payload) {
 				)
 			}
 		: await findPredecessors(payload);
+	const mobileImage = typeof payload.mobileImage === 'string' ? payload.mobileImage : '';
 	const landing = {
 		...(payload.landing ?? emptyLanding()),
+		// תמונה ייעודית לנייד - רק כשהועלתה; ראו withAdImageUrls
+		...(mobileImage
+			? { _mobileImage: mobileImage, _mobileImageFit: parseAdImageFit(payload.mobileImageFit) }
+			: {}),
 		// הגשה לעולם לא נכנסת כ"שולם". קוד הבעלים הוא *בקשה* לפרסום חינם,
 		// והזכות עצמה ניתנת רק באישור הידני של האדמין.
 		_payment: 'pending',

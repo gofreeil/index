@@ -37,8 +37,9 @@
 					cta: a.shop ? '' : a.cta || a.title,
 					href: `/ads/${a.id}`,
 					internal: true,
-					image: a.mainImage,
-					imageFit: a.mainImageFit ? parseAdImageFit(a.mainImageFit) : undefined,
+					// תמונה ייעודית לנייד גוברת על הראשית, עם ה-fit שלה
+					image: a.mobileImage || a.mainImage,
+					imageFit: parseAdImageFit(a.mobileImage ? a.mobileImageFit : a.mainImageFit),
 					color: a.gradient,
 					// הפופ-אפ מצויר מהעיצוב שהמפרסם קבע (כולל הזזת הטקסטים בנייד)
 					card: a.shop

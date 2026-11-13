@@ -53,6 +53,9 @@ export async function load({ locals }) {
 		mainImage: adImageUrl(a, 'main'),
 		// מיקום+זום שנבחרו בבילדר — מוחלים בתצוגת הסרגל (adImgFit)
 		mainImageFit: a.mainImageFit,
+		// תמונה ייעודית לנייד (ככתובת, לא base64); ריק = הפופ-אפ מציג את הראשית
+		mobileImage: adImageUrl(a, 'mobile'),
+		mobileImageFit: a.mobileImageFit,
 		adStyle: a.adStyle,
 		// מספר המקום בטור (1..12) — נקבע במסך הניהול
 		slot: liveSlots.get(a.id),

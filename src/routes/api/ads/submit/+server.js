@@ -54,6 +54,9 @@ export async function POST({ request, locals }) {
 			logo: payload.logo ?? '',
 			mainImage: payload.mainImage,
 			mainImageFit: payload.mainImageFit,
+			// תמונה ייעודית לנייד (לא חובה) - הפופ-אפ בנייד מציג אותה במקום הראשית
+			mobileImage: typeof payload.mobileImage === 'string' ? payload.mobileImage : undefined,
+			mobileImageFit: payload.mobileImageFit,
 			// העיצוב מהבילדר (לוגו, רצועה, כותרת) — בלעדיו הפרסומת מתפרסמת
 			// עם ברירות המחדל של האתר ולא עם מה שהמפרסם ראה על המסך
 			adStyle: payload.adStyle,

@@ -1190,6 +1190,11 @@
 			mainImageObjectX = typeof ad.mainImageFit?.x === 'number' ? ad.mainImageFit.x : 50;
 			mainImageObjectY = typeof ad.mainImageFit?.y === 'number' ? ad.mainImageFit.y : 50;
 			mainImageZoom = typeof ad.mainImageFit?.z === 'number' ? ad.mainImageFit.z : 1;
+			// תמונה ייעודית לנייד (שלב 7) - נשמרת עם הפרסומת, לא רק בטיוטה
+			mobileImage = ad.mobileImage ?? '';
+			mobileImageObjectX = typeof ad.mobileImageFit?.x === 'number' ? ad.mobileImageFit.x : 50;
+			mobileImageObjectY = typeof ad.mobileImageFit?.y === 'number' ? ad.mobileImageFit.y : 50;
+			mobileImageZoom = typeof ad.mobileImageFit?.z === 'number' ? ad.mobileImageFit.z : 1;
 			title = ad.title ?? '';
 			subtitle = ad.subtitle ?? '';
 			hoverText = ad.hoverText ?? '';
@@ -1485,7 +1490,16 @@
 		<div class="builder-cols">
 			<div class="builder-steps">
 				<!-- =================== שלב 1: תמונה ראשית =================== -->
-				<section bind:this={stepRefs.image} class="step-card">
+				<!-- לחיצה על הכרטיס היא קיצור עכבר בלבד; משתמש מקלדת מגיע לשלב ע"י Tab
+				     לתוך הפקדים שבו, ולכן נוסף onfocusin שמדליק את אותו שלב -->
+				<!-- svelte-ignore a11y_click_events_have_key_events -->
+				<!-- svelte-ignore a11y_no_static_element_interactions -->
+				<section
+					bind:this={stepRefs.image}
+					class="step-card"
+					onclick={() => activeStep === 'image' || (activeStep = 'image')}
+					onfocusin={() => activeStep === 'image' || (activeStep = 'image')}
+				>
 					<div class="step-head" class:step-title-light={litFlags.image.title}>
 						<span class="step-num" class:step-num-light={litFlags.image.num}>1</span>
 						<h2>{$bt('b_s1_title')}</h2>
@@ -2087,7 +2101,20 @@
 				</section>
 
 				<!-- =================== שלב 6: טקסט בריחוף =================== -->
-				<section bind:this={stepRefs.hover} class="step-card">
+				<!-- כמו בשלב 1: קיצור עכבר, ומקבילה למקלדת דרך onfocusin -->
+				<!-- svelte-ignore a11y_click_events_have_key_events -->
+				<!-- svelte-ignore a11y_no_static_element_interactions -->
+				<section
+					bind:this={stepRefs.hover}
+					class="step-card"
+					onclick={(e) => {
+						if (/** @type {HTMLElement} */ (e.target).closest('button, a, input, textarea')) return;
+						if (activeStep !== 'hover') activeStep = 'hover';
+					}}
+					onfocusin={() => {
+						if (activeStep !== 'hover') activeStep = 'hover';
+					}}
+				>
 					<div class="step-head" class:step-title-light={litFlags.hover.title}>
 						<span class="step-num" class:step-num-light={litFlags.hover.num}>6</span>
 						<h2>{$bt('b_s6_title')}</h2>
@@ -2118,7 +2145,8 @@
 					{#if logo}
 					    <div class="mt-3 rounded-lg border border-white/10 bg-black/20 p-2.5 space-y-2">
 					        <label class="flex items-center gap-2 text-sm font-bold text-gray-300 cursor-pointer">
-					            <input type="checkbox" bind:checked={hoverLogo} class="accent-amber-500" />
+					            <input type="checkbox" bind:checked={hoverLogo} class="accent-amber-500"
+					                   onchange={() => activeStep === 'hover' || (activeStep = 'hover')} />
 					            {$bt('b_hover_logo')}
 					        </label>
 					        {#if hoverLogo}
@@ -2424,6 +2452,8 @@
 							></div>
 							<div
 								class="pro-title-top"
+								class:has-corner-logo-right={titleCornerSide === 'right'}
+								class:has-corner-logo-left={titleCornerSide === 'left'}
 								style:transform="translateY({titleOffsetY}px)"
 								style:opacity={activeStep === 'hover' ? 0 : 1}
 							>
