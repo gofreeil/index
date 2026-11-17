@@ -268,12 +268,17 @@
 									{#if b.discount}
 										<p class="mt-2 text-sm font-medium text-green-400">🎁 {b.discount}</p>
 									{/if}
-									{#if b.description}
-										<p class="mt-2 line-clamp-3 text-sm text-gray-400">{b.description}</p>
+									<!-- הטקסט של העסק יושב ב-unique_content; description הוא שריד -->
+									{#if b.unique_content || b.description}
+										<p class="mt-2 line-clamp-3 text-sm whitespace-pre-line text-gray-400">
+											{b.unique_content || b.description}
+										</p>
 									{/if}
-									{#if b.website || b.address || b.sales_area}
+									{#if b.website || b.address || b.city || b.sales_area}
 										<p class="mt-2 text-xs text-gray-500">
-											{b.address || b.sales_area || ''}{b.website ? ' · ' + b.website : ''}
+											{[b.address, b.city].filter(Boolean).join(', ') ||
+												b.sales_area ||
+												''}{b.website ? ' · ' + b.website : ''}
 										</p>
 									{/if}
 									<!-- התגיות שהמגיש רשם: הן ייכנסו למנוע החיפוש עם האישור,

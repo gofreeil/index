@@ -7,7 +7,8 @@
 // טיפול נפרד. אותו דפוס תוקן ב"קהילה בשכונה": בקשה זהה שכבר ממתינה
 // מתעדכנת במקום להיווצר שוב, והמגיש מקבל הודעה כנה ("כבר נשלחה").
 //
-// "אותו עסק" = אותו שם (בלי רגישות לרישיות, רווחים וסימני פיסוק) וגם
+// "אותו עסק" = אותו שם (בלי רגישות לרישיות, רווחים וסימני פיסוק; או שם
+// שמתחיל בשם השני, "X" מול "X - תוספת") וגם
 // אותו טלפון (לפי canonicalPhoneKey) או אותו אימייל של בעל העסק.
 // שם בלבד לא מספיק — "מוסך הגליל" יכול להיות שני עסקים שונים; טלפון בלבד
 // לא מספיק — לבעל עסק אחד יכולים להיות שני עסקים.
@@ -31,6 +32,21 @@ export function normalizeBizName(raw) {
 		.trim();
 }
 
+/**
+ * שם זהה, או שם אחד הוא תחילת השני במילים שלמות: "נעה שוהם" ו-"נעה שוהם -
+ * בהירות עיסקית" הם אותו עסק שהוגש שוב עם תוספת לשם. כך נוצרו שלוש בקשות
+ * ושלוש התראות לאותה כרטיסייה. (עדיין דרוש גם טלפון/אימייל זהה.)
+ * @param {unknown} x @param {unknown} y
+ */
+function sameBizName(x, y) {
+	const a = normalizeBizName(x);
+	const b = normalizeBizName(y);
+	if (!a || !b) return false;
+	if (a === b) return true;
+	const [short, long] = a.length < b.length ? [a, b] : [b, a];
+	return short.length >= 3 && long.startsWith(short + ' ');
+}
+
 /** @param {any} b */
 function ownerEmailOf(b) {
 	return String(b?.extra_fields?.owner_email ?? b?.email ?? '')
@@ -51,8 +67,7 @@ function ownerEmailOf(b) {
  * @param {any} a @param {any} b
  */
 export function isSameBusiness(a, b) {
-	const name = normalizeBizName(a?.name);
-	if (!name || name !== normalizeBizName(b?.name)) return false;
+	if (!sameBizName(a?.name, b?.name)) return false;
 	const pa = canonicalPhoneKey(a?.phone);
 	if (pa && pa === canonicalPhoneKey(b?.phone)) return true;
 	const ea = ownerEmailOf(a);
