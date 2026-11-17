@@ -1,7 +1,13 @@
 import { verifyStrapiJwt, displayName } from '$lib/server/strapi';
 import { rememberUser, recallUser } from '$lib/server/rememberedUser.js';
 import { getSiteProfile } from '$lib/server/profileStore';
-import { SESSION_COOKIE, SHARED_SSO_COOKIE } from '$lib/server/session';
+import {
+	SESSION_COOKIE,
+	SHARED_SSO_COOKIE,
+	SHARED_MARK_COOKIE,
+	setSharedSession,
+	clearSession
+} from '$lib/server/session';
 import { avatarSrc } from '$lib/server/userAvatar.js';
 
 // נתיב תמונות הפרסומות — ציבורי לחלוטין ולא תלוי-משתמש. חייב לעקוף את
@@ -37,6 +43,15 @@ export async function handle({ event, resolve }) {
 	}
 
 	event.locals.user = null;
+	// הסשן שותף עם הרשת והעוגייה המשותפת נמחקה → התנתקות באתר אחר; מתנתקים גם כאן
+	if (
+		event.cookies.get(SESSION_COOKIE) &&
+		!event.cookies.get(SHARED_SSO_COOKIE) &&
+		event.cookies.get(SHARED_MARK_COOKIE)
+	) {
+		clearSession(event.cookies);
+		return resolve(event);
+	}
 	const jwt = event.cookies.get(SESSION_COOKIE) || event.cookies.get(SHARED_SSO_COOKIE);
 	if (jwt) {
 		const r = await verifyStrapiJwt(jwt);
@@ -57,6 +72,9 @@ export async function handle({ event, resolve }) {
 				avatar: avatarSrc(me.avatar_url)
 			};
 			rememberUser(event.cookies, jwt, event.locals.user);
+			// מחובר רק כאן (עוגיית האינדקס, מלפני שההתחברות כתבה גם את המשותפת)?
+			// משתפים עם שאר הרשת עכשיו — בלי שיתבקש להתחבר שוב באף אתר.
+			if (!event.cookies.get(SHARED_SSO_COOKIE)) setSharedSession(event.cookies, jwt, event.url);
 		}
 	}
 	return resolve(event);

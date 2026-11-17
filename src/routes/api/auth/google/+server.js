@@ -10,7 +10,7 @@ const client = new OAuth2Client(PUBLIC_GOOGLE_CLIENT_ID);
 // התחברות Google → JWT אמיתי ב-Strapi המשותף (בלי סיסמה דטרמיניסטית).
 // ה-ID token מאומת (חתימה + audience), ואז מונפק JWT דרך strapiGoogleUpsert
 // (issue-jwt / הרשמה בסיסמה אקראית). ה-JWT נשמר ב-cookie httpOnly.
-export async function POST({ request, cookies }) {
+export async function POST({ request, cookies, url }) {
 	try {
 		const { credential } = await request.json();
 
@@ -34,7 +34,7 @@ export async function POST({ request, cookies }) {
 				{ status: 500 }
 			);
 		}
-		setSession(cookies, result.jwt);
+		setSession(cookies, result.jwt, url);
 		return json({ success: true, user: result.user });
 	} catch (error) {
 		console.error('Google Auth API Error:', error);

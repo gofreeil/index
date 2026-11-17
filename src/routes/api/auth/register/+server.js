@@ -4,7 +4,7 @@ import { setSession } from '$lib/server/session';
 
 // הרשמה מול ה-Strapi המשותף של יוצאים לחירות (רשימת המשתמשים המאוחדת).
 // ה-JWT נשמר ב-cookie httpOnly (לא מוחזר ללקוח / לא ב-localStorage).
-export async function POST({ request, cookies }) {
+export async function POST({ request, cookies, url }) {
 	try {
 		const { name, email, password } = await request.json();
 		if (!email || !password) {
@@ -16,7 +16,7 @@ export async function POST({ request, cookies }) {
 
 		try {
 			const { jwt, user } = await strapiRegister(username, emailLc, password);
-			if (jwt) setSession(cookies, jwt);
+			if (jwt) setSession(cookies, jwt, url);
 			return json({
 				success: true,
 				user: { id: String(user.id), name: displayName(user) || name || '', email: user.email }

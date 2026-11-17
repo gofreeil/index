@@ -1,6 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { confirmPasswordReset, RecoveryError, SHARED_COOKIE, sharedCookieOptions } from '$lib/server/recovery';
+import { confirmPasswordReset, RecoveryError } from '$lib/server/recovery';
 import { setSession } from '$lib/server/session';
 
 // אחרי שהסיסמה נקבעה המשתמש נכנס מיד: סשן האינדקס (idx-auth) + העוגייה המשותפת
@@ -39,8 +39,7 @@ export const actions: Actions = {
 			return failReset(503, 'תקלה זמנית בשרת. נסו שוב בעוד רגע.');
 		}
 
-		setSession(cookies, jwt);
-		cookies.set(SHARED_COOKIE, jwt, sharedCookieOptions(url));
+		setSession(cookies, jwt, url);
 		throw redirect(303, AFTER_RESET);
 	}
 };
