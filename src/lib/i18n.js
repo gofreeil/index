@@ -10,6 +10,7 @@ export const translations = {
 		// טולטיפ הלוגו שבכותרת — הלוגו הוא הקישור לדף הבית, וזה מה שמסביר אותו
 		homeTooltip: 'לדף הבית — מדריך בעלי מקצוע כשירים',
 		addStore: 'הוסף עסק',
+		addAnotherStore: 'הוסף עסק נוסף',
 		// כפתור המידע שבכותרת. הכיתוב קצר בכוונה ("מידע" ולא "מדיניות הקהילה"):
 		// הכותרת צפופה במובייל, וכותרת המסמך עצמו (communityPolicyTitle) ממילא
 		// מסבירה במה מדובר ברגע שהוא נפתח.
@@ -332,6 +333,7 @@ export const translations = {
 		addStore: 'Add Store',
 		info: 'Info',
 		aboutTab: 'About',
+		addAnotherStore: 'Add another store',
 		termsTab: 'Community Terms',
 		standardTab: 'Quality Mark',
 		search: 'Search businesses...',
@@ -648,6 +650,7 @@ export const translations = {
 		aboutTab: 'О сайте',
 		termsTab: 'Условия сообщества',
 		standardTab: 'Знак качества',
+		addAnotherStore: 'Добавить ещё один магазин',
 		search: 'Поиск бизнеса...',
 		totalBusinesses: 'Всего {count} бизнеса в индексе',
 		foundResults: 'Найдено {count} результатов',

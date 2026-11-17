@@ -214,6 +214,14 @@
 	>
 		<!-- אווטאר + שם + אימייל בשורה אחת. כשיש פריטים שממתינים לטיפול (אדמין)
 		     — בועה אדומה ממוספרת בפינה, אותו מספר שמופיע על האווטאר בהאדר. -->
+	<!-- חזרה למדריך — בראש העמוד, מעל כרטיס הזהות -->
+	<a
+		href="/"
+		class="mx-auto -mb-1 w-full max-w-lg text-sm font-bold text-blue-700 transition hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-100"
+	>
+		→ {t.backToDirectory}
+	</a>
+
 		<div class="flex items-center gap-3">
 			<div class="relative h-12 w-12 flex-shrink-0">
 				<div
@@ -278,12 +286,6 @@
 					✏️ {t.profileEdit}
 				</button>
 			</div>
-			{#if !profile.phone}
-				<p class="mt-1 text-[11px] leading-tight text-gray-400 dark:text-gray-500">
-					{t.myPhoneHint}
-				</p>
-			{/if}
-
 			<!-- השינוי נשמר רק כאן — מזכירים לו שברשת יש לו פרטים אחרים,
 			     ומאפשרים להחיל בכל האתרים בלחיצה אחת בלי לערוך שוב. -->
 			{#if profile.scope === 'site'}
@@ -454,21 +456,6 @@
 			{/if}
 		{/if}
 
-		<!-- קיצורים -->
-		<div class="mt-3 grid grid-cols-2 gap-2">
-			<a
-				href="/submit-business"
-				class="flex items-center justify-center gap-1 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 text-sm font-bold text-white shadow-md transition hover:scale-[1.02] active:scale-95"
-			>
-				{t.addStore}
-			</a>
-			<a
-				href="/"
-				class="flex items-center justify-center rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
-			>
-				{t.backToDirectory}
-			</a>
-		</div>
 	</div>
 
 	<!-- כרטיסיות שנראות שלך — הכרטיסיות שהוזרמו בייבוא נוצרו בלי בעלים,
@@ -1205,3 +1192,11 @@
 		</section>
 	{/if}
 </div>
+
+	<!-- הוסף עסק נוסף — בסוף העמוד -->
+	<a
+		href="/submit-business"
+		class="mx-auto flex w-full max-w-lg items-center justify-center gap-1 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 text-sm font-bold text-white shadow-md transition hover:scale-[1.02] active:scale-95"
+	>
+		+ {t.addAnotherStore}
+	</a>
