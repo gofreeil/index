@@ -53,7 +53,8 @@ export const sentText = {
 		evDetails: 'טלפון: {phone}\nוואטסאפ: {wa}\nהכרטיסייה: {url}',
 		// הגעה מהשיתוף החכם — אחרי שמירת שם הנמען
 		freshAdded: '{name} נוסף לטבלה',
-		sendAnother: 'שליחה לנמען נוסף'
+		sendAnother: 'שליחה לנמען נוסף',
+		redirecting: 'נשמר ✓ — אתה מועבר לאזור האישי שלך, לטבלת השליחות…'
 	},
 	en: {
 		search: 'Search by name, number or business',
@@ -100,7 +101,8 @@ export const sentText = {
 		evTitle: 'Follow up with {who} — {biz}',
 		evDetails: 'Phone: {phone}\nWhatsApp: {wa}\nBusiness page: {url}',
 		freshAdded: '{name} added to the list',
-		sendAnother: 'Send to someone else'
+		sendAnother: 'Send to someone else',
+		redirecting: 'Saved ✓ — taking you to your personal area, to the sent list…'
 	},
 	ru: {
 		search: 'Поиск по имени, номеру или карточке',
@@ -147,7 +149,8 @@ export const sentText = {
 		evTitle: 'Вернуться к {who} — {biz}',
 		evDetails: 'Телефон: {phone}\nWhatsApp: {wa}\nКарточка: {url}',
 		freshAdded: '{name} добавлен(а) в таблицу',
-		sendAnother: 'Отправить кому-то ещё'
+		sendAnother: 'Отправить кому-то ещё',
+		redirecting: 'Сохранено ✓ — переходим в ваш личный кабинет, к таблице отправок…'
 	}
 };
 

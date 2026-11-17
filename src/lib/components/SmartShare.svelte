@@ -22,6 +22,7 @@
 	import { canonical } from '$lib/seo';
 	import { parsePhoneIL } from '$lib/phoneIL.js';
 	import { goto } from '$app/navigation';
+	import { sentText } from '$lib/sentListText.js';
 	import { logShare, nameShare, revealKey, syncShareLog } from '$lib/shareLog.js';
 
 	/** @type {{ business: any }} */
@@ -147,6 +148,9 @@
 	/** @type {{key:string, pretty:string}|null} */
 	let pending = $state(null);
 	let pendingName = $state('');
+	/** בין שמירת השם לבין המעבר לאזור האישי — מציג הודעת "מועבר…". */
+	let redirecting = $state(false);
+	const tx = $derived(/** @type {any} */ (sentText)[currentLang] || sentText.he);
 	/** @type {HTMLInputElement|undefined} */
 	let whoInput = $state();
 
@@ -183,13 +187,18 @@
 	 * שמדלג על השם נשאר בכרטיסייה, כדי לא לשבור סבב של כמה שליחות.
 	 */
 	function saveWho() {
-		if (!pending || !pendingName.trim()) return;
+		if (!pending || !pendingName.trim() || redirecting) return;
 		const { key } = pending;
 		nameShare(key, pendingName);
 		pending = null;
 		pendingName = '';
 		revealKey.set(key);
-		void goto('/profile#sent');
+		// ההודעה "מועבר לאזור האישי" חייבת להיקרא לפני שהמסך מתחלף — לכן
+		// הפסקה קצרה, ולא ניווט באותו רגע שבו הלחיצה נעלמה בלי הסבר.
+		redirecting = true;
+		setTimeout(() => {
+			void goto('/profile#sent').finally(() => (redirecting = false));
+		}, 800);
 	}
 
 	function skipWho() {
@@ -427,6 +436,18 @@
 							</button>
 						</div>
 					</div>
+				{:else if redirecting}
+					<p
+						role="status"
+						transition:slide={{ duration: 160 }}
+						class="mt-5 flex items-center gap-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5 text-sm font-semibold text-emerald-300"
+					>
+						<span
+							aria-hidden="true"
+							class="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-emerald-400/40 border-t-emerald-300"
+						></span>
+						{tx.redirecting}
+					</p>
 				{/if}
 			</div>
 		</div>
