@@ -8,6 +8,7 @@
 	import { earliestStamp } from '$lib/tenure.js';
 	import AdCardPreview from '$lib/components/AdCardPreview.svelte';
 	import SentList from '$lib/components/SentList.svelte';
+	import MiniCalendar from '$lib/components/MiniCalendar.svelte';
 
 	/** @type {{ data: any, form: any }} */
 	let { data, form } = $props();
@@ -186,13 +187,6 @@
 </svelte:head>
 
 <div class="mx-auto flex min-h-[70vh] max-w-3xl flex-col gap-4 px-4 py-6">
-	<!-- כרטיס הזהות — שורת זהות אחת (אווטאר, שם, אימייל, התנתקות), ומתחתיה
-	     הטלפון והקיצורים. הכל דחוס: זהו כרטיס פרטים, לא באנר. -->
-	<div
-		class="mx-auto w-full max-w-lg rounded-2xl border border-gray-100 bg-white p-4 shadow-xl dark:border-gray-700 dark:bg-gray-800"
-	>
-		<!-- אווטאר + שם + אימייל בשורה אחת. כשיש פריטים שממתינים לטיפול (אדמין)
-		     — בועה אדומה ממוספרת בפינה, אותו מספר שמופיע על האווטאר בהאדר. -->
 	<!-- חזרה למדריך — בראש העמוד, מעל כרטיס הזהות -->
 	<a
 		href="/"
@@ -201,6 +195,13 @@
 		→ {t.backToDirectory}
 	</a>
 
+	<!-- כרטיס הזהות — שורת זהות אחת (אווטאר, שם, אימייל, התנתקות), ומתחתיה
+	     הטלפון והקיצורים. הכל דחוס: זהו כרטיס פרטים, לא באנר. -->
+	<div
+		class="mx-auto w-full max-w-lg rounded-2xl border border-gray-100 bg-white p-4 shadow-xl dark:border-gray-700 dark:bg-gray-800"
+	>
+		<!-- אווטאר + שם + אימייל בשורה אחת. כשיש פריטים שממתינים לטיפול (אדמין)
+		     — בועה אדומה ממוספרת בפינה, אותו מספר שמופיע על האווטאר בהאדר. -->
 		<div class="flex items-center gap-3">
 			<div class="relative h-12 w-12 flex-shrink-0">
 				<div
@@ -1089,6 +1090,9 @@
 	<!-- למי שלחתי — כל מי שקיבל ממני כרטיס עסק דרך השיתוף החכם, עם תזכורות
 	     למעקב. נשמר בחשבון — מכל מכשיר רואים אותו דבר. -->
 	<SentList {canShare} lang={currentLang} {t} />
+
+	<!-- היומן שלי — הערות לפי יום (נשמרות בחשבון), התזכורות מהטבלה, ויומן גוגל -->
+	<MiniCalendar lang={currentLang} email={user?.email || ''} />
 
 	<!-- הוסף עסק נוסף — בסוף העמוד -->
 	<a
