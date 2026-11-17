@@ -50,7 +50,10 @@ export const sentText = {
 		errPast: 'הזמן שבחרתם כבר עבר',
 		errDate: 'בחרו תאריך',
 		evTitle: 'לחזור אל {who} — {biz}',
-		evDetails: 'טלפון: {phone}\nוואטסאפ: {wa}\nהכרטיסייה: {url}'
+		evDetails: 'טלפון: {phone}\nוואטסאפ: {wa}\nהכרטיסייה: {url}',
+		// הגעה מהשיתוף החכם — אחרי שמירת שם הנמען
+		freshAdded: '{name} נוסף לטבלה',
+		sendAnother: 'שליחה לנמען נוסף'
 	},
 	en: {
 		search: 'Search by name, number or business',
@@ -95,7 +98,9 @@ export const sentText = {
 		errPast: 'That time has already passed',
 		errDate: 'Pick a date',
 		evTitle: 'Follow up with {who} — {biz}',
-		evDetails: 'Phone: {phone}\nWhatsApp: {wa}\nBusiness page: {url}'
+		evDetails: 'Phone: {phone}\nWhatsApp: {wa}\nBusiness page: {url}',
+		freshAdded: '{name} added to the list',
+		sendAnother: 'Send to someone else'
 	},
 	ru: {
 		search: 'Поиск по имени, номеру или карточке',
@@ -140,7 +145,9 @@ export const sentText = {
 		errPast: 'Это время уже прошло',
 		errDate: 'Выберите дату',
 		evTitle: 'Вернуться к {who} — {biz}',
-		evDetails: 'Телефон: {phone}\nWhatsApp: {wa}\nКарточка: {url}'
+		evDetails: 'Телефон: {phone}\nWhatsApp: {wa}\nКарточка: {url}',
+		freshAdded: '{name} добавлен(а) в таблицу',
+		sendAnother: 'Отправить кому-то ещё'
 	}
 };
 

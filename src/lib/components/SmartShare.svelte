@@ -13,14 +13,16 @@
 	// המסלול המהיר הוא מספר → שליחה, ותו לא: נוסח ההודעה מוסתר מאחורי
 	// כפתור עריכה, ושם הנמען נשאל רק אחרי השליחה — כשהוא כבר לא עומד
 	// בדרך. הפאנל רק כותב ליומן (shareLog.js) ולא מציג אותו: רשימת מי
-	// שקיבל את הכרטיס יושבת במקום אחד בלבד — האזור האישי.
+	// שקיבל את הכרטיס יושבת במקום אחד בלבד — האזור האישי. שמירת השם מעבירה
+	// ישר אליה (saveWho).
 	// ─────────────────────────────────────────────────────────────
 	import { onMount, tick } from 'svelte';
 	import { slide } from 'svelte/transition';
 	import { lang, translations } from '$lib/i18n';
 	import { canonical } from '$lib/seo';
 	import { parsePhoneIL } from '$lib/phoneIL.js';
-	import { logShare, nameShare, syncShareLog } from '$lib/shareLog.js';
+	import { goto } from '$app/navigation';
+	import { logShare, nameShare, revealKey, syncShareLog } from '$lib/shareLog.js';
 
 	/** @type {{ business: any }} */
 	let { business } = $props();
@@ -145,7 +147,6 @@
 	/** @type {{key:string, pretty:string}|null} */
 	let pending = $state(null);
 	let pendingName = $state('');
-	let savedFlash = $state(false);
 	/** @type {HTMLInputElement|undefined} */
 	let whoInput = $state();
 
@@ -168,7 +169,6 @@
 
 		pending = { key, pretty: parsed.pretty };
 		pendingName = '';
-		savedFlash = false;
 		// מתפנים לנמען הבא — הנוסח חוזר לברירת המחדל, המספר מתנקה
 		phoneRaw = '';
 		editing = false;
@@ -176,13 +176,20 @@
 		tick().then(() => whoInput?.focus());
 	}
 
+	/**
+	 * שמירת השם סוגרת את הסבב: עוברים ישר לטבלת השליחות באזור האישי, אל
+	 * השורה שזה עתה נוספה (מוארת, עם קיצורים לתזכורת ולשליחה לנמען נוסף).
+	 * ניווט בצד הלקוח — הבקשה לשרת שיצאה בשמירה ממשיכה לרוץ ברקע. מי
+	 * שמדלג על השם נשאר בכרטיסייה, כדי לא לשבור סבב של כמה שליחות.
+	 */
 	function saveWho() {
-		if (!pending) return;
-		nameShare(pending.key, pendingName);
+		if (!pending || !pendingName.trim()) return;
+		const { key } = pending;
+		nameShare(key, pendingName);
 		pending = null;
 		pendingName = '';
-		savedFlash = true;
-		setTimeout(() => (savedFlash = false), 4000);
+		revealKey.set(key);
+		void goto('/profile#sent');
 	}
 
 	function skipWho() {
@@ -420,13 +427,6 @@
 							</button>
 						</div>
 					</div>
-				{:else if savedFlash}
-					<p transition:slide={{ duration: 160 }} class="mt-5 text-xs text-emerald-400">
-						{t.smartShareSavedWho}
-						<a href="/profile" class="text-gray-500 underline-offset-4 hover:underline">
-							{t.smartShareSavedLink}
-						</a>
-					</p>
 				{/if}
 			</div>
 		</div>

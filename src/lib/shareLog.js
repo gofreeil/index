@@ -81,6 +81,14 @@ function load() {
 
 export const shareLog = writable(/** @type {ShareEntry[]} */ (load()));
 
+/**
+ * מפתח השורה שצריך להבליט כשנכנסים לטבלה. השיתוף החכם קובע אותו ברגע
+ * ששם הנמען נשמר, ו-SentList צורך אותו (ומאפס) כשהוא נטען. store בזיכרון
+ * ולא פרמטר ב-URL: מפתח השורה כולל את מספר הטלפון של הנמען, ואסור שהוא
+ * יישב בהיסטוריית הדפדפן.
+ */
+export const revealKey = writable('');
+
 /** מצבות מחיקה שממתינות לאישור השרת. */
 let pendingRemoved = /** @type {Record<string, number>} */ (
 	browser ? cleanRemoved(readJson(REMOVED_KEY)) : {}

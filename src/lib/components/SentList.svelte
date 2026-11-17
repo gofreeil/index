@@ -11,9 +11,11 @@
 	//   • חיפוש, סינון לתזכורות, וייצוא לאקסל
 	// ─────────────────────────────────────────────────────────────
 	import { onMount } from 'svelte';
+	import { get } from 'svelte/store';
 	import { fly } from 'svelte/transition';
 	import {
 		shareLog,
+		revealKey,
 		clearShareLog,
 		syncShareLog,
 		updateShare,
@@ -37,13 +39,43 @@
 	let syncing = $state(true);
 	/** "עכשיו" חי: תזכורת שהגיע זמנה מתחלפת למצב "באיחור" בלי רענון. */
 	let now = $state(Date.now());
+	/** @type {HTMLElement | undefined} */
+	let root = $state();
+	/** השורה שהמשתמש הגיע אליה מהשיתוף החכם (נבחרה שם ברגע שמירת השם). */
+	let fresh = $state('');
+	/** הבהוב השורה החדשה — נמשך כמה שניות ודועך. */
+	let glow = $state(false);
+
+	function scrollToFresh() {
+		const li = [...(root?.querySelectorAll('li[data-key]') ?? [])].find(
+			(n) => /** @type {HTMLElement} */ (n).dataset.key === fresh
+		);
+		const calm = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+		li?.scrollIntoView({ block: 'center', behavior: calm ? 'auto' : 'smooth' });
+	}
+
 	onMount(() => {
 		mounted = true;
 		syncShareLog().finally(() => (syncing = false));
 		const tick = setInterval(() => (now = Date.now()), 60_000);
-		return () => clearInterval(tick);
+
+		/** @type {ReturnType<typeof setTimeout>[]} */
+		const timers = [];
+		const arrivedFor = get(revealKey);
+		if (arrivedFor) {
+			revealKey.set('');
+			fresh = arrivedFor;
+			glow = true;
+			// אחרי שהניווט סיים לגלול לעוגן (#sent) והשורות רונדרו — ממקמים את השורה עצמה
+			timers.push(setTimeout(scrollToFresh, 250), setTimeout(() => (glow = false), 4500));
+		}
+		return () => {
+			clearInterval(tick);
+			timers.forEach(clearTimeout);
+		};
 	});
 	const all = $derived(mounted ? $shareLog : []);
+	const freshEntry = $derived(fresh ? (all.find((e) => e.key === fresh) ?? null) : null);
 
 	// ── חיפוש וסינון ─────────────────────────────────────────────
 	let query = $state('');
@@ -226,8 +258,11 @@
 </script>
 
 {#if all.length || canShare}
+	<!-- id="sent": העוגן שאליו מוביל השיתוף החכם (/profile#sent) -->
 	<section
-		class="w-full rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800"
+		id="sent"
+		bind:this={root}
+		class="w-full scroll-mt-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800"
 	>
 		<div class="mb-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
 			<h2 class="text-lg font-extrabold text-gray-900 dark:text-gray-100">
@@ -272,6 +307,40 @@
 			{/if}
 		</div>
 		<p class="mb-3 text-xs text-gray-500 dark:text-gray-400">{t.sentListHint}</p>
+
+		<!-- הגעה מהשיתוף החכם: אישור, וקיצורי הדרך הטבעיים של מי ששלח ליד — לקבוע לו תזכורת, או לחזור לכרטיס ולשלוח לעוד אחד -->
+		{#if freshEntry}
+			<div
+				class="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm dark:border-emerald-500/40 dark:bg-emerald-900/30"
+			>
+				<span class="font-bold text-emerald-800 dark:text-emerald-300">
+					✓ {fill(tx.freshAdded, { name: freshEntry.name || freshEntry.pretty })}
+				</span>
+				<button
+					type="button"
+					onclick={() => (sheetKey = freshEntry.key)}
+					class="font-bold text-emerald-700 underline-offset-4 hover:underline dark:text-emerald-400"
+				>
+					⏰ {tx.reminderAdd}
+				</button>
+				{#if freshEntry.bizId}
+					<a
+						href="/business/{freshEntry.bizId}"
+						class="font-bold text-emerald-700 underline-offset-4 hover:underline dark:text-emerald-400"
+					>
+						{tx.sendAnother}
+					</a>
+				{/if}
+				<button
+					type="button"
+					onclick={() => (fresh = '')}
+					aria-label={tx.close}
+					class="ms-auto text-emerald-700/60 transition hover:text-emerald-800 dark:text-emerald-300/60"
+				>
+					✕
+				</button>
+			</div>
+		{/if}
 
 		{#if dueToday > 0}
 			<button
@@ -321,7 +390,11 @@
 				{#each rows as e (e.key)}
 					{@const st = e.remindAt ? remState(e.remindAt) : ''}
 					<li
-						class="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-gray-100 py-2.5 last:border-0 dark:border-gray-700/60"
+						data-key={e.key}
+						class="-mx-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg border-b border-gray-100 px-2 py-2.5 transition-colors duration-700 last:border-0 dark:border-gray-700/60 {glow &&
+						e.key === fresh
+							? 'bg-emerald-100/80 dark:bg-emerald-900/30'
+							: ''}"
 					>
 						<!-- שם + פרטי השליחה + הערה — כולם ניתנים לעריכה בלחיצה -->
 						<div class="min-w-0 flex-1 basis-44">
