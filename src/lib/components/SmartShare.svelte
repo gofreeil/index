@@ -21,7 +21,7 @@
 	import { lang, translations } from '$lib/i18n';
 	import { canonical } from '$lib/seo';
 	import { parsePhoneIL } from '$lib/phoneIL.js';
-	import { zoomGoto } from '$lib/zoomNav.js';
+	import { warm, zoomGoto } from '$lib/zoomNav.js';
 	import { sentText } from '$lib/sentListText.js';
 	import { logShare, nameShare, revealKey, syncShareLog } from '$lib/shareLog.js';
 
@@ -170,6 +170,9 @@
 			at: Date.now()
 		});
 		openLink(href, channel);
+		// האזור האישי הוא דף כבד (כמה שניות בשרת). נטען מעכשיו, בזמן שהמשתמש
+		// בוואטסאפ וכותב את שם הנמען — כדי שבלחיצה על "שמירה" המעבר יהיה מיידי.
+		warm('/profile');
 
 		pending = { key, pretty: parsed.pretty };
 		pendingName = '';
@@ -423,6 +426,8 @@
 								autocomplete="off"
 								bind:this={whoInput}
 								bind:value={pendingName}
+								onfocus={() => warm('/profile')}
+								oninput={() => warm('/profile')}
 								onkeydown={(e) => e.key === 'Enter' && saveWho()}
 								placeholder={t.smartShareWhoPlaceholder}
 								class="min-w-0 flex-1 rounded-lg border border-white/10 bg-transparent px-3 py-2 text-sm text-gray-100 transition outline-none placeholder:text-gray-600 focus:border-white/30"
