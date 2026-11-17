@@ -4,7 +4,7 @@
 	import { lang, translations } from '$lib/i18n';
 	import { logout } from '$lib/auth';
 	import { adminTiles } from '$lib/adminNav.js';
-	import { shareLog, clearShareLog } from '$lib/shareLog.js';
+	import { shareLog, clearShareLog, syncShareLog } from '$lib/shareLog.js';
 	import VisitorStatsCard from '$lib/components/VisitorStatsCard.svelte';
 	import TenureBadge from '$lib/components/TenureBadge.svelte';
 	import { earliestStamp } from '$lib/tenure.js';
@@ -168,15 +168,22 @@
 	/** @param {string} st */
 	const statusCls = (st) => STATUS_CLS[st] || STATUS_CLS.pending;
 
-	// למי שלחתי — יומן השליחות של פאנל השיתוף החכם. יושב ב-localStorage
-	// ולא בשרת, ולכן נקרא רק אחרי ההרכבה: לפני כן הצד השרתי והצד הלקוח
-	// היו מרנדרים תוכן שונה.
+	// למי שלחתי — יומן השליחות של פאנל השיתוף החכם. הוא שמור בחשבון (בשרת)
+	// ומוצג מהעותק המקומי מיד; syncShareLog מביא שליחות ממכשירים אחרים.
+	// נקרא רק אחרי ההרכבה: לפני כן הצד השרתי והצד הלקוח היו מרנדרים תוכן שונה.
 	let mounted = $state(false);
-	onMount(() => (mounted = true));
+	let syncing = $state(true);
+	onMount(() => {
+		mounted = true;
+		syncShareLog().finally(() => (syncing = false));
+	});
 	const sent = $derived(mounted ? $shareLog : []);
+	// הטבלה מוצגת תמיד למי שיכול לשלוח (בעל כרטיסייה / אדמין) — גם ריקה,
+	// כדי שיידע איפה הרשימה תופיע. למי שלא יכול לשלוח היא לא נחוצה.
+	const canShare = $derived(Boolean(data.isAdmin) || businesses.length > 0);
 	let confirmClear = $state(false);
 	function clearSent() {
-		clearShareLog();
+		void clearShareLog();
 		confirmClear = false;
 	}
 
@@ -1108,8 +1115,8 @@
 	</section>
 
 	<!-- למי שלחתי — כל מי שקיבל ממני כרטיס עסק דרך השיתוף החכם, כדי
-	     שאפשר יהיה לחזור אליו בהמשך. מוצג רק כשיש מה להציג. -->
-	{#if sent.length}
+	     שאפשר יהיה לחזור אליו בהמשך. נשמר בחשבון — מכל מכשיר רואים אותו דבר. -->
+	{#if sent.length || canShare}
 		<section
 			class="w-full rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800"
 		>
@@ -1136,7 +1143,7 @@
 							{t.cancel}
 						</button>
 					</span>
-				{:else}
+				{:else if sent.length}
 					<button
 						type="button"
 						onclick={() => (confirmClear = true)}
@@ -1146,8 +1153,13 @@
 					</button>
 				{/if}
 			</div>
-			<p class="mb-4 text-xs text-gray-500 dark:text-gray-400">{t.sentListHint}</p>
+			<p class="mb-3 text-xs text-gray-500 dark:text-gray-400">{t.sentListHint}</p>
 
+			{#if !sent.length}
+				<p class="rounded-xl bg-gray-50 px-3 py-3 text-sm text-gray-500 dark:bg-gray-900/40 dark:text-gray-400">
+					{syncing ? t.sentLoading : t.sentEmpty}
+				</p>
+			{:else}
 			<div class="overflow-x-auto">
 				<table class="w-full text-sm">
 					<thead>
@@ -1189,9 +1201,9 @@
 					</tbody>
 				</table>
 			</div>
+			{/if}
 		</section>
 	{/if}
-</div>
 
 	<!-- הוסף עסק נוסף — בסוף העמוד -->
 	<a
@@ -1200,3 +1212,4 @@
 	>
 		+ {t.addAnotherStore}
 	</a>
+</div>

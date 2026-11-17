@@ -309,7 +309,9 @@ export const translations = {
 		smartShareErrInvalid: 'המספר לא נראה תקין',
 		// טבלת "למי שלחתי" באזור האישי — יומן השליחות של פאנל השיתוף
 		sentList: 'למי שלחתי',
-		sentListHint: 'נשמר בדפדפן הזה בלבד — לא בשרת ולא במכשירים אחרים.',
+		sentListHint: 'נשמר בחשבון שלך — אותה רשימה בנייד ובמחשב.',
+		sentEmpty: 'עוד לא שלחת כרטיס. בדף הכרטיסייה שלך לחץ "שיתוף חכם" — מי שתשלח לו יופיע כאן.',
+		sentLoading: 'טוען את הרשימה…',
 		sentColName: 'שם',
 		sentColPhone: 'טלפון',
 		sentColDate: 'תאריך',
@@ -624,7 +626,9 @@ export const translations = {
 		smartShareErrInvalid: "That number doesn't look valid",
 		// "People I've sent to" table in the personal area — the share panel's log
 		sentList: "People I've sent to",
-		sentListHint: 'Kept in this browser only — not on the server, not on other devices.',
+		sentListHint: 'Saved to your account — the same list on phone and desktop.',
+		sentEmpty: 'You have not sent a card yet. Open your business page and tap "Smart Share" — people you send to will appear here.',
+		sentLoading: 'Loading the list…',
 		sentColName: 'Name',
 		sentColPhone: 'Phone',
 		sentColDate: 'Date',
@@ -937,7 +941,9 @@ export const translations = {
 		smartShareErrInvalid: 'Номер выглядит некорректным',
 		// Таблица «Кому я отправлял» в личном кабинете — журнал панели обмена
 		sentList: 'Кому я отправлял',
-		sentListHint: 'Хранится только в этом браузере — не на сервере и не на других устройствах.',
+		sentListHint: 'Сохранено в вашем аккаунте — один и тот же список на телефоне и компьютере.',
+		sentEmpty: 'Вы ещё не отправляли карточку. Откройте страницу своей карточки и нажмите «Умный обмен» — получатели появятся здесь.',
+		sentLoading: 'Загружаем список…',
 		sentColName: 'Имя',
 		sentColPhone: 'Телефон',
 		sentColDate: 'Дата',

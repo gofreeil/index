@@ -15,15 +15,21 @@
 	// בדרך. הפאנל רק כותב ליומן (shareLog.js) ולא מציג אותו: רשימת מי
 	// שקיבל את הכרטיס יושבת במקום אחד בלבד — האזור האישי.
 	// ─────────────────────────────────────────────────────────────
-	import { tick } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { slide } from 'svelte/transition';
 	import { lang, translations } from '$lib/i18n';
 	import { canonical } from '$lib/seo';
 	import { parsePhoneIL } from '$lib/phoneIL.js';
-	import { logShare, nameShare } from '$lib/shareLog.js';
+	import { logShare, nameShare, syncShareLog } from '$lib/shareLog.js';
 
 	/** @type {{ business: any }} */
 	let { business } = $props();
+
+	// מעבירים לשרת רשימה ישנה שישבה רק בדפדפן הזה, ומאמתים שהעותק המקומי
+	// שייך לחשבון המחובר — לפני השליחה הראשונה ולא אחריה.
+	onMount(() => {
+		void syncShareLog();
+	});
 
 	let currentLang = $state('he');
 	lang.subscribe((v) => (currentLang = v));
