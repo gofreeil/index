@@ -23,6 +23,7 @@
 		restoreShare
 	} from '$lib/shareLog.js';
 	import { sentText, fill } from '$lib/sentListText.js';
+	import { arrival } from '$lib/zoomNav.js';
 	import { canonical } from '$lib/seo';
 	import ReminderSheet from '$lib/components/ReminderSheet.svelte';
 
@@ -61,15 +62,22 @@
 
 		/** @type {ReturnType<typeof setTimeout>[]} */
 		const timers = [];
+		let alive = true;
 		const arrivedFor = get(revealKey);
 		if (arrivedFor) {
 			revealKey.set('');
 			fresh = arrivedFor;
 			glow = true;
-			// אחרי שהניווט סיים לגלול לעוגן (#sent) והשורות רונדרו — ממקמים את השורה עצמה
-			timers.push(setTimeout(scrollToFresh, 250), setTimeout(() => (glow = false), 4500));
+			// הגענו בזום (zoomNav) — מחכים שהאזור האישי ייפתח עד הסוף, ורק אז
+			// "נוסעים" מראש הדף אל השורה. בלי זום ההבטחה כבר פתורה, והגלילה
+			// ממקמת את השורה אחרי שהניווט גלל לעוגן (#sent).
+			void arrival().then(() => {
+				if (!alive) return;
+				timers.push(setTimeout(scrollToFresh, 250), setTimeout(() => (glow = false), 4500));
+			});
 		}
 		return () => {
+			alive = false;
 			clearInterval(tick);
 			timers.forEach(clearTimeout);
 		};

@@ -21,7 +21,7 @@
 	import { lang, translations } from '$lib/i18n';
 	import { canonical } from '$lib/seo';
 	import { parsePhoneIL } from '$lib/phoneIL.js';
-	import { goto } from '$app/navigation';
+	import { zoomGoto } from '$lib/zoomNav.js';
 	import { sentText } from '$lib/sentListText.js';
 	import { logShare, nameShare, revealKey, syncShareLog } from '$lib/shareLog.js';
 
@@ -193,12 +193,17 @@
 		pending = null;
 		pendingName = '';
 		revealKey.set(key);
-		// ההודעה "מועבר לאזור האישי" חייבת להיקרא לפני שהמסך מתחלף — לכן
-		// הפסקה קצרה, ולא ניווט באותו רגע שבו הלחיצה נעלמה בלי הסבר.
+		// ההודעה "מועבר לאזור האישי" נשארת על המסך רגע לפני שהוא זז, ואז
+		// זום אל כפתור האזור האישי שבכותרת — והאזור האישי נפתח מתוכו. משם
+		// הטבלה עצמה גוללת אל השורה החדשה (SentList). בלי תמיכה באנימציה —
+		// ניווט רגיל ישר אל הטבלה.
 		redirecting = true;
-		setTimeout(() => {
-			void goto('/profile#sent').finally(() => (redirecting = false));
-		}, 800);
+		zoomGoto('/profile', document.querySelector('header a[href="/profile"]'), {
+			fallbackHref: '/profile#sent',
+			hold: 700
+		})
+			.catch(() => {})
+			.finally(() => (redirecting = false));
 	}
 
 	function skipWho() {
