@@ -155,10 +155,11 @@ function bubble(rect, label) {
  * @param {{ fallbackHref?: string, label?: string, enterAfter?: number }} [opts]
  *   fallbackHref — לאן הולכים כשאין אנימציה (למשל עם #עוגן, ישר ליעד)
  *   label — טקסט הבועה שליד הכפתור
- *   enterAfter — אחרי כמה זמן מתחילת הזום נכנסים פנימה (אם הדף כבר מוכן)
+ *   enterAfter — זמן מינימלי מתחילת הזום עד הכניסה פנימה. ברירת המחדל 0:
+ *   נכנסים ברגע שהדף מוכן — המטרה מהירות, לא השהיה
  * @returns {Promise<void>}
  */
-export async function zoomGoto(href, el, { fallbackHref = href, label = '', enterAfter = 1000 } = {}) {
+export async function zoomGoto(href, el, { fallbackHref = href, label = '', enterAfter = 0 } = {}) {
 	const target = /** @type {HTMLElement | null} */ (el);
 	const rect = supported() ? visibleRect(target) : null;
 	if (!target || !rect) {
