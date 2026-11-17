@@ -12,7 +12,7 @@ function me(locals) {
 
 const NO_STORE = { 'Cache-Control': 'private, no-store' };
 
-/** GET /api/share-log → { userId, entries, clearedAt } */
+/** GET /api/share-log → { userId, entries, clearedAt, removed } */
 export async function GET({ locals }) {
 	const userId = me(locals);
 	if (!userId) return json({ error: 'unauthorized' }, { status: 401 });
@@ -25,17 +25,22 @@ export async function GET({ locals }) {
 }
 
 /**
- * POST /api/share-log { entries: ShareEntry[] } → { userId, entries, clearedAt }
- * מיזוג: שליחה חדשה, מתן שם לנמען, או העברת הרשימה הישנה מהדפדפן.
+ * POST /api/share-log { entries?: ShareEntry[], removed?: {key: ts} }
+ *   → { userId, entries, clearedAt, removed }
+ * מיזוג: שליחה חדשה, עריכת שם/הערה/תזכורת, מחיקת שורה, או העברת הרשימה
+ * הישנה מהדפדפן.
  */
 export async function POST({ locals, request }) {
 	const userId = me(locals);
 	if (!userId) return json({ error: 'unauthorized' }, { status: 401 });
 	const body = await request.json().catch(() => null);
-	const incoming = Array.isArray(body?.entries) ? body.entries.slice(0, 250) : null;
-	if (!incoming) return json({ error: 'bad request' }, { status: 400 });
+	const entries = Array.isArray(body?.entries) ? body.entries.slice(0, 250) : [];
+	const removed = body?.removed && typeof body.removed === 'object' ? body.removed : {};
+	if (!body || (!Array.isArray(body.entries) && !body.removed)) {
+		return json({ error: 'bad request' }, { status: 400 });
+	}
 	try {
-		return json({ userId, ...(await mergeShareLog(userId, incoming)) }, { headers: NO_STORE });
+		return json({ userId, ...(await mergeShareLog(userId, { entries, removed })) }, { headers: NO_STORE });
 	} catch (e) {
 		console.error('[share-log] POST failed:', e instanceof Error ? e.message : e);
 		return json({ error: 'unavailable' }, { status: 502 });
