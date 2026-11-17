@@ -73,7 +73,7 @@
 			// ממקמת את השורה אחרי שהניווט גלל לעוגן (#sent).
 			void arrival().then(() => {
 				if (!alive) return;
-				timers.push(setTimeout(scrollToFresh, 250), setTimeout(() => (glow = false), 4500));
+				timers.push(setTimeout(scrollToFresh, 120), setTimeout(() => (glow = false), 4500));
 			});
 		}
 		return () => {

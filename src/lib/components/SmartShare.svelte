@@ -186,21 +186,23 @@
 	 * ניווט בצד הלקוח — הבקשה לשרת שיצאה בשמירה ממשיכה לרוץ ברקע. מי
 	 * שמדלג על השם נשאר בכרטיסייה, כדי לא לשבור סבב של כמה שליחות.
 	 */
-	function saveWho() {
+	async function saveWho() {
 		if (!pending || !pendingName.trim() || redirecting) return;
 		const { key } = pending;
 		nameShare(key, pendingName);
 		pending = null;
 		pendingName = '';
 		revealKey.set(key);
-		// ההודעה "מועבר לאזור האישי" נשארת על המסך רגע לפני שהוא זז, ואז
-		// זום אל כפתור האזור האישי שבכותרת — והאזור האישי נפתח מתוכו. משם
-		// הטבלה עצמה גוללת אל השורה החדשה (SentList). בלי תמיכה באנימציה —
-		// ניווט רגיל ישר אל הטבלה.
+		// מהרגע הראשון: זום איטי אל כפתור האזור האישי שבכותרת (עם בועה "לאזור
+		// האישי שלך"), אחרי כשנייה צלילה פנימה — והאזור האישי נפתח מתוך
+		// הכפתור. משם הטבלה עצמה גוללת אל השורה החדשה (SentList). בלי תמיכה
+		// באנימציה — ההודעה כאן, ואז ניווט רגיל ישר אל הטבלה.
 		redirecting = true;
+		// ההודעה חייבת להיות בדף לפני שהמסך מצולם לזום
+		await tick();
 		zoomGoto('/profile', document.querySelector('header a[href="/profile"]'), {
 			fallbackHref: '/profile#sent',
-			hold: 700
+			label: tx.toMyArea
 		})
 			.catch(() => {})
 			.finally(() => (redirecting = false));
@@ -403,8 +405,9 @@
 				<!-- שאלת השם — אחרי השליחה בלבד, כדי שהיא לא תעמוד בדרך למי
 			     שרק רוצה לשלוח ולהמשיך הלאה. -->
 				{#if pending}
+					<!-- ביציאה לזום — בלי אנימציית קיפול: המסך מצולם מיד, ושאלה חצי-מקופלת הייתה נתקעת בצילום -->
 					<div
-						transition:slide={{ duration: 160 }}
+						transition:slide={{ duration: redirecting ? 0 : 160 }}
 						class="mt-5 rounded-lg border border-white/10 bg-white/[0.03] p-3"
 					>
 						<label for="ss-who" class="block text-sm font-medium text-gray-300">
@@ -444,7 +447,6 @@
 				{:else if redirecting}
 					<p
 						role="status"
-						transition:slide={{ duration: 160 }}
 						class="mt-5 flex items-center gap-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5 text-sm font-semibold text-emerald-300"
 					>
 						<span

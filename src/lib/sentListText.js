@@ -54,7 +54,8 @@ export const sentText = {
 		// הגעה מהשיתוף החכם — אחרי שמירת שם הנמען
 		freshAdded: '{name} נוסף לטבלה',
 		sendAnother: 'שליחה לנמען נוסף',
-		redirecting: 'נשמר ✓ — אתה מועבר לאזור האישי שלך, לטבלת השליחות…'
+		redirecting: 'נשמר ✓ — אתה מועבר לאזור האישי שלך, לטבלת השליחות…',
+		toMyArea: 'לאזור האישי שלך'
 	},
 	en: {
 		search: 'Search by name, number or business',
@@ -102,7 +103,8 @@ export const sentText = {
 		evDetails: 'Phone: {phone}\nWhatsApp: {wa}\nBusiness page: {url}',
 		freshAdded: '{name} added to the list',
 		sendAnother: 'Send to someone else',
-		redirecting: 'Saved ✓ — taking you to your personal area, to the sent list…'
+		redirecting: 'Saved ✓ — taking you to your personal area, to the sent list…',
+		toMyArea: 'To your personal area'
 	},
 	ru: {
 		search: 'Поиск по имени, номеру или карточке',
@@ -150,7 +152,8 @@ export const sentText = {
 		evDetails: 'Телефон: {phone}\nWhatsApp: {wa}\nКарточка: {url}',
 		freshAdded: '{name} добавлен(а) в таблицу',
 		sendAnother: 'Отправить кому-то ещё',
-		redirecting: 'Сохранено ✓ — переходим в ваш личный кабинет, к таблице отправок…'
+		redirecting: 'Сохранено ✓ — переходим в ваш личный кабинет, к таблице отправок…',
+		toMyArea: 'В ваш личный кабинет'
 	}
 };
 
