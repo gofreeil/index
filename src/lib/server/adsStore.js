@@ -562,8 +562,13 @@ export async function listAdsByOwner({ id, email }) {
 		const res = await api(`${ENDPOINT}?${qs}`);
 		if (!res.ok) return [];
 		const data = await res.json().catch(() => null);
+		// האוסף משותף עם אתרים אחרים, והחיפוש כאן לפי המפרסם בלבד — בלי סינון האתר
+		// הופיעו פה פרסומות שלו מאתרים אחרים: תמונותיהן ודף הנחיתה שלהן מחזירים
+		// 404 מכאן (התצוגה המקדימה יצאה בלי תמונות), והסטטיסטיקה ריקה.
 		// גרסה שהוחלפה בעדכון מאושר יורדת מהרשימה — הפרסומת מופיעה פעם אחת
-		return withoutReplaced((Array.isArray(data?.data) ? data.data : []).map(fromStrapi));
+		return withoutReplaced(
+			(Array.isArray(data?.data) ? data.data : []).filter(belongsToThisSite).map(fromStrapi)
+		);
 	} catch {
 		return [];
 	}
