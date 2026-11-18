@@ -404,7 +404,7 @@
 							? 'bg-emerald-100/80 dark:bg-emerald-900/30'
 							: ''}"
 					>
-						<!-- שם + פרטי השליחה + הערה — כולם ניתנים לעריכה בלחיצה -->
+						<!-- שם + פרטי השליחה + טלפון — השם ניתן לעריכה בלחיצה -->
 						<div class="min-w-0 flex-1 basis-44">
 							{#if edit.key === e.key && edit.field === 'name'}
 								<input
@@ -432,6 +432,21 @@
 							<div class="text-[11px] text-gray-400">
 								{#if e.bizName}{e.bizName} · {/if}{fill(tx.sentOn, { date: fmtDate(e.at) })}
 							</div>
+							<!-- הטלפון — קישור לשיחה ריקה בוואטסאפ -->
+							<a
+								href="https://wa.me/{e.wa}"
+								target="_blank"
+								rel="noopener noreferrer"
+								title={t.sentOpenChat}
+								dir="ltr"
+								class="mt-0.5 inline-block text-sm font-medium text-green-600 hover:underline dark:text-green-400"
+							>
+								{e.pretty}
+							</a>
+						</div>
+
+						<!-- הערה — ניתנת לעריכה בלחיצה -->
+						<div class="min-w-0 flex-1 basis-32">
 							{#if edit.key === e.key && edit.field === 'note'}
 								<input
 									use:focusOnMount
@@ -441,13 +456,13 @@
 									maxlength="300"
 									placeholder={tx.notePlaceholder}
 									aria-label={tx.notePlaceholder}
-									class="{FIELD} mt-1"
+									class={FIELD}
 								/>
 							{:else if e.note}
 								<button
 									type="button"
 									onclick={() => startEdit(e, 'note')}
-									class="mt-0.5 block max-w-full text-start text-xs leading-5 text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400"
+									class="block max-w-full text-start text-xs leading-5 text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400"
 								>
 									{e.note}
 								</button>
@@ -461,18 +476,6 @@
 								</button>
 							{/if}
 						</div>
-
-						<!-- הטלפון — קישור לשיחה ריקה בוואטסאפ -->
-						<a
-							href="https://wa.me/{e.wa}"
-							target="_blank"
-							rel="noopener noreferrer"
-							title={t.sentOpenChat}
-							dir="ltr"
-							class="shrink-0 text-sm font-medium text-green-600 hover:underline dark:text-green-400"
-						>
-							{e.pretty}
-						</a>
 
 						<!-- תזכורת + פעולות -->
 						<div class="ms-auto flex shrink-0 items-center gap-1">
