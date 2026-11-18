@@ -9,6 +9,9 @@
 	import AdCardPreview from '$lib/components/AdCardPreview.svelte';
 	import SentList from '$lib/components/SentList.svelte';
 	import MiniCalendar from '$lib/components/MiniCalendar.svelte';
+	import FloorPanel from '$lib/components/FloorPanel.svelte';
+	import { shareLog } from '$lib/shareLog.js';
+	import { onMount } from 'svelte';
 
 	/** @type {{ data: any, form: any }} */
 	let { data, form } = $props();
@@ -173,6 +176,80 @@
 	// כדי שיידע איפה הרשימה תופיע; למי שלא יכול לשלוח היא לא נחוצה.
 	const canShare = $derived(Boolean(data.isAdmin) || businesses.length > 0);
 
+	// ── פאנל ניהול: אריח לכל קומה בדף, עם סיכום קצר ─────────────────
+	// רשימת "למי שלחתי" נשמרת ב-localStorage ונקראת רק אחרי ההרכבה, כמו ב-SentList,
+	// כדי שהשרת והלקוח לא ירנדרו תוכן שונה.
+	let mounted = $state(false);
+	onMount(() => (mounted = true));
+	const sentCount = $derived(mounted ? $shareLog.length : 0);
+	const sentDue = $derived(
+		mounted ? $shareLog.filter((e) => e.remindAt > 0 && e.remindAt <= Date.now()).length : 0
+	);
+
+	/** סדר האריחים = סדר הקומות בדף; כל קומה מופיעה רק כשהיא קיימת למשתמש הזה. */
+	const floors = $derived.by(() => {
+		/** @type {{ id: string, icon: string, title: string, summary: string, alert?: number }[]} */
+		const list = [
+			{ id: 'me', icon: '👤', title: 'הפרטים שלי', summary: profile.phone || 'חסר טלפון' }
+		];
+		if (matches.length) {
+			list.push({
+				id: 'claims',
+				icon: '🪪',
+				title: 'כרטיסיות שלך',
+				summary: openMatches > 0 ? `${openMatches} לדרישה` : `${matches.length} בטיפול`,
+				alert: openMatches
+			});
+		}
+		if (mod) {
+			list.push({
+				id: 'admin',
+				icon: '🛡️',
+				title: 'ניהול ומודרציה',
+				summary: pendingTotal > 0 ? `${pendingTotal} ממתינים` : 'הכול טופל 🎉',
+				alert: pendingTotal
+			});
+		}
+		if (hasAssets) {
+			const parts = [];
+			if (businesses.length) parts.push(`${fmtNum.format(totals.views ?? 0)} צפיות`);
+			if (ads.length) parts.push(`${fmtNum.format(totals.adImpressions ?? 0)} חשיפות`);
+			list.push({ id: 'stats', icon: '📊', title: 'הנתונים שלי', summary: parts.join(' · ') });
+		}
+		const pendingAds = ads.filter((/** @type {any} */ a) => a.status === 'pending').length;
+		const liveAds = ads.filter((/** @type {any} */ a) => a.live).length;
+		list.push({
+			id: 'ads',
+			icon: '📢',
+			title: 'המודעות שלי',
+			summary: !ads.length
+				? 'אין עדיין'
+				: `${ads.length} · ${pendingAds > 0 ? `${pendingAds} ממתינות` : `${liveAds} באוויר`}`
+		});
+		if (canShare || sentCount > 0) {
+			list.push({
+				id: 'sent',
+				icon: '📤',
+				title: 'למי שלחתי',
+				summary: !sentCount
+					? 'אין עדיין'
+					: `${sentCount} נשלחו${sentDue > 0 ? ` · ${sentDue} לחזור אליהם` : ''}`,
+				alert: sentDue
+			});
+		}
+		list.push({ id: 'calendar', icon: '📅', title: 'היומן שלי', summary: 'הערות ותזכורות' });
+		const pendingBiz = businesses.filter((/** @type {any} */ b) => b.status === 'pending').length;
+		list.push({
+			id: 'businesses',
+			icon: '🏪',
+			title: 'העסקים שלי',
+			summary: !businesses.length
+				? 'אין עדיין'
+				: `${businesses.length}${pendingBiz > 0 ? ` · ${pendingBiz} ממתינים` : ''}`
+		});
+		return list;
+	});
+
 	// סיבות דיווח — בתקציר המודרציה (עברית בלבד, כמו פאנל הניהול)
 	const REASON_HE = /** @type {Record<string,string>} */ ({
 		no_discount: 'לא נתן את ההטבה',
@@ -198,6 +275,7 @@
 	<!-- כרטיס הזהות — שורת זהות אחת (אווטאר, שם, אימייל, התנתקות), ומתחתיה
 	     הטלפון והקיצורים. הכל דחוס: זהו כרטיס פרטים, לא באנר. -->
 	<div
+		id="me"
 		class="mx-auto w-full max-w-lg rounded-2xl border border-gray-100 bg-white p-4 shadow-xl dark:border-gray-700 dark:bg-gray-800"
 	>
 		<!-- אווטאר + שם + אימייל בשורה אחת. כשיש פריטים שממתינים לטיפול (אדמין)
@@ -437,6 +515,9 @@
 		{/if}
 
 	</div>
+
+	<!-- פאנל ניהול — סיכום קצר של כל קומה בדף; לחיצה גוללת אליה -->
+	<FloorPanel {floors} />
 
 	<!-- כרטיסיות שנראות שלך — הכרטיסיות שהוזרמו בייבוא נוצרו בלי בעלים,
 	     והמערכת מזהה אותן לפי הטלפון או האימייל של המשתמש. זו הצעה בלבד:
@@ -690,6 +771,7 @@
 	     מוצג לכל בעל נכס, גם למי שאינו אדמין. -->
 	{#if hasAssets}
 		<section
+			id="stats"
 			class="w-full rounded-2xl border border-blue-100 bg-blue-50/40 p-5 dark:border-blue-500/20 dark:bg-blue-950/20"
 		>
 			<h2 class="flex items-center gap-2 text-lg font-extrabold text-gray-900 dark:text-gray-100">
@@ -756,6 +838,7 @@
 
 	<!-- המודעות שלי -->
 	<section
+		id="ads"
 		class="w-full rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800"
 	>
 		<div class="mb-4 flex flex-wrap items-center justify-between gap-2">
@@ -1003,6 +1086,7 @@
 
 	<!-- העסקים שלי -->
 	<section
+		id="businesses"
 		class="w-full rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800"
 	>
 		<div class="mb-4 flex flex-wrap items-center justify-between gap-2">
