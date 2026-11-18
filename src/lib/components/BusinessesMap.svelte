@@ -316,7 +316,7 @@
 </script>
 
 <!-- isolate: כולא את ה-z-index הגבוהים של Leaflet (400–1000) בתוך stacking context משלו, שלא יצוירו מעל ההדר (z-50) -->
-<div class="relative isolate {full ? 'h-full' : 'map-preview'}">
+<div class="biz-map relative isolate {full ? 'h-full' : 'map-preview'}">
 	<!-- מסגרת לאורך, בערך ביחס של הארץ עצמה: היא ארוכה מצפון לדרום וצרה
 	     ממערב למזרח, ובמלבן רחב נותרו פסי ים ומדבר משני הצדדים בזמן שהיישובים
 	     הצטופפו לפס דק באמצע. הגובה חייב להתאים לשלד ב-LazyMap, אחרת הדף קופץ
@@ -395,6 +395,19 @@
 	   תיאורים ופופאפים — נפל לגופן ברירת המחדל במקום ל-Heebo של האתר */
 	:global(.leaflet-container) {
 		font-family: inherit;
+	}
+
+	/* תפר בין האריחים: בזום שברי (zoomSnap: 0.1) Leaflet מותח את האריחים
+	   ב-scale לא שלם, קצותיהם נופלים על חלקי פיקסל, ובתצוגה שאינה 100%
+	   (זום דפדפן 110%, קנה מידה של Windows) נשאר ביניהם קו אפור דק לרוחב
+	   ולגובה המפה. ה-plus-lighter של Leaflet אמור לסגור אותו ולא סוגר, ולכן
+	   כל אריח גדל בפיקסל (257 במקום tileSize של 256) ועולה על שכנו. חייבים
+	   לבטל יחד איתו את plus-lighter — הוא מחבר צבעים, ובחפיפה היה מצייר
+	   קו בהיר במקום האפור. */
+	.biz-map :global(img.leaflet-tile) {
+		width: 257px !important;
+		height: 257px !important;
+		mix-blend-mode: normal;
 	}
 
 	/* שורת הקרדיט בגודל ברירת המחדל (11px, ריפוד 3×5) נשברה לשתי שורות
