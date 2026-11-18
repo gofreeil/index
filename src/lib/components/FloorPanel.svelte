@@ -4,6 +4,9 @@
 	// סיכום קצר שלה, ולחיצה גוללת אליה. אותו דפוס כמו קיצורי הקומות באתר
 	// "קהילה בשכונה". הקומות עצמן מוגדרות בדף (רק הקיימות למשתמש), והעוגן של
 	// כל אחת הוא ה-id של המקטע. ההדר הדביק מטופל ב-scroll-padding-top של ה-html.
+	//
+	// הרכיב מוטמע בתוך כרטיס הזהות (בלי מסגרת וצל משלו): מפריד דק מעליו,
+	// וכל אריח מקבל צ'יפ אייקון. אריח עם התראה (alert) מודגש באדום עדין.
 	// ─────────────────────────────────────────────────────────────
 
 	/**
@@ -29,36 +32,37 @@
 	}
 </script>
 
-<nav
-	aria-label="פאנל ניהול"
-	class="w-full rounded-2xl border border-gray-100 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-800"
->
-	<div class="mb-2 flex flex-wrap items-baseline gap-x-2">
-		<h2 class="text-sm font-extrabold text-gray-900 dark:text-gray-100">🧭 פאנל ניהול</h2>
-		<span class="text-[11px] text-gray-500 dark:text-gray-400">לחצו על קומה כדי לקפוץ אליה</span>
-	</div>
+<nav aria-label="פאנל ניהול" class="mt-4 border-t border-gray-100 pt-3 dark:border-gray-700">
+	<h2 class="mb-2.5 text-xl font-extrabold text-gray-900 dark:text-gray-100">🧭 פאנל ניהול</h2>
 
-	<ul class="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+	<ul class="grid grid-cols-2 gap-2 sm:grid-cols-4">
 		{#each floors as f (f.id)}
 			<li class="min-w-0">
 				<a
 					href="#{f.id}"
 					onclick={(e) => go(e, f.id)}
-					class="relative flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-2.5 py-2 transition hover:border-blue-300 hover:bg-blue-50 dark:border-gray-700 dark:bg-gray-700/30 dark:hover:border-blue-500/40 dark:hover:bg-blue-900/20"
+					class="relative flex h-full items-center gap-2.5 rounded-xl border bg-gradient-to-br px-2.5 py-2 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md {f.alert
+						? 'border-red-200 from-red-50 to-white hover:border-red-300 dark:border-red-500/30 dark:from-red-950/30 dark:to-gray-800 dark:hover:border-red-400/50'
+						: 'border-gray-200 from-gray-50 to-white hover:border-blue-300 dark:border-gray-700 dark:from-gray-700/40 dark:to-gray-800 dark:hover:border-blue-500/40'}"
 				>
 					{#if f.alert}
 						<span
-							class="absolute -top-1.5 -left-1.5 z-10 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] leading-none font-black text-white shadow ring-2 ring-white dark:ring-gray-800"
+							class="absolute -top-1.5 -left-1.5 z-10 flex h-6 min-w-6 items-center justify-center rounded-full bg-red-600 px-1.5 text-xs leading-none font-black text-white shadow ring-2 ring-white dark:ring-gray-800"
 						>
 							<span class="sr-only">ממתינים לטיפול: </span>{f.alert}
 						</span>
 					{/if}
-					<span class="text-lg leading-none" aria-hidden="true">{f.icon}</span>
+					<span
+						class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-white text-2xl leading-none shadow-sm ring-1 ring-gray-200 dark:bg-gray-900/60 dark:ring-gray-700"
+						aria-hidden="true">{f.icon}</span
+					>
 					<span class="min-w-0">
-						<span class="block truncate text-xs font-bold text-gray-900 dark:text-gray-100">
+						<span
+							class="block text-base leading-tight font-bold break-words text-gray-900 dark:text-gray-100"
+						>
 							{f.title}
 						</span>
-						<span class="block truncate text-[11px] text-gray-500 dark:text-gray-400">
+						<span class="block text-sm leading-tight break-words text-gray-500 dark:text-gray-400">
 							{f.summary}
 						</span>
 					</span>

@@ -189,9 +189,8 @@
 	/** סדר האריחים = סדר הקומות בדף; כל קומה מופיעה רק כשהיא קיימת למשתמש הזה. */
 	const floors = $derived.by(() => {
 		/** @type {{ id: string, icon: string, title: string, summary: string, alert?: number }[]} */
-		const list = [
-			{ id: 'me', icon: '👤', title: 'הפרטים שלי', summary: profile.phone || 'חסר טלפון' }
-		];
+		// "הפרטים שלי" אינו אריח: הפרטים והטלפון מוצגים בכרטיס הזהות שהפאנל חי בתוכו
+		const list = [];
 		if (matches.length) {
 			list.push({
 				id: 'claims',
@@ -267,7 +266,7 @@
 	<!-- חזרה למדריך — בראש העמוד, מעל כרטיס הזהות -->
 	<a
 		href="/"
-		class="mx-auto -mb-1 w-full max-w-lg text-sm font-bold text-blue-700 transition hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-100"
+		class="-mb-1 w-full text-sm font-bold text-blue-700 transition hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-100"
 	>
 		→ {t.backToDirectory}
 	</a>
@@ -276,8 +275,14 @@
 	     הטלפון והקיצורים. הכל דחוס: זהו כרטיס פרטים, לא באנר. -->
 	<div
 		id="me"
-		class="mx-auto w-full max-w-lg rounded-2xl border border-gray-100 bg-white p-4 shadow-xl dark:border-gray-700 dark:bg-gray-800"
+		class="relative w-full overflow-hidden rounded-2xl border border-gray-100 bg-white p-4 shadow-xl dark:border-gray-700 dark:bg-gray-800"
 	>
+		<!-- פס צבע דק בראש הכרטיס -->
+		<div
+			class="absolute inset-x-0 top-0 h-1 bg-gradient-to-l from-blue-500 via-purple-500 to-pink-500"
+			aria-hidden="true"
+		></div>
+
 		<!-- אווטאר + שם + אימייל בשורה אחת. כשיש פריטים שממתינים לטיפול (אדמין)
 		     — בועה אדומה ממוספרת בפינה, אותו מספר שמופיע על האווטאר בהאדר. -->
 		<div class="flex items-center gap-3">
@@ -514,10 +519,9 @@
 			{/if}
 		{/if}
 
+		<!-- פאנל ניהול — מאוחד לכרטיס הזהות: סיכום קצר של כל קומה בדף; לחיצה גוללת אליה -->
+		<FloorPanel {floors} />
 	</div>
-
-	<!-- פאנל ניהול — סיכום קצר של כל קומה בדף; לחיצה גוללת אליה -->
-	<FloorPanel {floors} />
 
 	<!-- כרטיסיות שנראות שלך — הכרטיסיות שהוזרמו בייבוא נוצרו בלי בעלים,
 	     והמערכת מזהה אותן לפי הטלפון או האימייל של המשתמש. זו הצעה בלבד:
