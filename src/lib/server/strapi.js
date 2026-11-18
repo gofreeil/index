@@ -1,6 +1,6 @@
 import { randomBytes } from 'crypto';
 import { env } from '$env/dynamic/private';
-import { isSameBusiness } from '$lib/businessDedupe.js';
+import { isPossiblySameBusiness } from '$lib/businessDedupe.js';
 
 // ─────────────────────────────────────────────────────────────
 // קליינט server-only ל-Strapi המשותף (api.gofreeil.com).
@@ -452,12 +452,12 @@ export async function createBusiness(data) {
 }
 
 /**
- * רשומות שכבר קיימות במאגר לאותו עסק שמגישים עכשיו — בכל סטטוס — כדי שהגשה
- * חוזרת תעדכן את הקיימת במקום ליצור כרטיס כפול (ראו $lib/businessDedupe.js).
+ * רשומות שכבר קיימות במאגר ואולי הן העסק שמגישים עכשיו — בכל סטטוס — כדי
+ * שהגשה חוזרת לא תהפוך לכרטיס כפול: אותם פרטי קשר, ושם זהה או שם שמרחיב
+ * את השני (ראו $lib/businessDedupe.js). טופס ההגשה מחליט מה לעשות בכל אחת.
  *
  * השאילתה רק מצמצמת מועמדים (שם זהה, טלפון זהה, או אותן 7 ספרות אחרונות של
- * הטלפון בכל פורמט); ההכרעה "אותו עסק" נעשית ב-JS עם isSameBusiness, כדי
- * שההגדרה תהיה אחת — גם כאן וגם בקיבוץ הכפילויות שבפאנל.
+ * הטלפון בכל פורמט); ההכרעה נעשית ב-JS עם isPossiblySameBusiness.
  * @param {{name:string, phone?:string, email?:string}} v
  * @returns {Promise<any[]>} מהוותיק לחדש
  */
@@ -473,7 +473,7 @@ export async function findSubmittedTwins(v) {
 	const data = await apiJson(`/api/idx-businesses?${qs}`);
 	const rows = Array.isArray(data?.data) ? data.data : [];
 	const probe = { name, phone, extra_fields: { owner_email: String(v.email ?? '').toLowerCase() } };
-	return rows.filter((/** @type {any} */ b) => isSameBusiness(probe, b));
+	return rows.filter((/** @type {any} */ b) => isPossiblySameBusiness(probe, b));
 }
 
 /** מונה חשיפת-טלפון אטומי; מחזיר את הטלפון. @param {string} documentId */

@@ -11,7 +11,7 @@ import {
 	recomputeBusinessRating
 } from '$lib/server/strapi.js';
 import { invalidatePendingCounts } from '$lib/server/pendingCounts.js';
-import { isSameBusiness } from '$lib/businessDedupe.js';
+import { autoMergePendingDuplicates } from '$lib/server/businessMerge.js';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ locals }) {
@@ -20,16 +20,27 @@ export async function load({ locals }) {
 
 	// מוני ההמתנה (הבועות בסרגל הניווט ובהאדר) מגיעים מ-+layout.server —
 	// כאן נשלפות רק הרשימות עצמן.
-	const [businesses, allBusinesses, reviews, reports] = await Promise.all([
+	let [businesses, allBusinesses, reviews, reports] = await Promise.all([
 		listPendingBusinesses().catch(() => []),
 		listAllBusinesses().catch(() => []),
 		listPendingReviews().catch(() => []),
 		listOpenReports().catch(() => [])
 	]);
+	// אותו עסק שהוגש כמה פעמים מתאחד כאן לבד — הגרסה החדשה ביותר, ומה שחסר
+	// בה נלקח מהקודמות (ראו $lib/businessDedupe.js). אף אחד לא צריך ללחוץ.
+	const autoMerged = await autoMergePendingDuplicates(businesses).catch(() => 0);
+	if (autoMerged) {
+		invalidatePendingCounts();
+		[businesses, allBusinesses] = await Promise.all([
+			listPendingBusinesses().catch(() => businesses),
+			listAllBusinesses().catch(() => allBusinesses)
+		]);
+	}
 	return {
 		authorized: true,
 		user,
 		superAdmin: isSuperAdmin(user),
+		autoMerged,
 		businesses,
 		allBusinesses,
 		reviews,
@@ -89,43 +100,5 @@ export const actions = {
 		}
 		invalidatePendingCounts();
 		return { ok: true, deleted: true, kind, documentId };
-	},
-
-	// ניקוי כפילויות בתור הממתינים — סופר-אדמין בלבד (זו מחיקה לצמיתות).
-	// הלקוח שולח את הרשומה שנשארת (הוותיקה) ואת הכפולים; השרת לא סומך על
-	// הרשימה: כל מועמד למחיקה חייב להיות ממתין *ואותו עסק* לפי ההגדרה
-	// המשותפת ב-$lib/businessDedupe.js — אחרת הוא מדולג, לא נמחק.
-	dedupePending: async ({ request, locals }) => {
-		if (!isSuperAdmin(locals.user)) {
-			return fail(403, { error: 'ניקוי כפילויות שמור לסופר-אדמין' });
-		}
-		const fd = await request.formData();
-		const keep = String(fd.get('keep') || '');
-		const remove = String(fd.get('remove') || '')
-			.split(',')
-			.map((s) => s.trim())
-			.filter(Boolean);
-		if (!keep || !remove.length) return fail(400, { error: 'בקשה לא תקינה' });
-		const pending = await listPendingBusinesses().catch(() => []);
-		const anchor = pending.find((b) => String(b.documentId) === keep);
-		if (!anchor) return fail(400, { error: 'הרשומה שאמורה להישאר כבר אינה ממתינה' });
-		const victims = pending.filter(
-			(b) =>
-				remove.includes(String(b.documentId)) &&
-				String(b.documentId) !== keep &&
-				isSameBusiness(anchor, b)
-		);
-		let deleted = 0;
-		for (const b of victims) {
-			try {
-				await deleteItem('business', String(b.documentId));
-				deleted += 1;
-			} catch (e) {
-				console.error('dedupePending: delete failed', b.documentId, e);
-			}
-		}
-		invalidatePendingCounts();
-		if (!deleted) return fail(502, { error: 'לא נמחק אף כפול — נסה שוב' });
-		return { ok: true, deduped: deleted, keep };
 	}
 };

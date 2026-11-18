@@ -40,13 +40,10 @@
 	const pending = $derived(data.businesses ?? []);
 	const allBusinesses = $derived(data.allBusinesses ?? []);
 
-	// אותו עסק שהוגש כמה פעמים (ראו $lib/businessDedupe.js) — מסומן על כל
-	// כרטיס בקבוצה, והוותיק שבהם מקבל כפתור לניקוי הכפולים בלחיצה אחת.
-	// ההגשה עצמה כבר לא יוצרת כפילויות; זה נועד למה שנכנס לפני התיקון.
+	// אותו עסק שהוגש כמה פעמים מתאחד לבד בטעינת הפאנל (ראו +page.server.js).
+	// מה שעוד מסומן כאן הוא רק הגשה טרייה של הדקות האחרונות — היא תאוחד
+	// בטעינה הבאה.
 	const dupOf = $derived(groupDuplicates(pending));
-	const dupGroupsCount = $derived(
-		new Set([...dupOf.values()].filter((g) => g.size > 1).map((g) => g.keepId)).size
-	);
 	const reviews = $derived(data.reviews ?? []);
 	const reports = $derived(data.reports ?? []);
 
@@ -219,21 +216,12 @@
 			{#if pending.length === 0}
 				<p class="py-16 text-center text-gray-500">אין עסקים שממתינים לאישור 🎉</p>
 			{:else}
-				{#if form?.deduped}
-					<div
-						class="mb-4 rounded-xl border border-green-500/30 bg-green-900/20 p-3 text-center text-green-300"
-					>
-						נמחקו {form.deduped} כפולים — נשארה ההגשה הראשונה בלבד
-					</div>
-				{/if}
-				{#if dupGroupsCount}
+				{#if data.autoMerged}
 					<p
-						class="mb-4 rounded-xl border border-amber-500/30 bg-amber-900/15 px-4 py-2.5 text-sm text-amber-200"
+						class="mb-4 rounded-xl border border-green-500/30 bg-green-900/20 px-4 py-2 text-sm text-green-300"
 					>
-						⚠️ {dupGroupsCount === 1 ? 'עסק אחד הוגש' : `${dupGroupsCount} עסקים הוגשו`} יותר מפעם אחת.
-						הכפולים מסומנים; {data.superAdmin
-							? 'כפתור "נקה כפולים" על ההגשה הראשונה מוחק את השאר.'
-							: 'דחה את הכפולים והשאר את ההגשה הראשונה.'}
+						🔗 אוחדו {data.autoMerged} הגשות כפולות לגרסה החדשה של אותו עסק — התמונות והפרטים מהקודמות
+						נשמרו בה.
 					</p>
 				{/if}
 				<div class="space-y-4">
@@ -252,11 +240,11 @@
 										{#if isDup && dup}
 											<span
 												class="rounded-full border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 text-[11px] font-bold text-amber-300"
-												title="אותו שם ואותו טלפון/אימייל בעל עסק"
+												title="אותו שם ואותו טלפון/אימייל בעל עסק — יאוחד אוטומטית בטעינה הבאה"
 											>
-												{dup.ordinal === 1
-													? `הגשה ראשונה מתוך ${dup.size}`
-													: `כפילות — הגשה ${dup.ordinal} מתוך ${dup.size}`}
+												{dup.keepId === String(b.documentId)
+													? `הגרסה החדשה מתוך ${dup.size}`
+													: `גרסה קודמת — תאוחד לחדשה`}
 											</span>
 										{/if}
 									</h3>
@@ -313,28 +301,6 @@
 									✏️ ערוך
 								</a>
 								{@render deleteBtn('business', b.documentId)}
-								{#if isDup && dup && dup.ordinal === 1 && data.superAdmin}
-									<form
-										method="POST"
-										action="?/dedupePending"
-										use:enhance={confirmDeleteFn(
-											b.documentId + 'dedupe',
-											`למחוק ${dup.others.length} כפולים של "${b.name}" ולהשאיר רק את ההגשה הראשונה?`
-										)}
-									>
-										<input type="hidden" name="keep" value={b.documentId} />
-										<input type="hidden" name="remove" value={dup.others.join(',')} />
-										<button
-											disabled={busy === b.documentId + 'dedupe'}
-											class="rounded-lg border border-amber-500/40 bg-amber-950/40 px-4 py-1.5 text-sm font-bold text-amber-300 transition hover:bg-amber-900/50 disabled:opacity-40"
-											title="מוחק לצמיתות את ההגשות הכפולות של אותו עסק"
-										>
-											{busy === b.documentId + 'dedupe'
-												? '…'
-												: `🧹 נקה ${dup.others.length} כפולים`}
-										</button>
-									</form>
-								{/if}
 							</div>
 						</div>
 					{/each}

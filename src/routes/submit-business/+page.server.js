@@ -6,7 +6,13 @@ import {
 	deleteItem,
 	uploadImage
 } from '$lib/server/strapi.js';
-import { submissionLockKey } from '$lib/businessDedupe.js';
+import {
+	submissionLockKey,
+	isSameBusiness,
+	sameBizName,
+	mergeBusinessVersions
+} from '$lib/businessDedupe.js';
+import { canEditBusiness } from '$lib/server/ownerMatch.js';
 import { getCategoryOptions } from '$lib/server/categoryStore.js';
 import { getMonthlyVisitorStats } from '$lib/server/visitorStats.js';
 import { parseExtraCategories } from '$lib/categories.js';
@@ -67,10 +73,15 @@ function rateLimited(ip) {
 }
 
 // ── מניעת כפילויות ──────────────────────────────────────────
-// אותו עסק שמוגש פעמיים (לחיצה כפולה, רענון אחרי שגיאת רשת, "ליתר ביטחון")
-// לא הופך לשני כרטיסים בפאנל: אם כבר יש לו רשומה שממתינה לאישור (או שנדחתה)
-// — היא מתעדכנת בפרטים החדשים וחוזרת לתור; אם הוא כבר במדריך — לא נוצר
-// כלום והמגיש מקבל הודעה כנה. ההגדרה של "אותו עסק": $lib/businessDedupe.js.
+// אותו עסק שמוגש פעמיים (לחיצה כפולה, רענון אחרי שגיאת רשת, "ליתר ביטחון",
+// או בעל עסק שמנסה לשפר את הכרטיס שלו בהגשה חדשה) לא הופך לשני כרטיסים:
+//   • אותו שם ופרטי קשר, והכרטיס כבר באתר — לא נוצר כלום; המגיש מקבל הודעה
+//     שמפנה אותו לעריכת הכרטיס, ושעסק נוסף צריך שם אחר.
+//   • אותו שם, והבקשה ממתינה (או נדחתה) — היא מתעדכנת: הפרטים החדשים קובעים,
+//     ומה שלא מולא עכשיו (תמונות, קישורים) נשאר מהקודמת. ראו mergeBusinessVersions.
+//   • שם שמרחיב שם קיים ("X - תוספת") עם אותם פרטי קשר — שואלים את המגיש אם
+//     זה אותו עסק או עסק נוסף, ולא מחליטים בשבילו.
+// ההגדרות: $lib/businessDedupe.js.
 //
 // הנעילה שבזיכרון סוגרת את החור שבין הבדיקה לכתיבה: שתי בקשות זהות שנכנסות
 // באותה שנייה (לחיצה כפולה לפני ש-submitting נדלק) עוברות שתיהן את
@@ -82,8 +93,6 @@ function rateLimited(ip) {
 // בתוך עשר שניות. לכן אחרי היצירה יש גם יישוב (settleCreateRace): כל מי שיצר
 // רשומה בודק שוב, ומי שאינו הוותיק מוחק את עצמו. זה עובד בין מופעים בלי
 // תשתית נעילה נוספת, כי המאגר עצמו הוא נקודת ההכרעה.
-// מפתחות ש-extra_fields מנהל מהטופס — מוחלפים בעדכון; כל מפתח אחר (שהוסיפו
-// אדמין או תהליך בעלות) נשמר.
 /** @type {Map<string, Promise<unknown>>} */
 const inflight = new Map();
 
@@ -97,7 +106,8 @@ const inflight = new Map();
  */
 async function settleCreateRace(values, ourId) {
 	try {
-		const twins = await findSubmittedTwins(values);
+		// רק הגשות זהות (לחיצה כפולה) — לא עסק נוסף של אותו אדם בשם מורחב
+		const twins = (await findSubmittedTwins(values)).filter((t) => isSameBusiness(values, t));
 		const winner = [...twins].sort(
 			(a, b) =>
 				String(a.createdAt ?? '').localeCompare(String(b.createdAt ?? '')) ||
@@ -111,15 +121,29 @@ async function settleCreateRace(values, ourId) {
 		return null;
 	}
 }
-const FORM_EXTRA_KEYS = [
-	'owner_email',
-	TERMS_STAMP,
-	'categories',
-	'branches',
-	'tags',
-	'links',
-	'media_fit'
-];
+/**
+ * מה שההודעה "הפרטים כבר קיימים" צריכה לדעת על הכרטיס הקיים.
+ * @param {any} t @param {any} user @param {boolean} variant
+ */
+function twinInfo(t, user, variant) {
+	const documentId = String(t.documentId);
+	const listed = t.status === 'approved' || t.status === 'frozen';
+	const edit = `/business/${documentId}/edit`;
+	return {
+		documentId,
+		name: String(t.name ?? ''),
+		listed,
+		variant,
+		// בעלים מחובר — ישר לעריכה. אחרת — לאזור האישי, שם מוצעת בקשת בעלות
+		// על כרטיס עם הטלפון/האימייל שלו (ownerMatch.js), ומשם לעריכה.
+		editHref: canEditBusiness(t, user)
+			? edit
+			: user
+				? '/profile'
+				: `/auth/login?returnTo=${encodeURIComponent('/profile')}`,
+		canEdit: canEditBusiness(t, user)
+	};
+}
 
 const PHONE_RE = /^0\d[\d\-\s]{6,}$/;
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -257,18 +281,29 @@ export const actions = {
 			console.warn('findSubmittedTwins failed:', e);
 			return [];
 		});
-		const listed = twins.find((t) => t.status === 'approved' || t.status === 'frozen');
-		if (listed) {
-			return {
-				success: true,
-				alreadyListed: true,
-				documentId: String(listed.documentId),
-				name: String(listed.name || values.name)
-			};
-		}
+		const isListed = (/** @type {any} */ t) => t.status === 'approved' || t.status === 'frozen';
+		const isOpen = (/** @type {any} */ t) => t.status === 'pending' || t.status === 'rejected';
+		const exact = twins.filter((t) => sameBizName(t.name, values.name));
+		const variants = twins.filter((t) => !exact.includes(t));
+
+		// אותו שם, והכרטיס כבר באתר: זה בעל העסק שמנסה לשפר את הכרטיס שלו
+		const listed = exact.find(isListed);
+		if (listed) return fail(409, { twin: twinInfo(listed, locals.user, false), values });
+
 		// ממתין → מעדכנים את אותה בקשה; נדחה → מעדכנים ומחזירים לתור (ניסיון מתוקן)
-		const reuse =
-			twins.find((t) => t.status === 'pending') ?? twins.find((t) => t.status === 'rejected');
+		let reuse =
+			exact.find((t) => t.status === 'pending') ?? exact.find((t) => t.status === 'rejected');
+
+		// שם מורחב עם אותם פרטי קשר — המגיש בוחר: אותו עסק (עדכון הבקשה) או עסק נוסף
+		const choice = str(fd.get('twin_choice'));
+		if (!reuse && variants.length && choice !== 'new') {
+			const picked = variants.find((t) => isOpen(t) && choice === `update:${t.documentId}`);
+			if (!picked) {
+				const shown = variants.find(isListed) ?? variants[0];
+				return fail(409, { twin: twinInfo(shown, locals.user, true), values });
+			}
+			reuse = picked;
+		}
 
 		// הנעילה נתפסת כאן — לפני העלאת התמונות — כדי שהגשה זהה שנייה שנכנסת
 		// בזמן ההעלאה (שניות ארוכות) תיתקל בה ולא תיצור רשומה משלה.
@@ -351,20 +386,20 @@ export const actions = {
 
 			const write = (async () => {
 				if (reuse) {
-					// מפתחות שהטופס מנהל מוחלפים; כל השאר (אדמין/בעלות) נשמר
-					const kept = Object.fromEntries(
-						Object.entries(reuse.extra_fields ?? {}).filter(([k]) => !FORM_EXTRA_KEYS.includes(k))
-					);
-					await updateBusiness(String(reuse.documentId), {
+					// ההגשה הזו היא הגרסה החדשה; מה שלא מולא בה (תמונות, קישורים,
+					// שדות ריקים) נשאר מהבקשה הקיימת. בעלים קיים לא מוחלף.
+					const incoming = {
 						...fields,
-						extra_fields: { ...kept, ...formExtra },
+						createdAt: new Date().toISOString(),
+						extra_fields: formExtra,
+						logo: logoId ? { id: logoId } : null,
+						banners: bannerIds.map((id) => ({ id })),
+						...(owner.user_id ? { user_id: owner.user_id } : {})
+					};
+					await updateBusiness(String(reuse.documentId), {
+						...mergeBusinessVersions([reuse, incoming], reuse),
 						accepted_terms: true,
-						status: 'pending',
-						// תמונות חדשות מחליפות; בלי תמונות חדשות — הישנות נשארות
-						...(logoId ? { logo: logoId } : {}),
-						...(bannerIds.length ? { banners: bannerIds } : {}),
-						// בעלים קיים לא נדרס על-ידי הגשה אנונימית
-						...(reuse.user_id || reuse.user ? {} : owner)
+						status: 'pending'
 					});
 					return { documentId: String(reuse.documentId) };
 				}

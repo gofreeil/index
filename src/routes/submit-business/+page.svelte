@@ -72,6 +72,8 @@
 		});
 	});
 	const errors = $derived(form?.errors ?? {});
+	/** הפרטים כבר קיימים באתר — ראו twinInfo ב-+page.server.js */
+	const twin = $derived(form?.twin ?? null);
 
 	/** "8/2026" — החודש הראשון בנתוני הצפיות (YYYYMM). @param {string} ym */
 	function sinceLabel(ym) {
@@ -234,22 +236,15 @@
 
 <main class="mx-auto max-w-2xl px-4 py-10 sm:px-6" dir="rtl">
 	{#if form?.success}
-		<!-- הודעה כנה לפי מה שבאמת קרה: נשלח / כבר ממתין (עודכן) / כבר במדריך.
-		     בפעם השנייה לא אומרים "נשלח בהצלחה" — זה מה שגרם לשליחה שלישית. -->
+		<!-- הודעה כנה לפי מה שבאמת קרה: נשלח / כבר ממתין (עודכן).
+		     בפעם השנייה לא אומרים "נשלח בהצלחה" — זה מה שגרם לשליחה שלישית.
+		     כרטיס שכבר באתר לא מגיע לכאן: הטופס נשאר פתוח עם הודעת twin. -->
 		<div
-			class="rounded-3xl border p-10 text-center shadow-xl {form.alreadyListed ||
-			form.alreadyPending
+			class="rounded-3xl border p-10 text-center shadow-xl {form.alreadyPending
 				? 'border-amber-500/30 bg-amber-900/10'
 				: 'border-green-500/30 bg-green-900/10'}"
 		>
-			{#if form.alreadyListed}
-				<div class="mb-4 text-6xl">ℹ️</div>
-				<h1 class="mb-3 text-2xl font-black text-amber-300">העסק כבר מופיע במדריך</h1>
-				<p class="mx-auto mb-8 max-w-md leading-relaxed text-gray-300">
-					"{form.name}" כבר רשום באינדקס עם אותו שם ופרטי קשר, ולכן לא נפתחה בקשה נוספת. אם זה העסק
-					שלכם ורוצים לעדכן פרטים — היכנסו לאזור האישי ודרשו בעלות על הכרטיסייה.
-				</p>
-			{:else if form.alreadyPending}
+			{#if form.alreadyPending}
 				<div class="mb-4 text-6xl">🕒</div>
 				<h1 class="mb-3 text-2xl font-black text-amber-300">
 					{form.resubmitted ? 'הבקשה חזרה לבדיקה' : 'הבקשה כבר נשלחה'}
@@ -296,9 +291,9 @@
 			</div>
 			<div class="flex flex-col justify-center gap-3 sm:flex-row">
 				<a
-					href={form.alreadyListed && form.documentId ? `/business/${form.documentId}` : '/'}
+					href="/"
 					class="rounded-full bg-gray-800 px-6 py-3 font-bold text-blue-400 transition hover:bg-gray-700"
-					>{form.alreadyListed && form.documentId ? 'לכרטיסיית העסק' : 'חזרה למדריך'}</a
+					>חזרה למדריך</a
 				>
 				<a
 					href="/submit-business"
@@ -795,6 +790,59 @@
 					{/each}
 				</div>
 			</fieldset>
+
+			{#if twin}
+				<!-- הפרטים כבר קיימים: כנראה בעל העסק מנסה לשפר את הכרטיס שלו בהגשה
+				     חדשה. מפנים אותו לעריכה, ומבהירים שעסק נוסף צריך שם אחר. -->
+				<div
+					class="rounded-2xl border border-amber-500/40 bg-amber-900/15 p-4 text-base text-amber-100"
+					role="alert"
+				>
+					<p class="font-black text-amber-300">⚠️ הפרטים שהזנתם כבר קיימים באתר</p>
+					<p class="mt-1 leading-relaxed">
+						יש כבר {twin.listed ? 'כרטיס' : 'בקשה ממתינה'} בשם "<b>{twin.name}</b>" עם אותו טלפון או
+						אימייל.
+						{#if twin.listed}
+							מנסים לערוך ולשפר את הכרטיס שלכם? {twin.canEdit
+								? 'עברו למצב עריכה.'
+								: 'התחברו, ובאזור האישי עברו לעריכת הכרטיס.'}
+						{:else}
+							מנסים לעדכן אותה? אפשר לשלוח את הפרטים החדשים לאותה בקשה.
+						{/if}
+						אם לא — מותר לרשום כמה עסקים, רק שימו לב שלכל אחד שם אחר!
+					</p>
+					<div class="mt-3 flex flex-wrap gap-2">
+						{#if twin.listed}
+							<!-- eslint-disable svelte/no-navigation-without-resolve -- יעד מחושב בשרת (twinInfo) -->
+							<a
+								href={twin.editHref}
+								class="rounded-full bg-amber-500 px-4 py-1.5 text-sm font-bold text-gray-950 transition hover:bg-amber-400"
+								>✏️ {twin.canEdit ? 'לעריכת הכרטיס' : 'התחברות ועריכה'}</a
+							>
+							<!-- eslint-enable svelte/no-navigation-without-resolve -->
+						{:else}
+							<button
+								type="submit"
+								name="twin_choice"
+								value="update:{twin.documentId}"
+								disabled={submitting}
+								class="rounded-full bg-amber-500 px-4 py-1.5 text-sm font-bold text-gray-950 transition hover:bg-amber-400 disabled:opacity-50"
+								>🔄 זה אותו עסק — עדכנו את הבקשה</button
+							>
+						{/if}
+						{#if twin.variant}
+							<button
+								type="submit"
+								name="twin_choice"
+								value="new"
+								disabled={submitting}
+								class="rounded-full border border-amber-500/50 px-4 py-1.5 text-sm font-bold text-amber-200 transition hover:bg-amber-900/40 disabled:opacity-50"
+								>➕ זה עסק אחר — שלחו כעסק נוסף</button
+							>
+						{/if}
+					</div>
+				</div>
+			{/if}
 
 			<button
 				type="submit"
