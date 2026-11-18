@@ -29,15 +29,15 @@
 	/** @type {{ business: any }} */
 	let { business } = $props();
 
-	// סרטון ההסבר "מה זה שיתוף חכם" — וידאו 10 בטלוויזיה, מנוגן בנגן צף
+	// סרטון ההסבר "מה זה שיתוף חכם" — וידאו 11 בטלוויזיה, מנוגן בנגן צף
 	// (FloatingVideo: באמצע המסך, ומתקטן לפינה בגלילה). "מה זה?" מופיע גם
 	// ליד הכפתור הסגור וגם בכותרת הפאנל הפתוח, כי מי שלא הבין נתקע בדרך
 	// כלל דווקא באמצע.
 	// הקבצים עצמם ולא ה-embed (הסיבה ב-FloatingVideo). אם הסרטון יוחלף או
 	// יקודד מחדש בטלוויזיה, צריך לעדכן כאן את התיקייה.
-	const EXPLAINER_DIR = 'https://tv.gofreeil.com/videos/video_261117230249_vea35';
+	const EXPLAINER_DIR = 'https://tv.gofreeil.com/videos/video_261118140540_v4576';
 	const EXPLAINER_SRC = `${EXPLAINER_DIR}/index.mp4`;
-	const EXPLAINER_POSTER = `${EXPLAINER_DIR}/video_261117230249_vea35.jpg`;
+	const EXPLAINER_POSTER = `${EXPLAINER_DIR}/video_261118140540_v4576.jpg`;
 	let videoOpen = $state(false);
 	/** @type {{ play: () => void } | undefined} */
 	let videoPlayer = $state();
