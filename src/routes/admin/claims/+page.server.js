@@ -38,6 +38,23 @@ import {
 const HISTORY = 20;
 
 /**
+ * הניידים שאפשר לשלוח אליהם: שבפרופיל, ושעל הכרטיסייה אם הוא מספר אחר.
+ * כשיש שניים האדמין בוחר במפורש: טלפון בפרופיל עם ספרה אחת שגויה היה
+ * שולח את ההזמנה לאדם זר, בזמן שהמספר שעל הכרטיסייה הוא הנכון.
+ * @param {string} userPhone @param {string} bizPhone
+ * @returns {{phone: string, src: 'profile' | 'card'}[]}
+ */
+function smsPhoneOptions(userPhone, bizPhone) {
+	/** @type {{phone: string, src: 'profile' | 'card'}[]} */
+	const out = [];
+	const profile = toMobileE164(userPhone);
+	if (profile) out.push({ phone: userPhone, src: 'profile' });
+	const card = toMobileE164(bizPhone);
+	if (card && card !== profile) out.push({ phone: bizPhone, src: 'card' });
+	return out;
+}
+
+/**
  * טיוטת ה-SMS לבעל עסק שהכרטיסייה שויכה אליו — נפתחת בעורך אחרי השיוך
  * (וגם מההיסטוריה), כדי שהאדמין יבדוק ויערוך לפני שהיא יוצאת. הנמען: הנייד
  * שבפרופיל, ואם אין — הנייד שעל הכרטיסייה.
@@ -45,12 +62,13 @@ const HISTORY = 20;
  * @param {{claimId: string, bizDocId: string, bizName: string, userName: string, userPhone: string, bizPhone: string}} v
  */
 function ownerSmsDraft(origin, template, v) {
-	const phone = toMobileE164(v.userPhone) ? v.userPhone : v.bizPhone;
+	const phones = smsPhoneOptions(v.userPhone, v.bizPhone);
 	return {
 		claimId: v.claimId,
 		bizName: v.bizName,
 		userName: v.userName,
-		phone: toMobileE164(phone) ? phone : '',
+		phone: phones[0]?.phone ?? '',
+		phones,
 		draft: renderOwnerSms(template, origin, v)
 	};
 }
@@ -142,11 +160,12 @@ export async function load({ locals, url }) {
 	 * @param {any} m
 	 */
 	const withSms = (m) => {
-		const phone = toMobileE164(m.userPhone) ? m.userPhone : m.bizPhone;
+		const phones = smsPhoneOptions(m.userPhone, m.bizPhone);
 		const links = claimLinks(url.origin, m.bizDocId, m.userId);
 		return {
 			...m,
-			smsPhone: toMobileE164(phone) ? phone : '',
+			smsPhone: phones[0]?.phone ?? '',
+			smsPhones: phones,
 			smsDraft: renderClaimSms(template, {
 				name: m.userName,
 				business: m.bizName,

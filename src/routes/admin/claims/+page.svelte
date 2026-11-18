@@ -71,7 +71,7 @@
 	/* ═══════════ הודעת בעלות ב-SMS ═══════════
 	   אחרי שיוך השרת מחזיר טיוטה (form.ownerSms) — העורך נפתח מיד, והאדמין
 	   בודק, מתקן ושולח. אותו עורך נפתח גם מ"הודע לבעלים" בהיסטוריה. */
-	/** @type {{claimId: string, bizName: string, userName: string, phone: string, draft: string} | null} */
+	/** @type {{claimId: string, bizName: string, userName: string, phone: string, phones?: {phone: string, src: string}[], draft: string} | null} */
 	let ownerEdit = $state(null);
 	let ownerText = $state('');
 	/** @param {any} o */
@@ -155,6 +155,37 @@
 		</div>
 	{/if}
 
+	<!-- נמען ה-SMS: מספר אחד = שדה מוסתר; שני מספרים שונים (פרופיל מול
+	     כרטיסייה) = בחירה מפורשת, בלי ברירת מחדל, כדי שלא יישלח למספר שגוי -->
+	{#snippet smsTo(
+		/** @type {{phone: string, src: string}[] | undefined} */ phones,
+		/** @type {string} */ fallback,
+		/** @type {string} */ userName
+	)}
+		{#if (phones?.length ?? 0) > 1}
+			<div class="mb-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-400">
+				<span class="font-bold text-amber-300">⚠️ שני מספרים שונים — לאיזה לשלוח?</span>
+				{#each phones ?? [] as p (p.phone)}
+					<label class="inline-flex cursor-pointer items-center gap-1">
+						<input type="radio" name="phone" value={p.phone} required class="accent-blue-500" />
+						<span class="font-bold text-gray-200" dir="ltr">{p.phone}</span>
+						<span>{p.src === 'card' ? 'בכרטיסייה' : 'בפרופיל'}</span>
+					</label>
+				{/each}
+			</div>
+			<p class="mb-1.5 text-xs text-gray-400">
+				{#if userName}{userName} · {/if}ההודעה נשלחת כפי שהיא מופיעה כאן:
+			</p>
+		{:else}
+			<input type="hidden" name="phone" value={fallback} />
+			<p class="mb-1.5 text-xs text-gray-400">
+				אל <span class="font-bold text-gray-200" dir="ltr">{fallback}</span>
+				{#if userName}· {userName}{/if}
+				— ההודעה נשלחת כפי שהיא מופיעה כאן:
+			</p>
+		{/if}
+	{/snippet}
+
 	<!-- ── עורך הודעת הבעלות, לפני השליחה ──────────────────── -->
 	{#if ownerEdit}
 		<form
@@ -171,7 +202,6 @@
 			class="mb-4 rounded-2xl border border-blue-500/30 bg-blue-950/20 p-4"
 		>
 			<input type="hidden" name="claimId" value={ownerEdit.claimId} />
-			<input type="hidden" name="phone" value={ownerEdit.phone} />
 			<p class="mb-1.5 text-sm font-bold text-gray-200">
 				📱 להודיע ל{ownerEdit.userName || 'בעל העסק'} ש"{ownerEdit.bizName}" שלו
 			</p>
@@ -180,10 +210,7 @@
 			{:else if !sms.enabled}
 				<p class="text-sm text-amber-300">שליחת SMS אינה מוגדרת בשרת המשותף.</p>
 			{:else}
-				<p class="mb-1.5 text-xs text-gray-400">
-					אל <span class="font-bold text-gray-200" dir="ltr">{ownerEdit.phone}</span> — ההודעה נשלחת
-					כפי שהיא מופיעה כאן:
-				</p>
+				{@render smsTo(ownerEdit.phones, ownerEdit.phone, '')}
 				<textarea
 					name="message"
 					rows="4"
@@ -626,12 +653,7 @@
 								<input type="hidden" name="userId" value={m.userId} />
 								<input type="hidden" name="userName" value={m.userName} />
 								<input type="hidden" name="bizName" value={m.bizName} />
-								<input type="hidden" name="phone" value={m.smsPhone} />
-								<p class="mb-1.5 text-xs text-gray-400">
-									אל <span class="font-bold text-gray-200" dir="ltr">{m.smsPhone}</span>
-									{#if m.userName}· {m.userName}{/if}
-									— ההודעה נשלחת כפי שהיא מופיעה כאן:
-								</p>
+								{@render smsTo(m.smsPhones, m.smsPhone, m.userName)}
 								<textarea
 									name="message"
 									rows="6"
