@@ -24,9 +24,16 @@
 	import { warm, zoomGoto } from '$lib/zoomNav.js';
 	import { sentText } from '$lib/sentListText.js';
 	import { logShare, nameShare, revealKey, syncShareLog } from '$lib/shareLog.js';
+	import VideoSheet from '$lib/components/VideoSheet.svelte';
 
 	/** @type {{ business: any }} */
 	let { business } = $props();
+
+	// סרטון ההסבר "מה זה שיתוף חכם" — embed של הטלוויזיה (VideoSheet).
+	// "מה זה?" מופיע גם ליד הכפתור הסגור וגם בכותרת הפאנל הפתוח: מי שלא
+	// הבין נתקע בדרך כלל דווקא שם, באמצע.
+	const EXPLAINER_SRC = 'https://tv.gofreeil.com/videoEmbed/10';
+	let videoOpen = $state(false);
 
 	// מעבירים לשרת רשימה ישנה שישבה רק בדפדפן הזה, ומאמתים שהעותק המקומי
 	// שייך לחשבון המחובר — לפני השליחה הראשונה ולא אחריה.
@@ -243,7 +250,8 @@
      הרוחב במקום להידחס לחצי הנותר. ה-‎-mt-1 מיישר את מרכז הגלולה לשורת הטקסט. -->
 <section dir={t.dir} class={open ? 'w-full' : '-mt-1 ms-auto shrink-0'}>
 	{#if !open}
-		<div class="flex justify-end">
+		<div class="flex items-center justify-end gap-3">
+			{@render whatIsIt()}
 			<button
 				type="button"
 				onclick={() => (open = true)}
@@ -270,14 +278,15 @@
 		</div>
 	{:else}
 		<div class="rounded-xl border border-white/[0.08] px-4 py-3">
-			<div class="flex items-center justify-between gap-3">
+			<div class="flex items-center gap-3">
 				<h2 class="shrink-0 text-sm font-semibold text-gray-400">{t.smartShare}</h2>
+				{@render whatIsIt()}
 				<button
 					type="button"
 					onclick={() => (open = false)}
 					aria-expanded={true}
 					aria-controls="smart-share-panel"
-					class="rounded-lg border border-white/15 px-3.5 py-1.5 text-sm font-medium text-gray-300 transition hover:border-white/30 hover:text-white"
+					class="ms-auto rounded-lg border border-white/15 px-3.5 py-1.5 text-sm font-medium text-gray-300 transition hover:border-white/30 hover:text-white"
 				>
 					{t.smartShareCloseBtn}
 				</button>
@@ -465,3 +474,34 @@
 		</div>
 	{/if}
 </section>
+
+<!-- "מה זה?" — פותח את סרטון ההסבר. לחיצה ולא hover, כדי שיעבוד גם בנייד;
+     ה-title נותן בדסקטופ טולטיפ קטן עם אורך הסרטון. -->
+{#snippet whatIsIt()}
+	<button
+		type="button"
+		onclick={() => (videoOpen = true)}
+		title={t.smartShareWhatTip}
+		aria-haspopup="dialog"
+		class="group inline-flex shrink-0 items-center gap-1.5 text-xs font-medium text-gray-400 transition hover:text-white"
+	>
+		<span
+			class="flex h-6 w-6 items-center justify-center rounded-full border border-white/20 transition group-hover:border-orange-400/70 group-hover:text-orange-300"
+		>
+			<!-- משולש "נגן" — תמיד פונה ימינה, גם ב-RTL (כמו פקדי מדיה) -->
+			<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" class="h-3 w-3">
+				<path d="M7 4.5v15l13-7.5z" />
+			</svg>
+		</span>
+		{t.smartShareWhatBtn}
+	</button>
+{/snippet}
+
+{#if videoOpen}
+	<VideoSheet
+		src={EXPLAINER_SRC}
+		title={t.smartShareVideoTitle}
+		closeLabel={t.smartShareCloseBtn}
+		onclose={() => (videoOpen = false)}
+	/>
+{/if}
