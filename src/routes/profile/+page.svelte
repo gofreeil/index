@@ -754,107 +754,6 @@
 		</section>
 	{/if}
 
-	<!-- העסקים שלי -->
-	<section
-		class="w-full rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800"
-	>
-		<div class="mb-4 flex flex-wrap items-center justify-between gap-2">
-			<h2 class="text-lg font-extrabold text-gray-900 dark:text-gray-100">
-				{t.myBusinesses}
-				{#if businesses.length}
-					<span class="text-sm font-bold text-gray-400">({businesses.length})</span>
-				{/if}
-			</h2>
-			<a
-				href="/submit-business"
-				class="text-sm font-bold text-blue-600 hover:underline dark:text-blue-400"
-			>
-				+ {t.addStore}
-			</a>
-		</div>
-
-		{#if businesses.length === 0}
-			<p class="py-6 text-center text-sm text-gray-500 dark:text-gray-400">{t.myBusinessesEmpty}</p>
-		{:else}
-			<ul class="space-y-3">
-				{#each businesses as b (b.documentId)}
-					<li
-						class="flex items-start gap-3 rounded-xl border border-gray-100 p-3 dark:border-gray-700"
-					>
-						{#if b.logo}
-							<img src={b.logo} alt="" class="h-14 w-14 flex-shrink-0 rounded-xl object-cover" />
-						{:else}
-							<div
-								class="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-gray-100 text-2xl dark:bg-gray-700"
-							>
-								🏪
-							</div>
-						{/if}
-
-						<div class="min-w-0 flex-1">
-							<div class="flex flex-wrap items-center gap-2">
-								<h3 class="truncate font-bold text-gray-900 dark:text-gray-100">{b.name}</h3>
-								<span
-									class="rounded-full border px-2 py-0.5 text-[11px] font-bold {statusCls(
-										b.status
-									)}"
-								>
-									{statusLabel(b.status)}
-								</span>
-							</div>
-							<p class="mt-0.5 truncate text-xs text-gray-500 dark:text-gray-400">
-								{b.category || '—'}{b.city ? ' · ' + b.city : ''}{b.phone ? ' · ' + b.phone : ''} · {fmtDate(
-									b.created_at
-								)}
-							</p>
-							{#if b.discount}
-								<p class="mt-1 truncate text-xs font-medium text-green-600 dark:text-green-400">
-									🎁 {b.discount}
-								</p>
-							{/if}
-							<p
-								class="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-gray-500 dark:text-gray-400"
-							>
-								<span>👁 {fmtNum.format(b.view_count)} {t.viewsLabel}</span>
-								<span>☎️ {fmtNum.format(b.phone_reveal_count)} {t.statsRevealsShort}</span>
-								{#if b.rating_count}
-									<span>★ {b.rating.toFixed(1)} ({b.rating_count})</span>
-								{/if}
-							</p>
-						</div>
-
-						<!-- בעל הכרטיסייה עורך את הפרטים בעצמו — בכל סטטוס, גם כשהיא
-						     עדיין ממתינה לאישור -->
-						<div class="flex flex-shrink-0 flex-col gap-1.5 self-center">
-							<a
-								href="/business/{b.documentId}/edit"
-								class="rounded-full bg-blue-600 px-3 py-1.5 text-center text-xs font-bold text-white transition hover:bg-blue-700"
-							>
-								✏️ {t.editMyCard}
-							</a>
-							{#if b.status === 'approved'}
-								<a
-									href="/business/{b.documentId}"
-									class="rounded-full border border-gray-200 px-3 py-1.5 text-center text-xs font-bold text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
-								>
-									{t.viewPage}
-								</a>
-							{/if}
-						</div>
-					</li>
-				{/each}
-			</ul>
-		{/if}
-	</section>
-
-	<!-- הוסף עסק נוסף — ישר מתחת ל"העסקים שלי" -->
-	<a
-		href="/submit-business"
-		class="mx-auto flex w-full max-w-lg items-center justify-center gap-1 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 text-sm font-bold text-white shadow-md transition hover:scale-[1.02] active:scale-95"
-	>
-		+ {t.addAnotherStore}
-	</a>
-
 	<!-- המודעות שלי -->
 	<section
 		class="w-full rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800"
@@ -1101,4 +1000,105 @@
 
 	<!-- היומן שלי — הערות לפי יום (נשמרות בחשבון), התזכורות מהטבלה, ויומן גוגל -->
 	<MiniCalendar lang={currentLang} email={user?.email || ''} />
+
+	<!-- העסקים שלי -->
+	<section
+		class="w-full rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800"
+	>
+		<div class="mb-4 flex flex-wrap items-center justify-between gap-2">
+			<h2 class="text-lg font-extrabold text-gray-900 dark:text-gray-100">
+				{t.myBusinesses}
+				{#if businesses.length}
+					<span class="text-sm font-bold text-gray-400">({businesses.length})</span>
+				{/if}
+			</h2>
+			<a
+				href="/submit-business"
+				class="text-sm font-bold text-blue-600 hover:underline dark:text-blue-400"
+			>
+				+ {t.addStore}
+			</a>
+		</div>
+
+		{#if businesses.length === 0}
+			<p class="py-6 text-center text-sm text-gray-500 dark:text-gray-400">{t.myBusinessesEmpty}</p>
+		{:else}
+			<ul class="space-y-3">
+				{#each businesses as b (b.documentId)}
+					<li
+						class="flex items-start gap-3 rounded-xl border border-gray-100 p-3 dark:border-gray-700"
+					>
+						{#if b.logo}
+							<img src={b.logo} alt="" class="h-14 w-14 flex-shrink-0 rounded-xl object-cover" />
+						{:else}
+							<div
+								class="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-gray-100 text-2xl dark:bg-gray-700"
+							>
+								🏪
+							</div>
+						{/if}
+
+						<div class="min-w-0 flex-1">
+							<div class="flex flex-wrap items-center gap-2">
+								<h3 class="truncate font-bold text-gray-900 dark:text-gray-100">{b.name}</h3>
+								<span
+									class="rounded-full border px-2 py-0.5 text-[11px] font-bold {statusCls(
+										b.status
+									)}"
+								>
+									{statusLabel(b.status)}
+								</span>
+							</div>
+							<p class="mt-0.5 truncate text-xs text-gray-500 dark:text-gray-400">
+								{b.category || '—'}{b.city ? ' · ' + b.city : ''}{b.phone ? ' · ' + b.phone : ''} · {fmtDate(
+									b.created_at
+								)}
+							</p>
+							{#if b.discount}
+								<p class="mt-1 truncate text-xs font-medium text-green-600 dark:text-green-400">
+									🎁 {b.discount}
+								</p>
+							{/if}
+							<p
+								class="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-gray-500 dark:text-gray-400"
+							>
+								<span>👁 {fmtNum.format(b.view_count)} {t.viewsLabel}</span>
+								<span>☎️ {fmtNum.format(b.phone_reveal_count)} {t.statsRevealsShort}</span>
+								{#if b.rating_count}
+									<span>★ {b.rating.toFixed(1)} ({b.rating_count})</span>
+								{/if}
+							</p>
+						</div>
+
+						<!-- בעל הכרטיסייה עורך את הפרטים בעצמו — בכל סטטוס, גם כשהיא
+						     עדיין ממתינה לאישור -->
+						<div class="flex flex-shrink-0 flex-col gap-1.5 self-center">
+							<a
+								href="/business/{b.documentId}/edit"
+								class="rounded-full bg-blue-600 px-3 py-1.5 text-center text-xs font-bold text-white transition hover:bg-blue-700"
+							>
+								✏️ {t.editMyCard}
+							</a>
+							{#if b.status === 'approved'}
+								<a
+									href="/business/{b.documentId}"
+									class="rounded-full border border-gray-200 px-3 py-1.5 text-center text-xs font-bold text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+								>
+									{t.viewPage}
+								</a>
+							{/if}
+						</div>
+					</li>
+				{/each}
+			</ul>
+		{/if}
+	</section>
+
+	<!-- הוסף עסק נוסף — ישר מתחת ל"העסקים שלי" -->
+	<a
+		href="/submit-business"
+		class="mx-auto flex w-full max-w-lg items-center justify-center gap-1 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 text-sm font-bold text-white shadow-md transition hover:scale-[1.02] active:scale-95"
+	>
+		+ {t.addAnotherStore}
+	</a>
 </div>
