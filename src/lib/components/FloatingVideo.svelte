@@ -142,7 +142,9 @@
 		left: 50%;
 		top: 50%;
 		translate: -50% -50%;
-		width: min(38rem, 92vw);
+		/* הרוחב מוגבל גם בגובה המסך (יחס 16:9), כדי שהנגן לא יחרוג ממנו */
+		width: min(46rem, 92vw, calc((100vh - 5rem) * 16 / 9));
+		width: min(46rem, 92vw, calc((100dvh - 5rem) * 16 / 9));
 		box-shadow:
 			0 24px 64px -12px rgba(0, 0, 0, 0.9),
 			0 0 0 1px rgba(255, 255, 255, 0.04);
