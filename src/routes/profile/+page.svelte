@@ -847,6 +847,14 @@
 		{/if}
 	</section>
 
+	<!-- הוסף עסק נוסף — ישר מתחת ל"העסקים שלי" -->
+	<a
+		href="/submit-business"
+		class="mx-auto flex w-full max-w-lg items-center justify-center gap-1 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 text-sm font-bold text-white shadow-md transition hover:scale-[1.02] active:scale-95"
+	>
+		+ {t.addAnotherStore}
+	</a>
+
 	<!-- המודעות שלי -->
 	<section
 		class="w-full rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800"
@@ -1093,12 +1101,4 @@
 
 	<!-- היומן שלי — הערות לפי יום (נשמרות בחשבון), התזכורות מהטבלה, ויומן גוגל -->
 	<MiniCalendar lang={currentLang} email={user?.email || ''} />
-
-	<!-- הוסף עסק נוסף — בסוף העמוד -->
-	<a
-		href="/submit-business"
-		class="mx-auto flex w-full max-w-lg items-center justify-center gap-1 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 text-sm font-bold text-white shadow-md transition hover:scale-[1.02] active:scale-95"
-	>
-		+ {t.addAnotherStore}
-	</a>
 </div>
