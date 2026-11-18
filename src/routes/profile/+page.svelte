@@ -113,6 +113,8 @@
 	const t = $derived(/** @type {any} */ (translations)[currentLang] || translations.he);
 
 	const initial = $derived((profile.name || user?.name || '?').trim().charAt(0).toUpperCase());
+	// תמונת הפרופיל לא נטענה (קישור שפג / חסום) → חוזרים לאות הראשונה
+	let avatarBroken = $state(false);
 
 	// הוותק של המשתמש נמדד מהכרטיסייה הוותיקה שלו ולא מיום ההרשמה: הכרטיסייה
 	// קדמה לחשבון (ראו tenure.js). הכרטיסיות שממתינות לאישור נספרות גם הן —
@@ -286,13 +288,27 @@
 		<!-- אווטאר + שם + אימייל בשורה אחת. כשיש פריטים שממתינים לטיפול (אדמין)
 		     — בועה אדומה ממוספרת בפינה, אותו מספר שמופיע על האווטאר בהאדר. -->
 		<div class="flex items-center gap-3">
-			<div class="relative h-12 w-12 flex-shrink-0">
-				<div
-					class="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-lg font-bold text-white shadow-md"
-					aria-hidden="true"
-				>
-					{initial}
-				</div>
+			<div class="relative h-14 w-14 flex-shrink-0">
+				<!-- תמונת הפרופיל אם יש (ואם נטענה); אחרת האות הראשונה של השם -->
+				{#if user?.avatar && !avatarBroken}
+					<img
+						src={user.avatar}
+						alt=""
+						width="56"
+						height="56"
+						decoding="async"
+						referrerpolicy="no-referrer"
+						onerror={() => (avatarBroken = true)}
+						class="h-14 w-14 rounded-full object-cover shadow-md ring-2 ring-white dark:ring-gray-700"
+					/>
+				{:else}
+					<div
+						class="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-xl font-bold text-white shadow-md"
+						aria-hidden="true"
+					>
+						{initial}
+					</div>
+				{/if}
 				{#if alertTotal > 0}
 					<a
 						href={alertAnchor}
@@ -314,13 +330,25 @@
 					<div class="mt-1"><TenureBadge since={tenureSince} size="sm" /></div>
 				{/if}
 			</div>
-			<button
-				type="button"
-				onclick={logout}
-				class="flex-shrink-0 rounded-full border border-red-200 px-3 py-1.5 text-xs font-bold text-red-600 transition hover:bg-red-50 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-950/40"
-			>
-				{t.logout}
-			</button>
+			<div class="flex flex-shrink-0 flex-col items-stretch gap-1.5">
+				<!-- עריכת פרטים (שם וטלפון) — הטלפון עצמו לא מוצג בכרטיס -->
+				{#if !editing}
+					<button
+						type="button"
+						onclick={startEdit}
+						class="rounded-full bg-blue-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400"
+					>
+						✏️ {t.profileEdit}
+					</button>
+				{/if}
+				<button
+					type="button"
+					onclick={logout}
+					class="rounded-full bg-red-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-400"
+				>
+					{t.logout}
+				</button>
+			</div>
 		</div>
 
 		<!-- הפרטים שלי — שם תצוגה וטלפון. שני מפתחות הזיהוי של בעל כרטיסייה
@@ -329,26 +357,6 @@
 		     מחפשת כרטיסיות תואמות. אין אימות SMS, ולכן המספר רק *מציע* התאמה;
 		     הבעלות עצמה ניתנת באישור אדמין. -->
 		{#if !editing}
-			<div class="mt-3 flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2 dark:bg-gray-700/30">
-				<span class="flex-shrink-0 text-xs font-medium text-gray-500 dark:text-gray-400">
-					{t.myPhone}
-				</span>
-				<span
-					class="min-w-0 flex-1 truncate text-sm font-bold {profile.phone
-						? 'text-gray-900 dark:text-gray-100'
-						: 'text-gray-400 dark:text-gray-500'}"
-					dir="ltr"
-				>
-					{profile.phone || t.myPhonePlaceholder}
-				</span>
-				<button
-					type="button"
-					onclick={startEdit}
-					class="flex-shrink-0 rounded-lg border border-blue-200 px-3 py-1.5 text-xs font-bold text-blue-700 transition hover:bg-blue-50 dark:border-blue-500/40 dark:text-blue-300 dark:hover:bg-blue-900/30"
-				>
-					✏️ {t.profileEdit}
-				</button>
-			</div>
 			<!-- השינוי נשמר רק כאן — מזכירים לו שברשת יש לו פרטים אחרים,
 			     ומאפשרים להחיל בכל האתרים בלחיצה אחת בלי לערוך שוב. -->
 			{#if profile.scope === 'site'}

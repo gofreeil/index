@@ -41,28 +41,26 @@
 				<a
 					href="#{f.id}"
 					onclick={(e) => go(e, f.id)}
-					class="relative flex h-full items-center gap-2.5 rounded-xl border bg-gradient-to-br px-2.5 py-2 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md {f.alert
-						? 'border-red-200 from-red-50 to-white hover:border-red-300 dark:border-red-500/30 dark:from-red-950/30 dark:to-gray-800 dark:hover:border-red-400/50'
-						: 'border-gray-200 from-gray-50 to-white hover:border-blue-300 dark:border-gray-700 dark:from-gray-700/40 dark:to-gray-800 dark:hover:border-blue-500/40'}"
+					class="relative flex h-full items-center gap-2.5 rounded-xl bg-gradient-to-br px-2.5 py-2 shadow-md ring-1 transition ring-inset hover:-translate-y-0.5 hover:shadow-lg hover:brightness-110 {f.alert
+						? 'from-red-600 to-rose-700 ring-red-300/40'
+						: 'from-blue-600 to-indigo-600 ring-blue-300/40'}"
 				>
 					{#if f.alert}
 						<span
-							class="absolute -top-1.5 -left-1.5 z-10 flex h-6 min-w-6 items-center justify-center rounded-full bg-red-600 px-1.5 text-xs leading-none font-black text-white shadow ring-2 ring-white dark:ring-gray-800"
+							class="absolute -top-1.5 -left-1.5 z-10 flex h-6 min-w-6 items-center justify-center rounded-full bg-white px-1.5 text-xs leading-none font-black text-red-600 shadow ring-2 ring-red-600"
 						>
 							<span class="sr-only">ממתינים לטיפול: </span>{f.alert}
 						</span>
 					{/if}
 					<span
-						class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-white text-2xl leading-none shadow-sm ring-1 ring-gray-200 dark:bg-gray-900/60 dark:ring-gray-700"
+						class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-white text-2xl leading-none shadow-sm"
 						aria-hidden="true">{f.icon}</span
 					>
 					<span class="min-w-0">
-						<span
-							class="block text-base leading-tight font-bold break-words text-gray-900 dark:text-gray-100"
-						>
+						<span class="block text-base leading-tight font-bold break-words text-white">
 							{f.title}
 						</span>
-						<span class="block text-sm leading-tight break-words text-gray-500 dark:text-gray-400">
+						<span class="block text-sm leading-tight break-words text-white/90">
 							{f.summary}
 						</span>
 					</span>
