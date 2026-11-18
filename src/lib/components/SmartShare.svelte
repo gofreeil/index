@@ -24,15 +24,16 @@
 	import { warm, zoomGoto } from '$lib/zoomNav.js';
 	import { sentText } from '$lib/sentListText.js';
 	import { logShare, nameShare, revealKey, syncShareLog } from '$lib/shareLog.js';
-	import MiniVideo from '$lib/components/MiniVideo.svelte';
+	import FloatingVideo from '$lib/components/FloatingVideo.svelte';
 
 	/** @type {{ business: any }} */
 	let { business } = $props();
 
 	// סרטון ההסבר "מה זה שיתוף חכם" — וידאו 10 בטלוויזיה, מנוגן בנגן צף
-	// מוקטן (MiniVideo). "מה זה?" מופיע גם ליד הכפתור הסגור וגם בכותרת
-	// הפאנל הפתוח, כי מי שלא הבין נתקע בדרך כלל דווקא באמצע.
-	// הקבצים עצמם ולא ה-embed (הסיבה ב-MiniVideo). אם הסרטון יוחלף או
+	// (FloatingVideo: באמצע המסך, ומתקטן לפינה בגלילה). "מה זה?" מופיע גם
+	// ליד הכפתור הסגור וגם בכותרת הפאנל הפתוח, כי מי שלא הבין נתקע בדרך
+	// כלל דווקא באמצע.
+	// הקבצים עצמם ולא ה-embed (הסיבה ב-FloatingVideo). אם הסרטון יוחלף או
 	// יקודד מחדש בטלוויזיה, צריך לעדכן כאן את התיקייה.
 	const EXPLAINER_DIR = 'https://tv.gofreeil.com/videos/video_261117230249_vea35';
 	const EXPLAINER_SRC = `${EXPLAINER_DIR}/index.mp4`;
@@ -514,12 +515,14 @@
 {/snippet}
 
 {#if videoOpen}
-	<MiniVideo
+	<FloatingVideo
 		bind:this={videoPlayer}
 		src={EXPLAINER_SRC}
 		poster={EXPLAINER_POSTER}
 		title={t.smartShareVideoTitle}
 		closeLabel={t.smartShareCloseBtn}
+		shrinkLabel={t.smartShareVideoShrink}
+		expandLabel={t.smartShareVideoExpand}
 		onclose={() => (videoOpen = false)}
 	/>
 {/if}
