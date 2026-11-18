@@ -82,6 +82,18 @@
 			</div>
 		</div>
 
+		<!-- בלי נייד ברשומה המשותפת השרת לא יכול לשלוח התראות SMS לאדמין -->
+		{#if data.smsReady === false}
+			<a
+				href="/profile#my-phone"
+				class="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border border-amber-500/40 bg-amber-900/20 px-3 py-2 text-xs text-amber-200 transition hover:bg-amber-900/30"
+			>
+				<span aria-hidden="true">📱</span>
+				<span class="font-bold">אין נייד בפרופיל — התראות הניהול לא מגיעות אליך ב-SMS.</span>
+				<span class="underline">להוספת נייד (לשמור "בכל האתרים") ←</span>
+			</a>
+		{/if}
+
 		<!-- סרגל הניווט. הבועה האדומה = פריטים שממתינים לטיפול באותו מסך;
 		     הסכום שלהן הוא בדיוק המספר שעל האווטאר בהאדר. -->
 		<nav class="mb-6 flex flex-wrap gap-2 border-b border-gray-800 pb-4">
