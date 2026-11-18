@@ -1417,6 +1417,14 @@
 		<div class="b-hero">
 			<div class="b-hero-icon">🎨</div>
 			<h1 class="b-hero-title">{$bt('b_title')}</h1>
+			<!-- בעלי עסק שחיפשו "כרטיס במדריך" הגיעו לכאן בטעות ובנו פרסומת
+			     בתשלום במקום כרטיס. שורה אחת שמפנה אותם לטופס הנכון. -->
+			{#if !editingAdTitle}
+				<p class="b-card-hint">
+					{$bt('ix_card_hint')}
+					<a href="/submit-business">{$bt('ix_card_link')}</a>
+				</p>
+			{/if}
 			<p class="b-hero-sub">
 				{$bt('ix_hero_1')}
 				<br />{$bt('b_hero_2')}
@@ -2712,6 +2720,25 @@
 		background-clip: text;
 		-webkit-text-fill-color: transparent;
 	}
+	.b-card-hint {
+		display: inline-block;
+		margin: 0 0 0.6rem;
+		max-width: 42rem;
+		background: #16264d;
+		border: 1px solid #3b5794;
+		border-radius: 999px;
+		padding: 0.3rem 1rem;
+		color: #e5e7eb;
+		font-size: 0.9rem;
+		line-height: 1.4;
+	}
+	.b-card-hint a {
+		color: #fcd34d;
+		font-weight: 800;
+		text-decoration: underline;
+		white-space: nowrap;
+	}
+
 	.b-hero-sub {
 		/* אסור טקסט אפור ישירות על הרקע הוורוד — תמיד קופסה כהה */
 		color: #d1d5db;
