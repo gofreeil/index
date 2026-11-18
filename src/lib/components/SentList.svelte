@@ -238,7 +238,7 @@
 	/** @param {string} v */
 	const csvCell = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
 	function exportCsv() {
-		const head = [t.sentColName, t.sentColPhone, 'כרטיסייה', t.sentColDate, tx.colReminder, tx.noteAdd];
+		const head = [tx.colName, tx.colPhone, tx.colCard, tx.colSent, tx.colReminder, tx.colNote];
 		const body = all.map((e) => [
 			e.name,
 			e.pretty,
@@ -262,7 +262,12 @@
 	const FIELD =
 		'w-full rounded-md border border-blue-400 bg-white px-2 py-1 text-base text-gray-900 focus:outline-none dark:border-blue-500 dark:bg-gray-900 dark:text-gray-100';
 	const ICON_BTN =
-		'flex h-8 w-8 items-center justify-center rounded-lg text-xl transition focus-visible:outline-2 focus-visible:outline-blue-500';
+		'flex h-7 w-7 items-center justify-center rounded-lg text-lg transition focus-visible:outline-2 focus-visible:outline-blue-500';
+	/** עמודות הטבלה (מ-md): שם · טלפון · הערה · כרטיסייה · תאריך · תזכורת · פעולות. אותה תבנית לכותרות ולשורות. */
+	const GRID =
+		'md:grid-cols-[minmax(0,1fr)_6.25rem_minmax(0,1.3fr)_minmax(0,1fr)_4rem_7rem_4rem]';
+	/** תווית שדה קטנה — רק בנייד, שם אין שורת כותרות. */
+	const LBL = 'mb-0.5 block text-xs font-bold text-gray-400 md:hidden';
 </script>
 
 {#if all.length || canShare}
@@ -393,18 +398,33 @@
 		{:else if !rows.length}
 			<p class="py-4 text-center text-sm text-gray-500 dark:text-gray-400">{tx.noResults}</p>
 		{:else}
+			<!-- טבלה: במסך רחב שורת כותרות ועמודות קבועות; בנייד כל שורה הופכת לכרטיס קטן
+			     עם תווית קטנה מעל כל שדה (LBL מוסתרת מ-md ומעלה) -->
+			<div
+				role="presentation"
+				class="-mx-2 mb-1 hidden items-center gap-x-2 border-b border-gray-200 px-2 pb-1.5 text-xs font-bold text-gray-400 md:grid {GRID} dark:border-gray-600"
+			>
+				<span>{tx.colName}</span>
+				<span>{tx.colPhone}</span>
+				<span>{tx.colNote}</span>
+				<span>{tx.colCard}</span>
+				<span>{tx.colSent}</span>
+				<span>{tx.colReminder}</span>
+				<span class="sr-only">{tx.colActions}</span>
+			</div>
 			<ul>
 				{#each rows as e (e.key)}
 					{@const st = e.remindAt ? remState(e.remindAt) : ''}
 					<li
 						data-key={e.key}
-						class="-mx-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg border-b border-gray-100 px-2 py-2.5 transition-colors duration-700 last:border-0 dark:border-gray-700/60 {glow &&
+						class="-mx-2 grid grid-cols-2 items-center gap-x-2 gap-y-1.5 rounded-lg border-b border-gray-100 px-2 py-2 transition-colors duration-700 last:border-0 {GRID} dark:border-gray-700/60 {glow &&
 						e.key === fresh
 							? 'bg-emerald-100/80 dark:bg-emerald-900/30'
 							: ''}"
 					>
-						<!-- שם + פרטי השליחה + טלפון — השם ניתן לעריכה בלחיצה -->
-						<div class="min-w-0 flex-1 basis-44">
+						<!-- שם — ניתן לעריכה בלחיצה -->
+						<div class="min-w-0">
+							<span class={LBL}>{tx.colName}</span>
 							{#if edit.key === e.key && edit.field === 'name'}
 								<input
 									use:focusOnMount
@@ -420,7 +440,7 @@
 								<button
 									type="button"
 									onclick={() => startEdit(e, 'name')}
-									class="max-w-full truncate text-start text-lg font-bold text-gray-900 hover:text-blue-600 dark:text-gray-100 dark:hover:text-blue-400"
+									class="max-w-full truncate text-start text-base font-bold text-gray-900 hover:text-blue-600 dark:text-gray-100 dark:hover:text-blue-400"
 									title={tx.namePlaceholder}
 								>
 									{#if e.name}{e.name}{:else}<span class="font-medium text-gray-400"
@@ -428,24 +448,26 @@
 										>{/if}
 								</button>
 							{/if}
-							<div class="text-sm text-gray-400">
-								{#if e.bizName}{e.bizName} · {/if}{fill(tx.sentOn, { date: fmtDate(e.at) })}
-							</div>
-							<!-- הטלפון — קישור לשיחה ריקה בוואטסאפ -->
+						</div>
+
+						<!-- טלפון — קישור לשיחה ריקה בוואטסאפ -->
+						<div class="min-w-0">
+							<span class={LBL}>{tx.colPhone}</span>
 							<a
 								href="https://wa.me/{e.wa}"
 								target="_blank"
 								rel="noopener noreferrer"
 								title={t.sentOpenChat}
 								dir="ltr"
-								class="mt-0.5 inline-block text-base font-medium text-green-600 hover:underline dark:text-green-400"
+								class="inline-block text-sm font-medium text-green-600 hover:underline dark:text-green-400"
 							>
 								{e.pretty}
 							</a>
 						</div>
 
 						<!-- הערה — ניתנת לעריכה בלחיצה -->
-						<div class="min-w-0 flex-1 basis-32">
+						<div class="col-span-2 min-w-0 md:col-span-1">
+							<span class={LBL}>{tx.colNote}</span>
 							{#if edit.key === e.key && edit.field === 'note'}
 								<input
 									use:focusOnMount
@@ -461,7 +483,7 @@
 								<button
 									type="button"
 									onclick={() => startEdit(e, 'note')}
-									class="block max-w-full text-start text-base leading-6 text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400"
+									class="block max-w-full text-start text-sm leading-5 text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400"
 								>
 									{e.note}
 								</button>
@@ -476,13 +498,26 @@
 							{/if}
 						</div>
 
-						<!-- תזכורת + פעולות -->
-						<div class="ms-auto flex shrink-0 items-center gap-1">
+						<!-- הכרטיסייה שנשלחה -->
+						<div class="min-w-0 text-sm leading-5 break-words text-gray-600 dark:text-gray-300">
+							<span class={LBL}>{tx.colCard}</span>
+							{e.bizName || '—'}
+						</div>
+
+						<!-- תאריך השליחה -->
+						<div class="min-w-0 text-sm text-gray-600 tabular-nums dark:text-gray-300">
+							<span class={LBL}>{tx.colSent}</span>
+							{e.at ? fmtDate(e.at) : '—'}
+						</div>
+
+						<!-- תזכורת -->
+						<div class="min-w-0">
+							<span class={LBL}>{tx.colReminder}</span>
 							<button
 								type="button"
 								onclick={() => (sheetKey = e.key)}
 								title={e.remindAt ? tx.reminderEdit : tx.reminderAdd}
-								class="flex items-center gap-1 rounded-lg border px-2 py-1 text-sm font-bold transition {e.remindAt
+								class="flex items-center gap-1 rounded-lg border px-1.5 py-1 text-start text-xs font-bold transition {e.remindAt
 									? REM_CLS[st]
 									: 'border-gray-200 text-gray-500 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700'}"
 							>
@@ -497,6 +532,10 @@
 									{tx.reminderAdd}
 								{/if}
 							</button>
+						</div>
+
+						<!-- פעולות: המשך שיחה, מחיקה -->
+						<div class="flex items-center justify-end gap-0.5 md:justify-start">
 							<a
 								href={followUpHref(e)}
 								target="_blank"
