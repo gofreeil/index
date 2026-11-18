@@ -260,9 +260,9 @@
 	}
 
 	const FIELD =
-		'w-full rounded-md border border-blue-400 bg-white px-2 py-1 text-sm text-gray-900 focus:outline-none dark:border-blue-500 dark:bg-gray-900 dark:text-gray-100';
+		'w-full rounded-md border border-blue-400 bg-white px-2 py-1 text-base text-gray-900 focus:outline-none dark:border-blue-500 dark:bg-gray-900 dark:text-gray-100';
 	const ICON_BTN =
-		'flex h-8 w-8 items-center justify-center rounded-lg text-base transition focus-visible:outline-2 focus-visible:outline-blue-500';
+		'flex h-8 w-8 items-center justify-center rounded-lg text-xl transition focus-visible:outline-2 focus-visible:outline-blue-500';
 </script>
 
 {#if all.length || canShare}
@@ -272,13 +272,13 @@
 		bind:this={root}
 		class="w-full scroll-mt-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800"
 	>
-		<div class="mb-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-			<h2 class="text-lg font-extrabold text-gray-900 dark:text-gray-100">
+		<div class="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+			<h2 class="text-xl font-extrabold text-gray-900 dark:text-gray-100">
 				{t.sentList}
 				{#if all.length}<span class="text-sm font-bold text-gray-400">({all.length})</span>{/if}
 			</h2>
 			{#if confirmClear}
-				<span class="flex items-center gap-3 text-sm">
+				<span class="flex items-center gap-3 text-base">
 					<span class="text-gray-500 dark:text-gray-400">{t.sentClearConfirm}</span>
 					<button
 						type="button"
@@ -296,7 +296,7 @@
 					</button>
 				</span>
 			{:else if all.length}
-				<span class="flex items-center gap-3 text-sm">
+				<span class="flex items-center gap-3 text-base">
 					<button
 						type="button"
 						onclick={exportCsv}
@@ -314,7 +314,6 @@
 				</span>
 			{/if}
 		</div>
-		<p class="mb-3 text-xs text-gray-500 dark:text-gray-400">{t.sentListHint}</p>
 
 		<!-- הגעה מהשיתוף החכם: אישור, וקיצורי הדרך הטבעיים של מי ששלח ליד — לקבוע לו תזכורת, או לחזור לכרטיס ולשלוח לעוד אחד -->
 		{#if freshEntry}
@@ -421,7 +420,7 @@
 								<button
 									type="button"
 									onclick={() => startEdit(e, 'name')}
-									class="max-w-full truncate text-start font-bold text-gray-900 hover:text-blue-600 dark:text-gray-100 dark:hover:text-blue-400"
+									class="max-w-full truncate text-start text-lg font-bold text-gray-900 hover:text-blue-600 dark:text-gray-100 dark:hover:text-blue-400"
 									title={tx.namePlaceholder}
 								>
 									{#if e.name}{e.name}{:else}<span class="font-medium text-gray-400"
@@ -429,7 +428,7 @@
 										>{/if}
 								</button>
 							{/if}
-							<div class="text-[11px] text-gray-400">
+							<div class="text-sm text-gray-400">
 								{#if e.bizName}{e.bizName} · {/if}{fill(tx.sentOn, { date: fmtDate(e.at) })}
 							</div>
 							<!-- הטלפון — קישור לשיחה ריקה בוואטסאפ -->
@@ -439,7 +438,7 @@
 								rel="noopener noreferrer"
 								title={t.sentOpenChat}
 								dir="ltr"
-								class="mt-0.5 inline-block text-sm font-medium text-green-600 hover:underline dark:text-green-400"
+								class="mt-0.5 inline-block text-base font-medium text-green-600 hover:underline dark:text-green-400"
 							>
 								{e.pretty}
 							</a>
@@ -462,7 +461,7 @@
 								<button
 									type="button"
 									onclick={() => startEdit(e, 'note')}
-									class="block max-w-full text-start text-xs leading-5 text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400"
+									class="block max-w-full text-start text-base leading-6 text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400"
 								>
 									{e.note}
 								</button>
@@ -470,7 +469,7 @@
 								<button
 									type="button"
 									onclick={() => startEdit(e, 'note')}
-									class="text-[11px] font-bold text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
+									class="text-sm font-bold text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
 								>
 									+ {tx.noteAdd}
 								</button>
@@ -483,7 +482,7 @@
 								type="button"
 								onclick={() => (sheetKey = e.key)}
 								title={e.remindAt ? tx.reminderEdit : tx.reminderAdd}
-								class="flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-bold transition {e.remindAt
+								class="flex items-center gap-1 rounded-lg border px-2 py-1 text-sm font-bold transition {e.remindAt
 									? REM_CLS[st]
 									: 'border-gray-200 text-gray-500 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700'}"
 							>
