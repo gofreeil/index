@@ -519,20 +519,20 @@
 			<button
 				type="button"
 				onclick={() => selectAllVisible(visibleList.map((/** @type {any} */ a) => a.id))}
-				class="text-xs font-bold text-amber-300 hover:text-amber-200"
+				class="text-sm leading-4 font-bold text-amber-300 hover:text-amber-200"
 			>
 				בחר הכל ({visibleList.length})
 			</button>
-			<span class="text-xs text-gray-600">·</span>
+			<span class="text-sm leading-4 text-gray-600">·</span>
 			<button
 				type="button"
 				onclick={clearSelection}
-				class="text-xs font-bold text-gray-400 hover:text-gray-300"
+				class="text-sm leading-4 font-bold text-gray-400 hover:text-gray-300"
 			>
 				נקה
 			</button>
 			{#if visibleSelectedIds.length > 0}
-				<span class="mr-2 text-xs text-gray-300">נבחרו {visibleSelectedIds.length}</span>
+				<span class="mr-2 text-sm leading-4 text-gray-300">נבחרו {visibleSelectedIds.length}</span>
 				<form
 					method="POST"
 					action="?/bulkApprove"
@@ -732,22 +732,22 @@
 								</form>
 							{:else}
 								<div class="mb-1 flex flex-wrap items-center gap-2">
-									<h3 class="text-base font-black text-white md:text-lg">{ad.title}</h3>
+									<h3 class="text-lg leading-6 font-black text-white md:text-xl md:leading-7">{ad.title}</h3>
 									{#if ad.payment === 'code'}
 										<span
-											class="rounded-full border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-[11px] font-black whitespace-nowrap text-emerald-300"
+											class="rounded-full border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-xs leading-4 font-black whitespace-nowrap text-emerald-300"
 											>💳 קוד תנועה — כמו שולם</span
 										>
 									{:else if ad.codeRequested}
 										<!-- הקוד הוא בקשה בלבד. הניסוח חייב לומר במפורש שלא שולם,
 										     אחרת מאשרים פרסומת בהנחה שנכנס כסף. -->
 										<span
-											class="rounded-full border border-sky-500/40 bg-sky-500/15 px-2 py-0.5 text-[11px] font-black whitespace-nowrap text-sky-300"
+											class="rounded-full border border-sky-500/40 bg-sky-500/15 px-2 py-0.5 text-xs leading-4 font-black whitespace-nowrap text-sky-300"
 											>🎟️ ביקש חינם עם קוד — לא שולם</span
 										>
 									{:else}
 										<span
-											class="rounded-full border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 text-[11px] font-black whitespace-nowrap text-amber-300"
+											class="rounded-full border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 text-xs leading-4 font-black whitespace-nowrap text-amber-300"
 											>⌛ תשלום לתיאום</span
 										>
 									{/if}
@@ -761,12 +761,12 @@
 									<div
 										class="mb-2 rounded-lg border border-blue-400/40 bg-blue-500/10 px-2.5 py-1.5"
 									>
-										<p class="m-0 text-[11px] font-black text-blue-200 md:text-xs">
+										<p class="m-0 text-xs leading-4 font-black text-blue-200 md:text-sm md:leading-4">
 											🔄 עדכון לפרסומת קיימת{ad.replacesTitle
 												? ` — גרסה קודמת: "${ad.replacesTitle}"`
 												: ''}
 										</p>
-										<p class="m-0 mt-0.5 text-[10px] text-blue-100/70 md:text-[11px]">
+										<p class="m-0 mt-0.5 text-[11px] text-blue-100/70 md:text-xs">
 											{prevLive
 												? 'עם האישור הגרסה הזו נכנסת במקום הישנה, באותו מקום בטור ועם אותו תאריך סיום — הישנה יורדת מהאתר.'
 												: 'למפרסם אין כרגע פרסומת פעילה על האתר — האישור פשוט יפרסם את הגרסה הזו.'}
@@ -774,19 +774,19 @@
 									</div>
 								{:else if ad.supersededBy}
 									<div class="mb-2 rounded-lg border border-gray-500/40 bg-white/5 px-2.5 py-1.5">
-										<p class="m-0 text-[11px] font-black text-gray-300 md:text-xs">
+										<p class="m-0 text-xs leading-4 font-black text-gray-300 md:text-sm md:leading-4">
 											🔄 גרסה ישנה — הוחלפה בגרסה מעודכנת של המפרסם
 										</p>
 									</div>
 								{/if}
-								<p class="mb-1 text-xs text-gray-300 md:text-sm">{ad.subtitle}</p>
+								<p class="mb-1 text-sm leading-4 text-gray-300 md:text-base md:leading-5">{ad.subtitle}</p>
 								{#if ad.cta}
-									<p class="mb-2 text-[10px] text-amber-300 md:text-xs">CTA: {ad.cta}</p>
+									<p class="mb-2 text-xs leading-[15px] text-amber-300 md:text-sm md:leading-4">CTA: {ad.cta}</p>
 								{/if}
 								{#if ad.hoverText}
-									<p class="mb-2 text-[10px] text-gray-500 md:text-xs">Hover: {ad.hoverText}</p>
+									<p class="mb-2 text-xs leading-[15px] text-gray-500 md:text-sm md:leading-4">Hover: {ad.hoverText}</p>
 								{/if}
-								<div class="space-y-0.5 text-[10px] text-gray-400 md:text-xs">
+								<div class="space-y-0.5 text-xs leading-[15px] text-gray-400 md:text-sm md:leading-4">
 									{#if ad.submittedBy?.email}<div>📧 {ad.submittedBy.email}</div>{/if}
 									<div>📅 נשלח: {fmtDate(ad.submittedAt)}</div>
 									{#if ad.decidedAt}<div>
@@ -804,8 +804,8 @@
 					</div>
 
 					{#if editingId !== ad.id}
-						<details class="mt-3 text-xs text-gray-300">
-							<summary class="cursor-pointer font-bold text-amber-300"
+						<details class="mt-3 text-sm text-gray-300">
+							<summary class="cursor-pointer leading-4 font-bold text-amber-300"
 								>תצוגה מקדימה של דף הנחיתה</summary
 							>
 							<div class="mt-2 space-y-2 rounded-lg border border-white/10 bg-black/40 p-3">
@@ -841,12 +841,12 @@
 									class="flex flex-wrap items-center gap-2"
 								>
 									<input type="hidden" name="id" value={ad.id} />
-									<label class="flex items-center gap-1.5 text-xs font-bold text-gray-400">
+									<label class="flex items-center gap-1.5 text-sm leading-4 font-bold text-gray-400">
 										שולם עבור:
 										<!-- ברירת המחדל = התקופה שהמפרסם בחר בשליחה -->
 										<select
 											name="durationDays"
-											class="rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-xs text-white focus:border-amber-400/50 focus:outline-none"
+											class="rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-sm leading-4 text-white focus:border-amber-400/50 focus:outline-none"
 										>
 											<option
 												value="30"
@@ -862,7 +862,7 @@
 									</label>
 									<button
 										type="submit"
-										class="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-black text-black hover:bg-emerald-400"
+										class="rounded-xl bg-emerald-500 px-4 py-2 text-base leading-5 font-black text-black hover:bg-emerald-400"
 									>
 										{(data.approved ?? []).some((/** @type {any} */ o) => o.id === ad.replacesAdId)
 											? '✅ אשר והחלף את הישנה'
@@ -881,7 +881,7 @@
 										/>
 										<button
 											type="submit"
-											class="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-black text-gray-300 hover:bg-white/10"
+											class="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-base leading-5 font-black text-gray-300 hover:bg-white/10"
 											title="הישנה תישאר על האתר וזו תתווסף לידה"
 										>
 											➕ אשר כפרסומת נוספת
@@ -891,7 +891,7 @@
 								<button
 									type="button"
 									onclick={() => startEdit(ad)}
-									class="rounded-xl border border-blue-500/40 bg-blue-500/20 px-4 py-2 text-sm font-black text-blue-200 hover:bg-blue-500/30"
+									class="rounded-xl border border-blue-500/40 bg-blue-500/20 px-4 py-2 text-base leading-5 font-black text-blue-200 hover:bg-blue-500/30"
 								>
 									✏️ ערוך לפני אישור
 								</button>
@@ -906,11 +906,11 @@
 										type="text"
 										name="reason"
 										placeholder="סיבת דחייה (אופציונלי)"
-										class="flex-1 rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-white"
+										class="flex-1 rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-base leading-5 text-white"
 									/>
 									<button
 										type="submit"
-										class="rounded-xl bg-red-600 px-4 py-2 text-sm font-black text-white hover:bg-red-500"
+										class="rounded-xl bg-red-600 px-4 py-2 text-base leading-5 font-black text-white hover:bg-red-500"
 									>
 										❌ דחה
 									</button>
@@ -920,14 +920,14 @@
 									href={`/ads/${ad.id}`}
 									target="_blank"
 									rel="noopener"
-									class="rounded-xl border border-amber-500/40 bg-amber-500/15 px-4 py-2 text-sm font-black text-amber-200 hover:bg-amber-500/25"
+									class="rounded-xl border border-amber-500/40 bg-amber-500/15 px-4 py-2 text-base leading-5 font-black text-amber-200 hover:bg-amber-500/25"
 								>
 									פתח דף נחיתה
 								</a>
 								<button
 									type="button"
 									onclick={() => startEdit(ad)}
-									class="rounded-xl border border-blue-500/40 bg-blue-500/20 px-4 py-2 text-sm font-black text-blue-200 hover:bg-blue-500/30"
+									class="rounded-xl border border-blue-500/40 bg-blue-500/20 px-4 py-2 text-base leading-5 font-black text-blue-200 hover:bg-blue-500/30"
 								>
 									✏️ ערוך
 								</button>
@@ -936,7 +936,7 @@
 									     העדכון נרשם על שם המפרסם המקורי ונכנס לאישור במקום הישנה -->
 									<a
 										href={`/advertise/builder?edit=${ad.id}`}
-										class="rounded-xl border border-blue-500/40 bg-blue-500/20 px-4 py-2 text-sm font-black text-blue-200 hover:bg-blue-500/30"
+										class="rounded-xl border border-blue-500/40 bg-blue-500/20 px-4 py-2 text-base leading-5 font-black text-blue-200 hover:bg-blue-500/30"
 										title="פתיחת הפרסומת בבילדר לעריכה מלאה"
 									>
 										🎨 ערוך בבילדר
@@ -946,7 +946,7 @@
 									<input type="hidden" name="id" value={ad.id} />
 									<button
 										type="submit"
-										class="rounded-xl border border-amber-500/40 bg-amber-500/20 px-4 py-2 text-sm font-black text-amber-200 hover:bg-amber-500/30"
+										class="rounded-xl border border-amber-500/40 bg-amber-500/20 px-4 py-2 text-base leading-5 font-black text-amber-200 hover:bg-amber-500/30"
 										onclick={(e) => {
 											if (!confirm('להוריד את הפרסומת מהאתר ולהחזיר אותה לממתינות?'))
 												e.preventDefault();
@@ -960,7 +960,7 @@
 										<input type="hidden" name="id" value={ad.id} />
 										<button
 											type="submit"
-											class="rounded-xl border border-red-500/40 bg-red-600/20 px-4 py-2 text-sm font-black text-red-300 hover:bg-red-600/30"
+											class="rounded-xl border border-red-500/40 bg-red-600/20 px-4 py-2 text-base leading-5 font-black text-red-300 hover:bg-red-600/30"
 											onclick={(e) => askRemove(e, ad, 'להעביר את הפרסומת לאשפה? אפשר לשחזר אותה משם.')}
 										>
 											🗑 מחק
@@ -972,7 +972,7 @@
 									<input type="hidden" name="id" value={ad.id} />
 									<button
 										type="submit"
-										class="rounded-xl border border-amber-500/40 bg-amber-500/20 px-4 py-2 text-sm font-black text-amber-200 hover:bg-amber-500/30"
+										class="rounded-xl border border-amber-500/40 bg-amber-500/20 px-4 py-2 text-base leading-5 font-black text-amber-200 hover:bg-amber-500/30"
 									>
 										↩️ החזר לממתינות
 									</button>
@@ -982,7 +982,7 @@
 										<input type="hidden" name="id" value={ad.id} />
 										<button
 											type="submit"
-											class="rounded-xl border border-red-500/40 bg-red-600/20 px-4 py-2 text-sm font-black text-red-300 hover:bg-red-600/30"
+											class="rounded-xl border border-red-500/40 bg-red-600/20 px-4 py-2 text-base leading-5 font-black text-red-300 hover:bg-red-600/30"
 											onclick={(e) => askRemove(e, ad, 'להעביר את הפרסומת לאשפה? אפשר לשחזר אותה משם.')}
 										>
 											🗑 מחק
