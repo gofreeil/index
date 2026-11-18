@@ -16,7 +16,7 @@
 	// שקיבל את הכרטיס יושבת במקום אחד בלבד — האזור האישי. שמירת השם מעבירה
 	// ישר אליה (saveWho).
 	// ─────────────────────────────────────────────────────────────
-	import { onMount, tick } from 'svelte';
+	import { flushSync, onMount, tick } from 'svelte';
 	import { slide } from 'svelte/transition';
 	import { lang, translations } from '$lib/i18n';
 	import { canonical } from '$lib/seo';
@@ -24,16 +24,32 @@
 	import { warm, zoomGoto } from '$lib/zoomNav.js';
 	import { sentText } from '$lib/sentListText.js';
 	import { logShare, nameShare, revealKey, syncShareLog } from '$lib/shareLog.js';
-	import VideoSheet from '$lib/components/VideoSheet.svelte';
+	import MiniVideo from '$lib/components/MiniVideo.svelte';
 
 	/** @type {{ business: any }} */
 	let { business } = $props();
 
-	// סרטון ההסבר "מה זה שיתוף חכם" — embed של הטלוויזיה (VideoSheet).
-	// "מה זה?" מופיע גם ליד הכפתור הסגור וגם בכותרת הפאנל הפתוח: מי שלא
-	// הבין נתקע בדרך כלל דווקא שם, באמצע.
-	const EXPLAINER_SRC = 'https://tv.gofreeil.com/videoEmbed/10';
+	// סרטון ההסבר "מה זה שיתוף חכם" — וידאו 10 בטלוויזיה, מנוגן בנגן צף
+	// מוקטן (MiniVideo). "מה זה?" מופיע גם ליד הכפתור הסגור וגם בכותרת
+	// הפאנל הפתוח, כי מי שלא הבין נתקע בדרך כלל דווקא באמצע.
+	// הקבצים עצמם ולא ה-embed (הסיבה ב-MiniVideo). אם הסרטון יוחלף או
+	// יקודד מחדש בטלוויזיה, צריך לעדכן כאן את התיקייה.
+	const EXPLAINER_DIR = 'https://tv.gofreeil.com/videos/video_261117230249_vea35';
+	const EXPLAINER_SRC = `${EXPLAINER_DIR}/index.mp4`;
+	const EXPLAINER_POSTER = `${EXPLAINER_DIR}/video_261117230249_vea35.jpg`;
 	let videoOpen = $state(false);
+	/** @type {{ play: () => void } | undefined} */
+	let videoPlayer = $state();
+
+	/**
+	 * הנגן נבנה ומנגן באותה לחיצה: flushSync מכניס אותו לדף מיד, כדי
+	 * ש-play() ייקרא עוד בתוך הלחיצה. רק כך הדפדפן מאשר קול מההתחלה.
+	 */
+	function openVideo() {
+		videoOpen = true;
+		flushSync();
+		videoPlayer?.play();
+	}
 
 	// מעבירים לשרת רשימה ישנה שישבה רק בדפדפן הזה, ומאמתים שהעותק המקומי
 	// שייך לחשבון המחובר — לפני השליחה הראשונה ולא אחריה.
@@ -480,7 +496,7 @@
 {#snippet whatIsIt()}
 	<button
 		type="button"
-		onclick={() => (videoOpen = true)}
+		onclick={openVideo}
 		title={t.smartShareWhatTip}
 		aria-haspopup="dialog"
 		class="group inline-flex shrink-0 items-center gap-1.5 text-xs font-medium text-gray-400 transition hover:text-white"
@@ -498,8 +514,10 @@
 {/snippet}
 
 {#if videoOpen}
-	<VideoSheet
+	<MiniVideo
+		bind:this={videoPlayer}
 		src={EXPLAINER_SRC}
+		poster={EXPLAINER_POSTER}
 		title={t.smartShareVideoTitle}
 		closeLabel={t.smartShareCloseBtn}
 		onclose={() => (videoOpen = false)}
