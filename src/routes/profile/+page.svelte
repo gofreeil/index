@@ -218,16 +218,6 @@
 			if (ads.length) parts.push(`${fmtNum.format(totals.adImpressions ?? 0)} חשיפות`);
 			list.push({ id: 'stats', icon: '📊', title: 'הנתונים שלי', summary: parts.join(' · ') });
 		}
-		const pendingAds = ads.filter((/** @type {any} */ a) => a.status === 'pending').length;
-		const liveAds = ads.filter((/** @type {any} */ a) => a.live).length;
-		list.push({
-			id: 'ads',
-			icon: '📢',
-			title: 'המודעות שלי',
-			summary: !ads.length
-				? 'אין עדיין'
-				: `${ads.length} · ${pendingAds > 0 ? `${pendingAds} ממתינות` : `${liveAds} באוויר`}`
-		});
 		if (canShare || sentCount > 0) {
 			list.push({
 				id: 'sent',
@@ -240,6 +230,16 @@
 			});
 		}
 		list.push({ id: 'calendar', icon: '📅', title: 'היומן שלי', summary: 'הערות ותזכורות' });
+		const pendingAds = ads.filter((/** @type {any} */ a) => a.status === 'pending').length;
+		const liveAds = ads.filter((/** @type {any} */ a) => a.live).length;
+		list.push({
+			id: 'ads',
+			icon: '📢',
+			title: 'המודעות שלי',
+			summary: !ads.length
+				? 'אין עדיין'
+				: `${ads.length} · ${pendingAds > 0 ? `${pendingAds} ממתינות` : `${liveAds} באוויר`}`
+		});
 		const pendingBiz = businesses.filter((/** @type {any} */ b) => b.status === 'pending').length;
 		list.push({
 			id: 'businesses',
@@ -854,6 +854,13 @@
 		</section>
 	{/if}
 
+	<!-- למי שלחתי — כל מי שקיבל ממני כרטיס עסק דרך השיתוף החכם, עם תזכורות
+	     למעקב. נשמר בחשבון — מכל מכשיר רואים אותו דבר. -->
+	<SentList {canShare} lang={currentLang} {t} />
+
+	<!-- היומן שלי — הערות לפי יום (נשמרות בחשבון), התזכורות מהטבלה, ויומן גוגל -->
+	<MiniCalendar lang={currentLang} email={user?.email || ''} />
+
 	<!-- המודעות שלי -->
 	<section
 		id="ads"
@@ -1096,13 +1103,6 @@
 		{/if}
 	</section>
 
-	<!-- למי שלחתי — כל מי שקיבל ממני כרטיס עסק דרך השיתוף החכם, עם תזכורות
-	     למעקב. נשמר בחשבון — מכל מכשיר רואים אותו דבר. -->
-	<SentList {canShare} lang={currentLang} {t} />
-
-	<!-- היומן שלי — הערות לפי יום (נשמרות בחשבון), התזכורות מהטבלה, ויומן גוגל -->
-	<MiniCalendar lang={currentLang} email={user?.email || ''} />
-
 	<!-- העסקים שלי -->
 	<section
 		id="businesses"
@@ -1120,7 +1120,7 @@
 				href="/submit-business"
 				class="text-sm font-bold text-blue-600 hover:underline dark:text-blue-400"
 			>
-				+ {t.addStore}
+				+ {t.addAnotherStore}
 			</a>
 		</div>
 
@@ -1197,12 +1197,4 @@
 			</ul>
 		{/if}
 	</section>
-
-	<!-- הוסף עסק נוסף — ישר מתחת ל"העסקים שלי" -->
-	<a
-		href="/submit-business"
-		class="mx-auto flex w-full max-w-lg items-center justify-center gap-1 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 text-sm font-bold text-white shadow-md transition hover:scale-[1.02] active:scale-95"
-	>
-		+ {t.addAnotherStore}
-	</a>
 </div>
