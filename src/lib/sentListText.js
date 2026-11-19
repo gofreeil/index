@@ -16,7 +16,7 @@ export const sentText = {
 		colPhone: 'טלפון',
 		colNote: 'הערות',
 		colCard: 'כרטיסייה',
-		colSent: 'נשלח בתאריך',
+		colSent: 'נשלח ב',
 		colReminder: 'תזכורת',
 		colActions: 'פעולות',
 		reminderAdd: 'תזכורת',

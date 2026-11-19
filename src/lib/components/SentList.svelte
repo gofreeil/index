@@ -404,7 +404,7 @@
 			     עם תווית קטנה מעל כל שדה (LBL מוסתרת מ-md ומעלה) -->
 			<div
 				role="presentation"
-				class="-mx-2 mb-1 hidden items-center gap-x-2 border-b border-gray-200 px-2 pb-1.5 text-xs font-bold text-gray-400 md:grid {GRID} dark:border-gray-600"
+				class="-mx-2 mb-1.5 hidden items-center gap-x-2 rounded-lg border-b-2 border-blue-500 bg-blue-50 px-2 py-2 text-sm font-extrabold text-blue-800 md:grid {GRID} dark:border-blue-400 dark:bg-blue-950/50 dark:text-blue-200"
 			>
 				<span>{tx.colName}</span>
 				<span>{tx.colPhone}</span>
