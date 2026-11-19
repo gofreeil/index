@@ -24,6 +24,7 @@ import { EXTRA_LINK_KEYS, parseExtraLinks } from '$lib/socialLinks.js';
 import { parseMediaFit, MAX_BANNERS } from '$lib/mediaFit.js';
 import { TERMS_ERROR, TERMS_STAMP, termsAccepted } from '$lib/terms.js';
 import { SITE_NAME, notifyAdmins } from '$lib/server/adminNotify.js';
+import { invalidatePendingCounts } from '$lib/server/pendingCounts.js';
 
 /**
  * רשימת הקטגוריות לתפריט הבחירה — כולל דריסות השם והקטגוריות שהוסיף
@@ -434,6 +435,10 @@ export const actions = {
 					};
 				}
 			}
+
+			// עסק חדש ממתין לאישור — מאפסים את מטמון הדקה כדי שהבועה האדומה
+			// בהאדר של האדמינים תופיע מיד ולא רק אחרי שהמטמון יפוג
+			invalidatePendingCounts();
 
 			await notifyAdminsNewBusiness({
 				values,

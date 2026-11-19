@@ -162,6 +162,11 @@ export async function load({ locals, parent }) {
 		// לפאנל הניהול הפרוס: מונה הכרטיסיות לאריח, וסטטיסטיקת הכניסות
 		businessesTotal,
 		pendingCounts: pending,
+		// אותו מספר גם תחת המפתח ש-+layout.svelte קורא ממנו (page.data.pending),
+		// כדי שהבועה בהאדר תתיישר עם הבועה בדף: ה-load של ה-layout הראשי לא
+		// רץ מחדש בניווט צד-לקוח, ולכן הבועה בהאדר נשארה על המספר הישן (0)
+		// בזמן שהפרופיל כבר הראה "1 ממתינים". אותו דפוס כמו admin/+layout.server.js.
+		pending,
 		gaConfigured: isAdmin ? gaConfigured() : false,
 		gaMonths: gaMonthly?.rows ?? null,
 		gaUpdatedAt: gaMonthly?.updatedAt ?? null
