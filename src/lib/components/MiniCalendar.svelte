@@ -12,6 +12,7 @@
 	import { shareLog } from '$lib/shareLog.js';
 	import { mergeNotes } from '$lib/calendarNotes.js';
 	import { googleCalendarUrl } from '$lib/calendar.js';
+	import { collapsibleFloor } from '$lib/actions/collapsibleFloor';
 
 	/** @type {{ lang?: string, email?: string }} */
 	let { lang = 'he', email = '' } = $props();
@@ -246,6 +247,7 @@
 
 <section
 	id="calendar"
+	use:collapsibleFloor
 	class="w-full scroll-mt-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800"
 >
 	<div class="mb-2 flex items-center justify-between gap-2">

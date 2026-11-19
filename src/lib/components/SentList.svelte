@@ -26,6 +26,7 @@
 	import { arrival } from '$lib/zoomNav.js';
 	import { canonical } from '$lib/seo';
 	import ReminderSheet from '$lib/components/ReminderSheet.svelte';
+	import { collapsibleFloor } from '$lib/actions/collapsibleFloor';
 
 	/** @type {{ canShare?: boolean, lang?: string, t: any }} */
 	let { canShare = true, lang = 'he', t } = $props();
@@ -274,6 +275,7 @@
 	<!-- id="sent": העוגן שאליו מוביל השיתוף החכם (/profile#sent) -->
 	<section
 		id="sent"
+		use:collapsibleFloor
 		bind:this={root}
 		class="w-full scroll-mt-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800"
 	>

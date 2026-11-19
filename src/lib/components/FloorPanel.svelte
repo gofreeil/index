@@ -22,6 +22,8 @@
 		// אין יעד בדף (מקטע שלא נטען) — מאפשרים לקישור לעשות את שלו
 		if (!el) return;
 		e.preventDefault();
+		// קומה מקופלת נפתחת לפני שגוללים אליה
+		el.dispatchEvent(new CustomEvent('floor-expand'));
 		const calm = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 		el.scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'start' });
 		// הבהוב קצר על הקומה שהגענו אליה, כדי שיהיה ברור לאן נחתנו

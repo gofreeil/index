@@ -109,3 +109,26 @@ body {
 html {
     scroll-padding-top: calc(var(--header-height, 90px) + 1.25rem);
 }
+
+/* ===== קומות מתקפלות בפרופיל (use:collapsibleFloor) =====
+   קומה מקופלת מציגה רק את שורת הכותרת; כל שאר התוכן מוסתר. */
+section[data-collapsed] > :not(.floor-head) {
+    display: none;
+}
+section[data-collapsed] > .floor-head {
+    margin-bottom: 0;
+}
+.floor-head {
+    cursor: pointer;
+    user-select: none;
+}
+.floor-chevron {
+    display: inline-block;
+    margin-inline-end: 0.35rem;
+    font-size: 0.8em;
+    color: #9ca3af;
+    transition: transform 0.15s;
+}
+section[data-collapsed] .floor-chevron {
+    transform: rotate(90deg);
+}

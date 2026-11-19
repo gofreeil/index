@@ -10,6 +10,7 @@
 	import SentList from '$lib/components/SentList.svelte';
 	import MiniCalendar from '$lib/components/MiniCalendar.svelte';
 	import FloorPanel from '$lib/components/FloorPanel.svelte';
+	import { collapsibleFloor } from '$lib/actions/collapsibleFloor';
 	import { shareLog } from '$lib/shareLog.js';
 	import { onMount } from 'svelte';
 
@@ -277,7 +278,7 @@
 	     הטלפון והקיצורים. הכל דחוס: זהו כרטיס פרטים, לא באנר. -->
 	<div
 		id="me"
-		class="relative w-full overflow-hidden rounded-2xl border border-gray-100 bg-white p-4 shadow-xl dark:border-gray-700 dark:bg-gray-800"
+		class="relative w-full overflow-hidden rounded-2xl border border-gray-100 bg-white p-3 shadow-xl dark:border-gray-700 dark:bg-gray-800"
 	>
 		<!-- פס צבע דק בראש הכרטיס -->
 		<div
@@ -285,25 +286,26 @@
 			aria-hidden="true"
 		></div>
 
-		<!-- אווטאר + שם + אימייל בשורה אחת. כשיש פריטים שממתינים לטיפול (אדמין)
-		     — בועה אדומה ממוספרת בפינה, אותו מספר שמופיע על האווטאר בהאדר. -->
-		<div class="flex items-center gap-3">
-			<div class="relative h-14 w-14 flex-shrink-0">
+		<!-- אווטאר + שם בשורה אחת (האימייל לא מוצג — הוא מזהה החשבון ואין בו צורך
+		     כאן). כשיש פריטים שממתינים לטיפול (אדמין) — בועה אדומה ממוספרת בפינה,
+		     אותו מספר שמופיע על האווטאר בהאדר. -->
+		<div class="flex items-center gap-2.5">
+			<div class="relative h-11 w-11 flex-shrink-0">
 				<!-- תמונת הפרופיל אם יש (ואם נטענה); אחרת האות הראשונה של השם -->
 				{#if user?.avatar && !avatarBroken}
 					<img
 						src={user.avatar}
 						alt=""
-						width="56"
-						height="56"
+						width="44"
+						height="44"
 						decoding="async"
 						referrerpolicy="no-referrer"
 						onerror={() => (avatarBroken = true)}
-						class="h-14 w-14 rounded-full object-cover shadow-md ring-2 ring-white dark:ring-gray-700"
+						class="h-11 w-11 rounded-full object-cover shadow-md ring-2 ring-white dark:ring-gray-700"
 					/>
 				{:else}
 					<div
-						class="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-xl font-bold text-white shadow-md"
+						class="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-lg font-bold text-white shadow-md"
 						aria-hidden="true"
 					>
 						{initial}
@@ -320,31 +322,32 @@
 				{/if}
 			</div>
 			<div class="min-w-0 flex-1">
-				<h1 class="truncate text-lg font-extrabold text-gray-900 dark:text-gray-100">
+				<h1 class="truncate text-base font-extrabold text-gray-900 dark:text-gray-100">
 					{profile.name || user?.name}
 				</h1>
-				<p class="truncate text-xs text-gray-500 dark:text-gray-400" dir="ltr">{user?.email}</p>
 				<!-- הוותק שלי — אותו תג שמוצג למבקרים בכרטיסייה, כאן על המשתמש
 				     עצמו. מי שאין לו כרטיסייה עדיין אין לו ותק, ואין שורה ריקה. -->
 				{#if tenureSince}
-					<div class="mt-1"><TenureBadge since={tenureSince} size="sm" /></div>
+					<div class="mt-0.5"><TenureBadge since={tenureSince} size="sm" /></div>
 				{/if}
 			</div>
-			<div class="flex flex-shrink-0 flex-col items-stretch gap-1.5">
+			<div class="flex flex-shrink-0 flex-col items-stretch gap-1">
 				<!-- עריכת פרטים (שם וטלפון) — הטלפון עצמו לא מוצג בכרטיס -->
 				{#if !editing}
 					<button
 						type="button"
 						onclick={startEdit}
-						class="rounded-full bg-blue-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400"
+						class="rounded-full bg-blue-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-sm transition hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400"
 					>
 						✏️ {t.profileEdit}
 					</button>
 				{/if}
+				<!-- התנתקות — פעולה שולית: מסגרת דקה וטקסט אפור, בלי מילוי אדום;
+				     האדום מופיע רק במעבר עכבר. -->
 				<button
 					type="button"
 					onclick={logout}
-					class="rounded-full bg-red-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-400"
+					class="rounded-full border border-gray-300 px-2.5 py-0.5 text-[11px] font-medium text-gray-500 transition hover:border-red-400 hover:text-red-600 dark:border-gray-600 dark:text-gray-400 dark:hover:border-red-400 dark:hover:text-red-400"
 				>
 					{t.logout}
 				</button>
@@ -538,6 +541,7 @@
 	{#if matches.length}
 		<section
 			id="claims"
+			use:collapsibleFloor
 			class="w-full rounded-2xl border-2 border-amber-400 bg-gradient-to-br from-amber-50 to-yellow-100/70 p-5 shadow-lg ring-4 shadow-amber-500/20 ring-amber-400/15 dark:border-amber-400/60 dark:from-amber-950/40 dark:to-yellow-900/20 dark:shadow-amber-500/10"
 		>
 			<h2 class="flex items-center gap-2 text-lg font-extrabold text-amber-900 dark:text-amber-100">
@@ -621,6 +625,7 @@
 	{#if mod}
 		<section
 			id="admin"
+			use:collapsibleFloor
 			class="w-full rounded-2xl border border-amber-200 bg-amber-50/50 p-5 dark:border-amber-700/40 dark:bg-amber-950/20"
 		>
 			<div class="mb-4 flex flex-wrap items-center justify-between gap-2">
@@ -784,6 +789,7 @@
 	{#if hasAssets}
 		<section
 			id="stats"
+			use:collapsibleFloor
 			class="w-full rounded-2xl border border-blue-100 bg-blue-50/40 p-5 dark:border-blue-500/20 dark:bg-blue-950/20"
 		>
 			<h2 class="flex items-center gap-2 text-lg font-extrabold text-gray-900 dark:text-gray-100">
@@ -851,6 +857,7 @@
 	<!-- המודעות שלי -->
 	<section
 		id="ads"
+		use:collapsibleFloor
 		class="w-full rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800"
 	>
 		<div class="mb-4 flex flex-wrap items-center justify-between gap-2">
@@ -1099,6 +1106,7 @@
 	<!-- העסקים שלי -->
 	<section
 		id="businesses"
+		use:collapsibleFloor
 		class="w-full rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800"
 	>
 		<div class="mb-4 flex flex-wrap items-center justify-between gap-2">
