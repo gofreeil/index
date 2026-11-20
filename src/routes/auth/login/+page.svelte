@@ -83,21 +83,33 @@
 		}
 	}
 
-	onMount(() => {
+	// הסקריפט של Google (gsi/client) נטען async ב-app.html, ולעיתים עוד לא הגיע כש-onMount
+	// רץ — אז הכפתור נשאר ריק. מנסים שוב כל 250ms (עד ~10 שניות) עד שהוא מוכן.
+	/** @param {number} attempt */
+	function renderGoogleButton(attempt = 0) {
+		if (!PUBLIC_GOOGLE_CLIENT_ID) return;
 		const googleAuth = /** @type {any} */ (window).google;
-		if (typeof window !== 'undefined' && googleAuth && PUBLIC_GOOGLE_CLIENT_ID) {
-			googleAuth.accounts.id.initialize({
-				client_id: PUBLIC_GOOGLE_CLIENT_ID,
-				callback: handleGoogleResponse
-			});
-			googleAuth.accounts.id.renderButton(document.getElementById('google-button'), {
-				theme: 'outline',
-				size: 'large',
-				width: '100%',
-				text: 'signin_with',
-				shape: 'pill'
-			});
+		const el = document.getElementById('google-button');
+		if (!el) return;
+		if (!googleAuth?.accounts?.id) {
+			if (attempt < 40) setTimeout(() => renderGoogleButton(attempt + 1), 250);
+			return;
 		}
+		googleAuth.accounts.id.initialize({
+			client_id: PUBLIC_GOOGLE_CLIENT_ID,
+			callback: handleGoogleResponse
+		});
+		googleAuth.accounts.id.renderButton(el, {
+			theme: 'outline',
+			size: 'large',
+			width: '100%',
+			text: 'signin_with',
+			shape: 'pill'
+		});
+	}
+
+	onMount(() => {
+		renderGoogleButton();
 	});
 
 	// SSO "יוצאים לחירות": מפנים לקהילה, היא קובעת את העוגייה המשותפת gofreeil-auth
