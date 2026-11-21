@@ -5,6 +5,7 @@ import {
 	SESSION_COOKIE,
 	SHARED_SSO_COOKIE,
 	SHARED_MARK_COOKIE,
+	setSession,
 	setSharedSession,
 	clearSession
 } from '$lib/server/session';
@@ -52,9 +53,22 @@ export async function handle({ event, resolve }) {
 		clearSession(event.cookies);
 		return resolve(event);
 	}
-	const jwt = event.cookies.get(SESSION_COOKIE) || event.cookies.get(SHARED_SSO_COOKIE);
+	const ownJwt = event.cookies.get(SESSION_COOKIE);
+	const sharedJwt = event.cookies.get(SHARED_SSO_COOKIE);
+	let jwt = ownJwt || sharedJwt;
 	if (jwt) {
-		const r = await verifyStrapiJwt(jwt);
+		let r = await verifyStrapiJwt(jwt);
+		// עוגיית האינדקס מתה (Strapi דחה אותה) אבל העוגייה המשותפת שונה — ורועננה
+		// באתר אחר ברשת. בלי הבדיקה הזו המשתמש "נותק" ונשאר עם מסך התחברות שמציע
+		// "המשך כ-…", למרות שהזהות שלו חיה. עוברים אליה ומחדשים גם את עוגיית האינדקס.
+		if ('invalid' in r && ownJwt && sharedJwt && sharedJwt !== ownJwt) {
+			const shared = await verifyStrapiJwt(sharedJwt);
+			if ('me' in shared) {
+				jwt = sharedJwt;
+				r = shared;
+				setSession(event.cookies, sharedJwt, event.url);
+			}
+		}
 		const me = 'me' in r ? r.me : null;
 		if ('transient' in r) {
 			// Strapi לא ענה — לא מנתקים משתמש מחובר; הזהות האחרונה שאומתה
