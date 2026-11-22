@@ -11,6 +11,7 @@
 	import Footer from '$lib/components/Footer.svelte';
 	import WelcomeScreen from '$lib/components/WelcomeScreen.svelte';
 	import Flag from '$lib/components/Flag.svelte';
+	import SignupTip from '$lib/components/SignupTip.svelte';
 	import { authUser, hydrateAuth } from '$lib/auth';
 	import { adminNav } from '$lib/adminNav.js';
 	import { page, navigating } from '$app/state';
@@ -487,14 +488,18 @@
 							<span class="hidden max-w-[120px] truncate sm:inline">{user.name || user.email}</span>
 						</a>
 					{:else}
-						<a
-							href="/auth/login"
-							class="login-grad flex flex-shrink-0 items-center gap-1.5 rounded-full px-2 py-1.5 text-sm font-bold text-white shadow-sm transition-all hover:brightness-110 sm:px-4 sm:py-2"
-							title={t.login}
-						>
-							<span aria-hidden="true">👤</span>
-							<span class="hidden sm:inline">{t.login}</span>
-						</a>
+						<!-- אורח: יד ובועה "לא רשום עדיין?" תלויות מתחת לכפתור (בעברית בלבד) -->
+						<span class="relative inline-flex flex-shrink-0">
+							<a
+								href="/auth/login"
+								class="login-grad flex flex-shrink-0 items-center gap-1.5 rounded-full px-2 py-1.5 text-sm font-bold text-white shadow-sm transition-all hover:brightness-110 sm:px-4 sm:py-2"
+								title={t.login}
+							>
+								<span aria-hidden="true">👤</span>
+								<span class="hidden sm:inline">{t.login}</span>
+							</a>
+							<SignupTip href="/auth/login" from="#ca8a04" to="#ea580c" hidden={currentLang !== 'he'} />
+						</span>
 					{/if}
 				</div>
 			</div>
