@@ -68,6 +68,7 @@
 		spacerPx = 32; // נמדדים מה-DOM; הקבועים הם רק ברירת מחדל ל-SSR
 	let padStartPx = 8; // padding-inline-start של המסילה (0.5rem)
 	let reduceMotion = false; // נקרא פעם אחת; הדומינו כבוי כשמבקשים פחות תנועה
+	let demoScroll = false; // הגלילה כרגע היא של הדגמת האצבע, לא של המשתמש
 
 	const prefersReduce = () =>
 		typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -90,9 +91,9 @@
 		fadeLeadPx = Math.round(Math.min(FADE_PX, Math.max(0, pos)));
 		fadeTailPx = Math.round(Math.min(FADE_PX, Math.max(0, max - pos)));
 		thumbRatio = el.scrollWidth > 0 ? Math.min(1, el.clientWidth / el.scrollWidth) : 1;
-		// גלגלת/מקלדת/סרגל — תזוזה אמיתית מכבה את הרמז. הסף גבוה מ-36px של הנדנוד
-		// האוטומטי, כדי שהרמז לא יכבה את עצמו
-		if (pos > 48) hinted = true;
+		// גלגלת/מקלדת/סרגל — תזוזה אמיתית מכבה את הרמז. גלילת הדגמת האצבע
+		// (demoScroll) לא נחשבת, כדי שהרמז לא יכבה את עצמו
+		if (pos > 48 && !demoScroll) hinted = true;
 
 		// כל האריחים ברוחב זהה, ולכן די במדידת הראשון. offsetWidth ולא
 		// getBoundingClientRect: הראשון עשוי להיות מסובב בדומינו, ותיבת ה-rect
@@ -174,24 +175,123 @@
 		untrack(readScroll);
 	});
 
-	/** נדנוד חד-פעמי "אני זזה" — פעם אחת ב-session, ולא כשמבקשים פחות תנועה */
+	/* הדגמת "אצבע מדפדפת" — הועתקה מ"גמ"חי ישראל" (national-gemach). בכל טעינת
+	   דף, כשהמסילה נכנסת למסך: המסילה מוצגת כשהיא כבר גלולה קדימה, האצבע נכנסת
+	   מימין ולוחצת, עושה סוויפ קצר מימין לשמאל (המסילה נגררת איתה), ואז מתרוממת
+	   ויוצאת ימינה בזמן שהמסילה ממשיכה במומנטום עד ההתחלה.
+	   האצבע והמסילה מונעות מאותה לולאת rAF: בזמן הסוויפ האצבע זזה בדיוק כמו
+	   האריחים שמתחתיה. הגלילה-מראש קורית מיד בטעינה ולא כשהאצבע יוצאת לדרך —
+	   אחרת האריחים קופצים לפני שהיד בכלל נגעה. נגיעה/גלגלת של המשתמש עוצרות הכל. */
+	const FINGER_ENTER_MS = 320; // כניסה מימין עד נקודת הלחיצה — בלי גלילה
+	const FINGER_PRESS_MS = 180; // הלחיצה עצמה — בלי גלילה
+	const FINGER_SWIPE_MS = 450; // הסוויפ — האצבע והאריחים זזים כגוף אחד
+	const FINGER_EXIT_MS = 420; // התרוממות ויציאה ימינה
+	const SWIPE_SHARE = 0.3; // איזה חלק מהדרך עוברים בזמן הסוויפ עצמו
+	const GLIDE_MS = 1500; // המומנטום עד ההתחלה — מהירות תחילית תואמת לסוף הסוויפ
+	const FINGER_DELAY_MS = 2000; // השהיה מרגע שהמסילה במסך — שהמבקר יספיק להתמצא קודם
+	let fingerDemo = $state(false);
+	/** @type {HTMLDivElement | null} */
+	let fingerEl = $state(null);
 	$effect(() => {
 		const el = railEl;
 		if (!el || !overflowing || nudged) return;
 		nudged = true;
 		if (prefersReduce()) return;
-		try {
-			if (sessionStorage.getItem('catRailHinted')) return;
-			sessionStorage.setItem('catRailHinted', '1');
-		} catch {
-			return; // Safari במצב פרטי זורק
-		}
-		const s = rtl ? -1 : 1; // "קדימה" ב-RTL = דלתא שלילית
-		const t1 = setTimeout(() => el.scrollBy({ left: s * 36, behavior: 'smooth' }), 700);
-		const t2 = setTimeout(() => el.scrollBy({ left: -s * 36, behavior: 'smooth' }), 1250);
+		new Image().src = '/images/finger.webp'; // טעינה מוקדמת — שלא תופיע באמצע התנועה
+
+		// "קדימה" ב-RTL = scrollLeft שלילי
+		const dir = untrack(() => rtl) ? -1 : 1;
+		const dist = dir * Math.min(el.scrollWidth - el.clientWidth, el.clientWidth * 1.5);
+		demoScroll = true;
+		el.scrollLeft = dist; // נקודת הפתיחה: גלולה קדימה, כבר עכשיו
+
+		let raf = 0,
+			t = 0,
+			cancelled = false;
+		const stop = () => {
+			cancelled = true;
+			cancelAnimationFrame(raf);
+			clearTimeout(t);
+			fingerDemo = false;
+			demoScroll = false;
+		};
+		const run = () => {
+			if (hinted || el.scrollWidth - el.clientWidth <= 4) {
+				demoScroll = false;
+				return;
+			}
+			/** @param {number} p */
+			const outCubic = (p) => 1 - Math.pow(1 - p, 3);
+			/** @param {number} p */
+			const inCubic = (p) => p * p * p;
+			el.scrollLeft = dist;
+			fingerDemo = true;
+			const t0 = performance.now();
+			const swipeAt = FINGER_ENTER_MS + FINGER_PRESS_MS;
+			const swipeEnd = swipeAt + FINGER_SWIPE_MS;
+			const endFx = dist * SWIPE_SHARE; // היסט האצבע בסוף הסוויפ = כמה שהאריחים זזו
+			/** @param {number} now */
+			const step = (now) => {
+				if (cancelled) return;
+				const dt = now - t0;
+				let fx = 0,
+					fy = 0,
+					sc = 0.94;
+				if (dt < swipeAt) {
+					el.scrollLeft = dist;
+					sc =
+						dt < FINGER_ENTER_MS
+							? 1.08
+							: 1.08 - 0.14 * ((dt - FINGER_ENTER_MS) / FINGER_PRESS_MS);
+				} else if (dt < swipeEnd) {
+					// ease-in: מאיצה עם האצבע, כך שהמומנטום ממשיך באותה מהירות
+					const p = (dt - swipeAt) / FINGER_SWIPE_MS;
+					const sl = dist * (1 - SWIPE_SHARE * p * p);
+					el.scrollLeft = sl;
+					fx = dist - sl; // התזוזה על המסך = הפרש הגלילה, בשני הכיוונים
+				} else {
+					const p = Math.min(1, (dt - swipeEnd) / GLIDE_MS);
+					el.scrollLeft = dist * (1 - SWIPE_SHARE) * (1 - outCubic(p));
+					const q = Math.min(1, (dt - swipeEnd) / FINGER_EXIT_MS);
+					fy = -12 * q;
+					sc = 0.94 + 0.11 * q;
+				}
+				const f = fingerEl;
+				if (f) {
+					// מרחק שמעביר את האצבע אל מעבר לקצה הימני של העטיפה (שם overflow-x: clip חותך)
+					const parent = /** @type {HTMLElement | null} */ (f.offsetParent);
+					const wrapW = parent?.clientWidth ?? el.clientWidth;
+					const away = wrapW * 0.04 + f.offsetWidth + 48;
+					if (dt < FINGER_ENTER_MS) fx = away * (1 - outCubic(dt / FINGER_ENTER_MS));
+					else if (dt >= swipeEnd)
+						fx =
+							endFx +
+							(away - endFx) * inCubic(Math.min(1, (dt - swipeEnd) / FINGER_EXIT_MS));
+					f.style.transform = `translate(${fx.toFixed(1)}px, ${fy.toFixed(1)}px) scale(${sc.toFixed(3)})`;
+				}
+				if (fingerDemo && dt >= swipeEnd + FINGER_EXIT_MS) fingerDemo = false;
+				if (dt < swipeEnd + GLIDE_MS) raf = requestAnimationFrame(step);
+				else demoScroll = false;
+			};
+			raf = requestAnimationFrame(step);
+		};
+
+		const io = new IntersectionObserver(
+			(entries) => {
+				if (!entries.some((en) => en.isIntersecting)) return;
+				io.disconnect();
+				t = window.setTimeout(run, FINGER_DELAY_MS);
+			},
+			{ threshold: 0.6 }
+		);
+		io.observe(el);
+		el.addEventListener('pointerdown', stop, { once: true });
+		el.addEventListener('wheel', stop, { once: true, passive: true });
 		return () => {
-			clearTimeout(t1);
-			clearTimeout(t2);
+			io.disconnect();
+			stop();
+			el.removeEventListener('pointerdown', stop);
+			el.removeEventListener('wheel', stop);
 		};
 	});
 
@@ -412,6 +512,8 @@
 
 		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 		<div
+			class="relative"
+			style="overflow-x: clip"
 			role="group"
 			aria-labelledby="cat-rail-title"
 			aria-describedby="cat-rail-help"
@@ -490,6 +592,11 @@
 				     להיות רחב כמו המסכה כדי שהאריח האחרון לא יישאר מעומעם -->
 				<li class="cat-spacer" data-spacer aria-hidden="true"></li>
 			</ul>
+			{#if fingerDemo}
+				<div bind:this={fingerEl} class="finger-demo" aria-hidden="true">
+					<img src="/images/finger.webp" alt="" width="500" height="802" decoding="async" />
+				</div>
+			{/if}
 		</div>
 
 		<!-- בקרי החשיפה מרוכזים מתחת למסילה, צמודים לאלמנט שהם מזיזים:
@@ -627,6 +734,33 @@
 	}
 	.cat-rail::-webkit-scrollbar {
 		display: none;
+	}
+	/* אצבע מדפדפת: המיקום, הלחיצה והיציאה נכתבים מה-JS (transform) באותה לולאה
+	   שגוללת את המסילה, כדי שהאצבע תדבק לאריחים. right: 4% היא נקודת הלחיצה;
+	   ברירת המחדל כאן מחוץ למסך, שלא תהבהב שם לפני הפריים הראשון. העטיפה חותכת
+	   אופקית (overflow-x: clip) כדי שלא תיווצר גלילה. */
+	.finger-demo {
+		position: absolute;
+		top: 42%;
+		right: 4%;
+		width: 6.5rem; /* בנייד — 11rem גלשה מחוץ למסך */
+		pointer-events: none;
+		z-index: 30;
+		filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.55));
+		transform: translateX(100vw);
+		will-change: transform;
+	}
+	.finger-demo img {
+		width: 100%;
+		height: auto;
+		display: block;
+		transform: rotate(-18deg);
+		transform-origin: 60% 30%;
+	}
+	@media (min-width: 768px) {
+		.finger-demo {
+			width: 11rem;
+		}
 	}
 	.cat-rail.is-dragging {
 		cursor: grabbing;
