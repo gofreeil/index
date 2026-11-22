@@ -1,4 +1,5 @@
 <script>
+	import FirstTimeTip from '$lib/components/FirstTimeTip.svelte';
 	import PasswordInput from '$lib/components/PasswordInput.svelte';
 	import { lang, translations } from '$lib/i18n';
 	import { onMount } from 'svelte';
@@ -165,14 +166,6 @@
 			<h2 class="text-center text-3xl font-extrabold text-gray-900 dark:text-gray-100">
 				{t.login}
 			</h2>
-			<!-- הודעה למשתמש חדש: הכניסה עם Google היא גם ההרשמה -->
-			{#if !data.ssoName}
-				<p
-					class="mt-3 text-center text-[13px] leading-relaxed font-bold text-amber-700 sm:text-sm dark:text-amber-300"
-				>
-					{t.firstTimeRegister}
-				</p>
-			{/if}
 		</div>
 
 		{#if data.ssoName}
@@ -281,6 +274,10 @@
 				</div>
 			</div>
 
+			<!-- משתמש חדש: בועה עם יד שמצביעה על כפתור Google — הכניסה היא גם ההרשמה -->
+			{#if !data.ssoName}
+				<FirstTimeTip text={t.firstTimeRegister} />
+			{/if}
 			<div id="google-button" class="flex justify-center"></div>
 
 			{#if !data.ssoName}
