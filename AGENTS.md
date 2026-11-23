@@ -21,3 +21,11 @@ You MUST use this tool whenever writing Svelte code before sending it to the use
 
 Generates a Svelte Playground link with the provided code.
 After completing the code, ask the user if they want a playground link. Only call this tool after user confirmation and NEVER if code was written to files in their project.
+
+
+## Git: push every task automatically (standing permission, 2026-11-23)
+
+- When a task that changed files in this git repo is finished and verified, run `git add` (only the files of the task), `git commit` and `git push` yourself. Do not ask for approval and do not wait for the user to type anything: the owner gave a standing permission for all repos.
+- Exceptions only: the work is unfinished or failing (do not push a broken state, report what is missing); never commit secrets (passwords, tokens, API keys, `.env`, session files, real configs); no `--force`, no `--no-verify`, no history rewriting, no pushing a different branch than the current one unless asked.
+- Commit only files that belong to the current task; leave the user's unrelated uncommitted changes alone.
+- If the push is rejected because the remote moved: `git pull --rebase` and push again; on a real conflict stop and report.
