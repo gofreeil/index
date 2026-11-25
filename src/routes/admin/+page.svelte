@@ -4,6 +4,7 @@
 	import { mediaUrl, STATUS_HE } from '$lib/businessShape.js';
 	import { parseTags } from '$lib/tags.js';
 	import { groupDuplicates } from '$lib/businessDedupe.js';
+	import AdminWhatsappShare from '$lib/components/AdminWhatsappShare.svelte';
 
 	/** @type {{ data: any, form: any }} */
 	let { data, form } = $props();
@@ -300,6 +301,7 @@
 								>
 									✏️ ערוך
 								</a>
+								<AdminWhatsappShare business={b} />
 								{@render deleteBtn('business', b.documentId)}
 							</div>
 						</div>

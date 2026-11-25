@@ -160,8 +160,8 @@ const normUrl = (v) => (v && !/^https?:\/\//i.test(v) ? `https://${v}` : v);
 // עסק שהוגש נשמר כ-pending ומחכה בפאנל; בלי הודעה איש לא יודע שהוא שם.
 // הגשה חוזרת מקבלת ניסוח משלה, כי היא לא כרטיס חדש בתור אלא עדכון של
 // בקשה קיימת — ודחויה שחזרה לתור היא ניסיון מתוקן שצריך מבט שני.
-/** @param {{ values: any, reuse: { status?: string } | null | undefined, submitterEmail?: string | null }} info */
-async function notifyAdminsNewBusiness({ values, reuse, submitterEmail }) {
+/** @param {{ values: any, reuse: { status?: string } | null | undefined, submitterEmail?: string | null, documentId?: string }} info */
+async function notifyAdminsNewBusiness({ values, reuse, submitterEmail, documentId }) {
 	const resubmitted = reuse?.status === 'rejected';
 	const head = reuse
 		? resubmitted
@@ -177,7 +177,8 @@ async function notifyAdminsNewBusiness({ values, reuse, submitterEmail }) {
 		`אימייל בעל העסק: ${values.email}\n` +
 		`מי הגיש: ${submitterEmail || 'הגשה ללא התחברות'}\n` +
 		(resubmitted ? `הבקשה הקודמת נדחתה והוחזרה לתור עם הפרטים המתוקנים.\n` : '') +
-		`ממתין לאישור ב-index.gofreeil.com/admin?tab=pending`;
+		`ממתין לאישור ב-index.gofreeil.com/admin?tab=pending` +
+		(documentId ? `\nלעריכה והודעת ווצאפ: index.gofreeil.com/admin/business/${documentId}` : '');
 	await notifyAdmins(content, 'new-business notification');
 }
 
@@ -443,7 +444,8 @@ export const actions = {
 			await notifyAdminsNewBusiness({
 				values,
 				reuse,
-				submitterEmail: locals.user?.email
+				submitterEmail: locals.user?.email,
+				documentId: written.documentId
 			});
 
 			if (reuse) {

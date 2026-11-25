@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { STATUS_HE } from '$lib/businessShape.js';
 	import BusinessFormFields from '$lib/components/BusinessFormFields.svelte';
+	import AdminWhatsappShare from '$lib/components/AdminWhatsappShare.svelte';
 
 	/** @type {{ data: any, form: any }} */
 	let { data, form } = $props();
@@ -71,6 +72,7 @@
 			{/if}
 
 			<div class="ms-auto flex flex-wrap items-center gap-2">
+				<AdminWhatsappShare business={biz} compact />
 				{#if users.length}
 					<button
 						type="button"
