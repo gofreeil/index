@@ -21,11 +21,11 @@ export function buildNewBusinessWhatsapp(b) {
 	const siteUrl = canonical('/');
 
 	const lead = subtitle
-		? `יוצאים לחירות שמחים להציג בפניכם את *${name}* — ${subtitle}`
-		: `יוצאים לחירות שמחים להציג בפניכם את *${name}*`;
+		? `אנו שמחים להציג בפניכם את *${name}* — ${subtitle}`
+		: `אנו שמחים להציג בפניכם את *${name}*`;
 
 	const lines = ['חברים יקרים ובעלי עסקים !', lead];
-	if (discount) lines.push(`🎁 הטבה לחברנו: ${discount}`);
+	if (discount) lines.push(`🎁 הטבה עבורנו: ${discount}`);
 	lines.push(
 		'מוזמנים להיכנס לאתר בעלי העסקים שלנו, להכיר את בעל/ת העסק וליהנות מההטבה.',
 		'',
