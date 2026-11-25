@@ -322,7 +322,7 @@
 				{/if}
 			</div>
 			<div class="min-w-0 flex-1">
-				<h1 class="truncate text-base font-extrabold text-gray-900 dark:text-gray-100">
+				<h1 class="truncate text-xl font-extrabold text-gray-900 dark:text-gray-100">
 					{profile.name || user?.name}
 				</h1>
 				<!-- הוותק שלי — אותו תג שמוצג למבקרים בכרטיסייה, כאן על המשתמש
@@ -337,7 +337,7 @@
 					<button
 						type="button"
 						onclick={startEdit}
-						class="rounded-full bg-blue-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-sm transition hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400"
+						class="rounded-full bg-blue-600 px-3 py-1 text-xs font-bold text-white shadow-sm transition hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400"
 					>
 						✏️ {t.profileEdit}
 					</button>
@@ -347,7 +347,7 @@
 				<button
 					type="button"
 					onclick={logout}
-					class="rounded-full border border-gray-300 px-2.5 py-0.5 text-[11px] font-medium text-gray-500 transition hover:border-red-400 hover:text-red-600 dark:border-gray-600 dark:text-gray-400 dark:hover:border-red-400 dark:hover:text-red-400"
+					class="rounded-full border border-gray-300 px-3 py-1 text-xs font-medium text-gray-500 transition hover:border-red-400 hover:text-red-600 dark:border-gray-600 dark:text-gray-400 dark:hover:border-red-400 dark:hover:text-red-400"
 				>
 					{t.logout}
 				</button>
@@ -629,17 +629,17 @@
 			class="w-full rounded-2xl border border-amber-200 bg-amber-50/50 p-5 dark:border-amber-700/40 dark:bg-amber-950/20"
 		>
 			<div class="mb-4 flex flex-wrap items-center justify-between gap-2">
-				<h2 class="flex items-center gap-2 text-lg font-extrabold text-gray-900 dark:text-gray-100">
+				<h2 class="flex items-center gap-2 text-xl font-extrabold text-gray-900 dark:text-gray-100">
 					🛡️ ניהול ומודרציה
 					<span
-						class="rounded-full border px-2 py-0.5 text-[11px] font-bold {data.superAdmin
+						class="rounded-full border px-2.5 py-0.5 text-xs font-bold {data.superAdmin
 							? 'border-amber-400 bg-amber-100 text-amber-800 dark:border-amber-500/40 dark:bg-amber-900/40 dark:text-amber-300'
 							: 'border-blue-300 bg-blue-100 text-blue-700 dark:border-blue-500/40 dark:bg-blue-900/40 dark:text-blue-300'}"
 					>
 						{data.superAdmin ? '👑 סופר-אדמין' : 'אדמין'}
 					</span>
 				</h2>
-				<a href="/admin" class="text-sm font-bold text-blue-600 hover:underline dark:text-blue-400">
+				<a href="/admin" class="text-base font-bold text-blue-600 hover:underline dark:text-blue-400">
 					לפאנל המלא ←
 				</a>
 			</div>
@@ -655,29 +655,29 @@
 					{@const count = tileCount(tile)}
 					<a
 						href={tile.href}
-						class="relative flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-3 py-2.5 transition hover:border-blue-300 hover:shadow-sm dark:border-gray-700 dark:bg-gray-800/60 dark:hover:border-blue-500/40"
+						class="relative flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-3.5 py-3 transition hover:border-blue-300 hover:shadow-sm dark:border-gray-700 dark:bg-gray-800/60 dark:hover:border-blue-500/40"
 					>
 						{#if alert > 0}
 							<span
-								class="absolute -top-2 -left-2 z-10 flex h-6 min-w-6 items-center justify-center rounded-full bg-red-600 px-1.5 text-[11px] leading-none font-black text-white shadow-lg ring-2 ring-amber-50 dark:ring-amber-950"
+								class="absolute -top-2 -left-2 z-10 flex h-6 min-w-6 items-center justify-center rounded-full bg-red-600 px-1.5 text-xs leading-none font-black text-white shadow-lg ring-2 ring-amber-50 dark:ring-amber-950"
 							>
 								<span class="sr-only">ממתינים לטיפול: </span>{alert}
 							</span>
 						{:else if soft > 0}
 							<span
-								class="absolute -top-2 -left-2 z-10 flex h-6 min-w-6 items-center justify-center rounded-full bg-sky-300 px-1.5 text-[11px] leading-none font-bold text-sky-950 ring-2 ring-amber-50 dark:ring-amber-950"
+								class="absolute -top-2 -left-2 z-10 flex h-6 min-w-6 items-center justify-center rounded-full bg-sky-300 px-1.5 text-xs leading-none font-bold text-sky-950 ring-2 ring-amber-50 dark:ring-amber-950"
 							>
 								<span class="sr-only">התאמות שהמערכת מצאה: </span>{soft}
 							</span>
 						{/if}
-						<span class="text-xl" aria-hidden="true">{tile.icon}</span>
+						<span class="text-2xl" aria-hidden="true">{tile.icon}</span>
 						<span class="min-w-0">
-							<span class="block truncate text-sm font-bold text-gray-900 dark:text-gray-100">
+							<span class="block truncate text-base font-bold text-gray-900 dark:text-gray-100">
 								{tile.title}
 							</span>
 							<!-- המונה משולב בתחילת שורת התיאור, באותו פונט ובאותו צבע —
 							     בתחילתה ולא בסופה, כדי שה-truncate לא יבלע אותו במסכים צרים -->
-							<span class="block truncate text-[11px] text-gray-500 dark:text-gray-400">
+							<span class="block truncate text-sm text-gray-500 dark:text-gray-400">
 								{count > 0 ? `${count} · ` : ''}{tile.desc}
 							</span>
 						</span>
@@ -698,20 +698,20 @@
 
 			<!-- הפריטים האחרונים מכל סוג -->
 			{#if mod.businesses.count === 0 && mod.reviews.count === 0 && mod.reports.count === 0}
-				<p class="mt-4 text-center text-sm text-gray-500 dark:text-gray-400">
+				<p class="mt-4 text-center text-base text-gray-500 dark:text-gray-400">
 					אין פריטים שממתינים לטיפול 🎉
 				</p>
 			{:else}
 				<div class="mt-4 space-y-4">
 					{#if mod.businesses.count}
 						<div>
-							<h3 class="mb-2 text-sm font-bold text-gray-700 dark:text-gray-300">
+							<h3 class="mb-2 text-base font-bold text-gray-700 dark:text-gray-300">
 								עסקים חדשים שממתינים לאישור
 							</h3>
 							<ul class="space-y-1.5">
 								{#each mod.businesses.items as b (b.documentId)}
 									<li
-										class="flex flex-wrap items-center gap-x-2 rounded-lg bg-white px-3 py-2 text-sm dark:bg-gray-800/60"
+										class="flex flex-wrap items-center gap-x-2 rounded-lg bg-white px-3 py-2 text-base dark:bg-gray-800/60"
 									>
 										<a
 											href="/admin/business/{b.documentId}"
@@ -719,7 +719,7 @@
 										>
 											{b.name}
 										</a>
-										<span class="text-xs text-gray-500 dark:text-gray-400">
+										<span class="text-sm text-gray-500 dark:text-gray-400">
 											{b.category || 'ללא קטגוריה'} · {b.contact_name || '—'} · {b.phone || '—'} · {fmtDate(
 												b.createdAt
 											)}
@@ -732,13 +732,13 @@
 
 					{#if mod.reviews.count}
 						<div>
-							<h3 class="mb-2 text-sm font-bold text-gray-700 dark:text-gray-300">
+							<h3 class="mb-2 text-base font-bold text-gray-700 dark:text-gray-300">
 								ביקורות שממתינות לאישור
 							</h3>
 							<ul class="space-y-1.5">
 								{#each mod.reviews.items as r (r.documentId)}
 									<li
-										class="flex flex-wrap items-center gap-x-2 rounded-lg bg-white px-3 py-2 text-sm dark:bg-gray-800/60"
+										class="flex flex-wrap items-center gap-x-2 rounded-lg bg-white px-3 py-2 text-base dark:bg-gray-800/60"
 									>
 										<span class="font-bold text-gray-900 dark:text-gray-100">
 											{r.business || 'עסק לא ידוע'}
@@ -746,7 +746,7 @@
 										<span class="text-amber-500" dir="ltr">
 											{'★'.repeat(Math.max(0, Math.min(5, r.rating)))}
 										</span>
-										<span class="text-xs text-gray-500 dark:text-gray-400">
+										<span class="text-sm text-gray-500 dark:text-gray-400">
 											{r.title || r.author || 'אנונימי'} · {fmtDate(r.createdAt)}
 										</span>
 									</li>
@@ -757,21 +757,21 @@
 
 					{#if mod.reports.count}
 						<div>
-							<h3 class="mb-2 text-sm font-bold text-gray-700 dark:text-gray-300">
+							<h3 class="mb-2 text-base font-bold text-gray-700 dark:text-gray-300">
 								דיווחים פתוחים
 							</h3>
 							<ul class="space-y-1.5">
 								{#each mod.reports.items as r (r.documentId)}
 									<li
-										class="flex flex-wrap items-center gap-x-2 rounded-lg bg-white px-3 py-2 text-sm dark:bg-gray-800/60"
+										class="flex flex-wrap items-center gap-x-2 rounded-lg bg-white px-3 py-2 text-base dark:bg-gray-800/60"
 									>
 										<span class="font-bold text-gray-900 dark:text-gray-100"
 											>{r.business || '—'}</span
 										>
-										<span class="text-xs font-bold text-red-600 dark:text-red-400">
+										<span class="text-sm font-bold text-red-600 dark:text-red-400">
 											{REASON_HE[r.reason] || r.reason}
 										</span>
-										<span class="text-xs text-gray-500 dark:text-gray-400">
+										<span class="text-sm text-gray-500 dark:text-gray-400">
 											{r.reporter || 'אנונימי'} · {fmtDate(r.createdAt)}
 										</span>
 									</li>
